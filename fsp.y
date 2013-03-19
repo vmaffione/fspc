@@ -71,19 +71,7 @@ action_labels:
     | set { T(5); }
     | action_labels '.' LowerCaseID { T(5); }
     | action_labels '.' set { T(6); }
-    | action_labels '[' action_range ']' { T(7); }
-    ;
-
-action_range:
-    range { T(9); }
-    | set { T(10); }
-    | variable ':' range { T(11); }
-    | variable ':' set { T(12); }
-    ;
-
-range:
-    range_id { T(13); }
-    | expression DOTDOT expression { T(14); }
+    | action_labels '[' expression ']' { T(7); }
     ;
 
 set:
@@ -126,11 +114,11 @@ process_body:
 
 local_process_defs:
     local_process_def {T(24);}
-    | local_process_defs local_process_def {T(25);}
+    | local_process_defs ',' local_process_def {T(25);}
     ;
 
 local_process_def:
-    process_id '=' local_process {T(26);}
+    process_id indices_OPT '=' local_process {T(26);}
     ;
 
 alphabet_extension_OPT:
@@ -148,16 +136,16 @@ base_local_process:
     END {T(32);}
     | STOP {T(33);}
     | ERROR {T(34);}
-    | process_id {T(35);}
+    | process_id indices_OPT {T(35);}
     ;
 
 choice:
     action_prefix {T(36);}
-    | choice action_prefix {T(37);}
+    | choice '|' action_prefix {T(37);}
     ;
 
 action_prefix:
-    prefix_actions ARROW local_process {T(38);}
+    guard_OPT prefix_actions ARROW local_process {T(38);}
     ;
 
 prefix_actions:
@@ -165,6 +153,18 @@ prefix_actions:
     | prefix_actions ARROW action_labels {T(40);}
     ;
 
+guard_OPT:
+    | WHEN expression  {T(41);}
+    ;
+
+indices_OPT:
+    | indices {T(42);}
+    ;
+
+indices:
+    '[' expression ']' {T(43);}
+    | indices '[' expression ']' {T(44);}
+    ;
 
 
 /* An expression or a simple_expression: standard operators and priorities. */
@@ -244,11 +244,12 @@ unary_expr:
     | '-' base_expr
     | '!' base_expr
     ;
-
+/* TODO: complete base_expr */
 base_expr:
     INTEGER
     | variable
     | constant_id
+    | '(' expression ')'
     ;
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
@@ -285,31 +286,3 @@ void yyerror(const char *s) {
     exit(-1);
 }
 
-
-/*
-action_labels:
-    action_label
-    | set
-    | action_labels '.' action_label
-    | action_labels '.' set
-    | action_labels '[' action_range ']'
-    | action_labels '[' expression ']'
-    ;
-
-action_range:
-    range
-    | set
-    | variable: range
-    | variable: set
-    ;
-
-range:
-    range_id
-    | expression DOTDOT expression
-    ;
-
-set:
-    set_id
-    | '{' set_elements '}'
-    ;
-*/
