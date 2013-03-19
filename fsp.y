@@ -9,7 +9,12 @@ extern int yylex();
 //extern "C" int yyparse();
 //extern "C" FILE *yyin;
 extern FILE * yyin;
- 
+
+void T(int x)
+{
+    cout << "<<B>> " << x << "\n";
+}
+
 void yyerror(const char *s);
 %}
 
@@ -30,8 +35,7 @@ void yyerror(const char *s);
 
 %token IF THEN ELSE
 %token WHEN
-%token CONST
-%token RANGE
+%token CONST RANGE SET
 %token ARROW
 %token DOTDOT
 %token END STOP
@@ -46,15 +50,80 @@ void yyerror(const char *s);
 
 %%
 
+/* Start symbol: an arbitrary long list of fsp_definitions */
+fsp_description:
+    fsp_definition
+    | fsp_description fsp_definition
+    ;
+
+/* All the possible type of fsp_definitions */
+fsp_definition:
+    constant_def
+    | range_def
+    | set_def
+    | action_labels
+    ;
+
+
+/* Action labels TODO: fix */
+action_labels:
+    LowerCaseID { T(4); }
+    | set { T(5); }
+    | action_labels '.' LowerCaseID { T(5); }
+    | action_labels '.' set { T(6); }
+    | action_labels '[' action_range ']' { T(7); }
+    ;
+
+action_range:
+    range { T(9); }
+    | set { T(10); }
+    | variable ':' range { T(11); }
+    | variable ':' set { T(12); }
+    ;
+
+range:
+    range_id { T(13); }
+    | expression DOTDOT expression { T(14); }
+    ;
+
+set:
+    set_id { T(15); }
+    | '{' set_elements '}' { T(16); }
+    ;
+
+
+/* Const, Range, Set */
+constant_def:
+    CONST constant_id '=' simple_expression {
+	cout << "<<B>> Const\n";
+    };
+
+range_def:
+    RANGE range_id '=' simple_expression DOTDOT simple_expression {
+	cout << "<<B>> Range\n";
+    };
+
+set_def:
+    SET set_id '=' '{' set_elements '}' {
+	cout << "<<B>> Set\n";
+    };
+
+set_elements:
+    action_labels
+    | set_elements ',' action_labels
+    ;
+
+
+/* An expression or a simple_expression: standard operators and priorities. */
 expression:
     or_expr {
-	cout << "Expression recognized!\n";
+	cout << "<<B>> Expression recognized!\n";
     }
     ;
 
 simple_expression:
     additive_expr {
-	cout << "Simple expression recognized!\n";
+	cout << "<<B>> Simple expression recognized!\n";
     }
     ;
 
@@ -126,18 +195,14 @@ unary_expr:
 base_expr:
     INTEGER
     | variable
-    | constant
-    ;
-    
-variable:
-    LowerCaseID
+    | constant_id
     ;
 
-constant:
-    UpperCaseID
-    ;
-    
-
+/* Some useful alias for LowerCaseID and UpperCaseID. */
+variable: LowerCaseID;
+constant_id: UpperCaseID;
+range_id: UpperCaseID;
+set_id: UpperCaseID;
 
 %%
 
@@ -165,3 +230,32 @@ void yyerror(const char *s) {
     // might as well halt now:
     exit(-1);
 }
+
+
+/*
+action_labels:
+    action_label
+    | set
+    | action_labels '.' action_label
+    | action_labels '.' set
+    | action_labels '[' action_range ']'
+    | action_labels '[' expression ']'
+    ;
+
+action_range:
+    range
+    | set
+    | variable: range
+    | variable: set
+    ;
+
+range:
+    range_id
+    | expression DOTDOT expression
+    ;
+
+set:
+    set_id
+    | '{' set_elements '}'
+    ;
+*/

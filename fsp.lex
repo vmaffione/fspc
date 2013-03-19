@@ -6,6 +6,15 @@ using namespace std;
 
 
 #include "fsp.tab.h"  // to get the token types definition that we return
+
+
+#define DEBUG
+#ifdef DEBUG
+#define IFD(x) (x)
+#else
+#define IFD(x) 
+#endif
+
 %}
 
 DIGIT		[0-9]
@@ -15,7 +24,9 @@ UpperCaseID	[A-Z][A-Z0-9]*
 %%
 
 {DIGIT}+ {
-    yylval.int_value = atoi(yytext); return INTEGER;
+    yylval.int_value = atoi(yytext);
+    IFD(cout << "INTEGER: " << yylval.int_value << "\n");
+    return INTEGER;
 }
 
 {DIGIT}+\.{DIGIT}+ {
@@ -23,74 +34,90 @@ UpperCaseID	[A-Z][A-Z0-9]*
     yylval.float_value = atof(yytext); return FLOAT;
 }
 
-if { return IF; }
-then { return THEN; }
-else { return ELSE; }
-when { return WHEN; }
-const { return CONST; }
-range { return RANGE; }
-END { return END; }
-STOP { return STOP; }
+if { IFD(cout << "IF\n"); return IF; }
+then { IFD(cout << "THEN\n"); return THEN; }
+else { IFD(cout << "ELSE\n"); return ELSE; }
+when { IFD(cout << "WHEN\n"); return WHEN; }
+const { IFD(cout << "CONST\n"); return CONST; }
+range { IFD(cout << "RANGE\n"); return RANGE; }
+set { IFD(cout << "SET\n"); return SET; }
+END { IFD(cout << "END\n"); return END; }
+STOP { IFD(cout << "STOP\n"); return STOP; }
 
 {LowerCaseID} {
     yylval.string_pointer = strdup(yytext);
+    IFD(cout << "LowerCaseID\n"); 
     return LowerCaseID;
 }
 
 {UpperCaseID} {
     yylval.string_pointer = strdup(yytext);
+    IFD(cout << "UpperCaseID\n"); 
     return UpperCaseID;
 }
 
 "->" {
+    IFD(cout << "->\n"); 
     return ARROW;
 }
 
 ".." {
+    IFD(cout << "..\n"); 
     return DOTDOT;
 }
 
 "||" {
+    IFD(cout << "||\n"); 
     return OR;
 }
 
 "&&" {
+    IFD(cout << "&&\n"); 
     return AND;
 }
 
 "==" {
+    IFD(cout << "==\n"); 
     return EQUAL;
 }
 
 "!=" {
+    IFD(cout << "!=\n"); 
     return NOTEQUAL;
 }
 
 "<=" {
+    IFD(cout << "<=\n"); 
     return LOE;
 }
 
 ">=" {
+    IFD(cout << ">=\n"); 
     return GOE;
 }
 
 "<<" {
+    IFD(cout << "<<\n"); 
     return RSHIFT;
 }
 
 ">>" {
+    IFD(cout << ">>\n"); 
     return LSHIFT;
 }
 
 "|"|"^"|"&"|"<"|">" {
+    IFD(cout << yytext[0] << "\n"); 
     return yytext[0];
 }
 
 "+"|"-"|"*"|"/"|"%"|"!" {
+    IFD(cout << yytext[0] << "\n"); 
     return yytext[0];
 }
 
 "("|")"|"["|"]"|"{"|"}"|"="|"."|","|":" {
+    IFD(cout << yytext[0] << "\n"); 
     return yytext[0];
 }
 
