@@ -38,7 +38,7 @@ void yyerror(const char *s);
 %token CONST RANGE SET
 %token ARROW
 %token DOTDOT
-%token END STOP
+%token END STOP ERROR
 
 %token OR AND EQUAL NOTEQUAL LOE GOE LSHIFT RSHIFT
 
@@ -61,7 +61,7 @@ fsp_definition:
     constant_def
     | range_def
     | set_def
-    | action_labels
+    | process_def
     ;
 
 
@@ -112,6 +112,59 @@ set_elements:
     action_labels
     | set_elements ',' action_labels
     ;
+
+
+/* Processes */
+process_def:
+    process_id '=' process_body alphabet_extension_OPT '.' {T(21);}
+    ;
+
+process_body:
+    local_process {T(22);}
+    | local_process ',' local_process_defs {T(23);}
+    ;
+
+local_process_defs:
+    local_process_def {T(24);}
+    | local_process_defs local_process_def {T(25);}
+    ;
+
+local_process_def:
+    process_id '=' local_process {T(26);}
+    ;
+
+alphabet_extension_OPT:
+    | '+' set {T(27);}
+    ;
+
+local_process:
+    base_local_process {T(28);}
+    | IF expression THEN local_process {T(29);}
+    | IF expression THEN local_process ELSE local_process {T(30);}
+    | '(' choice ')' {T(31);}
+    ;
+
+base_local_process:
+    END {T(32);}
+    | STOP {T(33);}
+    | ERROR {T(34);}
+    | process_id {T(35);}
+    ;
+
+choice:
+    action_prefix {T(36);}
+    | choice action_prefix {T(37);}
+    ;
+
+action_prefix:
+    prefix_actions ARROW local_process {T(38);}
+    ;
+
+prefix_actions:
+    action_labels {T(39);}
+    | prefix_actions ARROW action_labels {T(40);}
+    ;
+
 
 
 /* An expression or a simple_expression: standard operators and priorities. */
@@ -203,6 +256,7 @@ variable: LowerCaseID;
 constant_id: UpperCaseID;
 range_id: UpperCaseID;
 set_id: UpperCaseID;
+process_id: UpperCaseID;
 
 %%
 

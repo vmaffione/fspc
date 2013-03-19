@@ -43,6 +43,7 @@ range { IFD(cout << "RANGE\n"); return RANGE; }
 set { IFD(cout << "SET\n"); return SET; }
 END { IFD(cout << "END\n"); return END; }
 STOP { IFD(cout << "STOP\n"); return STOP; }
+ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 
 {LowerCaseID} {
     yylval.string_pointer = strdup(yytext);
