@@ -4,7 +4,6 @@
 using namespace std;
 
 // stuff from flex that bison needs to know about:
-//extern "C" int yylex();
 extern int yylex();
 //extern "C" int yyparse();
 //extern "C" FILE *yyin;
@@ -19,10 +18,10 @@ void yyerror(const char *s);
 %}
 
 // Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "yystype".  But tokens could be of any
+// returns as an object of type "YYSTYPE".  But tokens could be of any
 // arbitrary data type!  So we deal with that in Bison by defining a C union
 // holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "yystype":
+// use that union instead of "int" for the definition of "YYSTYPE":
 %union {
     int int_value;
     float float_value;
@@ -74,21 +73,21 @@ fsp_definition:
 
 /* Action labels TODO: fix */
 action_labels:
-    LowerCaseID { T(4); }
-    | set { T(3); }
-    | action_labels '.' LowerCaseID { T(5); }
-    | action_labels '.' set { T(6); }
+    LowerCaseID
+    | set
+    | action_labels '.' LowerCaseID
+    | action_labels '.' set
     | action_labels '[' action_range ']'
-    | action_labels '[' expression ']' { T(7); }
+    | action_labels '[' expression ']'
     ;
 
 set:
-    set_id { T(15); }
+    set_id
     | set_expr
     ;
 
 set_expr:
-    '{' set_elements '}' { T(16); }
+    '{' set_elements '}'
     ;
 
 action_range:
@@ -130,67 +129,67 @@ set_elements:
 /* Processes */
 process_def:
     process_id param_OPT '=' process_body alphabet_extension_OPT 
-    relabel_OPT hiding_OPT '.' {T(21);}
+    relabel_OPT hiding_OPT '.'
     ;
 
 process_body:
-    local_process {T(22);}
-    | local_process ',' local_process_defs {T(23);}
+    local_process
+    | local_process ',' local_process_defs
     ;
 
 local_process_defs:
-    local_process_def {T(24);}
-    | local_process_defs ',' local_process_def {T(25);}
+    local_process_def
+    | local_process_defs ',' local_process_def
     ;
 
 local_process_def:
-    process_id index_ranges_OPT '=' local_process {T(26);}
+    process_id index_ranges_OPT '=' local_process
     ;
 
 alphabet_extension_OPT:
-    | '+' set {T(27);}
+    | '+' set
     ;
 
 local_process:
-    base_local_process {T(28);}
+    base_local_process
     | sequential_composition
-    | IF expression THEN local_process {T(29);}
-    | IF expression THEN local_process ELSE local_process {T(30);}
-    | '(' choice ')' {T(31);}
+    | IF expression THEN local_process
+    | IF expression THEN local_process ELSE local_process
+    | '(' choice ')'
     ;
 
 base_local_process:
-    END {T(32);}
-    | STOP {T(33);}
-    | ERROR {T(34);}
-    | process_id indices_OPT {T(35);}
+    END
+    | STOP
+    | ERROR
+    | process_id indices_OPT
     ;
 
 choice:
-    action_prefix {T(36);}
-    | choice '|' action_prefix {T(37);}
+    action_prefix
+    | choice '|' action_prefix
     ;
 
 action_prefix:
-    guard_OPT prefix_actions ARROW local_process {T(38);}
+    guard_OPT prefix_actions ARROW local_process
     ;
 
 prefix_actions:
-    action_labels {T(39);}
-    | prefix_actions ARROW action_labels {T(40);}
+    action_labels
+    | prefix_actions ARROW action_labels
     ;
 
 guard_OPT:
-    | WHEN expression  {T(41);}
+    | WHEN expression
     ;
 
 indices_OPT:
-    | indices {T(42);}
+    | indices
     ;
 
 indices:
-    '[' expression ']' {T(43);}
-    | indices '[' expression ']' {T(44);}
+    '[' expression ']'
+    | indices '[' expression ']'
     ;
 
 index_ranges_OPT:
@@ -297,17 +296,17 @@ relabel_OPT:
     ;
 
 relabel:
-    '/' '{' relabel_defs '}' {T(100);}
+    '/' '{' relabel_defs '}'
     ;
 
 relabel_defs:
-    relabel_def {T(101);}
-    | relabel_defs ',' relabel_def {T(102);}
+    relabel_def
+    | relabel_defs ',' relabel_def
     ;
 
 relabel_def:
-    action_labels '/' action_labels {T(103);}
-    | FORALL index_ranges '{' relabel_defs '}' {T(104);}
+    action_labels '/' action_labels
+    | FORALL index_ranges '{' relabel_defs '}'
     ;
 
 hiding_OPT:
@@ -315,8 +314,8 @@ hiding_OPT:
     ;
 
 hiding:
-    '\\' set {T(105);}
-    | '@' set {T(106);}
+    '\\' set
+    | '@' set
     ;
 
 

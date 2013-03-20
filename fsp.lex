@@ -21,7 +21,22 @@ DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-z0-9]*
 UpperCaseID	[A-Z][A-Z0-9]*
 
+%x COMMENTS
+
 %%
+
+"/*" {
+    BEGIN(COMMENTS);
+}
+
+<COMMENTS>"*/" {
+    BEGIN(INITIAL);
+}
+
+<COMMENTS>. {
+    /* Throw away everything when in the COMMENTS state */
+}
+
 
 {DIGIT}+ {
     yylval.int_value = atoi(yytext);
