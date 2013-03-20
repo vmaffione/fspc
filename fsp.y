@@ -47,6 +47,7 @@ void yyerror(const char *s);
 %token <string_pointer> UpperCaseID
 %token <string_pointer> LowerCaseID
 
+%glr-parser
 
 %%
 
@@ -71,12 +72,30 @@ action_labels:
     | set { T(5); }
     | action_labels '.' LowerCaseID { T(5); }
     | action_labels '.' set { T(6); }
+    | action_labels '[' action_range ']'
     | action_labels '[' expression ']' { T(7); }
     ;
 
 set:
     set_id { T(15); }
-    | '{' set_elements '}' { T(16); }
+    | set_expr
+    ;
+
+set_expr:
+    '{' set_elements '}' { T(16); }
+    ;
+
+action_range:
+    range_or_set_id
+    | range_expr
+    | set_expr
+    | variable ':' range_or_set_id
+    | variable ':' range_expr
+    | variable ':' set_expr
+    ;
+
+range_expr:
+    expression DOTDOT expression
     ;
 
 
@@ -118,7 +137,7 @@ local_process_defs:
     ;
 
 local_process_def:
-    process_id indices_OPT '=' local_process {T(26);}
+    process_id index_ranges_OPT '=' local_process {T(26);}
     ;
 
 alphabet_extension_OPT:
@@ -166,6 +185,35 @@ indices:
     | indices '[' expression ']' {T(44);}
     ;
 
+index_ranges_OPT:
+    | index_ranges
+    ;
+
+index_ranges:
+    '[' expression ']'
+    | index_ranges '[' expression ']'
+    | '[' action_range ']'
+    | index_ranges '[' action_range ']'
+    ;
+
+/* Parameters 
+param_OPT:
+    | param
+    ;
+
+param:
+    '(' parameter_list ')'
+    ;
+
+parameter_list:
+    parameter
+    parameter_list ',' parameter
+    ;
+
+parameter:
+    parameter_id '=' expression
+    ;
+*/
 
 /* An expression or a simple_expression: standard operators and priorities. */
 expression:
@@ -257,6 +305,8 @@ variable: LowerCaseID;
 constant_id: UpperCaseID;
 range_id: UpperCaseID;
 set_id: UpperCaseID;
+range_or_set_id: set_id;
+//parameter_id: UpperCaseID;
 process_id: UpperCaseID;
 
 %%
