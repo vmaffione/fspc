@@ -44,6 +44,7 @@ set { IFD(cout << "SET\n"); return SET; }
 property { IFD(cout << "PROPERTY\n"); return PROPERTY; }
 progress { IFD(cout << "PROGRESS\n"); return PROGRESS; }
 menu { IFD(cout << "MENU\n"); return MENU; }
+forall {IFD(cout << "FORALL\n"); return FORALL; }
 END { IFD(cout << "END\n"); return END; }
 STOP { IFD(cout << "STOP\n"); return STOP; }
 ERROR { IFD(cout << "ERROR\n"); return ERROR; }
@@ -68,6 +69,11 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 ".." {
     IFD(cout << "..\n"); 
     return DOTDOT;
+}
+
+"::" {
+    IFD(cout << "::\n");
+    return SHARING;
 }
 
 "||" {
@@ -120,7 +126,7 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
     return yytext[0];
 }
 
-"("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";" {
+"("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";"|"@"|"\\" {
     IFD(cout << yytext[0] << "\n"); 
     return yytext[0];
 }

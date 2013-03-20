@@ -40,6 +40,8 @@ void yyerror(const char *s);
 %token DOTDOT
 %token END STOP ERROR
 %token PROPERTY PROGRESS MENU
+%token FORALL
+%token SHARING
 %token OR AND EQUAL NOTEQUAL LOE GOE LSHIFT RSHIFT
 
 %token <int_value> INTEGER
@@ -66,13 +68,14 @@ fsp_definition:
     | progress_def
     | menu_def
     | process_def
+    | composite_def
     ;
 
 
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID { T(4); }
-    | set { T(5); }
+    | set { T(3); }
     | action_labels '.' LowerCaseID { T(5); }
     | action_labels '.' set { T(6); }
     | action_labels '[' action_range ']'
@@ -126,7 +129,8 @@ set_elements:
 
 /* Processes */
 process_def:
-    process_id param_OPT '=' process_body alphabet_extension_OPT '.' {T(21);}
+    process_id param_OPT '=' process_body alphabet_extension_OPT 
+    relabel_OPT hiding_OPT '.' {T(21);}
     ;
 
 process_body:
@@ -223,7 +227,42 @@ argument_list:
     ;
 
 
-/* Composite processes */
+/* Composite process */
+composite_def:
+    OR process_id param_OPT '=' composite_body priority_OPT hiding_OPT '.'
+    ;
+
+composite_body:
+    prefix_label_OPT process_ref relabel_OPT
+    | prefix_label_OPT '(' parallel_composition ')' relabel_OPT
+    | FORALL ranges composite_body
+    | IF expression THEN composite_body
+    | IF expression THEN composite_body ELSE composite_body
+    ;
+
+parallel_composition:
+    composite_body
+    | parallel_composition OR composite_body
+    ;
+
+prefix_label_OPT:
+    | prefix_label
+    ;
+
+// TODO add the third option
+prefix_label:
+    action_labels ':' 
+    | action_labels SHARING
+    ;
+
+priority_OPT:
+    | priority;
+
+priority:
+    RSHIFT set
+    | LSHIFT set
+    ;
+
 ranges_OPT:
     | ranges;
 
@@ -252,8 +291,37 @@ parameter:
     ;
 
 
+/* Re-Labeling and Hiding */
+relabel_OPT:
+    | relabel
+    ;
+
+relabel:
+    '/' '{' relabel_defs '}' {T(100);}
+    ;
+
+relabel_defs:
+    relabel_def {T(101);}
+    | relabel_defs ',' relabel_def {T(102);}
+    ;
+
+relabel_def:
+    action_labels '/' action_labels {T(103);}
+    | FORALL index_ranges '{' relabel_defs '}' {T(104);}
+    ;
+
+hiding_OPT:
+    | hiding
+    ;
+
+hiding:
+    '\\' set {T(105);}
+    | '@' set {T(106);}
+    ;
+
+
 /* Property, Progress and Menu */
-// TODO second form of progress
+// TODO second form of progress (if S then C)
 property_def:
     PROPERTY process_def
     ;
