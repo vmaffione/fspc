@@ -41,6 +41,9 @@ when { IFD(cout << "WHEN\n"); return WHEN; }
 const { IFD(cout << "CONST\n"); return CONST; }
 range { IFD(cout << "RANGE\n"); return RANGE; }
 set { IFD(cout << "SET\n"); return SET; }
+property { IFD(cout << "PROPERTY\n"); return PROPERTY; }
+progress { IFD(cout << "PROGRESS\n"); return PROGRESS; }
+menu { IFD(cout << "MENU\n"); return MENU; }
 END { IFD(cout << "END\n"); return END; }
 STOP { IFD(cout << "STOP\n"); return STOP; }
 ERROR { IFD(cout << "ERROR\n"); return ERROR; }
@@ -117,7 +120,7 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
     return yytext[0];
 }
 
-"("|")"|"["|"]"|"{"|"}"|"="|"."|","|":" {
+"("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";" {
     IFD(cout << yytext[0] << "\n"); 
     return yytext[0];
 }

@@ -39,7 +39,7 @@ void yyerror(const char *s);
 %token ARROW
 %token DOTDOT
 %token END STOP ERROR
-
+%token PROPERTY PROGRESS MENU
 %token OR AND EQUAL NOTEQUAL LOE GOE LSHIFT RSHIFT
 
 %token <int_value> INTEGER
@@ -62,6 +62,9 @@ fsp_definition:
     constant_def
     | range_def
     | set_def
+    | property_def
+    | progress_def
+    | menu_def
     | process_def
     ;
 
@@ -123,7 +126,7 @@ set_elements:
 
 /* Processes */
 process_def:
-    process_id '=' process_body alphabet_extension_OPT '.' {T(21);}
+    process_id param_OPT '=' process_body alphabet_extension_OPT '.' {T(21);}
     ;
 
 process_body:
@@ -146,6 +149,7 @@ alphabet_extension_OPT:
 
 local_process:
     base_local_process {T(28);}
+    | sequential_composition
     | IF expression THEN local_process {T(29);}
     | IF expression THEN local_process ELSE local_process {T(30);}
     | '(' choice ')' {T(31);}
@@ -196,7 +200,40 @@ index_ranges:
     | index_ranges '[' action_range ']'
     ;
 
-/* Parameters 
+sequential_composition:
+    seq_process_list ';' base_local_process
+    ;
+
+seq_process_list:
+    process_ref
+    | seq_process_list ';' process_ref
+    ;
+
+process_ref:
+    process_id argument_OPT
+    ;
+
+argument_OPT:
+    |'(' argument_list ')'
+    ;
+
+argument_list:
+    expression
+    | argument_list ',' expression
+    ;
+
+
+/* Composite processes */
+ranges_OPT:
+    | ranges;
+
+ranges:
+    '[' action_range ']'
+    | ranges '[' action_range ']'
+    ;
+
+
+/* Parameters */
 param_OPT:
     | param
     ;
@@ -207,13 +244,28 @@ param:
 
 parameter_list:
     parameter
-    parameter_list ',' parameter
+    | parameter_list ',' parameter
     ;
 
 parameter:
     parameter_id '=' expression
     ;
-*/
+
+
+/* Property, Progress and Menu */
+// TODO second form of progress
+property_def:
+    PROPERTY process_def
+    ;
+
+progress_def:
+    PROGRESS progress_id ranges_OPT '=' set
+    ;
+
+menu_def:
+    MENU menu_id '=' set
+    ;
+
 
 /* An expression or a simple_expression: standard operators and priorities. */
 expression:
@@ -306,8 +358,10 @@ constant_id: UpperCaseID;
 range_id: UpperCaseID;
 set_id: UpperCaseID;
 range_or_set_id: set_id;
-//parameter_id: UpperCaseID;
+parameter_id: UpperCaseID;
 process_id: UpperCaseID;
+progress_id: UpperCaseID;
+menu_id: UpperCaseID;
 
 %%
 
