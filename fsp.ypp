@@ -3,11 +3,14 @@
 #include <iostream>
 using namespace std;
 
-// stuff from flex that bison needs to know about:
+/* Stuff from flex that bison needs to know about. */
 extern int yylex();
-//extern "C" int yyparse();
-//extern "C" FILE *yyin;
 extern FILE * yyin;
+
+/* Main identifiers table. */
+#include "strings_table.hpp"
+extern struct SymbolsTable identifiers;
+
 
 void T(int x)
 {
@@ -25,7 +28,7 @@ void yyerror(const char *s);
 %union {
     int int_value;
     float float_value;
-    char *string_pointer;
+    char *string_value;
 }
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -44,14 +47,17 @@ void yyerror(const char *s);
 %token OR AND EQUAL NOTEQUAL LOE GOE LSHIFT RSHIFT
 %token <int_value> INTEGER
 %token <float_value> FLOAT
-%token <string_pointer> UpperCaseID
-%token <string_pointer> LowerCaseID
+%token <string_value> UpperCaseID
+%token <string_value> LowerCaseID
 
 
 %type <int_value> base_expr simple_expression expression unary_expr
 %type <int_value> multiplicative_expr additive_expr shift_expr relational_expr
 %type <int_value> equality_expr bitand_expr bitxor_expr bitor_expr and_expr
-%type <int_value> or_expr 
+%type <int_value> or_expr
+
+%type <string_value> variable constant_id range_id set_id range_or_set_id
+%type <string_value> parameter_id process_id progress_id menu_id
 
 
 %glr-parser
@@ -113,7 +119,13 @@ range_expr:
 /* Const, Range, Set */
 constant_def:
     CONST constant_id '=' simple_expression {
-	cout << "<<B>> Const\n";
+	cout << "<<B>> Const " << $2 << "=" << $4 << "\n";
+	int v = $4;
+	int ok = identifiers.insert(string($2), v);
+	if (ok)
+	    cout << "Inserted\n";
+	else
+	    cout << "Duplicate!\n";
     };
 
 range_def:

@@ -1,5 +1,5 @@
 #include <cstring>
-#include "strings_table.h"
+#include "strings_table.hpp"
 
 
 
@@ -10,6 +10,7 @@
 #define IFD(x)
 #endif
 
+/******************** StringsTable implementation ********************/
 int StringsTable::lookup(const char * s) const
 {
     for (int i=0; i<table.size(); i++)
@@ -38,3 +39,37 @@ void StringsTable::print() const
     for (int i=0; i<table.size(); i++)
 	cout << "  " << table[i] << "\n";
 }
+
+
+/********************* SymbolsTable implementation ******************/
+
+bool SymbolsTable::insert(const string& name, const int& value)
+{
+    pair< map<string, int>::iterator, bool > ret;
+
+    ret = table.insert(pair<string, int>(name, value));
+
+    return ret.second;
+}
+
+bool SymbolsTable::lookup(const string& name, int& value) const
+{
+    map<string, int>::const_iterator it = table.find(name);
+
+    if (it == table.end())
+	return false;
+
+    value = it->second;
+    return true;
+}
+
+void SymbolsTable::print() const
+{
+    map<string, int>::const_iterator it;
+
+    cout << "Symbols Table\n";
+    for (it=table.begin(); it!=table.end(); it++) {
+	cout << "(" << it->first << "," << it->second << ")\n";
+    }
+}
+

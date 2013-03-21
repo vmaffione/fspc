@@ -8,7 +8,7 @@ using namespace std;
 #include "fsp.tab.hpp"  // to get the token types definition that we return
 
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define IFD(x) (x)
 #else
@@ -65,13 +65,13 @@ STOP { IFD(cout << "STOP\n"); return STOP; }
 ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 
 {LowerCaseID} {
-    yylval.string_pointer = strdup(yytext);
+    yylval.string_value = strdup(yytext);
     IFD(cout << "LowerCaseID\n"); 
     return LowerCaseID;
 }
 
 {UpperCaseID} {
-    yylval.string_pointer = strdup(yytext);
+    yylval.string_value = strdup(yytext);
     IFD(cout << "UpperCaseID\n"); 
     return UpperCaseID;
 }
