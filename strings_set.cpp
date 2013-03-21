@@ -1,9 +1,8 @@
 #include <iostream>
-#include <string>
-#include <vector>
 #include <sstream>
 
-using namespace std;
+#include "strings_set.hpp"
+
 
 
 string int2string(int x)
@@ -12,25 +11,6 @@ string int2string(int x)
     sstr << x;
     return sstr.str();
 }
-
-
-class StringsSet {
-    vector<string> strings;
-
-  public:
-    StringsSet() {}
-    StringsSet(const string& s) { strings.push_back(s); }
-    StringsSet& dotcat(const string&);
-    StringsSet& dotcat(const StringsSet&);
-    StringsSet& indexize(int index);
-    StringsSet& indexize(const StringsSet&);
-    StringsSet& indexize(int low, int high);
-    StringsSet& operator +=(const StringsSet&);
-    void print() const;
-
-    friend StringsSet& operator+(const StringsSet& ss1,
-				    const StringsSet& s2);
-};
 
 
 StringsSet& StringsSet::dotcat(const string& s)
@@ -122,7 +102,7 @@ void StringsSet::print() const
 }
 
 
-int main()
+int test()
 {
     StringsSet ss1("ciao"), ss2("p1");
     StringsSet ss3("kk");
