@@ -1,6 +1,9 @@
 %{
 #include <cstdio>
 #include <iostream>
+#include <sstream>
+#include <cstdlib>
+
 using namespace std;
 
 /* Stuff from flex that bison needs to know about. */
@@ -10,6 +13,14 @@ extern FILE * yyin;
 /* Main identifiers table. */
 #include "strings_table.hpp"
 extern struct SymbolsTable identifiers;
+
+stringstream errstream;
+
+void semantic_error()
+{
+    cout << "Semantic error: " << errstream.str() << "\n";
+    exit(-1);
+}
 
 
 void T(int x)
@@ -120,17 +131,26 @@ range_expr:
 constant_def:
     CONST constant_id '=' simple_expression {
 	cout << "<<B>> Const " << $2 << "=" << $4 << "\n";
-	int v = $4;
-	int ok = identifiers.insert(string($2), v);
-	if (ok)
-	    cout << "Inserted\n";
-	else
-	    cout << "Duplicate!\n";
+	ConstValue* vp = new ConstValue;
+	vp->value = $4;
+	int ok = identifiers.insert(string($2), vp);
+	if (!ok) {
+	    errstream << "const " << $2 << " declared twice";
+	    semantic_error();
+	}
     };
 
 range_def:
     RANGE range_id '=' simple_expression DOTDOT simple_expression {
-	cout << "<<B>> Range\n";
+	cout << "<<B>> Range " << $2 << $4 << $6 << "\n";
+	RangeValue* vp = new RangeValue;
+	vp->low = $4;
+	vp->high = $6;
+	int ok = identifiers.insert(string($2), vp);
+	if (!ok) {
+	    errstream << "range " << $2 << " declared twice";
+	    semantic_error();
+	}
     };
 
 set_def:
@@ -436,7 +456,17 @@ unary_expr:
 base_expr:
     INTEGER { $$ = $1; /* implicit action */ }
     | variable { $$ = 19; /*TODO take from symbols */ }
-    | constant_id   { $$ = 23; /* TODO / */ }
+    | constant_id   {
+	SymbolValue * svp;
+	ConstValue * vp;
+	int ok = identifiers.lookup(string($1), svp);
+	if (!ok) {
+	    errstream << "const " << $1 << " undeclared";
+	    semantic_error();
+	}
+	vp = (ConstValue*)svp;
+	$$ = vp->value;
+    }
     | '(' expression ')' { $$ = $2; }
     ;
 
@@ -473,7 +503,7 @@ int parser() {
 }
 
 void yyerror(const char *s) {
-    cout << "EEK, parse error!  Message: " << s << endl;
+    cout << "Syntax error:" << s << endl;
     // might as well halt now:
     exit(-1);
 }

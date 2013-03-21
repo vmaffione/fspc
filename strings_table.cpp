@@ -43,18 +43,18 @@ void StringsTable::print() const
 
 /********************* SymbolsTable implementation ******************/
 
-bool SymbolsTable::insert(const string& name, const int& value)
+bool SymbolsTable::insert(const string& name, SymbolValue * ptr)
 {
-    pair< map<string, int>::iterator, bool > ret;
+    pair< map<string, SymbolValue*>::iterator, bool > ret;
 
-    ret = table.insert(pair<string, int>(name, value));
+    ret = table.insert(pair<string, SymbolValue*>(name, ptr));
 
     return ret.second;
 }
 
-bool SymbolsTable::lookup(const string& name, int& value) const
+bool SymbolsTable::lookup(const string& name, SymbolValue*& value) const
 {
-    map<string, int>::const_iterator it = table.find(name);
+    map<string, SymbolValue*>::const_iterator it = table.find(name);
 
     if (it == table.end())
 	return false;
@@ -65,11 +65,13 @@ bool SymbolsTable::lookup(const string& name, int& value) const
 
 void SymbolsTable::print() const
 {
-    map<string, int>::const_iterator it;
+    map<string, SymbolValue*>::const_iterator it;
 
     cout << "Symbols Table\n";
     for (it=table.begin(); it!=table.end(); it++) {
-	cout << "(" << it->first << "," << it->second << ")\n";
+	cout << "(" << it->first << ",";
+	it->second->print();
+	cout << ")\n";
     }
 }
 

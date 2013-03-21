@@ -25,22 +25,22 @@ struct SymbolValue {
 struct ConstValue: public SymbolValue {
     int value;
 
-    void print() { cout << value << "\n"; }
+    void print() { cout << value; }
 };
 
 struct RangeValue: public SymbolValue {
     int low;
     int high;
 
-    void print() { cout << "[" << low << ", " << high << "]\n"; }
+    void print() { cout << "[" << low << ", " << high << "]"; }
 };
 
 
 struct SymbolsTable {
-    map<string, in;t> table;
+    map<string, SymbolValue*> table;
 
-    bool insert(const string& name, const int& value);
-    bool lookup(const string& name, int& value) const;
+    bool insert(const string& name, SymbolValue *);
+    bool lookup(const string& name, SymbolValue*&) const;
     void print() const;
 };
 
