@@ -1,8 +1,8 @@
 CC=g++
 
 
-fspc: lex.yy.o fsp.tab.o
-	$(CC) fsp.tab.o lex.yy.o -lfl -o fspc
+fspc: fspc.o lex.yy.o fsp.tab.o
+	$(CC) fspc.o fsp.tab.o lex.yy.o -lfl -o fspc
 
 fsp.tab.cpp fsp.tab.hpp: fsp.ypp
 	bison -d fsp.ypp
