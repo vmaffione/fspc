@@ -65,13 +65,13 @@ STOP { IFD(cout << "STOP\n"); return STOP; }
 ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 
 {LowerCaseID} {
-    yylval.string_value = strdup(yytext);
+    yylval.string_ptr = new string(yytext);
     IFD(cout << "LowerCaseID\n"); 
     return LowerCaseID;
 }
 
 {UpperCaseID} {
-    yylval.string_value = strdup(yytext);
+    yylval.string_ptr = new string(yytext);
     IFD(cout << "UpperCaseID\n"); 
     return UpperCaseID;
 }

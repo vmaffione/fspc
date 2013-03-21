@@ -1,6 +1,8 @@
 CC=g++
 CFLAGS=-g -Wall
 
+all: fspc strings_set
+
 
 fspc: fspc.o lex.yy.o fsp.tab.o strings_table.o lts.o
 	$(CC) fspc.o fsp.tab.o lex.yy.o strings_table.o lts.o -lfl -o fspc
@@ -14,4 +16,4 @@ lex.yy.c: fsp.lex fsp.tab.hpp
 	flex fsp.lex
 
 clean:
-	-rm *.o fspc lex.yy.c fsp.tab.cpp fsp.tab.hpp
+	-rm *.o fspc lex.yy.c fsp.tab.cpp fsp.tab.hpp strings_set
