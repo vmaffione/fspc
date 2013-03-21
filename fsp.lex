@@ -5,7 +5,7 @@
 using namespace std;
 
 
-#include "fsp.tab.h"  // to get the token types definition that we return
+#include "fsp.tab.hpp"  // to get the token types definition that we return
 
 
 #define DEBUG
