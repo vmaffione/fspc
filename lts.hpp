@@ -1,3 +1,6 @@
+#ifndef __LTS__H__
+#define __LTS__H__
+
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -42,3 +45,4 @@ class Lts {
     void compose(const Lts& p, const Lts& q);
 };
 
+#endif

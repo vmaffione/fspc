@@ -12,7 +12,6 @@ string int2string(int x)
     return sstr.str();
 }
 
-
 StringsSet& StringsSet::dotcat(const string& s)
 {
     for (int i=0; i<strings.size(); i++)

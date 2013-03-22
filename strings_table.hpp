@@ -7,6 +7,7 @@
 #include <map>
 
 #include "strings_set.hpp"
+#include "lts.hpp"
 
 using namespace std;
 
@@ -21,16 +22,14 @@ struct StringsTable {
 
 
 struct SymbolValue {
-    /* Is the symbol value is temporary (a literal) or is it taken from
-       the symbol table? */
-    bool temp;
-
     virtual void print() const = 0;
     virtual int type() const = 0;
+    virtual SymbolValue * clone() const = 0;
 
     static const int Const = 0;
     static const int Range = 1;
     static const int Set = 2;
+    static const int Lts = 3;
 };
 
 struct ConstValue: public SymbolValue {
@@ -38,6 +37,7 @@ struct ConstValue: public SymbolValue {
 
     void print() const { cout << value; }
     int type() const { return SymbolValue::Const; }
+    SymbolValue * clone() const;
 };
 
 struct RangeValue: public SymbolValue {
@@ -46,16 +46,27 @@ struct RangeValue: public SymbolValue {
 
     void print() const { cout << "[" << low << ", " << high << "]"; }
     int type() const { return SymbolValue::Range; }
+    SymbolValue * clone() const;
 };
 
 struct SetValue: public SymbolValue {
     StringsSet * ssp;
     
     SetValue() : ssp(NULL) {}
+    SetValue(const SetValue&);
     void print() const { ssp->print(); }
     int type() const { return SymbolValue::Set; }
+    SymbolValue * clone() const;
 };
 
+struct LtsValue: public SymbolValue {
+    class Lts lts;
+
+    LtsValue(string name) : lts(name) { }
+    void print() const { lts.print(); }
+    int type() const { return SymbolValue::Lts; }
+    SymbolValue * clone() const;
+};
 
 struct SymbolsTable {
     map<string, SymbolValue*> table;

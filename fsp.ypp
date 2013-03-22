@@ -25,10 +25,14 @@ void semantic_error()
     exit(-1);
 }
 
-
-void T(int x)
+inline ConstValue* err_if_not_const(SymbolValue * svp)
 {
-    cout << "<<B>> " << x << "\n";
+    if (svp->type() != SymbolValue::Const) {
+	errstream << "Unexpected range/set";
+	semantic_error();
+    }
+
+    return (ConstValue *)svp;
 }
 
 void yyerror(const char *s);
@@ -68,13 +72,14 @@ void yyerror(const char *s);
 %token <string_ptr> LowerCaseID
 
 
-%type <int_value> base_expr simple_expression expression unary_expr
-%type <int_value> multiplicative_expr additive_expr shift_expr relational_expr
-%type <int_value> equality_expr bitand_expr bitxor_expr bitor_expr and_expr
-%type <int_value> or_expr
+%type <sv_ptr> simple_expression
+%type <sv_ptr> base_expr expression unary_expr multiplicative_expr
+%type <sv_ptr>  additive_expr shift_expr relational_expr equality_expr
+%type <sv_ptr> bitand_expr bitxor_expr bitor_expr and_expr or_expr
 
 %type <string_ptr> variable constant_id range_id set_id range_or_set_id
 %type <string_ptr> parameter_id process_id progress_id menu_id
+%type <string_ptr> const_range_set_id
 
 %type <sset_ptr> action_labels set set_expr set_elements
 %type <sv_ptr> action_range
@@ -124,9 +129,15 @@ action_labels:
     }
     | action_labels '[' action_range ']' {
 	StringsSet * ssp;
+	ConstValue * cvp;
 	RangeValue * rvp;
 
 	switch ($3->type()) {
+	    case SymbolValue::Const:
+		cvp = ((ConstValue *)$3);
+		$1->indexize(cvp->value);
+		break;
+
 	    case SymbolValue::Range:
 		rvp = ((RangeValue *)$3);
 		$1->print();
@@ -143,12 +154,7 @@ action_labels:
 		semantic_error();
 	};
 
-	if ($3->temp)
-	    delete $3;
-	$$ = $1;
-    }
-    | action_labels '[' expression ']' {
-	$1->indexize($3);
+	delete $3;
 	$$ = $1;
     }
     ;
@@ -156,14 +162,18 @@ action_labels:
 set:
     set_id {
 	SymbolValue * svp;
-	SetValue * vp;
+	StringsSet * ss;
 	int ok = identifiers.lookup(*$1, svp);
 	if (!ok) {
 	    errstream << "set " << *$1 << " undeclared";
 	    semantic_error();
 	}
-	vp = (SetValue *)svp;
-	$$ = vp->ssp;
+	if (svp->type() != SymbolValue::Set) {
+	    errstream << "identifier " << *$1 << " is not a set";
+	    semantic_error();
+	}
+	ss = new StringsSet(*(((SetValue *)svp)->ssp));
+	$$ = ss;
     }
     | set_expr
     ;
@@ -173,14 +183,8 @@ set_expr:
     ;
 
 action_range:
-    range_or_set_id {
-	SymbolValue * svp;
-	int ok = identifiers.lookup(*$1, svp);
-	if (!ok) {
-	    errstream << "range/set " << *$1 << " undeclared";
-	    semantic_error();
-	}
-	$$ = svp;
+    expression {
+	$$ = $1;
     }
     | range_expr {
 	$$ = (SymbolValue *)$1;
@@ -189,7 +193,6 @@ action_range:
     | set_expr {
 	SetValue * vp = new SetValue;
 	vp->ssp = $1;
-	vp->temp = 1;
 	$$ = (SymbolValue *)vp;
     }
     | variable ':' range_or_set_id {
@@ -200,6 +203,7 @@ action_range:
 	    errstream << "range/set " << *$3 << " undeclared";
 	    semantic_error();
 	}
+	svp = svp->clone();
 	$$ = svp;
 	
     }
@@ -211,17 +215,19 @@ action_range:
 	//TODO variable
 	SetValue * vp = new SetValue;
 	vp->ssp = $3;
-	vp->temp = 1;
 	$$ = (SymbolValue *)vp;
     }
     ;
 
 range_expr:
     expression DOTDOT expression {
-	RangeValue* vp = new RangeValue;
-	vp->low = $1;
-	vp->high = $3;
-	vp->temp = 1;
+	RangeValue * vp = new RangeValue;
+	ConstValue * cvp = err_if_not_const($1);
+	vp->low = cvp->value;
+	delete $1;
+	cvp = err_if_not_const($3);
+	vp->high = cvp->value;
+	delete $3;
 	$$ = vp;
     }
     ;
@@ -230,11 +236,9 @@ range_expr:
 /* Const, Range, Set */
 constant_def:
     CONST constant_id '=' simple_expression {
-	cout << "<<B>> Const " << *$2 << "=" << $4 << "\n";
-	ConstValue* vp = new ConstValue;
-	vp->value = $4;
-	vp->temp = 0;
-	int ok = identifiers.insert(*$2, vp);
+	ConstValue* cvp = err_if_not_const($4);
+	cout << "<<B>> Const " << *$2 << "=" << cvp->value << "\n";
+	int ok = identifiers.insert(*$2, cvp);
 	if (!ok) {
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
@@ -243,12 +247,15 @@ constant_def:
 
 range_def:
     RANGE range_id '=' simple_expression DOTDOT simple_expression {
-	cout << "<<B>> Range " << *$2 << $4 << $6 << "\n";
-	RangeValue* vp = new RangeValue;
-	vp->low = $4;
-	vp->high = $6;
-	vp->temp = 0;
-	int ok = identifiers.insert(*$2, vp);
+	RangeValue* rvp = new RangeValue;
+	ConstValue * cvp1 = err_if_not_const($4);
+	ConstValue * cvp2 = err_if_not_const($6);
+	cout << "<<B>> Range " << *$2 << cvp1->value << cvp2->value << "\n";
+	rvp->low = cvp1->value;
+	rvp->high = cvp2->value;
+	delete cvp1;
+	delete cvp2;
+	int ok = identifiers.insert(*$2, rvp);
 	if (!ok) {
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error();
@@ -260,7 +267,6 @@ set_def:
 	cout << "<<B>> Set\n";
 	SetValue* vp = new SetValue;
 	vp->ssp = $5;
-	vp->temp = 0;
 	int ok = identifiers.insert(*$2, vp);
 	if (!ok) {
 	    errstream << "set " << *$2 << " declared twice";
@@ -283,7 +289,9 @@ set_elements:
 /* Processes */
 process_def:
     process_id param_OPT '=' process_body alphabet_extension_OPT 
-    relabel_OPT hiding_OPT '.'
+    relabel_OPT hiding_OPT '.' {
+	cout << "Process " << *$1 << endl;
+    }
     ;
 
 process_body:
@@ -498,96 +506,225 @@ menu_def:
 expression:
     or_expr {
 	$$ = $1;
-	cout << "<<B>> Expression: " << $1 <<  "\n";
+	if ($1->type() == SymbolValue::Const)
+	    cout << "<<B>> Expression: " << ((ConstValue *)$1)->value
+		    << "\n";
     }
     ;
 
 simple_expression:
     additive_expr {
 	$$ = $1;
-	cout << "<<B>> Simple expression: " << $1 <<  "\n";
+	ConstValue * cvp = err_if_not_const($1);
+	cout << "<<B>> Simple expression: " << cvp->value <<  "\n";
     }
     ;
 
 or_expr:
     and_expr
-    | or_expr OR and_expr { $$ = ($1 || $3); }
+    | or_expr OR and_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = vpl->value || vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 and_expr:
     bitor_expr
-    | and_expr AND bitor_expr { $$ = ($1 && $3); }
+    | and_expr AND bitor_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = vpl->value && vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 bitor_expr:
     bitxor_expr
-    | bitor_expr '|' bitxor_expr { $$ = ($1 | $3); }
+    | bitor_expr '|' bitxor_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value |= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 bitxor_expr:
     bitand_expr
-    | bitxor_expr '^' bitand_expr { $$ = ($1 ^ $3); }
+    | bitxor_expr '^' bitand_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value ^= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 bitand_expr:
     equality_expr
-    | bitand_expr '&' equality_expr { $$ = ($1 & $3); }
+    | bitand_expr '&' equality_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value &= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 equality_expr:
     relational_expr
-    | equality_expr EQUAL relational_expr { $$ = ($1 == $3); }
-    | equality_expr NOTEQUAL relational_expr { $$ = ($1 != $3); }
+    | equality_expr EQUAL relational_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value == vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
+    | equality_expr NOTEQUAL relational_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value != vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 relational_expr:
     shift_expr
-    | relational_expr '<' shift_expr { $$ = ($1 < $3); }
-    | relational_expr '>' shift_expr { $$ = ($1 > $3); }
-    | relational_expr LOE shift_expr { $$ = ($1 <= $3); }
-    | relational_expr GOE shift_expr { $$ = ($1 >= $3); }
+    | relational_expr '<' shift_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value < vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
+    | relational_expr '>' shift_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value > vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
+    | relational_expr LOE shift_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value <= vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
+    | relational_expr GOE shift_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = (vpl->value >= vpr->value);
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 shift_expr:
     additive_expr
-    | shift_expr LSHIFT additive_expr { $$ = ($1 << $3); }
-    | shift_expr RSHIFT additive_expr { $$ = ($1 << $3); }
+    | shift_expr LSHIFT additive_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value <<= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
+    | shift_expr RSHIFT additive_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value >>= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 additive_expr:
     multiplicative_expr
-    | additive_expr '+' multiplicative_expr { $$ = $1 + $3; }
-    | additive_expr '-' multiplicative_expr { $$ = $1 - $3; }
+    | additive_expr '+' multiplicative_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value += vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
+    | additive_expr '-' multiplicative_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value -= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 multiplicative_expr:
     unary_expr
-    | multiplicative_expr '*' unary_expr { $$ = $1 * $3; }
-    | multiplicative_expr '/' unary_expr { $$ = $1 / $3; }
-    | multiplicative_expr '%' unary_expr { $$ = $1 % $3; }
+    | multiplicative_expr '*' unary_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value *= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
+    | multiplicative_expr '/' unary_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value /= vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
+    | multiplicative_expr '%' unary_expr {
+	ConstValue * vpl = err_if_not_const($1);
+	ConstValue * vpr = err_if_not_const($3);
+	vpl->value = vpl->value % vpr->value;
+	delete vpr;
+	$$ = vpl;
+    }
     ;
 
 unary_expr:
     base_expr
-    | '+' base_expr { $$ = $2; }
-    | '-' base_expr { $$ = -1 * $2; }
-    | '!' base_expr { $$ = !$2; }
+    | '+' base_expr {
+	err_if_not_const($2);
+	$$ = $2;
+    }
+    | '-' base_expr {
+	ConstValue * vp = err_if_not_const($2);
+	vp->value *= -1;
+	$$ = vp;
+    }
+    | '!' base_expr {
+	ConstValue * vp = err_if_not_const($2);
+	vp->value = !(vp->value);
+	$$ = vp;
+    }
     ;
 
 /* TODO: complete base_expr */
 base_expr:
-    INTEGER { $$ = $1; /* implicit action */ }
-    | variable { $$ = 19; /*TODO take from symbols */ }
-    | constant_id   {
+    INTEGER {
+	ConstValue * vp = new ConstValue;
+	vp->value = $1;
+	$$ = vp;
+    }
+    | variable {
+	ConstValue * vp = new ConstValue;
+	vp->value = 19; /*TODO take from symbols */
+	$$ = vp;
+    }
+    | const_range_set_id {
 	SymbolValue * svp;
-	ConstValue * vp;
 	int ok = identifiers.lookup(*$1, svp);
 	if (!ok) {
-	    errstream << "const " << *$1 << " undeclared";
+	    errstream << "const/range/set " << *$1 << " undeclared";
 	    semantic_error();
 	}
-	vp = (ConstValue*)svp;
-	$$ = vp->value;
+	svp = svp->clone();
+	$$ = svp;
     }
     | '(' expression ')' { $$ = $2; }
     ;
@@ -598,6 +735,7 @@ constant_id: UpperCaseID;
 range_id: UpperCaseID;
 set_id: UpperCaseID;
 range_or_set_id: set_id;
+const_range_set_id: set_id;
 parameter_id: UpperCaseID;
 process_id: UpperCaseID;
 progress_id: UpperCaseID;

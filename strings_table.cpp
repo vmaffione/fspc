@@ -75,3 +75,35 @@ void SymbolsTable::print() const
     }
 }
 
+
+
+SetValue::SetValue(const SetValue& sv)
+{
+    ssp = new StringsSet(*(sv.ssp));
+}
+
+
+SymbolValue * ConstValue::clone() const
+{
+    ConstValue * cv = new ConstValue;
+    cv->value = value;
+
+    return cv;
+}
+
+SymbolValue * RangeValue::clone() const
+{
+    RangeValue * rv = new RangeValue;
+    rv->low = low;
+    rv->high = high;
+
+    return rv;
+}
+
+SymbolValue * SetValue::clone() const
+{
+    SetValue * sv = new SetValue(*this);
+
+    return sv;
+}
+
