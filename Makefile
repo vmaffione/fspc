@@ -16,6 +16,10 @@ fsp.tab.o: strings_set.hpp strings_table.hpp
 fsp.tab.cpp fsp.tab.hpp: fsp.ypp
 	bison -d fsp.ypp
 
+# This rule has been made explicit only to avoid compiler warnings (-Wall)
+lex.yy.o: lex.yy.c
+	$(CC) -c lex.yy.c
+
 lex.yy.c: fsp.lex fsp.tab.hpp
 	flex fsp.lex
 

@@ -44,6 +44,8 @@ void yyerror(const char *s);
     float float_value;
     std::string *string_ptr;
     class StringsSet *sset_ptr;
+    class SymbolValue *sv_ptr;
+    class RangeValue *rv_ptr;
 }
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -74,7 +76,9 @@ void yyerror(const char *s);
 %type <string_ptr> variable constant_id range_id set_id range_or_set_id
 %type <string_ptr> parameter_id process_id progress_id menu_id
 
-%type <sset_ptr> action_labels set
+%type <sset_ptr> action_labels set set_expr set_elements
+%type <sv_ptr> action_range
+%type <rv_ptr> range_expr
 
 
 %glr-parser
@@ -109,39 +113,117 @@ action_labels:
     }
     | set
     | action_labels '.' LowerCaseID {
-	$$->dotcat(*$3);
+	$1->dotcat(*$3);
 	delete $3;
+	$$ = $1;
     }
     | action_labels '.' set {
-	$$->dotcat(*$3);
+	$1->dotcat(*$3);
 	delete $3;
+	$$ = $1;
     }
-    | action_labels '[' action_range ']'
+    | action_labels '[' action_range ']' {
+	StringsSet * ssp;
+	RangeValue * rvp;
+
+	switch ($3->type()) {
+	    case SymbolValue::Range:
+		rvp = ((RangeValue *)$3);
+		$1->print();
+		$1->indexize(rvp->low, rvp->high);
+		break;
+
+	    case SymbolValue::Set:
+		ssp = ((SetValue *)$3)->ssp;
+		$1->indexize(*ssp);
+		break;
+
+	    default:
+		errstream << "Internal error: unexpected range\n";
+		semantic_error();
+	};
+
+	if ($3->temp)
+	    delete $3;
+	$$ = $1;
+    }
     | action_labels '[' expression ']' {
-	$$->indexize($3);
+	$1->indexize($3);
+	$$ = $1;
     }
     ;
 
 set:
-    set_id
+    set_id {
+	SymbolValue * svp;
+	SetValue * vp;
+	int ok = identifiers.lookup(*$1, svp);
+	if (!ok) {
+	    errstream << "set " << *$1 << " undeclared";
+	    semantic_error();
+	}
+	vp = (SetValue *)svp;
+	$$ = vp->ssp;
+    }
     | set_expr
     ;
 
 set_expr:
-    '{' set_elements '}'
+    '{' set_elements '}' { $$ = $2; }
     ;
 
 action_range:
-    range_or_set_id
-    | range_expr
-    | set_expr
-    | variable ':' range_or_set_id
-    | variable ':' range_expr
-    | variable ':' set_expr
+    range_or_set_id {
+	SymbolValue * svp;
+	int ok = identifiers.lookup(*$1, svp);
+	if (!ok) {
+	    errstream << "range/set " << *$1 << " undeclared";
+	    semantic_error();
+	}
+	$$ = svp;
+    }
+    | range_expr {
+	$$ = (SymbolValue *)$1;
+	cout << "From RangeValue to SymbolValue\n";
+    }
+    | set_expr {
+	SetValue * vp = new SetValue;
+	vp->ssp = $1;
+	vp->temp = 1;
+	$$ = (SymbolValue *)vp;
+    }
+    | variable ':' range_or_set_id {
+	// TODO pass the variable
+	SymbolValue * svp;
+	int ok = identifiers.lookup(*$3, svp);
+	if (!ok) {
+	    errstream << "range/set " << *$3 << " undeclared";
+	    semantic_error();
+	}
+	$$ = svp;
+	
+    }
+    | variable ':' range_expr {
+	//TODO variable
+	$$ = (SymbolValue *)$3;
+    }
+    | variable ':' set_expr {
+	//TODO variable
+	SetValue * vp = new SetValue;
+	vp->ssp = $3;
+	vp->temp = 1;
+	$$ = (SymbolValue *)vp;
+    }
     ;
 
 range_expr:
-    expression DOTDOT expression
+    expression DOTDOT expression {
+	RangeValue* vp = new RangeValue;
+	vp->low = $1;
+	vp->high = $3;
+	vp->temp = 1;
+	$$ = vp;
+    }
     ;
 
 
@@ -151,6 +233,7 @@ constant_def:
 	cout << "<<B>> Const " << *$2 << "=" << $4 << "\n";
 	ConstValue* vp = new ConstValue;
 	vp->value = $4;
+	vp->temp = 0;
 	int ok = identifiers.insert(*$2, vp);
 	if (!ok) {
 	    errstream << "const " << *$2 << " declared twice";
@@ -164,6 +247,7 @@ range_def:
 	RangeValue* vp = new RangeValue;
 	vp->low = $4;
 	vp->high = $6;
+	vp->temp = 0;
 	int ok = identifiers.insert(*$2, vp);
 	if (!ok) {
 	    errstream << "range " << *$2 << " declared twice";
@@ -174,11 +258,25 @@ range_def:
 set_def:
     SET set_id '=' '{' set_elements '}' {
 	cout << "<<B>> Set\n";
+	SetValue* vp = new SetValue;
+	vp->ssp = $5;
+	vp->temp = 0;
+	int ok = identifiers.insert(*$2, vp);
+	if (!ok) {
+	    errstream << "set " << *$2 << " declared twice";
+	    semantic_error();
+	}
+	$5->print();
     };
 
 set_elements:
-    action_labels
-    | set_elements ',' action_labels
+    action_labels {
+	$$ = $1;
+    }
+    | set_elements ',' action_labels {
+	*$1 += *$3;
+	$$ = $1;
+    }
     ;
 
 
@@ -231,8 +329,14 @@ action_prefix:
     ;
 
 prefix_actions:
-    action_labels
-    | prefix_actions ARROW action_labels
+    action_labels {
+	cout << "Action: ";
+	$1->print();
+    }
+    | prefix_actions ARROW action_labels {
+	cout << "Action: ";
+	$3->print();
+    }
     ;
 
 guard_OPT:

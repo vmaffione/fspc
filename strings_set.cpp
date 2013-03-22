@@ -81,6 +81,13 @@ StringsSet& StringsSet::operator +=(const StringsSet& ss)
     return *this;
 }
 
+StringsSet& StringsSet::operator +=(const string& s)
+{
+    strings.push_back(s);
+
+    return *this;
+}
+
 StringsSet& operator+(const StringsSet& ss1, const StringsSet& ss2)
 {
     StringsSet * res = new StringsSet;

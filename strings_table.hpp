@@ -6,6 +6,8 @@
 #include <string>
 #include <map>
 
+#include "strings_set.hpp"
+
 using namespace std;
 
 
@@ -19,20 +21,39 @@ struct StringsTable {
 
 
 struct SymbolValue {
-    virtual void print() = 0;
+    /* Is the symbol value is temporary (a literal) or is it taken from
+       the symbol table? */
+    bool temp;
+
+    virtual void print() const = 0;
+    virtual int type() const = 0;
+
+    static const int Const = 0;
+    static const int Range = 1;
+    static const int Set = 2;
 };
 
 struct ConstValue: public SymbolValue {
     int value;
 
-    void print() { cout << value; }
+    void print() const { cout << value; }
+    int type() const { return SymbolValue::Const; }
 };
 
 struct RangeValue: public SymbolValue {
     int low;
     int high;
 
-    void print() { cout << "[" << low << ", " << high << "]"; }
+    void print() const { cout << "[" << low << ", " << high << "]"; }
+    int type() const { return SymbolValue::Range; }
+};
+
+struct SetValue: public SymbolValue {
+    StringsSet * ssp;
+    
+    SetValue() : ssp(NULL) {}
+    void print() const { ssp->print(); }
+    int type() const { return SymbolValue::Set; }
 };
 
 
