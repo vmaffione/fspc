@@ -32,7 +32,17 @@ void Lts::updateAlphabet(int action)
 	alphabet.push_back(action);
 }
 
-Lts::Lts(string nm, const char * filename) : name(nm)
+Lts::Lts(int type)
+{
+    struct LtsNode node;
+
+    node.type = type;
+    nodes.push_back(node);
+    ntr = 0;
+    valid = true;
+}
+
+Lts::Lts(const char * filename)
 {
     fstream fin;
     int n;
@@ -71,7 +81,7 @@ Lts::Lts(string nm, const char * filename) : name(nm)
     ntr = 0;
     nodes.resize(n);
     for (int i=0; i<n; i++)
-	nodes[i].end = 0;
+	nodes[i].type = LtsNode::Normal;
 
     /* Build the graph */
     fin.open(filename, ios_base::in);
@@ -92,7 +102,7 @@ Lts::Lts(string nm, const char * filename) : name(nm)
 
 void Lts::print() const {
     actionsTable.print();
-    cout << "LTS " << name << "\n";
+    cout << "LTS " << "\n";
     for (int i=0; i<nodes.size(); i++) {
 	cout << "State: " << i << "\n";
 	for (int j=0; j<nodes[i].children.size(); j++)
@@ -147,7 +157,7 @@ void Lts::compositionReduce(const vector<LtsNode>& product)
 
     for (int i=0; i<np; i++)
 	if (map[i] != -1)
-	    nodes[map[i]].end = product[i].end;
+	    nodes[map[i]].type = product[i].type;
 
     nodes.resize(n);
 }
@@ -221,16 +231,21 @@ void Lts::compose(const Lts& p, const Lts& q)
 	    } /* else case has already been covered by the previous scan. */
 	}
 
-    /* A composed state is and END state when both the components are
+    /* A composed state is an END state when both the components are
        END states. */
     for (int ip=0; ip<p.nodes.size(); ip++)
 	for (int iq=0; iq<q.nodes.size(); iq++)
-	    product[ip*nq+iq].end = p.nodes[ip].end && q.nodes[iq].end;
+	    if ((p.nodes[ip].type == LtsNode::Error) ||
+		    (q.nodes[iq].type == LtsNode::Error))
+		product[ip*nq+iq].type = LtsNode::Error;
+	    else if ((p.nodes[ip].type == LtsNode::End) &&
+		    (q.nodes[iq].type == LtsNode::End))
+		product[ip*nq+iq].type = LtsNode::End;
 
     compositionReduce(product);
 }
 
-Lts::Lts(string nm, const Lts& p, const Lts& q) : name(nm)
+Lts::Lts(const Lts& p, const Lts& q)
 {
     compose(p, q);
 }
@@ -276,7 +291,7 @@ int Lts::deadlockAnalysis() const
 	}
 
 	/* No outgoing transitions ==> Deadlock state */
-	if (i == 0 && !nodes[state].end) { 
+	if (i == 0 && nodes[state].type != LtsNode::End) { 
 	    int t;
 	    int j;
 
@@ -501,4 +516,11 @@ clear_flags:
     }
 
     return nts;
+}
+
+SymbolValue * Lts::clone() const
+{
+    Lts * lv = new Lts(*this);
+
+    return lv;
 }

@@ -8,12 +8,13 @@ using namespace std;
 
 
 struct SymbolsTable identifiers;
+struct SymbolsTable processes;
 
 
 int main ()
 {
     int ret;
-    Lts p1("P1");
+    Lts p1();
 
     ret = parser();
 

@@ -6,6 +6,8 @@
 #include <fstream>
 #include <string>
 
+#include "strings_table.hpp"
+
 using namespace std;
 
 
@@ -16,11 +18,14 @@ struct Edge {
 
 struct LtsNode {
     vector<Edge> children;
-    bool end; /* set if the node is an END node */
+    unsigned int type; /* set if the node is an END node */
+
+    static const int Normal = 0;
+    static const int End = 1;
+    static const int Error = 2;
 };
 
-class Lts {
-    string name;
+class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     int ntr;
     bool valid;
@@ -32,17 +37,20 @@ class Lts {
     void compositionReduce(const vector<LtsNode>& product);
 	
   public:
-    Lts(string nm) : name(nm), ntr(0), valid(true) {}
-    Lts(string nm, const char * filename);
-    Lts(string nm, const Lts& p, const Lts& q); /* Parallel composition */
+    Lts() : ntr(0), valid(true) {}
+    Lts(int); /* One state Lts: Stop, End or Error */
+    Lts(const char * filename);
+    Lts(const Lts& p, const Lts& q); /* Parallel composition */
     bool isValid() const { return valid; };
-    void print() const;
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }
     int deadlockAnalysis() const;
     int terminalSets() const;
-
     void compose(const Lts& p, const Lts& q);
+
+    void print() const;
+    int type() const { return SymbolValue::Lts; }
+    SymbolValue * clone() const;
 };
 
 #endif

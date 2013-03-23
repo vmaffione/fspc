@@ -10,11 +10,13 @@ using namespace std;
 extern int yylex();
 extern FILE * yyin;
 
-/* Main identifiers table. */
+/* Symbols tables. */
 #include "strings_table.hpp"
 extern struct SymbolsTable identifiers;
+extern struct SymbolsTable processes;
 
 #include "strings_set.hpp"
+#include "lts.hpp"
 
 /* For semantic errors */
 stringstream errstream;
@@ -50,6 +52,8 @@ void yyerror(const char *s);
     class StringsSet *sset_ptr;
     class SymbolValue *sv_ptr;
     class RangeValue *rv_ptr;
+    class Lts *lv_ptr;
+    class ProcessNode * pn_ptr;
 }
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -61,7 +65,7 @@ void yyerror(const char *s);
 %token CONST RANGE SET
 %token ARROW
 %token DOTDOT
-%token END STOP ERROR
+%token <pn_ptr> END STOP ERROR
 %token PROPERTY PROGRESS MENU
 %token FORALL
 %token SHARING
@@ -70,7 +74,6 @@ void yyerror(const char *s);
 %token <float_value> FLOAT
 %token <string_ptr> UpperCaseID
 %token <string_ptr> LowerCaseID
-
 
 %type <sv_ptr> simple_expression
 %type <sv_ptr> base_expr expression unary_expr multiplicative_expr
@@ -84,7 +87,9 @@ void yyerror(const char *s);
 %type <sset_ptr> action_labels set set_expr set_elements
 %type <sv_ptr> action_range
 %type <rv_ptr> range_expr
-
+%type <pn_ptr> process_body local_process local_process_defs local_process_def
+%type <pn_ptr> sequential_composition base_local_process choice action_prefix
+%type <pn_ptr> seq_process_list process_ref prefix_actions
 
 %glr-parser
 
@@ -150,7 +155,7 @@ action_labels:
 		break;
 
 	    default:
-		errstream << "Internal error: unexpected range\n";
+		errstream << "Internal error: unexpected symbol type\n";
 		semantic_error();
 	};
 
@@ -290,7 +295,15 @@ set_elements:
 process_def:
     process_id param_OPT '=' process_body alphabet_extension_OPT 
     relabel_OPT hiding_OPT '.' {
+	ProcessValue * pvp = new ProcessValue;
+	pvp->pnp = $4;
 	cout << "Process " << *$1 << endl;
+	int ok = processes.insert(*$1, pvp);
+	if (!ok) {
+	    errstream << "process " << *$1 << " declared twice";
+	    semantic_error();
+	}
+	// TODO implement everything
     }
     ;
 
@@ -305,7 +318,9 @@ local_process_defs:
     ;
 
 local_process_def:
-    process_id index_ranges_OPT '=' local_process
+    process_id index_ranges_OPT '=' local_process {
+	$$ = $4;
+    }
     ;
 
 alphabet_extension_OPT:
@@ -315,16 +330,34 @@ alphabet_extension_OPT:
 local_process:
     base_local_process
     | sequential_composition
-    | IF expression THEN local_process
-    | IF expression THEN local_process ELSE local_process
-    | '(' choice ')'
+    | IF expression THEN local_process {
+	$$ = $4;
+    }
+    | IF expression THEN local_process ELSE local_process {
+	$$ = $4;
+    }
+    | '(' choice ')' {
+	$$ = $2;
+    }
     ;
 
 base_local_process:
-    END
-    | STOP
-    | ERROR
-    | process_id indices_OPT
+    END {
+	ProcessNode * pnp = new ProcessNode(ProcessNode::End);
+	$$ = pnp;
+    }
+    | STOP {
+	ProcessNode * pnp = new ProcessNode;
+	$$ = pnp;
+    }
+    | ERROR {
+	ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
+	$$ = pnp;
+    }
+    | process_id indices_OPT {
+	//TODO
+	$$ = new ProcessNode;
+    }
     ;
 
 choice:
@@ -333,17 +366,61 @@ choice:
     ;
 
 action_prefix:
-    guard_OPT prefix_actions ARROW local_process
+    guard_OPT prefix_actions ARROW local_process {
+	// TODO
+	$$ = $4;
+    }
     ;
 
 prefix_actions:
     action_labels {
-	cout << "Action: ";
-	$1->print();
+	cout << "Action: "; $1->print();
+	ProcessNode * pnp = new ProcessNode;
+	ProcessEdge e;
+
+	pnp->type = ProcessNode::Normal;
+	pnp->frontier_shortcut.push_back(pnp);
+	for (int i=0; i<$1->strings.size(); i++) {
+	    e.action = $1->strings[i];
+	    e.dest = NULL;
+	    pnp->children.push_back(e);
+	}
+	delete $1;
+	pnp->print();
+	$$ = pnp;
+	    
     }
     | prefix_actions ARROW action_labels {
-	cout << "Action: ";
-	$3->print();
+	cout << "Action(->): "; $3->print();
+	ProcessNode * rpnp = new ProcessNode;
+	ProcessEdge e;
+
+	rpnp->type = ProcessNode::Normal;
+	for (int i=0; i<$3->strings.size(); i++) {
+	    e.action = $3->strings[i];
+	    e.dest = NULL;
+	    rpnp->children.push_back(e);
+	}
+	delete $3;
+	rpnp->print();
+	
+	/* Attach an rpnp clone to each node in the frontier. */
+	vector<ProcessNode*> new_frontier(1);
+	$1->frontier_shortcut[0]->children[0].dest = rpnp;
+	new_frontier[0] = rpnp;
+	for (int i=0; i<$1->frontier_shortcut.size(); i++) {
+	    ProcessNode * pnp = $1->frontier_shortcut[i];
+	    cout << "Frontier element: " << pnp << "\n";
+	    for (int j=0; j<pnp->children.size(); j++)
+		if (i || j) {
+		    pnp->children[j].dest = rpnp->clone();
+		    new_frontier.push_back(pnp->children[j].dest);
+		}
+	}
+	$1->frontier_shortcut = new_frontier;
+	
+	$1->print();
+	$$ = $1;
     }
     ;
 
@@ -381,7 +458,11 @@ seq_process_list:
     ;
 
 process_ref:
-    process_id argument_OPT
+    process_id argument_OPT {
+	//TODO
+	ProcessNode * pnp = new ProcessNode;
+	$$ = pnp;
+    }
     ;
 
 argument_OPT:

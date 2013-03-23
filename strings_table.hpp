@@ -7,7 +7,7 @@
 #include <map>
 
 #include "strings_set.hpp"
-#include "lts.hpp"
+//#include "lts.hpp"
 
 using namespace std;
 
@@ -30,6 +30,7 @@ struct SymbolValue {
     static const int Range = 1;
     static const int Set = 2;
     static const int Lts = 3;
+    static const int Process = 4;
 };
 
 struct ConstValue: public SymbolValue {
@@ -59,14 +60,40 @@ struct SetValue: public SymbolValue {
     SymbolValue * clone() const;
 };
 
-struct LtsValue: public SymbolValue {
-    class Lts lts;
 
-    LtsValue(string name) : lts(name) { }
-    void print() const { lts.print(); }
-    int type() const { return SymbolValue::Lts; }
+struct ProcessNode;
+
+struct ProcessEdge {
+    ProcessNode * dest;
+    string action;
+};
+
+struct ProcessNode {
+    vector<ProcessEdge> children;
+    int type;
+    vector<ProcessNode*> frontier_shortcut;
+
+    ProcessNode() : type(ProcessNode::Normal) { }
+    ProcessNode(int t) : type(t) { }
+    void print() const;
+    ProcessNode * clone() const;
+
+    //TODO write the destructor!!
+
+    static const int Normal = 0;
+    static const int End = 1;
+    static const int Error = 2;
+};
+
+struct ProcessValue: public SymbolValue {
+    struct ProcessNode * pnp;
+
+    ProcessValue() : pnp(NULL) {}
+    void print() const { pnp->print(); }
+    int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;
 };
+
 
 struct SymbolsTable {
     map<string, SymbolValue*> table;
