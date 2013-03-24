@@ -61,6 +61,10 @@ struct SetValue: public SymbolValue {
 };
 
 
+struct ProcessBase {
+    virtual bool unresolved() const = 0;
+};
+
 struct ProcessNode;
 
 struct ProcessEdge {
@@ -68,7 +72,7 @@ struct ProcessEdge {
     string action;
 };
 
-struct ProcessNode {
+struct ProcessNode: public ProcessBase {
     vector<ProcessEdge> children;
     int type;
     vector<ProcessNode*> frontier_shortcut;
@@ -77,12 +81,20 @@ struct ProcessNode {
     ProcessNode(int t) : type(t) { }
     void print() const;
     ProcessNode * clone() const;
+    bool unresolved() const { return false; }
 
     //TODO write the destructor!!
 
     static const int Normal = 0;
     static const int End = 1;
     static const int Error = 2;
+};
+
+struct UnresolvedProcess: public ProcessBase {
+    string reference;
+
+    UnresolvedProcess(const string& s) : reference(s) { }
+    bool unresolved() const { return true; }
 };
 
 struct ProcessValue: public SymbolValue {
@@ -93,6 +105,7 @@ struct ProcessValue: public SymbolValue {
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;
 };
+
 
 
 struct SymbolsTable {

@@ -1,4 +1,5 @@
 #include <cstring>
+#include <set>
 #include "strings_table.hpp"
 
 
@@ -109,6 +110,7 @@ SetValue::SetValue(const SetValue& sv)
 
 
 /*======================= ProcessNode & Process Value =====================*/
+/*
 void ProcessNode::print() const
 {
     cout << this << ":\n";
@@ -117,12 +119,41 @@ void ProcessNode::print() const
     for (int i=0; i<children.size(); i++)
 	if (children[i].dest)
 	    children[i].dest->print();
+}*/
+
+void ProcessNode::print() const
+{
+    set<const ProcessNode*> visited;
+    vector<const ProcessNode*> frontier(1);
+    int pop, push;
+    const ProcessNode * current;
+
+    pop = 0;
+    push = 1;
+    frontier[0] = this;
+
+    while (pop != push) {
+	current = frontier[pop++];
+	cout << current << ":\n";
+	if (current) {
+	    for (int i=0; i<current->children.size(); i++) {
+		ProcessEdge e = current->children[i];
+		cout << e.action << " -> " << e.dest << "\n";
+		if (visited.count(e.dest) == 0) {
+		    visited.insert(e.dest);
+		    frontier.push_back(e.dest);
+		    push++;
+		}
+	    }
+	}
+    }
 }
 
 ProcessNode * ProcessNode::clone() const
 {
     int nc;
     int pop, push;
+    //XXX visited
     vector<const ProcessNode *> frontier(1);
     vector<ProcessNode*> cloned_frontier(1);
     const ProcessNode * current;
@@ -144,9 +175,12 @@ ProcessNode * ProcessNode::clone() const
 	for (int i=0; i<nc; i++) {
 	    cloned->children[i].action = current->children[i].action;
 	    if (current->children[i].dest) {
-		frontier[push] = current->children[i].dest;
-		cloned->children[i].dest = cloned_frontier[push] =
-		    new ProcessNode;
+		//frontier[push] = current->children[i].dest;
+		frontier.push_back(current->children[i].dest);
+		/*cloned->children[i].dest = cloned_frontier[push] =
+		    new ProcessNode; */
+		cloned->children[i].dest = new ProcessNode;
+		cloned_frontier.push_back(cloned->children[i].dest);
 		push++;
 	    } else
 		cloned->children[i].dest = NULL;
