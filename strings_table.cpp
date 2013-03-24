@@ -42,6 +42,43 @@ void StringsTable::print() const
 }
 
 
+/* ========================= ActionsTable ================================ */
+
+int ActionsTable::insert(const string& s)
+{
+    int ret = -1;
+
+    pair< map<string, int>::iterator, bool > ins_ret;
+
+    ins_ret = table.insert(pair<string, int>(s, serial));
+    if (ins_ret.second) {
+	reverse.push_back(ins_ret.first->first);
+	ret = serial++;
+    }
+    return ret;
+}
+
+int ActionsTable::lookup(const string& s) const
+{
+    map<string, int>::const_iterator it = table.find(s);
+
+    if (it == table.end())
+	return -1;
+;
+    return it->second;
+}
+
+void ActionsTable::print() const
+{
+    map<string, int>::const_iterator it;
+
+    cout << "Action table" << name << "\n";
+    for (it=table.begin(); it!=table.end(); it++) {
+	cout << "(" << it->first << ", " << it->second << ")\n";
+    }
+}
+
+
 /*===================== SymbolsTable implementation ====================== */
 bool SymbolsTable::insert(const string& name, SymbolValue * ptr)
 {
@@ -110,16 +147,6 @@ SetValue::SetValue(const SetValue& sv)
 
 
 /*======================= ProcessNode & Process Value =====================*/
-/*
-void ProcessNode::print() const
-{
-    cout << this << ":\n";
-    for (int i=0; i<children.size(); i++)
-	cout << children[i].action << " -> " << children[i].dest << "\n";
-    for (int i=0; i<children.size(); i++)
-	if (children[i].dest)
-	    children[i].dest->print();
-}*/
 
 string processNodeTypeString(int type)
 {
@@ -133,34 +160,18 @@ string processNodeTypeString(int type)
     }
 }
 
-void ProcessNode::print() const
+void printVisitFunction(ProcessNode * pnp)
 {
-    set<const ProcessNode*> visited;
-    vector<const ProcessNode*> frontier(1);
-    int pop, push;
-    const ProcessNode * current;
-
-    pop = 0;
-    push = 1;
-    frontier[0] = this;
-    visited.insert(this);
-
-    while (pop != push) {
-	current = frontier[pop++];
-	cout << current << "(" << processNodeTypeString(current->type) 
-		<< "):\n";
-	if (current) {
-	    for (int i=0; i<current->children.size(); i++) {
-		ProcessEdge e = current->children[i];
-		cout << e.action << " -> " << e.dest << "\n";
-		if (visited.count(e.dest) == 0) {  //TODO and e.dest != NULL
-		    visited.insert(e.dest);
-		    frontier.push_back(e.dest);
-		    push++;
-		}
-	    }
-	}
+    cout << pnp << "(" << processNodeTypeString(pnp->type) << "):\n";
+    for (int i=0; i<pnp->children.size(); i++) {
+	ProcessEdge e = pnp->children[i];
+	cout << e.action << " -> " << e.dest << "\n";
     }
+}
+
+void ProcessNode::print()
+{
+    visit(&printVisitFunction);
 }
 
 void ProcessNode::visit(ProcessVisitFunction vfp)
@@ -177,15 +188,13 @@ void ProcessNode::visit(ProcessVisitFunction vfp)
 
     while (pop != push) {
 	current = frontier[pop++];
-	if (current) {
-	    vfp(current);  /* Invoke the specific visit function. */
-	    for (int i=0; i<current->children.size(); i++) {
-		ProcessEdge e = current->children[i];
-		if (visited.count(e.dest) == 0) {  //TODO and e.dest != NULL
-		    visited.insert(e.dest);
-		    frontier.push_back(e.dest);
-		    push++;
-		}
+	vfp(current);  /* Invoke the specific visit function. */
+	for (int i=0; i<current->children.size(); i++) {
+	    ProcessEdge e = current->children[i];
+	    if (e.dest && visited.count(e.dest) == 0) {
+		visited.insert(e.dest);
+		frontier.push_back(e.dest);
+		push++;
 	    }
 	}
     }
@@ -217,10 +226,7 @@ ProcessNode * ProcessNode::clone() const
 	for (int i=0; i<nc; i++) {
 	    cloned->children[i].action = current->children[i].action;
 	    if (current->children[i].dest) {
-		//frontier[push] = current->children[i].dest;
 		frontier.push_back(current->children[i].dest);
-		/*cloned->children[i].dest = cloned_frontier[push] =
-		    new ProcessNode; */
 		cloned->children[i].dest = new ProcessNode;
 		cloned_frontier.push_back(cloned->children[i].dest);
 		push++;
@@ -231,6 +237,13 @@ ProcessNode * ProcessNode::clone() const
 
     return cloned_frontier[0];
 }
+
+ProcessNode::~ProcessNode() {
+    // XXX does not manage loops!!!
+    for (int i=0; i<children.size(); i++)
+	delete children[i].dest;
+}
+
 
 SymbolValue * ProcessValue::clone() const
 {

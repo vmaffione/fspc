@@ -14,12 +14,18 @@ extern FILE * yyin;
 
 /* Symbols tables. */
 #include "strings_table.hpp"
+//TODO define these tables here.. move from fspc.cpp
 extern struct SymbolsTable identifiers;
 extern struct SymbolsTable processes;
 
 /* Strings sets. */
 #include "strings_set.hpp"
 #include "lts.hpp"
+
+
+/* Main actions table */
+struct ActionsTable actions("Global actions table");
+
 
 void fixUnresolvedReferences(ProcessNode * pnp);
 
@@ -201,7 +207,6 @@ action_range:
     }
     | range_expr {
 	$$ = (SymbolValue *)$1;
-	cout << "From RangeValue to SymbolValue\n";
     }
     | set_expr {
 	SetValue * vp = new SetValue;
@@ -294,7 +299,7 @@ set_elements:
     }
     | set_elements ',' action_labels {
 	*$1 += *$3;
-	// XXX delete $3 ?? 
+	delete $3;
 	$$ = $1;
     }
     ;
@@ -380,7 +385,6 @@ local_process:
 	}
     }
     | '(' choice ')' {
-	cout << "(choice)\n";
 	//$2->print();
 	$$ = $2;
     }
@@ -414,10 +418,15 @@ choice:
     action_prefix
     | choice '|' action_prefix {
 	cout << "Choice\n";
-	/* Merge $1 head and $3 head. */
+	/* Merge $1 head and $3 head. Don't care about frontier_shortcut
+	   merging, since we will not need them anymore. */
 	for (int i=0; i<$3->children.size(); i++)
 	    $1->children.push_back($3->children[i]);
-	// XXX must delete $3 but not the whole graph!
+	/* We must delete only the ProcessNode pointed by $, but not the
+	   whole graph! Therefore we detach *$3 children before free its
+	   memory. */
+	$3->detachChildren();
+	delete $3;
 	//$1->print();
 	$$ = $1;
     }

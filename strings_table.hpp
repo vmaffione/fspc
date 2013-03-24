@@ -21,6 +21,19 @@ struct StringsTable {
 };
 
 
+struct ActionsTable {
+    string name;
+    map<string, int> table;
+    vector<string> reverse;
+    int serial;
+
+    ActionsTable(const string& nm) : serial(0), name(nm) { }
+    int insert(const string& s);
+    int lookup(const string& s) const;
+    void print() const;
+};
+
+
 struct SymbolValue {
     virtual void print() const = 0;
     virtual int type() const = 0;
@@ -78,16 +91,17 @@ typedef void (*ProcessVisitFunction)(struct ProcessNode * pnp);
 struct ProcessNode: public ProcessBase {
     vector<ProcessEdge> children;
     int type;
-    vector<ProcessNode*> frontier_shortcut;
+    vector<ProcessNode*> frontier_shortcut; /* only action_prefix and down */
 
     ProcessNode() : type(ProcessNode::Normal) { }
     ProcessNode(int t) : type(t) { }
-    void print() const;
+    void print();
     ProcessNode * clone() const;
     bool unresolved() const { return false; }
     void visit(ProcessVisitFunction);
 
-    //TODO write the destructor!!
+    void detachChildren() { children.clear(); }
+    ~ProcessNode();
 
     static const int Normal = 0;
     static const int End = 1;
