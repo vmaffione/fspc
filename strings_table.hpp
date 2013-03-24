@@ -70,7 +70,10 @@ struct ProcessNode;
 struct ProcessEdge {
     ProcessNode * dest;
     string action;
+    string unresolved_reference;
 };
+
+typedef void (*ProcessVisitFunction)(struct ProcessNode * pnp);
 
 struct ProcessNode: public ProcessBase {
     vector<ProcessEdge> children;
@@ -82,6 +85,7 @@ struct ProcessNode: public ProcessBase {
     void print() const;
     ProcessNode * clone() const;
     bool unresolved() const { return false; }
+    void visit(ProcessVisitFunction);
 
     //TODO write the destructor!!
 

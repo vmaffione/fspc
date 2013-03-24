@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <set>
+#include <vector>
 
 using namespace std;
 
@@ -19,13 +21,7 @@ extern struct SymbolsTable processes;
 #include "strings_set.hpp"
 #include "lts.hpp"
 
-/* Table of unresolved process symbols. */
-struct UnresolvedRow {
-    ProcessNode* pnp;
-    int child;
-    string reference;
-};
-vector<struct UnresolvedRow> unresolved;
+void fixUnresolvedReferences(ProcessNode * pnp);
 
 
 /* For semantic errors */
@@ -313,8 +309,9 @@ process_def:
 		    ((UnresolvedProcess * )$4)->reference << " undeclared\n";
 	    semantic_error();
 	}
+
 	/* Insert a new ProcessValue in the symbol table, attaching the
-	   process_body. */
+	   process_body to it. */
 	ProcessValue * pvp = new ProcessValue;
 	cout << "Process " << *$1 << " defined\n";
 	int ok = processes.insert(*$1, pvp);
@@ -324,22 +321,11 @@ process_def:
 	}
 	pvp->pnp = (ProcessNode *)$4;
 
-	/* Try to resolve all the undefined references. */
-	for (int i=0; i<unresolved.size(); i++) {
-	    SymbolValue * svp;
-	    cout << "unres " << unresolved[i].reference << " at " << unresolved[i].pnp << "[" << unresolved[i].child << "]\n";
-	    ok = processes.lookup(unresolved[i].reference, svp);
-	    if (!ok) {
-		errstream << "Local process " << unresolved[i].reference <<
-				" undeclared\n";
-		semantic_error();
-	    }
-	    unresolved[i].pnp->children[unresolved[i].child].dest =
-		((ProcessValue *)svp)->pnp;
-	}
-	unresolved.clear();
+	/* Try to resolve all the undefined references into this process. */
+	pvp->pnp->visit(&fixUnresolvedReferences);
+
 	pvp->pnp->print();
-	// TODO implement everything
+	// TODO implement everything is OPT
     }
     ;
 
@@ -395,7 +381,7 @@ local_process:
     }
     | '(' choice ')' {
 	cout << "(choice)\n";
-	$2->print();
+	//$2->print();
 	$$ = $2;
     }
     ;
@@ -413,13 +399,14 @@ base_local_process:
     | process_id indices_OPT {
 	//TODO implement indices_OPT
 	SymbolValue * svp;
+	/* If the process referenced is already defined, return it.
+	   Otherwise return a new UnresolvedProcess object, so that the
+	   upper level sees that *$1 is unresolved. */
 	bool ok = processes.lookup(*$1, svp);
-	if (!ok) {
-	    $$ = new UnresolvedProcess(*$1);
-	    //$$ = new ProcessNode;
-	} else {
+	if (ok)
 	    $$ = ((ProcessValue *)svp)->pnp;
-	}
+	else
+	    $$ = new UnresolvedProcess(*$1);
     }
     ;
 
@@ -440,22 +427,23 @@ action_prefix:
     guard_OPT prefix_actions ARROW local_process {
 	// TODO guard_OPT
 
-	/* Connect the frontier of $2 to the process $4. */
 	if (!($4->unresolved())) {
+	    /* If $4 is not an unresolved reference, we connect the frontier 
+	       of $2 to the process $4. */
 	    for (int i=0; i<$2->frontier_shortcut.size(); i++) {
 		ProcessNode * pnp = $2->frontier_shortcut[i];
 		for (int j=0; j<pnp->children.size(); j++)
 		    pnp->children[j].dest = (ProcessNode *)$4;
 	    }
 	} else {
-	    UnresolvedRow ur;
-	    ur.reference = ((UnresolvedProcess *)$4)->reference;
+	    /* If $4 is an unresolved reference, we scan the frontier of $2
+	       recording the reference itslef, so that this reference will
+	       be fixed by the upper levels. */
+	    string reference = ((UnresolvedProcess *)$4)->reference;
 	    for (int i=0; i<$2->frontier_shortcut.size(); i++) {
 		ProcessNode * pnp = $2->frontier_shortcut[i];
-		ur.pnp = pnp;
 		for (int j=0; j<pnp->children.size(); j++) {
-		    ur.child = j;
-		    unresolved.push_back(ur);
+		    pnp->children[j].unresolved_reference = reference;
 		}
 	    }
 	}
@@ -915,6 +903,26 @@ progress_id: UpperCaseID;
 menu_id: UpperCaseID;
 
 %%
+
+void fixUnresolvedReferences(ProcessNode * pnp)
+{
+    for (int i=0; i<pnp->children.size(); i++) {
+	ProcessEdge& e = pnp->children[i];
+	SymbolValue * svp;
+	if (e.dest == NULL) {
+	    cout << "Unref " << pnp << ": " << e.action 
+		<< " -> " << e.unresolved_reference << "\n";				
+	    bool ok = processes.lookup(e.unresolved_reference, svp);
+	    if (!ok) {
+		errstream << "Local process " << pnp << ": "
+		    << e.unresolved_reference << " undeclared\n";
+		semantic_error();
+	    }
+	    e.dest = ((ProcessValue *)svp)->pnp;
+	}
+    }
+}
+
 
 int parser() {
     // open a file handle to a particular file:

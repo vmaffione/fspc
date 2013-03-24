@@ -121,6 +121,18 @@ void ProcessNode::print() const
 	    children[i].dest->print();
 }*/
 
+string processNodeTypeString(int type)
+{
+    switch (type) {
+	case ProcessNode::Normal:
+	    return "normal";
+	case ProcessNode::End:
+	    return "END";
+	case ProcessNode::Error:
+	    return "ERROR";
+    }
+}
+
 void ProcessNode::print() const
 {
     set<const ProcessNode*> visited;
@@ -131,15 +143,45 @@ void ProcessNode::print() const
     pop = 0;
     push = 1;
     frontier[0] = this;
+    visited.insert(this);
 
     while (pop != push) {
 	current = frontier[pop++];
-	cout << current << ":\n";
+	cout << current << "(" << processNodeTypeString(current->type) 
+		<< "):\n";
 	if (current) {
 	    for (int i=0; i<current->children.size(); i++) {
 		ProcessEdge e = current->children[i];
 		cout << e.action << " -> " << e.dest << "\n";
-		if (visited.count(e.dest) == 0) {
+		if (visited.count(e.dest) == 0) {  //TODO and e.dest != NULL
+		    visited.insert(e.dest);
+		    frontier.push_back(e.dest);
+		    push++;
+		}
+	    }
+	}
+    }
+}
+
+void ProcessNode::visit(ProcessVisitFunction vfp)
+{
+    set<ProcessNode*> visited;
+    vector<ProcessNode*> frontier(1);
+    int pop, push;
+    ProcessNode * current;
+
+    pop = 0;
+    push = 1;
+    frontier[0] = this;
+    visited.insert(this);
+
+    while (pop != push) {
+	current = frontier[pop++];
+	if (current) {
+	    vfp(current);  /* Invoke the specific visit function. */
+	    for (int i=0; i<current->children.size(); i++) {
+		ProcessEdge e = current->children[i];
+		if (visited.count(e.dest) == 0) {  //TODO and e.dest != NULL
 		    visited.insert(e.dest);
 		    frontier.push_back(e.dest);
 		    push++;
