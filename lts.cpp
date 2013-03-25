@@ -19,18 +19,24 @@ using namespace std;
 /* ====================== class Lts implementation ===================== */
 int Lts::lookupAlphabet(int action) const
 {
-    for (int i=0; i<alphabet.size(); i++)
-	if (alphabet[i] == action)
-	    return i;
-    return -1;
+    set<int>::iterator it = alphabet.find(action);
+    
+    return (it == alphabet.end()) ? -1 : 0;
 }
 
 void Lts::updateAlphabet(int action)
 {
-    int i = lookupAlphabet(action);
-    
-    if (i == -1)
-	alphabet.push_back(action);
+    alphabet.insert(action);
+}
+
+void Lts::printAlphabet() const
+{
+    set<int>::iterator it;
+
+    cout << "Alphabet: {";
+    for (it=alphabet.begin(); it != alphabet.end(); it++)    
+	cout << ati(*it) << ", ";
+    cout << "}\n";
 }
 
 Lts::Lts(int type, struct ActionsTable * p) : atp(p)
@@ -181,10 +187,7 @@ void Lts::print() const {
 	    cout << "    " << ati(nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
-    cout << "Alphabet: {";
-    for (int i=0; i<alphabet.size(); i++)
-	cout << ati(alphabet[i]) << ", ";
-    cout << "}\n";
+    printAlphabet();
     cout << numStates() << " states, " << ntr << " transitions\n";
 }
 

@@ -11,15 +11,6 @@
 using namespace std;
 
 
-struct StringsTable {
-    vector<char *> table;
-
-    int insert(const char *);
-    int lookup(const char *) const;
-    void print() const;
-};
-
-
 struct ActionsTable {
     string name;
     map<string, int> table;
@@ -106,13 +97,14 @@ struct ProcessNode: public ProcessBase {
     bool unresolved() const { return false; }
     void visit(struct VisitFunctor);
 
-    void detachChildren() { children.clear(); }
-    ~ProcessNode();
+    //void detachChildren() { children.clear(); }
 
     static const int Normal = 0;
     static const int End = 1;
     static const int Error = 2;
 };
+
+void freeProcessNodeGraph(struct ProcessNode *);
 
 struct UnresolvedProcess: public ProcessBase {
     string reference;

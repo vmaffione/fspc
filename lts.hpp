@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <set>
 
 #include "strings_table.hpp"
 
@@ -31,9 +32,11 @@ class Lts: public SymbolValue {
     int ntr;	/* Number of transactions */
     bool valid;  //XXX remove it ASAP
 
-    vector<int> alphabet;
+    //vector<int> alphabet; //TODO REMOVE
+    set<int> alphabet;
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;
+    void printAlphabet() const;
 
     void compositionReduce(const vector<LtsNode>& product);
 	

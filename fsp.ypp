@@ -337,6 +337,10 @@ process_def:
 	/* Convert the collection of ProcessNodes in an Lts object. */
 	Lts lts(pvp->pnp, &actions);
 	lts.print();
+
+	/* Now we can delete the graph pointed by pvp->pnp. */
+	//delete pvp->pnp;
+	freeProcessNodeGraph(pvp->pnp);
 	// TODO implement everything is OPT
     }
     ;
@@ -432,7 +436,7 @@ choice:
 	/* We must delete only the ProcessNode pointed by $, but not the
 	   whole graph! Therefore we detach *$3 children before free its
 	   memory. */
-	$3->detachChildren();
+	//$3->detachChildren();
 	delete $3;
 	//$1->print();
 	$$ = $1;

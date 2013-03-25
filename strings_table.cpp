@@ -11,36 +11,6 @@
 #define IFD(x)
 #endif
 
-/*======================== StringsTable implementation ====================*/
-int StringsTable::lookup(const char * s) const
-{
-    for (int i=0; i<table.size(); i++)
-	if (strcmp(s, table[i]) == 0)
-	    return i;
-    return -1;
-}
-
-int StringsTable::insert(const char * s)
-{
-    int i = lookup(s);
-    char * sc = strdup(s);
-
-    if (i == -1) {
-	table.push_back(sc); // This makes a copy
-	IFD(cout << "Added '" << sc << "' to the actions table ("
-		<< table.size()-1 << ")\n");
-	return table.size() - 1;
-    }
-    return i;
-}
-
-void StringsTable::print() const
-{
-    cout << "Actions table:\n";
-    for (int i=0; i<table.size(); i++)
-	cout << "  " << table[i] << "\n";
-}
-
 
 /* ========================= ActionsTable ================================ */
 
@@ -74,7 +44,7 @@ void ActionsTable::print() const
 {
     map<string, int>::const_iterator it;
 
-    cout << "Action table" << name << "\n";
+    cout << "Action table '" << name << "'\n";
     for (it=table.begin(); it!=table.end(); it++) {
 	cout << "(" << it->first << ", " << it->second << ")\n";
     }
@@ -212,7 +182,7 @@ ProcessNode * ProcessNode::clone() const
 {
     int nc;
     int pop, push;
-    //XXX visited
+    //XXX visited: Now it does not handle loops
     vector<const ProcessNode *> frontier(1);
     vector<ProcessNode*> cloned_frontier(1);
     const ProcessNode * current;
@@ -246,10 +216,26 @@ ProcessNode * ProcessNode::clone() const
     return cloned_frontier[0];
 }
 
-ProcessNode::~ProcessNode() {
-    // XXX does not manage loops!!!
-    for (int i=0; i<children.size(); i++)
-	delete children[i].dest;
+
+void freeVisitFunction(struct ProcessNode * pnp, void * opaque)
+{
+    vector<ProcessNode *> * nodes_ptr = (vector<ProcessNode *> *)opaque;
+    nodes_ptr->push_back(pnp);
+}
+
+void freeProcessNodeGraph(struct ProcessNode * pnp)
+{
+    struct VisitFunctor f;
+    vector<ProcessNode *> nodes;
+
+    /* Collect all the nodes reachable from 'pnp'. */
+    f.vfp = &freeVisitFunction;
+    f.opaque = &nodes;
+    pnp->visit(f);
+
+    /* Free them. */
+    for (int i=0; i<nodes.size(); i++)
+	delete nodes[i];
 }
 
 
