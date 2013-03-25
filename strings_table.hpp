@@ -7,7 +7,6 @@
 #include <map>
 
 #include "strings_set.hpp"
-//#include "lts.hpp"
 
 using namespace std;
 
@@ -35,7 +34,7 @@ struct ActionsTable {
 
 
 struct SymbolValue {
-    virtual void print() const = 0;
+    virtual void print() const { };
     virtual int type() const = 0;
     virtual SymbolValue * clone() const = 0;
 
@@ -82,11 +81,18 @@ struct ProcessNode;
 
 struct ProcessEdge {
     ProcessNode * dest;
-    string action;
+    int action;
     string unresolved_reference;
 };
 
-typedef void (*ProcessVisitFunction)(struct ProcessNode * pnp);
+typedef void (*ProcessVisitFunction)(struct ProcessNode *,
+		    void *);
+
+struct VisitFunctor
+{
+    ProcessVisitFunction vfp;
+    void * opaque;
+};
 
 struct ProcessNode: public ProcessBase {
     vector<ProcessEdge> children;
@@ -95,10 +101,10 @@ struct ProcessNode: public ProcessBase {
 
     ProcessNode() : type(ProcessNode::Normal) { }
     ProcessNode(int t) : type(t) { }
-    void print();
+    void print(ActionsTable * atp);
     ProcessNode * clone() const;
     bool unresolved() const { return false; }
-    void visit(ProcessVisitFunction);
+    void visit(struct VisitFunctor);
 
     void detachChildren() { children.clear(); }
     ~ProcessNode();
@@ -119,7 +125,7 @@ struct ProcessValue: public SymbolValue {
     struct ProcessNode * pnp;
 
     ProcessValue() : pnp(NULL) {}
-    void print() const { pnp->print(); }
+    void print(ActionsTable * atp) const { pnp->print(atp); }
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;
 };

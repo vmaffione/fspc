@@ -1,5 +1,8 @@
+#include <map>
 #include "lts.hpp"
 #include "strings_table.hpp"
+
+using namespace std;
 
 
 //#define DEBUG
@@ -10,12 +13,10 @@
 #endif
 
 
-/* Global actions table that holds all the action names */
-static struct StringsTable actionsTable;
-#define ati(index) actionsTable.table[(index)]
+#define ati(index) atp->reverse[index]
 
 
-/******************* class Lts implementation ********************/
+/* ====================== class Lts implementation ===================== */
 int Lts::lookupAlphabet(int action) const
 {
     for (int i=0; i<alphabet.size(); i++)
@@ -32,7 +33,7 @@ void Lts::updateAlphabet(int action)
 	alphabet.push_back(action);
 }
 
-Lts::Lts(int type)
+Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 {
     struct LtsNode node;
 
@@ -42,7 +43,78 @@ Lts::Lts(int type)
     valid = true;
 }
 
-Lts::Lts(const char * filename)
+struct LtsConvertData {
+    Lts * ltsp;
+    map<ProcessNode *, int> * mapp;
+};
+
+void lts_convert(struct ProcessNode * pnp, void * opaque)
+{
+    Lts * ltsp = ((LtsConvertData *)opaque)->ltsp;
+    map<ProcessNode *, int> * mapp = ((LtsConvertData *)opaque)->mapp;
+    int state = (mapp->find(pnp))->second;
+
+    cout << "Converting " << pnp << " into " << state << "\n";
+    
+    switch (pnp->type) {
+	case ProcessNode::Normal:
+	    ltsp->nodes[state].type = LtsNode::Normal;
+	    break;
+	case ProcessNode::End:
+	    ltsp->nodes[state].type = LtsNode::End;
+	    break;
+	case ProcessNode::Error:
+	    ltsp->nodes[state].type = LtsNode::Error;
+	    break;
+    }
+
+    Edge e;
+    pair< map<ProcessNode*, int>::iterator, bool> ret;
+
+    for (int i=0; i<pnp->children.size(); i++) {
+	int next = mapp->size();
+	ret = mapp->insert(make_pair(pnp->children[i].dest, next));
+	if (ret.second) {
+	    ltsp->nodes.push_back(LtsNode());
+	    cout << "(" << pnp->children[i].dest << "," <<
+		    next << ")\n";
+	}
+	e.dest = ret.first->second;
+	e.action = pnp->children[i].action;
+	cout << "Adding " << e.action << ", " << e.dest << "\n";
+	ltsp->nodes[state].children.push_back(e);
+	ltsp->ntr++;
+    }
+}
+
+Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
+{
+    ProcessNode * pnp;
+    VisitFunctor f;
+    LtsConvertData lcd;
+    map<ProcessNode *, int> index_map;
+
+    /* We use const_cast<> to remove 'const' from pnp: we are sure that the 
+       visit function won't modify the graph. */
+    pnp = const_cast<ProcessNode *>(cpnp);
+
+    /* The index_map maps each ProcessNode* in the graph to an index in
+       Lts::nodes. The map is build and used during the visit, but we must
+       initialize it with respect to the first node. */
+    index_map.insert(make_pair(pnp, 0));
+    nodes.push_back(LtsNode());
+
+    lcd.ltsp = this;
+    lcd.mapp = &index_map;
+    f.vfp = &lts_convert;
+    f.opaque = &lcd;
+
+    ntr = 0;
+    valid = true;
+    pnp->visit(f);
+}
+
+Lts::Lts(const char * filename) : atp(NULL)
 {
     fstream fin;
     int n;
@@ -90,7 +162,7 @@ Lts::Lts(const char * filename)
 	if (fin.fail())
 	    break;
 	e.dest = s2;
-	e.action = actionsTable.insert(a.c_str());  // XXX: not optimized we could avoid using string
+	e.action = atp->insert(a);
 	IFD(cout << "Adding (" << s1 << ", " << ati(e.action) 
 		<< ", " << e.dest << ")\n";)
 	nodes[s1].children.push_back(e);  /* Insert a new edge */
@@ -101,10 +173,10 @@ Lts::Lts(const char * filename)
 }
 
 void Lts::print() const {
-    actionsTable.print();
+    atp->print();
     cout << "LTS " << "\n";
     for (int i=0; i<nodes.size(); i++) {
-	cout << "State: " << i << "\n";
+	cout << "State " << i << ":\n";
 	for (int j=0; j<nodes[i].children.size(); j++)
 	    cout << "    " << ati(nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
@@ -170,6 +242,9 @@ void Lts::compose(const Lts& p, const Lts& q)
     int np;
     Edge e;
     vector<LtsNode> product;
+
+    if (p.atp != atp || q.atp != atp)
+	throw int(-1);
 
     valid = true;
     /* We build the cartesian product of P states and Q states. For 
@@ -247,6 +322,9 @@ void Lts::compose(const Lts& p, const Lts& q)
 
 Lts::Lts(const Lts& p, const Lts& q)
 {
+    if (!p.atp || p.atp != q.atp)
+	throw int(-1);
+    atp = p.atp;
     compose(p, q);
 }
 
@@ -317,7 +395,7 @@ int Lts::deadlockAnalysis() const
 int Lts::terminalSets() const
 {
     int n = nodes.size();
-    int na = actionsTable.table.size();
+    int na = atp->reverse.size();
     int nts = 0;
 
     /* Data structures for the iterative DFS implementation */
@@ -524,3 +602,4 @@ SymbolValue * Lts::clone() const
 
     return lv;
 }
+

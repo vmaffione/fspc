@@ -27,8 +27,9 @@ struct LtsNode {
 
 class Lts: public SymbolValue {
     vector<LtsNode> nodes;
-    int ntr;
-    bool valid;
+    ActionsTable * atp;
+    int ntr;	/* Number of transactions */
+    bool valid;  //XXX remove it ASAP
 
     vector<int> alphabet;
     void updateAlphabet(int action);
@@ -36,10 +37,13 @@ class Lts: public SymbolValue {
 
     void compositionReduce(const vector<LtsNode>& product);
 	
+    friend void lts_convert(struct ProcessNode * pnp, void * opaque);
+
   public:
-    Lts() : ntr(0), valid(true) {}
-    Lts(int); /* One state Lts: Stop, End or Error */
-    Lts(const char * filename);
+    Lts(struct ActionsTable * p) : atp(p), ntr(0), valid(true) { }
+    Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
+    Lts(const struct ProcessNode *, struct ActionsTable *);
+    Lts(const char * filename);  // TODO remove or update it
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     bool isValid() const { return valid; };
     int numStates() const { return nodes.size(); }

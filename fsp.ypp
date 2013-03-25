@@ -27,7 +27,7 @@ extern struct SymbolsTable processes;
 struct ActionsTable actions("Global actions table");
 
 
-void fixUnresolvedReferences(ProcessNode * pnp);
+void fix_unresolved_references(ProcessNode * pnp, void * opaque);
 
 
 /* For semantic errors */
@@ -327,9 +327,16 @@ process_def:
 	pvp->pnp = (ProcessNode *)$4;
 
 	/* Try to resolve all the undefined references into this process. */
-	pvp->pnp->visit(&fixUnresolvedReferences);
+	struct VisitFunctor f;
+	f.vfp = &fix_unresolved_references;
+	f.opaque = &actions;
+	pvp->pnp->visit(f);
 
-	pvp->pnp->print();
+	pvp->pnp->print(&actions);
+
+	/* Convert the collection of ProcessNodes in an Lts object. */
+	Lts lts(pvp->pnp, &actions);
+	lts.print();
 	// TODO implement everything is OPT
     }
     ;
@@ -470,7 +477,7 @@ prefix_actions:
 	pnp->type = ProcessNode::Normal;
 	pnp->frontier_shortcut.push_back(pnp);
 	for (int i=0; i<$1->strings.size(); i++) {
-	    e.action = $1->strings[i];
+	    e.action = actions.insert($1->strings[i]);
 	    e.dest = NULL;
 	    pnp->children.push_back(e);
 	}
@@ -486,7 +493,7 @@ prefix_actions:
 
 	rpnp->type = ProcessNode::Normal;
 	for (int i=0; i<$3->strings.size(); i++) {
-	    e.action = $3->strings[i];
+	    e.action = actions.insert($3->strings[i]);
 	    e.dest = NULL;
 	    rpnp->children.push_back(e);
 	}
@@ -913,13 +920,15 @@ menu_id: UpperCaseID;
 
 %%
 
-void fixUnresolvedReferences(ProcessNode * pnp)
+void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 {
+    ActionsTable * atp = (ActionsTable *)opaque;
+
     for (int i=0; i<pnp->children.size(); i++) {
 	ProcessEdge& e = pnp->children[i];
 	SymbolValue * svp;
 	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": " << e.action 
+	    cout << "Unref " << pnp << ": " << actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
 	    bool ok = processes.lookup(e.unresolved_reference, svp);
 	    if (!ok) {

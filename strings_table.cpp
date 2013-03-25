@@ -54,6 +54,8 @@ int ActionsTable::insert(const string& s)
     if (ins_ret.second) {
 	reverse.push_back(ins_ret.first->first);
 	ret = serial++;
+    } else {
+	ret = ins_ret.first->second;
     }
     return ret;
 }
@@ -160,21 +162,27 @@ string processNodeTypeString(int type)
     }
 }
 
-void printVisitFunction(ProcessNode * pnp)
+void printVisitFunction(ProcessNode * pnp, void * opaque)
 {
+    ActionsTable * atp = (ActionsTable *)opaque;
+
     cout << pnp << "(" << processNodeTypeString(pnp->type) << "):\n";
     for (int i=0; i<pnp->children.size(); i++) {
 	ProcessEdge e = pnp->children[i];
-	cout << e.action << " -> " << e.dest << "\n";
+	cout << atp->reverse[e.action] << " -> " << e.dest << "\n";
     }
 }
 
-void ProcessNode::print()
+void ProcessNode::print(ActionsTable * atp)
 {
-    visit(&printVisitFunction);
+    struct VisitFunctor f;
+
+    f.vfp = &printVisitFunction;
+    f.opaque = atp;
+    visit(f);
 }
 
-void ProcessNode::visit(ProcessVisitFunction vfp)
+void ProcessNode::visit(VisitFunctor f)
 {
     set<ProcessNode*> visited;
     vector<ProcessNode*> frontier(1);
@@ -188,7 +196,7 @@ void ProcessNode::visit(ProcessVisitFunction vfp)
 
     while (pop != push) {
 	current = frontier[pop++];
-	vfp(current);  /* Invoke the specific visit function. */
+	f.vfp(current, f.opaque);  /* Invoke the specific visit function. */
 	for (int i=0; i<current->children.size(); i++) {
 	    ProcessEdge e = current->children[i];
 	    if (e.dest && visited.count(e.dest) == 0) {

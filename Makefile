@@ -11,7 +11,7 @@ strings_table.o: strings_table.hpp strings_table.cpp
 
 strings_set.o: strings_set.hpp strings_set.cpp
 
-fsp.tab.o: strings_set.hpp strings_table.hpp fsp.tab.cpp
+fsp.tab.o: strings_set.hpp strings_table.hpp fsp.tab.cpp lts.hpp
 
 fsp.tab.cpp fsp.tab.hpp: fsp.ypp fsp.y
 	bison -d fsp.ypp
