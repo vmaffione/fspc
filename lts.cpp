@@ -1,4 +1,5 @@
 #include <map>
+#include <fstream>
 #include "lts.hpp"
 #include "strings_table.hpp"
 
@@ -96,7 +97,7 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
 Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 {
     ProcessNode * pnp;
-    VisitFunctor f;
+    ProcessVisitObject f;
     LtsConvertData lcd;
     map<ProcessNode *, int> index_map;
 
@@ -606,3 +607,72 @@ SymbolValue * Lts::clone() const
     return lv;
 }
 
+void Lts::visit(const struct LtsVisitObject& lvo) const
+{
+    int state = 0;
+    int n = nodes.size();
+    vector<int> frontier(n);
+    vector<bool> seen(n);
+    int pop, push;
+
+    pop = 0;
+    push = 1;
+    frontier[0] = 0;
+    seen[0] = true;
+    for (int i=1; i<n; i++)
+	seen[i] = false;
+
+    while (pop != push) {
+	state = frontier[pop++];
+	/* Invoke the visit function */
+	lvo.vfp(state, nodes[state], lvo.opaque);
+	for (int i=0; i<nodes[state].children.size(); i++) {
+	    int child = nodes[state].children[i].dest;
+	    if (!seen[child]) {
+		seen[child] = true;
+		frontier[push++] = child;
+	    }
+	}
+    }
+}
+
+
+struct GraphvizVisitData {
+    fstream * fsptr;
+    ActionsTable * atp;
+};
+
+void graphvizVisitFunction(int state, const struct LtsNode& node,
+				void * opaque)
+{
+    GraphvizVisitData * gvdp = (GraphvizVisitData *)opaque;
+    ActionsTable * atp = gvdp->atp;
+
+    for (int i=0; i<node.children.size(); i++)
+	(*(gvdp->fsptr)) << state << " -> " << node.children[i].dest
+	    << " [label = \"" << ati(node.children[i].action) << "\"];\n";
+}
+
+void Lts::graphvizOutput(const char * filename) const
+{
+    LtsVisitObject lvo;
+    GraphvizVisitData gvd;
+    fstream fout;
+
+    fout.open(filename, fstream::out);
+    fout << "digraph G {\n";
+    fout << "rankdir = LR;\n";
+    fout << "ratio = 1.0;\n";
+    for (int i=0; i<nodes.size(); i++) {
+	fout << i << " [shape=circle,style=filled, fillcolor=green];\n";
+    }
+
+    lvo.vfp = &graphvizVisitFunction;
+    gvd.fsptr = &fout;
+    gvd.atp = atp;
+    lvo.opaque = &gvd;
+    visit(lvo);
+
+    fout << "}\n";
+    fout.close();
+}

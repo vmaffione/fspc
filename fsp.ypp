@@ -327,7 +327,7 @@ process_def:
 	pvp->pnp = (ProcessNode *)$4;
 
 	/* Try to resolve all the undefined references into this process. */
-	struct VisitFunctor f;
+	struct ProcessVisitObject f;
 	f.vfp = &fix_unresolved_references;
 	f.opaque = &actions;
 	pvp->pnp->visit(f);
@@ -339,8 +339,10 @@ process_def:
 	lts.print();
 
 	/* Now we can delete the graph pointed by pvp->pnp. */
-	//delete pvp->pnp;
 	freeProcessNodeGraph(pvp->pnp);
+
+	lts.graphvizOutput((*$1 += ".gv").c_str());
+	delete $1;
 	// TODO implement everything is OPT
     }
     ;

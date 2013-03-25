@@ -145,14 +145,14 @@ void printVisitFunction(ProcessNode * pnp, void * opaque)
 
 void ProcessNode::print(ActionsTable * atp)
 {
-    struct VisitFunctor f;
+    struct ProcessVisitObject f;
 
     f.vfp = &printVisitFunction;
     f.opaque = atp;
     visit(f);
 }
 
-void ProcessNode::visit(VisitFunctor f)
+void ProcessNode::visit(ProcessVisitObject f)
 {
     set<ProcessNode*> visited;
     vector<ProcessNode*> frontier(1);
@@ -225,7 +225,7 @@ void freeVisitFunction(struct ProcessNode * pnp, void * opaque)
 
 void freeProcessNodeGraph(struct ProcessNode * pnp)
 {
-    struct VisitFunctor f;
+    struct ProcessVisitObject f;
     vector<ProcessNode *> nodes;
 
     /* Collect all the nodes reachable from 'pnp'. */

@@ -26,13 +26,19 @@ struct LtsNode {
     static const int Error = 2;
 };
 
+typedef void (*LtsVisitFunction)(int, const struct LtsNode&, void*);
+
+struct LtsVisitObject {
+    LtsVisitFunction vfp;
+    void * opaque;
+};
+
 class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     ActionsTable * atp;
     int ntr;	/* Number of transactions */
     bool valid;  //XXX remove it ASAP
 
-    //vector<int> alphabet; //TODO REMOVE
     set<int> alphabet;
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;
@@ -54,6 +60,8 @@ class Lts: public SymbolValue {
     int deadlockAnalysis() const;
     int terminalSets() const;
     void compose(const Lts& p, const Lts& q);
+    void visit(const struct LtsVisitObject&) const;
+    void graphvizOutput(const char * filename) const;
 
     void print() const;
     int type() const { return SymbolValue::Lts; }

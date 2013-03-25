@@ -79,8 +79,7 @@ struct ProcessEdge {
 typedef void (*ProcessVisitFunction)(struct ProcessNode *,
 		    void *);
 
-struct VisitFunctor
-{
+struct ProcessVisitObject {
     ProcessVisitFunction vfp;
     void * opaque;
 };
@@ -95,7 +94,7 @@ struct ProcessNode: public ProcessBase {
     void print(ActionsTable * atp);
     ProcessNode * clone() const;
     bool unresolved() const { return false; }
-    void visit(struct VisitFunctor);
+    void visit(struct ProcessVisitObject);
 
     //void detachChildren() { children.clear(); }
 
