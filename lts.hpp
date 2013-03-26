@@ -40,9 +40,6 @@ class Lts: public SymbolValue {
     bool valid;  //XXX remove it ASAP
 
     set<int> alphabet;
-    void updateAlphabet(int action);
-    int lookupAlphabet(int action) const;
-    void printAlphabet() const;
 
     void compositionReduce(const vector<LtsNode>& product);
 	
@@ -62,6 +59,11 @@ class Lts: public SymbolValue {
     void compose(const Lts& p, const Lts& q);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
+
+    void updateAlphabet(int action);
+    int lookupAlphabet(int action) const;
+    void printAlphabet() const;
+
 
     void print() const;
     int type() const { return SymbolValue::Lts; }

@@ -26,6 +26,8 @@ extern struct SymbolsTable processes;
 /* Main actions table */
 struct ActionsTable actions("Global actions table");
 
+vector<string *> parameters;
+
 
 void fix_unresolved_references(ProcessNode * pnp, void * opaque);
 
@@ -78,7 +80,7 @@ void yyerror(const char *s);
 %token CONST RANGE SET
 %token ARROW
 %token DOTDOT
-%token <pn_ptr> END STOP ERROR
+%token END STOP ERROR
 %token PROPERTY PROGRESS MENU
 %token FORALL
 %token SHARING
@@ -95,15 +97,18 @@ void yyerror(const char *s);
 
 %type <string_ptr> variable constant_id range_id set_id range_or_set_id
 %type <string_ptr> parameter_id process_id progress_id menu_id
-%type <string_ptr> const_range_set_id
+%type <string_ptr> const_range_set_parameter_id
 
 %type <sset_ptr> action_labels set set_expr set_elements
+%type <sset_ptr> alphabet_extension_OPT
 %type <sv_ptr> action_range
 %type <rv_ptr> range_expr
 %type <pn_ptr> choice action_prefix prefix_actions
 %type <pb_ptr> process_body local_process local_process_defs local_process_def
 %type <pb_ptr> sequential_composition base_local_process
 %type <pb_ptr> seq_process_list process_ref
+
+%type <int_value> guard_OPT
 
 %glr-parser
 
@@ -191,6 +196,7 @@ set:
 	    errstream << "identifier " << *$1 << " is not a set";
 	    semantic_error();
 	}
+	delete $1;
 	ss = new StringsSet(*(((SetValue *)svp)->ssp));
 	$$ = ss;
     }
@@ -261,6 +267,7 @@ constant_def:
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
 	}
+	delete $2;
     };
 
 range_def:
@@ -278,6 +285,7 @@ range_def:
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error();
 	}
+	delete $2;
     };
 
 set_def:
@@ -291,6 +299,7 @@ set_def:
 	    semantic_error();
 	}
 	$5->print();
+	delete $2;
     };
 
 set_elements:
@@ -307,11 +316,17 @@ set_elements:
 
 /* Processes */
 process_def:
-    process_id param_OPT '=' process_body alphabet_extension_OPT
-					    relabel_OPT hiding_OPT '.' {
-	if ($4->unresolved()) {
+    process_id param_OPT {
+	/* Parameters have been pushed inside the 'param_OPT' rule.
+	   A cleaner approach would be to get a list of parameters from
+	   the rule and push the parameters into the 'identifiers' table
+	   in this action. */
+	;
+    }
+    '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
+	if ($5->unresolved()) {
 	    errstream << "Local process " << 
-		    ((UnresolvedProcess * )$4)->reference << " undeclared\n";
+		    ((UnresolvedProcess * )$5)->reference << " undeclared\n";
 	    semantic_error();
 	}
 
@@ -324,7 +339,7 @@ process_def:
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
 	}
-	pvp->pnp = (ProcessNode *)$4;
+	pvp->pnp = (ProcessNode *)$5;
 
 	/* Try to resolve all the undefined references into this process. */
 	struct ProcessVisitObject f;
@@ -336,13 +351,29 @@ process_def:
 
 	/* Convert the collection of ProcessNodes in an Lts object. */
 	Lts lts(pvp->pnp, &actions);
-	lts.print();
 
-	/* Now we can delete the graph pointed by pvp->pnp. */
+	/* Now we can free the graph pointed by pvp->pnp. */
 	freeProcessNodeGraph(pvp->pnp);
+
+	/* Extend the alphabet if is the case. */
+	if ($6) {
+	    for (int i=0; i<$6->strings.size(); i++)
+		lts.updateAlphabet(actions.insert($6->strings[i]));
+		delete $6;
+	}
+
+	/* Remove process parameters from the identifiers. */
+	for (int i=0; i<parameters.size(); i++) {
+	    identifiers.remove(*(parameters[i]));
+	    delete parameters[i];
+	}
+	parameters.clear();
+
+	lts.print();
 
 	lts.graphvizOutput((*$1 += ".gv").c_str());
 	delete $1;
+
 	// TODO implement everything is OPT
     }
     ;
@@ -371,7 +402,12 @@ local_process_def:
     ;
 
 alphabet_extension_OPT:
-    | '+' set
+    {
+	$$ = NULL;
+    }
+    | '+' set {
+	$$ = $2;
+    }
     ;
 
 local_process:
@@ -383,19 +419,26 @@ local_process:
 	    $$ = $4;
 	else {
 	    /* If the condition is not true, return a STOP process. */
-	    delete $4;
+	    ProcessBase * pbp = $4;
+	    if (pbp->unresolved())
+		delete pbp;
+	    else
+		freeProcessNodeGraph((ProcessNode *)pbp);
 	    $$ = new ProcessNode;
 	}
+	delete $2;
     }
     | IF expression THEN local_process ELSE local_process {
 	ConstValue * cvp = err_if_not_const($2);
+	ProcessBase * pbp;
 	if (cvp->value) {
-	    delete $6;
+	    pbp = $6;
 	    $$ = $4;
 	} else {
-	    delete $4;
+	    pbp = $4;
 	    $$ = $6;
 	}
+	delete $2;
     }
     | '(' choice ')' {
 	//$2->print();
@@ -436,9 +479,7 @@ choice:
 	for (int i=0; i<$3->children.size(); i++)
 	    $1->children.push_back($3->children[i]);
 	/* We must delete only the ProcessNode pointed by $, but not the
-	   whole graph! Therefore we detach *$3 children before free its
-	   memory. */
-	//$3->detachChildren();
+	   whole graph! */
 	delete $3;
 	//$1->print();
 	$$ = $1;
@@ -527,7 +568,14 @@ prefix_actions:
     ;
 
 guard_OPT:
-    | WHEN expression
+    {
+	$$ = 1;
+    }
+    | WHEN expression {
+	ConstValue * cvp = err_if_not_const($2);
+	$$ = cvp->value;
+	delete $2;
+    }
     ;
 
 indices_OPT:
@@ -637,7 +685,16 @@ parameter_list:
     ;
 
 parameter:
-    parameter_id '=' expression
+    parameter_id '=' expression {
+	ConstValue * cvp = err_if_not_const($3);
+	SymbolValue * svp = cvp;
+	bool ok = identifiers.insert(*$1, svp);
+	if (!ok) {
+	    errstream << "identifier " << *$1 << " already declared";
+	    semantic_error();
+	}
+	parameters.push_back($1);
+    }	
     ;
 
 
@@ -899,13 +956,15 @@ base_expr:
 	vp->value = 19; /*TODO take from symbols */
 	$$ = vp;
     }
-    | const_range_set_id {
+    | const_range_set_parameter_id {
 	SymbolValue * svp;
 	int ok = identifiers.lookup(*$1, svp);
 	if (!ok) {
-	    errstream << "const/range/set " << *$1 << " undeclared";
+	    errstream << "const/range/set/parameter " << *$1
+		<< " undeclared";
 	    semantic_error();
 	}
+	delete $1;
 	svp = svp->clone();
 	$$ = svp;
     }
@@ -918,7 +977,7 @@ constant_id: UpperCaseID;
 range_id: UpperCaseID;
 set_id: UpperCaseID;
 range_or_set_id: set_id;
-const_range_set_id: set_id;
+const_range_set_parameter_id: set_id;
 parameter_id: UpperCaseID;
 process_id: UpperCaseID;
 progress_id: UpperCaseID;

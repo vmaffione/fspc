@@ -90,6 +90,7 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
 	e.action = pnp->children[i].action;
 	cout << "Adding " << e.action << ", " << e.dest << "\n";
 	ltsp->nodes[state].children.push_back(e);
+	ltsp->updateAlphabet(e.action);
 	ltsp->ntr++;
     }
 }

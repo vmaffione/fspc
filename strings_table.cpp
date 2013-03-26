@@ -13,21 +13,16 @@
 
 
 /* ========================= ActionsTable ================================ */
-
 int ActionsTable::insert(const string& s)
 {
-    int ret = -1;
-
     pair< map<string, int>::iterator, bool > ins_ret;
 
     ins_ret = table.insert(pair<string, int>(s, serial));
     if (ins_ret.second) {
 	reverse.push_back(ins_ret.first->first);
-	ret = serial++;
-    } else {
-	ret = ins_ret.first->second;
+	return serial++;
     }
-    return ret;
+    return ins_ret.first->second;
 }
 
 int ActionsTable::lookup(const string& s) const
@@ -36,7 +31,7 @@ int ActionsTable::lookup(const string& s) const
 
     if (it == table.end())
 	return -1;
-;
+
     return it->second;
 }
 
@@ -70,6 +65,11 @@ bool SymbolsTable::lookup(const string& name, SymbolValue*& value) const
 
     value = it->second;
     return true;
+}
+
+bool SymbolsTable::remove(const string& name)
+{
+    return table.erase(name);
 }
 
 void SymbolsTable::print() const
