@@ -104,19 +104,62 @@ SymbolValue * RangeValue::clone() const
     return rv;
 }
 
-/*============================= SetValue =============================*/
+/*============================= SetValue ================================ */
+SetValue::SetValue()
+{
+}
+
+SetValue::SetValue(SvpVec * vp) {
+    ActionValue * avp;
+
+    if (vp == NULL)
+	return;
+
+    for (int i=0; i<vp->v.size(); i++) {
+	if (vp->v[i]->type() != SymbolValue::Action) {
+	    cout << "Fatal error: here I want actions\n";
+	    throw int(-1);
+	}
+	avp = (ActionValue *)(vp->v[i]);
+	actions.push_back(avp->name);
+    }
+}
+
 SymbolValue * SetValue::clone() const
 {
     SetValue * sv = new SetValue(*this);
-
+    cout << "Don't use it\n";
+    throw int(-1);
     return sv;
 }
 
-SetValue::SetValue(const SetValue& sv)
+void SetValue::cloneActions(SvpVec * vp)
 {
-    ssp = new StringsSet(*(sv.ssp));
+    ActionValue * avp;
+    for (int i=0; i<actions.size(); i++) {
+	avp = new ActionValue;
+	avp->name = actions[i];
+	vp->v.push_back(avp);
+    }
 }
 
+void SetValue::print() const
+{
+    cout << "{";
+    for (int i=0; i<actions.size(); i++) {
+	cout << actions[i] << ", ";
+    }
+    cout << "}\n";
+}
+
+/* ============================= ActionValue ============================ */
+SymbolValue * ActionValue::clone() const
+{
+    ActionValue * avp = new ActionValue;
+    avp->name = name;
+
+    return avp;
+}
 
 /*======================= ProcessNode & Process Value =====================*/
 

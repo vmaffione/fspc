@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 
-#include "strings_set.hpp"
+//#include "strings_set.hpp"
 
 using namespace std;
 
@@ -34,6 +34,50 @@ struct SymbolValue {
     static const int Set = 2;
     static const int Lts = 3;
     static const int Process = 4;
+    static const int Action = 5;
+};
+
+/* Class that supports a list of SymbolValue*. */
+struct SvpVec {
+    vector<SymbolValue *> v;
+    bool shared;
+
+    SymbolValue * detach(int i) {
+	SymbolValue* ret;
+	if (i < v.size()) {
+	    ret = v[i];
+	    v[i] = NULL;
+	} else {
+	    cerr << "Internal error: tried to detach out of bounds\n";
+	    return NULL;
+	}
+	return ret;
+    }
+
+    void print() {
+	cout << "{";
+	for (int i=0; i<v.size(); i++)
+	    if (v[i]) {
+		v[i]->print();
+		cout << ", ";
+	    }
+	cout << "}\n";
+    }
+
+    ~SvpVec() {
+	if (shared) {
+	    for (int i=0; i<v.size(); i++) {
+		if (v[i]) {
+		    delete v[i];
+		    break;
+		}
+	    }
+	} else {
+	    for (int i=0; i<v.size(); i++)
+		if (v[i])
+		    delete v[i];
+	}
+    }
 };
 
 struct ConstValue: public SymbolValue {
@@ -47,18 +91,30 @@ struct ConstValue: public SymbolValue {
 struct RangeValue: public SymbolValue {
     int low;
     int high;
+    string variable;
 
     void print() const { cout << "[" << low << ", " << high << "]"; }
     int type() const { return SymbolValue::Range; }
     SymbolValue * clone() const;
 };
 
+struct ActionValue: public SymbolValue {
+    string name;
+
+    void print() const { cout << name; }
+    int type() const { return SymbolValue::Action; }
+    SymbolValue * clone() const;
+};
+
 struct SetValue: public SymbolValue {
-    StringsSet * ssp;
+    //StringsSet * ssp;
+    vector<string> actions;
+    string variable;
     
-    SetValue() : ssp(NULL) {}
-    SetValue(const SetValue&);
-    void print() const { ssp->print(); }
+    SetValue();
+    SetValue(SvpVec *);
+    void cloneActions(SvpVec *);
+    void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;
 };

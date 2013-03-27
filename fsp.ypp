@@ -18,17 +18,23 @@ extern FILE * yyin;
 extern struct SymbolsTable identifiers;
 extern struct SymbolsTable processes;
 
-/* Strings sets. */
-#include "strings_set.hpp"
+/* Main actions table. */
+struct ActionsTable actions("Global actions table");
+
 #include "lts.hpp"
 
 
-/* Main actions table */
-struct ActionsTable actions("Global actions table");
+#include "context.hpp"
+/* Start with an empty context. */
+vector<Context*> contexts(1); 
 
+
+/* Storage for a list of parameters identifiers to remove from the 
+   identifiers table when a process definition has been completed. */
 vector<string *> parameters;
 
 
+/* Fix unresolved ProcessNode references due to cyclic processes. */
 void fix_unresolved_references(ProcessNode * pnp, void * opaque);
 
 
@@ -41,14 +47,53 @@ void semantic_error()
     exit(-1);
 }
 
+/* Helper function used to get a ConstValue* from a SymbolValue*. If the
+   object pointed is not a constant, a semantic error is issued. */
 inline ConstValue* err_if_not_const(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Const) {
-	errstream << "Unexpected range/set";
+	errstream << "Const expected";
 	semantic_error();
     }
 
     return (ConstValue *)svp;
+}
+
+inline RangeValue* err_if_not_range(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Range) {
+	errstream << "Range expected";
+	semantic_error();
+    }
+
+    return (RangeValue *)svp;
+}
+
+inline SetValue* err_if_not_set(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Set) {
+	errstream << "Set expected";
+	semantic_error();
+    }
+
+    return (SetValue *)svp;
+}
+
+inline ActionValue* err_if_not_action(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Action) {
+	errstream << "Action expected";
+	semantic_error();
+    }
+
+    return (ActionValue *)svp;
+}
+
+string int2string(int x)
+{
+    stringstream sstr;
+    sstr << x;
+    return sstr.str();
 }
 
 void yyerror(const char *s);
@@ -69,6 +114,7 @@ void yyerror(const char *s);
     class Lts *lv_ptr;
     class ProcessNode * pn_ptr;
     class ProcessBase * pb_ptr;
+    struct SvpVec * svpvec_ptr;
 }
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -90,25 +136,24 @@ void yyerror(const char *s);
 %token <string_ptr> UpperCaseID
 %token <string_ptr> LowerCaseID
 
-%type <sv_ptr> simple_expression
-%type <sv_ptr> base_expr expression unary_expr multiplicative_expr
-%type <sv_ptr>  additive_expr shift_expr relational_expr equality_expr
-%type <sv_ptr> bitand_expr bitxor_expr bitor_expr and_expr or_expr
+%type <svpvec_ptr> simple_expression
+%type <svpvec_ptr> base_expr expression unary_expr multiplicative_expr
+%type <svpvec_ptr>  additive_expr shift_expr relational_expr equality_expr
+%type <svpvec_ptr> bitand_expr bitxor_expr bitor_expr and_expr or_expr
 
 %type <string_ptr> variable constant_id range_id set_id range_or_set_id
 %type <string_ptr> parameter_id process_id progress_id menu_id
 %type <string_ptr> const_range_set_parameter_id
 
-%type <sset_ptr> action_labels set set_expr set_elements
-%type <sset_ptr> alphabet_extension_OPT
-%type <sv_ptr> action_range
-%type <rv_ptr> range_expr
+%type <svpvec_ptr> set set_elements set_expr
+%type <svpvec_ptr> action_labels
+%type <svpvec_ptr> alphabet_extension_OPT
+%type <svpvec_ptr> action_range guard_OPT
+%type <svpvec_ptr> range_expr
 %type <pn_ptr> choice action_prefix prefix_actions
 %type <pb_ptr> process_body local_process local_process_defs local_process_def
 %type <pb_ptr> sequential_composition base_local_process
 %type <pb_ptr> seq_process_list process_ref
-
-%type <int_value> guard_OPT
 
 %glr-parser
 
@@ -136,22 +181,86 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
+	/*
 	$$ = new StringsSet(*$1);
-	/* Free the memory allocated by flex for the token. */
-	delete $1; 
+	delete $1; */
+	SvpVec * vp = new SvpVec;
+	ActionValue * avp = new ActionValue;
+	avp->name = *$1;
+	delete $1;
+	vp->v.push_back(avp);
+	vp->shared = true;
+	$$ = vp;
+	cout << "<<B>> als\n";
+	vp->print();
     }
     | set
     | action_labels '.' LowerCaseID {
+/*
 	$1->dotcat(*$3);
+	delete $3;
+*/
+	ActionValue * avpl;
+	for (int i=0; i<$1->v.size(); i++) {
+	    avpl = err_if_not_action($1->v[i]);
+	    avpl->name += "." + *$3;
+	}
 	delete $3;
 	$$ = $1;
     }
     | action_labels '.' set {
+/*
 	$1->dotcat(*$3);
 	delete $3;
+*/
 	$$ = $1;
     }
     | action_labels '[' action_range ']' {
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 215\n"; exit(-1);}
+	cout << "<<B>> als[action_range]\n";
+	$1->print(); $3->print();
+	SvpVec * vp;
+	ActionValue * avp;
+	RangeValue * rvp;
+	ConstValue * cvp;
+	/* type() and 'variable' is the same for all the elements in 
+	   'action_range'. */
+	switch ($3->v[0]->type()) {
+	    case SymbolValue::Range:
+		/* In this case each element in action_range is in the
+		   form 'var:R', where R is a range_id or a range_expr. */
+		// TODO push the contexts of var (see rvp->variable != "") or a normal context
+		vp = new SvpVec;
+		for (int i=0; i<$1->v.size(); i++) {
+		    avp = err_if_not_action($1->v[i]);
+		    rvp = err_if_not_range($3->v[i]);
+		    for (int j=rvp->low; j<=rvp->high; j++) {
+			ActionValue * new_avp = new ActionValue;
+			new_avp->name = avp->name + "[" +
+			    int2string(j) + "]";
+			vp->v.push_back(new_avp);
+		    }
+		}
+		delete $1;
+		delete $3;
+		$$ = vp;
+		break;
+
+	    case SymbolValue::Const:
+		for (int i=0; i<$1->v.size(); i++) {
+		    avp = err_if_not_action($1->v[i]);
+		    cvp = err_if_not_const($3->v[i]);
+		    avp->name += "[" + int2string(cvp->value) + "]";
+		}
+		delete $3;
+		$$ = $1;
+		break;
+	    case SymbolValue::Set:
+	    case SymbolValue::Action:
+		break;
+	}
+	$$->print();
+/*
 	StringsSet * ssp;
 	ConstValue * cvp;
 	RangeValue * rvp;
@@ -179,32 +288,39 @@ action_labels:
 	};
 
 	delete $3;
-	$$ = $1;
+*/
     }
     ;
 
 set:
     set_id {
+	// TODO convert from SetValue to SvpVec of actions
+	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
-	StringsSet * ss;
+	SetValue * setvp;
 	int ok = identifiers.lookup(*$1, svp);
 	if (!ok) {
 	    errstream << "set " << *$1 << " undeclared";
 	    semantic_error();
 	}
-	if (svp->type() != SymbolValue::Set) {
-	    errstream << "identifier " << *$1 << " is not a set";
-	    semantic_error();
-	}
 	delete $1;
-	ss = new StringsSet(*(((SetValue *)svp)->ssp));
-	$$ = ss;
+	setvp = err_if_not_set(svp);
+
+	setvp->cloneActions(vp);
+	svp = svp->clone();
+	vp->v.push_back(svp);
+	vp->shared = true;
+	$$ = vp;
     }
     | set_expr
     ;
 
 set_expr:
-    '{' set_elements '}' { $$ = $2; }
+    '{' set_elements '}' {
+	cout << "Set expression:\n";
+	$2->print();
+	$$ = $2;
+    }
     ;
 
 action_range:
@@ -212,15 +328,14 @@ action_range:
 	$$ = $1;
     }
     | range_expr {
-	$$ = (SymbolValue *)$1;
+	$$ = $1;
     }
     | set_expr {
-	SetValue * vp = new SetValue;
-	vp->ssp = $1;
-	$$ = (SymbolValue *)vp;
+	$$ = $1;
     }
     | variable ':' range_or_set_id {
-	// TODO pass the variable
+	cout << "Variable definition: " << *$1 << ":" << *$3 << "\n";
+	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 	int ok = identifiers.lookup(*$3, svp);
 	if (!ok) {
@@ -228,29 +343,61 @@ action_range:
 	    semantic_error();
 	}
 	svp = svp->clone();
-	$$ = svp;
+	/* Pass the variable name to the upper levels.*/
+	switch (svp->type()) {
+	    case SymbolValue::Range:
+		((RangeValue *)svp)->variable = *$1;
+		break;
+	    case SymbolValue::Set:
+		((SetValue *)svp)->variable = *$1;
+		break;
+	    default:
+		errstream << "range or set identifier expected";
+		semantic_error();
+	}
+	vp->v.push_back(svp);
+	vp->shared = true;
+	delete $1;
+	$$ = vp;
 	
     }
     | variable ':' range_expr {
-	//TODO variable
-	$$ = (SymbolValue *)$3;
+	/* Pass the variable to the upper levels.*/
+	RangeValue * rvp;
+	for (int i=0; i<$3->v.size(); i++) {
+	    rvp = (RangeValue *)($3->v[i]);
+	    rvp->variable = *$1;
+	}
+	delete $1;
+	$$ = $3;
     }
     | variable ':' set_expr {
 	//TODO variable
-	SetValue * vp = new SetValue;
-	vp->ssp = $3;
-	$$ = (SymbolValue *)vp;
+	SetValue * setvp;
+	for (int i=0; i<$3->v.size(); i++) {
+	    setvp = err_if_not_set($3->v[i]);
+	    setvp->variable = *$1;
+	}
+	delete $1;
+	$$ = $3;
     }
     ;
 
 range_expr:
     expression DOTDOT expression {
-	RangeValue * vp = new RangeValue;
-	ConstValue * cvp = err_if_not_const($1);
-	vp->low = cvp->value;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	RangeValue * rvp;
+	ConstValue * cvp;
+	SvpVec * vp = new SvpVec;
+	for (int i=0; i<$1->v.size(); i++) {
+	    rvp = new RangeValue;
+	    cvp = err_if_not_const($1->v[i]);
+	    rvp->low = cvp->value;
+	    cvp = err_if_not_const($3->v[i]);
+	    rvp->high = cvp->value;
+	    vp->v.push_back(rvp);
+	}
 	delete $1;
-	cvp = err_if_not_const($3);
-	vp->high = cvp->value;
 	delete $3;
 	$$ = vp;
     }
@@ -260,26 +407,40 @@ range_expr:
 /* Const, Range, Set */
 constant_def:
     CONST constant_id '=' simple_expression {
-	ConstValue* cvp = err_if_not_const($4);
+	if ($4->v.size() != 1) {
+	    // XXX this should never happen, because we get an "undeclared"
+	    errstream << "Illegal use of variables in const declaration";
+	    semantic_error();
+	}
+	ConstValue* cvp = err_if_not_const($4->v[0]);
+	$4->detach(0);
 	cout << "<<B>> Const " << *$2 << "=" << cvp->value << "\n";
 	int ok = identifiers.insert(*$2, cvp);
 	if (!ok) {
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
 	}
+	delete $4;
 	delete $2;
     };
 
 range_def:
     RANGE range_id '=' simple_expression DOTDOT simple_expression {
+	if ($4->v.size() != 1 || $6->v.size() != 1) {
+	    // XXX this should never happen, because we get an "undeclared"
+	    errstream << "Illegal use of variables in range declaration";
+	    semantic_error();
+	}
 	RangeValue* rvp = new RangeValue;
-	ConstValue * cvp1 = err_if_not_const($4);
-	ConstValue * cvp2 = err_if_not_const($6);
+	ConstValue * cvp1 = err_if_not_const($4->v[0]);
+	ConstValue * cvp2 = err_if_not_const($6->v[0]);
 	cout << "<<B>> Range " << *$2 << cvp1->value << cvp2->value << "\n";
 	rvp->low = cvp1->value;
 	rvp->high = cvp2->value;
-	delete cvp1;
-	delete cvp2;
+	//delete cvp1; // done below
+	//delete cvp2;
+	delete $4;
+	delete $6;
 	int ok = identifiers.insert(*$2, rvp);
 	if (!ok) {
 	    errstream << "range " << *$2 << " declared twice";
@@ -290,15 +451,14 @@ range_def:
 
 set_def:
     SET set_id '=' '{' set_elements '}' {
-	cout << "<<B>> Set\n";
-	SetValue* vp = new SetValue;
-	vp->ssp = $5;
-	int ok = identifiers.insert(*$2, vp);
+	cout << "<<B>> Set\n"; $5->print();
+	int ok = identifiers.insert(*$2, $5->v[0]);
 	if (!ok) {
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error();
 	}
-	$5->print();
+	$5->detach(0);
+	delete $5;
 	delete $2;
     };
 
@@ -307,9 +467,16 @@ set_elements:
 	$$ = $1;
     }
     | set_elements ',' action_labels {
-	*$1 += *$3;
+	for (int i=0; i<$3->v.size(); i++) {
+	    $1->v.push_back($3->v[i]);
+	    $3->detach(i);
+	}
 	delete $3;
 	$$ = $1;
+/*
+	*$1 += *$3;
+	delete $3;
+	$$ = $1; */
     }
     ;
 
@@ -356,11 +523,12 @@ process_def:
 	freeProcessNodeGraph(pvp->pnp);
 
 	/* Extend the alphabet if is the case. */
+    /*
 	if ($6) {
 	    for (int i=0; i<$6->strings.size(); i++)
 		lts.updateAlphabet(actions.insert($6->strings[i]));
 		delete $6;
-	}
+	} */
 
 	/* Remove process parameters from the identifiers. */
 	for (int i=0; i<parameters.size(); i++) {
@@ -414,23 +582,26 @@ local_process:
     base_local_process
     | sequential_composition
     | IF expression THEN local_process {
-	ConstValue * cvp = err_if_not_const($2);
+	ConstValue * cvp;
+	if ($2->v.size() > 1) {cout < "TODO IF THEN\n"; exit(-1);} //TODO
+	cvp = err_if_not_const($2->v[0]);
 	if (cvp->value)
 	    $$ = $4;
 	else {
 	    /* If the condition is not true, return a STOP process. */
-	    ProcessBase * pbp = $4;
-	    if (pbp->unresolved())
-		delete pbp;
+	    if ($4->unresolved())
+		delete $4;
 	    else
-		freeProcessNodeGraph((ProcessNode *)pbp);
+		freeProcessNodeGraph((ProcessNode *)$4);
 	    $$ = new ProcessNode;
 	}
 	delete $2;
     }
     | IF expression THEN local_process ELSE local_process {
-	ConstValue * cvp = err_if_not_const($2);
+	ConstValue * cvp; 
 	ProcessBase * pbp;
+	if ($2->v.size() > 1) {cout < "TODO IF THEN\n"; exit(-1);} //TODO
+	cvp = err_if_not_const($2->v[0]);
 	if (cvp->value) {
 	    pbp = $6;
 	    $$ = $4;
@@ -438,6 +609,10 @@ local_process:
 	    pbp = $4;
 	    $$ = $6;
 	}
+	if (pbp->unresolved())
+	    delete pbp;
+	else
+	    freeProcessNodeGraph((ProcessNode *)pbp);
 	delete $2;
     }
     | '(' choice ')' {
@@ -517,6 +692,7 @@ action_prefix:
 
 prefix_actions:
     action_labels {
+/*
 	cout << "Action: "; $1->print();
 	ProcessNode * pnp = new ProcessNode;
 	ProcessEdge e;
@@ -531,9 +707,11 @@ prefix_actions:
 	delete $1;
 	//pnp->print();
 	$$ = pnp;
+*/
 	    
     }
     | prefix_actions ARROW action_labels {
+/*
 	cout << "Action(->): "; $3->print();
 	ProcessNode * rpnp = new ProcessNode;
 	ProcessEdge e;
@@ -546,8 +724,9 @@ prefix_actions:
 	}
 	delete $3;
 	//rpnp->print();
-	
+*/
 	/* Attach an rpnp clone to each node in the frontier. */
+/*
 	vector<ProcessNode*> new_frontier(1);
 	$1->frontier_shortcut[0]->children[0].dest = rpnp;
 	new_frontier[0] = rpnp;
@@ -564,17 +743,20 @@ prefix_actions:
 	
 	//$1->print();
 	$$ = $1;
+*/
     }
     ;
 
 guard_OPT:
     {
-	$$ = 1;
+	$$ = NULL;
     }
     | WHEN expression {
-	ConstValue * cvp = err_if_not_const($2);
-	$$ = cvp->value;
-	delete $2;
+	ConstValue * cvp;
+	for (int i=0; i<$2->v.size(); i++) {
+	    err_if_not_const($2->v[i]);
+	}
+	$$ = $2;
     }
     ;
 
@@ -686,7 +868,13 @@ parameter_list:
 
 parameter:
     parameter_id '=' expression {
-	ConstValue * cvp = err_if_not_const($3);
+	if ($3->v.size() != 1) {
+	    // XXX this should never happen..
+	    errstream << "Illegal use of variables in parameter declaration";
+	    semantic_error();
+	}
+	ConstValue * cvp = err_if_not_const($3->v[0]);
+	$3->detach(0);
 	SymbolValue * svp = cvp;
 	bool ok = identifiers.insert(*$1, svp);
 	if (!ok) {
@@ -694,6 +882,7 @@ parameter:
 	    semantic_error();
 	}
 	parameters.push_back($1);
+	delete $3;
     }	
     ;
 
@@ -746,200 +935,273 @@ menu_def:
 expression:
     or_expr {
 	$$ = $1;
-	if ($1->type() == SymbolValue::Const)
-	    cout << "<<B>> Expression: " << ((ConstValue *)$1)->value
-		    << "\n";
+	cout << "<<B>> Expression(s): {";
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * cvp = err_if_not_const($1->v[i]);
+	    cout << cvp->value << ", ";
+	}
+	cout << "}\n";
     }
     ;
 
 simple_expression:
     additive_expr {
 	$$ = $1;
-	ConstValue * cvp = err_if_not_const($1);
-	cout << "<<B>> Simple expression: " << cvp->value <<  "\n";
+	cout << "<<B>> Simple expression(s): {";
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * cvp = err_if_not_const($1->v[i]);
+	    cout << cvp->value << ", ";
+	}
+	cout << "}\n";
     }
     ;
 
 or_expr:
     and_expr
     | or_expr OR and_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = vpl->value || vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = vpl->value || vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 and_expr:
     bitor_expr
     | and_expr AND bitor_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = vpl->value && vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = vpl->value && vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 bitor_expr:
     bitxor_expr
     | bitor_expr '|' bitxor_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value |= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value |= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 bitxor_expr:
     bitand_expr
     | bitxor_expr '^' bitand_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value ^= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value ^= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 bitand_expr:
     equality_expr
     | bitand_expr '&' equality_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value &= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value &= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 equality_expr:
     relational_expr
     | equality_expr EQUAL relational_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value == vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value == vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     | equality_expr NOTEQUAL relational_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value != vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value != vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 relational_expr:
     shift_expr
     | relational_expr '<' shift_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value < vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value < vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     | relational_expr '>' shift_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value > vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value > vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     | relational_expr LOE shift_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value <= vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value <= vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     | relational_expr GOE shift_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = (vpl->value >= vpr->value);
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = (vpl->value >= vpr->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 shift_expr:
     additive_expr
     | shift_expr LSHIFT additive_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value <<= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value <<= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     | shift_expr RSHIFT additive_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value >>= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value >>= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 additive_expr:
     multiplicative_expr
     | additive_expr '+' multiplicative_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value += vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value += vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     | additive_expr '-' multiplicative_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value -= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value -= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 multiplicative_expr:
     unary_expr
     | multiplicative_expr '*' unary_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value *= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value *= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     | multiplicative_expr '/' unary_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value /= vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value /= vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     | multiplicative_expr '%' unary_expr {
-	ConstValue * vpl = err_if_not_const($1);
-	ConstValue * vpr = err_if_not_const($3);
-	vpl->value = vpl->value % vpr->value;
-	delete vpr;
-	$$ = vpl;
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	for (int i=0; i<$1->v.size(); i++) {
+	    ConstValue * vpl = err_if_not_const($1->v[i]);
+	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    vpl->value = vpl->value % vpr->value;
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 unary_expr:
     base_expr
     | '+' base_expr {
-	err_if_not_const($2);
+	for (int i=0; i<$2->v.size(); i++) {
+	    err_if_not_const($2->v[i]);
+	}
 	$$ = $2;
     }
     | '-' base_expr {
-	ConstValue * vp = err_if_not_const($2);
-	vp->value *= -1;
+	SvpVec * vp = new SvpVec;
+	ConstValue * cvp;
+	for (int i=0; i<$2->v.size(); i++) {
+	    cvp = err_if_not_const($2->v[i]);
+	    cvp->value *= -1;;
+	    vp->v.push_back(cvp);
+	}
 	$$ = vp;
     }
     | '!' base_expr {
-	ConstValue * vp = err_if_not_const($2);
-	vp->value = !(vp->value);
+	SvpVec * vp = new SvpVec;
+	ConstValue * cvp;
+	for (int i=0; i<$2->v.size(); i++) {
+	    cvp = err_if_not_const($2->v[i]);
+	    cvp->value = !(cvp->value);
+	    vp->v.push_back(cvp);
+	}
 	$$ = vp;
     }
     ;
@@ -947,26 +1209,56 @@ unary_expr:
 /* TODO: complete base_expr */
 base_expr:
     INTEGER {
-	ConstValue * vp = new ConstValue;
-	vp->value = $1;
+	SvpVec * vp;
+	ConstValue * cvp = new ConstValue;
+
+	/* Return a ConstValue* for each context (in shared mode). */
+	cvp->value = $1;
+	vp = new SvpVec;
+	vp->shared = true;
+	for (int i=0; i<contexts.size(); i++)
+	    vp->v.push_back(cvp);
 	$$ = vp;
     }
     | variable {
-	ConstValue * vp = new ConstValue;
-	vp->value = 19; /*TODO take from symbols */
+	/* Return a ConstValue* for each context (in non shared mode). */
+	SvpVec * vp;
+	ConstValue * cvp;
+
+	vp = new SvpVec;
+	vp->shared = false;
+	for (int i=0; i<contexts.size(); i++) {
+	    cvp = new ConstValue;
+	    if (!(contexts[i]->lookup(*$1, cvp->value))) {
+		errstream << "variable " << *$1 << " undeclared\n";
+		semantic_error();
+	    }
+	    vp->v.push_back(cvp);
+	}
+
+	delete $1;
 	$$ = vp;
     }
     | const_range_set_parameter_id {
 	SymbolValue * svp;
+	SvpVec * vp; 
+	
+	/* Lookup the identifier and clone the associated object. */
 	int ok = identifiers.lookup(*$1, svp);
 	if (!ok) {
 	    errstream << "const/range/set/parameter " << *$1
-		<< " undeclared";
+			    << " undeclared";
 	    semantic_error();
 	}
 	delete $1;
 	svp = svp->clone();
-	$$ = svp;
+
+	/* Return a ConstValue* for each context (in shared mode). */
+	vp = new SvpVec;
+	vp->shared = true;
+	for (int i=0; i<contexts.size(); i++)
+	    vp->v.push_back(svp);
+	$$ = vp;
     }
     | '(' expression ')' { $$ = $2; }
     ;
@@ -995,8 +1287,7 @@ void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	if (e.dest == NULL) {
 	    cout << "Unref " << pnp << ": " << actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
-	    bool ok = processes.lookup(e.unresolved_reference, svp);
-	    if (!ok) {
+	    if (!processes.lookup(e.unresolved_reference, svp)) {
 		errstream << "Local process " << pnp << ": "
 		    << e.unresolved_reference << " undeclared\n";
 		semantic_error();
@@ -1007,13 +1298,17 @@ void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 }
 
 
-int parser() {
-    // open a file handle to a particular file:
+int parser()
+{
     FILE *fin = fopen("input", "r");
     if (!fin) {
 	cout << "I can't open 'input'!" << endl;
 	return -1;
     }
+
+    /* Initialize shared data structures. */
+    contexts[0] = new Context;
+
 
     /* Set flex to read from it instead of defaulting to STDIN. */
     yyin = fin;
