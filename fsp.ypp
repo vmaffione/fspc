@@ -25,9 +25,27 @@ struct ActionsTable actions("Global actions table");
 
 
 #include "context.hpp"
-/* Start with an empty context. */
-vector<Context*> contexts(1); 
 
+/* Stack of context sets. */
+struct ContextsSetStack {
+    vector<ContextsSet *> stack;
+    int csstop;
+
+    ContextsSetStack() : csstop(-1) { }
+    void push(ContextsSet * ctxset) {
+	stack.push_back(ctxset);
+	csstop++;
+    }
+    void pop() {
+	stack.pop_back();
+	csstop--;
+    }
+    ContextsSet& top() { return *(stack.back()); }
+};
+
+struct ContextsSetStack css;
+
+#define current_contexts css.top()
 
 /* Storage for a list of parameters identifiers to remove from the 
    identifiers table when a process definition has been completed. */
@@ -181,25 +199,23 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
-	/*
-	$$ = new StringsSet(*$1);
-	delete $1; */
-	SvpVec * vp = new SvpVec;
-	ActionValue * avp = new ActionValue;
-	avp->name = *$1;
+	SvpVec * vp;
+	ActionValue * avp; 
+
+	vp = new SvpVec;
+	vp->shared = false;
+	for (int c=0; c<current_contexts.size(); c++) {
+	    avp = new ActionValue;
+	    avp->name = *$1;
+	    vp->v.push_back(avp);
+	}
 	delete $1;
-	vp->v.push_back(avp);
-	vp->shared = true;
 	$$ = vp;
 	cout << "<<B>> als\n";
 	vp->print();
     }
     | set
     | action_labels '.' LowerCaseID {
-/*
-	$1->dotcat(*$3);
-	delete $3;
-*/
 	ActionValue * avpl;
 	for (int i=0; i<$1->v.size(); i++) {
 	    avpl = err_if_not_action($1->v[i]);
@@ -216,31 +232,46 @@ action_labels:
 	$$ = $1;
     }
     | action_labels '[' action_range ']' {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 215\n"; exit(-1);}
+	if ($1->v.size() != $3->v.size() ||
+		$1->v.size() != current_contexts.size())
+	     {cout<<"FATAL 215\n"; exit(-1);}
 	cout << "<<B>> als[action_range]\n";
 	$1->print(); $3->print();
 	SvpVec * vp;
 	ActionValue * avp;
 	RangeValue * rvp;
 	ConstValue * cvp;
+	ContextsSet * csp; 
+	Context * cxp;
 	/* type() and 'variable' is the same for all the elements in 
 	   'action_range'. */
 	switch ($3->v[0]->type()) {
 	    case SymbolValue::Range:
 		/* In this case each element in action_range is in the
 		   form 'var:R', where R is a range_id or a range_expr. */
-		// TODO push the contexts of var (see rvp->variable != "") or a normal context
+		csp = new ContextsSet;
 		vp = new SvpVec;
-		for (int i=0; i<$1->v.size(); i++) {
-		    avp = err_if_not_action($1->v[i]);
-		    rvp = err_if_not_range($3->v[i]);
+		for (int c=0; c<$1->v.size(); c++) {
+		    avp = err_if_not_action($1->v[c]);
+		    rvp = err_if_not_range($3->v[c]);
 		    for (int j=rvp->low; j<=rvp->high; j++) {
 			ActionValue * new_avp = new ActionValue;
 			new_avp->name = avp->name + "[" +
 			    int2string(j) + "]";
 			vp->v.push_back(new_avp);
+			cxp = current_contexts[c];
+			/* TODO we could Make a copy only if we have
+			    to extend the context. */
+			cxp = new Context(*cxp);
+			if (rvp->variable != "") {
+			    cxp->insert(rvp->variable, j);
+			}
+			csp->append(cxp);
 		    }
 		}
+		cout << "Contexts ramification\n";
+		css.push(csp);
+		current_contexts.print();
 		delete $1;
 		delete $3;
 		$$ = vp;
@@ -294,22 +325,19 @@ action_labels:
 
 set:
     set_id {
-	// TODO convert from SetValue to SvpVec of actions
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 	SetValue * setvp;
-	int ok = identifiers.lookup(*$1, svp);
-	if (!ok) {
+	if (!identifiers.lookup(*$1, svp)) {
 	    errstream << "set " << *$1 << " undeclared";
 	    semantic_error();
 	}
 	delete $1;
 	setvp = err_if_not_set(svp);
 
+	/* Convert from SetValue to SvpVec of actions. */
 	setvp->cloneActions(vp);
-	svp = svp->clone();
-	vp->v.push_back(svp);
-	vp->shared = true;
+	vp->shared = false;
 	$$ = vp;
     }
     | set_expr
@@ -337,8 +365,7 @@ action_range:
 	cout << "Variable definition: " << *$1 << ":" << *$3 << "\n";
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
-	int ok = identifiers.lookup(*$3, svp);
-	if (!ok) {
+	if (!identifiers.lookup(*$3, svp)) {
 	    errstream << "range/set " << *$3 << " undeclared";
 	    semantic_error();
 	}
@@ -415,8 +442,7 @@ constant_def:
 	ConstValue* cvp = err_if_not_const($4->v[0]);
 	$4->detach(0);
 	cout << "<<B>> Const " << *$2 << "=" << cvp->value << "\n";
-	int ok = identifiers.insert(*$2, cvp);
-	if (!ok) {
+	if (!identifiers.insert(*$2, cvp)) {
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -441,8 +467,7 @@ range_def:
 	//delete cvp2;
 	delete $4;
 	delete $6;
-	int ok = identifiers.insert(*$2, rvp);
-	if (!ok) {
+	if (!identifiers.insert(*$2, rvp)) {
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -452,8 +477,8 @@ range_def:
 set_def:
     SET set_id '=' '{' set_elements '}' {
 	cout << "<<B>> Set\n"; $5->print();
-	int ok = identifiers.insert(*$2, $5->v[0]);
-	if (!ok) {
+	// TODO convert from SvpVec to SetValue
+	if (!identifiers.insert(*$2, $5->v[0])) {
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -467,12 +492,18 @@ set_elements:
 	$$ = $1;
     }
     | set_elements ',' action_labels {
+	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 719\n";exit(-1);}
 	for (int i=0; i<$3->v.size(); i++) {
+	    SetValue * setvp = err_if_not_set($1->v[i]);
+	    ActionValue * avp = err_if_not_action($3->v[i]);
+	    setvp->actions.push_back(avp->name);
+    /*
 	    $1->v.push_back($3->v[i]);
-	    $3->detach(i);
+	    $3->detach(i); */
 	}
 	delete $3;
 	$$ = $1;
+
 /*
 	*$1 += *$3;
 	delete $3;
@@ -501,8 +532,7 @@ process_def:
 	   process_body to it. */
 	ProcessValue * pvp = new ProcessValue;
 	cout << "Process " << *$1 << " defined\n";
-	int ok = processes.insert(*$1, pvp);
-	if (!ok) {
+	if (!processes.insert(*$1, pvp)) {
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
 	}
@@ -637,8 +667,7 @@ base_local_process:
 	/* If the process referenced is already defined, return it.
 	   Otherwise return a new UnresolvedProcess object, so that the
 	   upper level sees that *$1 is unresolved. */
-	bool ok = processes.lookup(*$1, svp);
-	if (ok)
+	if (processes.lookup(*$1, svp))
 	    $$ = ((ProcessValue *)svp)->pnp;
 	else
 	    $$ = new UnresolvedProcess(*$1);
@@ -876,8 +905,7 @@ parameter:
 	ConstValue * cvp = err_if_not_const($3->v[0]);
 	$3->detach(0);
 	SymbolValue * svp = cvp;
-	bool ok = identifiers.insert(*$1, svp);
-	if (!ok) {
+	if (!identifiers.insert(*$1, svp)) {
 	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error();
 	}
@@ -1216,7 +1244,7 @@ base_expr:
 	cvp->value = $1;
 	vp = new SvpVec;
 	vp->shared = true;
-	for (int i=0; i<contexts.size(); i++)
+	for (int c=0; c<current_contexts.size(); c++)
 	    vp->v.push_back(cvp);
 	$$ = vp;
     }
@@ -1227,9 +1255,9 @@ base_expr:
 
 	vp = new SvpVec;
 	vp->shared = false;
-	for (int i=0; i<contexts.size(); i++) {
+	for (int c=0; c<current_contexts.size(); c++) {
 	    cvp = new ConstValue;
-	    if (!(contexts[i]->lookup(*$1, cvp->value))) {
+	    if (!(current_contexts[c]->lookup(*$1, cvp->value))) {
 		errstream << "variable " << *$1 << " undeclared\n";
 		semantic_error();
 	    }
@@ -1244,8 +1272,7 @@ base_expr:
 	SvpVec * vp; 
 	
 	/* Lookup the identifier and clone the associated object. */
-	int ok = identifiers.lookup(*$1, svp);
-	if (!ok) {
+	if (!identifiers.lookup(*$1, svp)) {
 	    errstream << "const/range/set/parameter " << *$1
 			    << " undeclared";
 	    semantic_error();
@@ -1256,7 +1283,7 @@ base_expr:
 	/* Return a ConstValue* for each context (in shared mode). */
 	vp = new SvpVec;
 	vp->shared = true;
-	for (int i=0; i<contexts.size(); i++)
+	for (int c=0; c<current_contexts.size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
     }
@@ -1306,8 +1333,11 @@ int parser()
 	return -1;
     }
 
-    /* Initialize shared data structures. */
-    contexts[0] = new Context;
+    /* Initialize shared data structures: A stack containing a single
+       ContextsSet. This set contains a single empty Context. */
+    ContextsSet * csp = new ContextsSet;
+    csp->append(new Context);
+    css.push(csp);
 
 
     /* Set flex to read from it instead of defaulting to STDIN. */
