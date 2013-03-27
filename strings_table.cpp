@@ -139,8 +139,7 @@ void SetValue::cloneActions(SvpVec * vp)
 SymbolValue * SetValue::clone() const
 {
     SetValue * sv = new SetValue(*this);
-    cout << "Don't use it\n";
-    throw int(-1);
+
     return sv;
 }
 

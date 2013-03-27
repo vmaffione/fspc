@@ -231,6 +231,7 @@ action_labels:
 	     {cout<<"FATAL 215 \n"; exit(-1);}
 	SvpVec * vp;
 	SetValue * setvp;
+	SetValue * rsetvp;
 	RangeValue * rvp;
 	ConstValue * cvp;
 	ContextsSet * csp; 
@@ -280,6 +281,7 @@ action_labels:
 			$1->v[c] = new_setvp;
 		    }
 		    delete $3;
+		    $$ = $1;
 		}
 		break;
 
@@ -295,6 +297,54 @@ action_labels:
 		$$ = $1;
 		break;
 	    case SymbolValue::Set:
+		setvp = err_if_not_set($3->v[0]);
+		if (setvp->variable != "") {
+		    cout << "STILL TO IMPLEMENT\n";exit(-1);
+		    /* In this case each element in action_range is in the
+		       form 'var:R', where R is a set_id or a set_expr. */
+		/*
+		    csp = new ContextsSet;
+		    vp = new SvpVec;
+		    for (int c=0; c<$1->v.size(); c++) {
+			setvp = err_if_not_set($1->v[c]);
+			rvp = err_if_not_range($3->v[c]);
+			for (int j=rvp->low; j<=rvp->high; j++) {
+			    SetValue * new_setvp = new SetValue(*setvp);
+			    for (int k=0; k<new_setvp->actions.size(); k++)
+				new_setvp->actions[k] += "[" +
+				    int2string(j) + "]";
+			    vp->v.push_back(new_setvp);
+			    cxp = current_contexts[c];
+			    cxp = new Context(*cxp);
+			    cxp->insert(rvp->variable, j);
+			    csp->append(cxp);
+			}
+		    }
+		    cout << "Contexts ramification\n";
+		    css.push(csp);
+		    current_contexts.print();
+		    delete $1;
+		    delete $3;
+		    $$ = vp;
+*/
+		} else {
+		    for (int c=0; c<$1->v.size(); c++) {
+			setvp = err_if_not_set($1->v[c]);
+			rsetvp = err_if_not_set($3->v[c]);
+			SetValue * new_setvp = new SetValue;
+			for (int k=0; k<setvp->actions.size(); k++)
+			    for (int j=0; j<rsetvp->actions.size(); j++)
+				new_setvp->actions.push_back(
+				    setvp->actions[k] + "." +
+					rsetvp->actions[j]);
+			delete $1->v[c];
+			$1->v[c] = new_setvp;
+		    }
+		    delete $3;
+		    $$ = $1;
+		}
+		break;
+
 	    case SymbolValue::Action:
 		break;
 	}
