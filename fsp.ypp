@@ -97,15 +97,6 @@ inline SetValue* err_if_not_set(SymbolValue * svp)
     return (SetValue *)svp;
 }
 
-inline ActionValue* err_if_not_action(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::Action) {
-	errstream << "Action expected";
-	semantic_error();
-    }
-
-    return (ActionValue *)svp;
-}
 
 string int2string(int x)
 {
@@ -200,14 +191,14 @@ fsp_definition:
 action_labels:
     LowerCaseID {
 	SvpVec * vp;
-	ActionValue * avp; 
+	SetValue * setvp; 
 
 	vp = new SvpVec;
 	vp->shared = false;
 	for (int c=0; c<current_contexts.size(); c++) {
-	    avp = new ActionValue;
-	    avp->name = *$1;
-	    vp->v.push_back(avp);
+	    setvp = new SetValue;
+	    setvp->actions.push_back(*$1);
+	    vp->v.push_back(setvp);
 	}
 	delete $1;
 	$$ = vp;
@@ -216,10 +207,11 @@ action_labels:
     }
     | set
     | action_labels '.' LowerCaseID {
-	ActionValue * avpl;
+	SetValue * setvp;
 	for (int i=0; i<$1->v.size(); i++) {
-	    avpl = err_if_not_action($1->v[i]);
-	    avpl->name += "." + *$3;
+	    setvp = err_if_not_set($1->v[i]);
+	    for (int j=0; j<setvp->actions.size(); j++)
+		setvp->actions[j] += "." + *$3;
 	}
 	delete $3;
 	$$ = $1;
@@ -232,13 +224,13 @@ action_labels:
 	$$ = $1;
     }
     | action_labels '[' action_range ']' {
+	cout << "<<B>> als[action_range]\n";
+	cout<<"$1 = ";$1->print();cout<<"$3 = ";$3->print();
 	if ($1->v.size() != $3->v.size() ||
 		$1->v.size() != current_contexts.size())
-	     {cout<<"FATAL 215\n"; exit(-1);}
-	cout << "<<B>> als[action_range]\n";
-	$1->print(); $3->print();
+	     {cout<<"FATAL 215 \n"; exit(-1);}
 	SvpVec * vp;
-	ActionValue * avp;
+	SetValue * setvp;
 	RangeValue * rvp;
 	ConstValue * cvp;
 	ContextsSet * csp; 
@@ -247,41 +239,57 @@ action_labels:
 	   'action_range'. */
 	switch ($3->v[0]->type()) {
 	    case SymbolValue::Range:
-		/* In this case each element in action_range is in the
-		   form 'var:R', where R is a range_id or a range_expr. */
-		csp = new ContextsSet;
-		vp = new SvpVec;
-		for (int c=0; c<$1->v.size(); c++) {
-		    avp = err_if_not_action($1->v[c]);
-		    rvp = err_if_not_range($3->v[c]);
-		    for (int j=rvp->low; j<=rvp->high; j++) {
-			ActionValue * new_avp = new ActionValue;
-			new_avp->name = avp->name + "[" +
-			    int2string(j) + "]";
-			vp->v.push_back(new_avp);
-			cxp = current_contexts[c];
-			/* TODO we could Make a copy only if we have
-			    to extend the context. */
-			cxp = new Context(*cxp);
-			if (rvp->variable != "") {
+		rvp = err_if_not_range($3->v[0]);
+		if (rvp->variable != "") {
+		    /* In this case each element in action_range is in the
+		       form 'var:R', where R is a range_id or a range_expr. */
+		    csp = new ContextsSet;
+		    vp = new SvpVec;
+		    for (int c=0; c<$1->v.size(); c++) {
+			setvp = err_if_not_set($1->v[c]);
+			rvp = err_if_not_range($3->v[c]);
+			for (int j=rvp->low; j<=rvp->high; j++) {
+			    SetValue * new_setvp = new SetValue(*setvp);
+			    for (int k=0; k<new_setvp->actions.size(); k++)
+				new_setvp->actions[k] += "[" +
+				    int2string(j) + "]";
+			    vp->v.push_back(new_setvp);
+			    cxp = current_contexts[c];
+			    cxp = new Context(*cxp);
 			    cxp->insert(rvp->variable, j);
+			    csp->append(cxp);
 			}
-			csp->append(cxp);
 		    }
+		    cout << "Contexts ramification\n";
+		    css.push(csp);
+		    current_contexts.print();
+		    delete $1;
+		    delete $3;
+		    $$ = vp;
+		} else {
+		    for (int c=0; c<$1->v.size(); c++) {
+			setvp = err_if_not_set($1->v[c]);
+			rvp = err_if_not_range($3->v[c]);
+			SetValue * new_setvp = new SetValue;
+			for (int k=0; k<setvp->actions.size(); k++)
+			    for (int j=rvp->low; j<=rvp->high; j++)
+				new_setvp->actions.push_back(
+				    setvp->actions[k] + "[" + int2string(j)
+					+ "]");
+			delete $1->v[c];
+			$1->v[c] = new_setvp;
+		    }
+		    delete $3;
 		}
-		cout << "Contexts ramification\n";
-		css.push(csp);
-		current_contexts.print();
-		delete $1;
-		delete $3;
-		$$ = vp;
 		break;
 
 	    case SymbolValue::Const:
 		for (int i=0; i<$1->v.size(); i++) {
-		    avp = err_if_not_action($1->v[i]);
+		    setvp = err_if_not_set($1->v[i]);
 		    cvp = err_if_not_const($3->v[i]);
-		    avp->name += "[" + int2string(cvp->value) + "]";
+		    for (int k=0; k<setvp->actions.size(); k++) 
+			setvp->actions[k] += "[" + int2string(cvp->value)
+						     + "]";
 		}
 		delete $3;
 		$$ = $1;
@@ -335,9 +343,10 @@ set:
 	delete $1;
 	setvp = err_if_not_set(svp);
 
-	/* Convert from SetValue to SvpVec of actions. */
-	setvp->cloneActions(vp);
-	vp->shared = false;
+	//setvp->cloneActions(vp);
+	vp->shared = true;
+	for (int c=0; c<current_contexts.size(); c++)
+	    vp->v.push_back(setvp);
 	$$ = vp;
     }
     | set_expr
@@ -427,6 +436,7 @@ range_expr:
 	delete $1;
 	delete $3;
 	$$ = vp;
+	$$->print();
     }
     ;
 
@@ -492,11 +502,13 @@ set_elements:
 	$$ = $1;
     }
     | set_elements ',' action_labels {
+	cout << "<<B>> set_el als\n";
 	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 719\n";exit(-1);}
-	for (int i=0; i<$3->v.size(); i++) {
+	for (int i=0; i<$1->v.size(); i++) {
 	    SetValue * setvp = err_if_not_set($1->v[i]);
-	    ActionValue * avp = err_if_not_action($3->v[i]);
-	    setvp->actions.push_back(avp->name);
+	    SetValue * rsetvp = err_if_not_set($3->v[i]);
+	    for (int k=0; k<rsetvp->actions.size(); k++)
+		setvp->actions.push_back(rsetvp->actions[k]);
     /*
 	    $1->v.push_back($3->v[i]);
 	    $3->detach(i); */
@@ -963,24 +975,16 @@ menu_def:
 expression:
     or_expr {
 	$$ = $1;
-	cout << "<<B>> Expression(s): {";
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * cvp = err_if_not_const($1->v[i]);
-	    cout << cvp->value << ", ";
-	}
-	cout << "}\n";
+	cout << "<<B>> Expression(s): ";
+	$1->print();
     }
     ;
 
 simple_expression:
     additive_expr {
 	$$ = $1;
-	cout << "<<B>> Simple expression(s): {";
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * cvp = err_if_not_const($1->v[i]);
-	    cout << cvp->value << ", ";
-	}
-	cout << "}\n";
+	cout << "<<B>> Simple expression(s): ";
+	$1->print();
     }
     ;
 

@@ -97,7 +97,7 @@ struct RangeValue: public SymbolValue {
     int type() const { return SymbolValue::Range; }
     SymbolValue * clone() const;
 };
-
+/*
 struct ActionValue: public SymbolValue {
     string name;
 
@@ -105,6 +105,7 @@ struct ActionValue: public SymbolValue {
     int type() const { return SymbolValue::Action; }
     SymbolValue * clone() const;
 };
+*/
 
 struct SetValue: public SymbolValue {
     //StringsSet * ssp;
@@ -112,8 +113,8 @@ struct SetValue: public SymbolValue {
     string variable;
     
     SetValue();
-    SetValue(SvpVec *);
-    void cloneActions(SvpVec *);
+    //SetValue(SvpVec *);
+    //void cloneActions(SvpVec *);
     void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;

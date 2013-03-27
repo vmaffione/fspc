@@ -108,7 +108,7 @@ SymbolValue * RangeValue::clone() const
 SetValue::SetValue()
 {
 }
-
+/*
 SetValue::SetValue(SvpVec * vp) {
     ActionValue * avp;
 
@@ -125,14 +125,6 @@ SetValue::SetValue(SvpVec * vp) {
     }
 }
 
-SymbolValue * SetValue::clone() const
-{
-    SetValue * sv = new SetValue(*this);
-    cout << "Don't use it\n";
-    throw int(-1);
-    return sv;
-}
-
 void SetValue::cloneActions(SvpVec * vp)
 {
     ActionValue * avp;
@@ -141,6 +133,15 @@ void SetValue::cloneActions(SvpVec * vp)
 	avp->name = actions[i];
 	vp->v.push_back(avp);
     }
+}
+
+*/
+SymbolValue * SetValue::clone() const
+{
+    SetValue * sv = new SetValue(*this);
+    cout << "Don't use it\n";
+    throw int(-1);
+    return sv;
 }
 
 void SetValue::print() const
@@ -153,13 +154,14 @@ void SetValue::print() const
 }
 
 /* ============================= ActionValue ============================ */
+/*
 SymbolValue * ActionValue::clone() const
 {
     ActionValue * avp = new ActionValue;
     avp->name = name;
 
     return avp;
-}
+}*/
 
 /*======================= ProcessNode & Process Value =====================*/
 
