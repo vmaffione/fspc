@@ -1311,22 +1311,14 @@ base_expr:
 	vp = new SvpVec;
 	vp->shared = false;
 	for (int c=0; c<current_contexts.size(); c++) {
-	    VarValue * vvp;
-	    if (!(current_contexts[c]->lookup(*$1, vvp))) {
+	    SymbolValue * svp;
+	    if (!(current_contexts[c]->lookup(*$1, svp))) {
 		errstream << "variable " << *$1 << " undeclared\n";
 		semantic_error();
 	    }
-	    if (vvp->type() == VarValue::Int) {
-		ConstValue * cvp = new ConstValue;
-		cvp->value = ((IntVarValue *)vvp)->value;
-		vp->v.push_back(cvp);
-	    } else { // vvp->type() == VarValue::String
-		SetValue * setvp = new SetValue;
-		setvp->actions.push_back(((StringVarValue *)vvp)->value);
-		vp->v.push_back(setvp);
-	    }
+	    svp = svp->clone();
+	    vp->v.push_back(svp);
 	}
-
 	delete $1;
 	$$ = vp;
     }

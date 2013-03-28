@@ -97,15 +97,14 @@ struct RangeValue: public SymbolValue {
     int type() const { return SymbolValue::Range; }
     SymbolValue * clone() const;
 };
-/*
-struct ActionValue: public SymbolValue {
-    string name;
 
-    void print() const { cout << name; }
+struct ActionValue: public SymbolValue {
+    string value;
+
+    void print() const { cout << value; }
     int type() const { return SymbolValue::Action; }
     SymbolValue * clone() const;
 };
-*/
 
 struct SetValue: public SymbolValue {
     //StringsSet * ssp;
