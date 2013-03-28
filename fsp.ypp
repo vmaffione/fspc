@@ -441,9 +441,10 @@ action_range:
 		errstream << "range or set identifier expected";
 		semantic_error();
 	}
-	vp->v.push_back(svp);
-	vp->shared = true;
 	delete $1;
+	vp->shared = true;
+	for (int c=0; c<current_contexts.size(); c++)
+	    vp->v.push_back(svp);
 	$$ = vp;
 	
     }
@@ -1310,12 +1311,20 @@ base_expr:
 	vp = new SvpVec;
 	vp->shared = false;
 	for (int c=0; c<current_contexts.size(); c++) {
-	    cvp = new ConstValue;
-	    if (!(current_contexts[c]->lookup(*$1, cvp->value))) {
+	    VarValue * vvp;
+	    if (!(current_contexts[c]->lookup(*$1, vvp))) {
 		errstream << "variable " << *$1 << " undeclared\n";
 		semantic_error();
 	    }
-	    vp->v.push_back(cvp);
+	    if (vvp->type() == VarValue::Int) {
+		ConstValue * cvp = new ConstValue;
+		cvp->value = ((IntVarValue *)vvp)->value;
+		vp->v.push_back(cvp);
+	    } else { // vvp->type() == VarValue::String
+		SetValue * setvp = new SetValue;
+		setvp->actions.push_back(((StringVarValue *)vvp)->value);
+		vp->v.push_back(setvp);
+	    }
 	}
 
 	delete $1;

@@ -113,8 +113,6 @@ struct SetValue: public SymbolValue {
     string variable;
     
     SetValue();
-    //SetValue(SvpVec *);
-    //void cloneActions(SvpVec *);
     void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;
