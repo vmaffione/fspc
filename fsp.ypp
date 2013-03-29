@@ -218,6 +218,29 @@ action_labels:
 	$$ = $1;
     }
     | action_labels '.' set {
+	if ($1->v.size() != $3->v.size() ||
+		$1->v.size() != current_contexts.size())
+	     {cout<<"FATAL 412 \n"; exit(-1);}
+	cout << "als.set\n";
+	SetValue * setvp;
+	SetValue * rsetvp;
+	for (int c=0; c<$1->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
+	    rsetvp = err_if_not_set($3->v[c]);
+	    /* Create a new SetValue that combines setvp and
+	       rsetvp. No context ramification happens here. */
+	    SetValue * new_setvp = new SetValue;
+	    for (int k=0; k<setvp->actions.size(); k++)
+		for (int j=0; j<rsetvp->actions.size(); j++)
+		    new_setvp->actions.push_back(
+			    setvp->actions[k] + "." +
+			    rsetvp->actions[j]);
+	    delete $1->v[c];
+	    $1->v[c] = new_setvp;
+	}
+	delete $3;
+	$$ = $1;
+	$$->print();
 /*
 	$1->dotcat(*$3);
 	delete $3;
