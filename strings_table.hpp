@@ -106,7 +106,9 @@ struct RangeValue: public SymbolValue {
 struct SetValue: public SymbolValue {
     vector<string> actions;
     string variable;
+    int rank;
     
+    SetValue() : rank(0) { }
     void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;

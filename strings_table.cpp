@@ -187,34 +187,7 @@ SetValue& SetValue::operator +=(const string& s)
 
     return *this;
 }
-/*
-SetValue::SetValue(SvpVec * vp) {
-    ActionValue * avp;
 
-    if (vp == NULL)
-	return;
-
-    for (int i=0; i<vp->v.size(); i++) {
-	if (vp->v[i]->type() != SymbolValue::Action) {
-	    cout << "Fatal error: here I want actions\n";
-	    throw int(-1);
-	}
-	avp = (ActionValue *)(vp->v[i]);
-	actions.push_back(avp->name);
-    }
-}
-
-void SetValue::cloneActions(SvpVec * vp)
-{
-    ActionValue * avp;
-    for (int i=0; i<actions.size(); i++) {
-	avp = new ActionValue;
-	avp->name = actions[i];
-	vp->v.push_back(avp);
-    }
-}
-
-*/
 SymbolValue * SetValue::clone() const
 {
     SetValue * sv = new SetValue(*this);
@@ -224,7 +197,7 @@ SymbolValue * SetValue::clone() const
 
 void SetValue::print() const
 {
-    cout << "{";
+    cout << "r=" << rank << " {";
     for (int i=0; i<actions.size(); i++) {
 	cout << actions[i] << ", ";
     }

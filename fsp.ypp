@@ -191,6 +191,7 @@ action_labels:
 	for (int c=0; c<current_contexts.size(); c++) {
 	    setvp = new SetValue;
 	    *setvp += *$1;
+	    setvp->rank = c;
 	    vp->v.push_back(setvp);
 	}
 	delete $1;
@@ -202,9 +203,10 @@ action_labels:
     | action_labels '.' LowerCaseID {
 	if ($1->v.size() != current_contexts.size()) {cout<<"FATAL 561\n";exit(-1);}
 	SetValue * setvp;
-	for (int i=0; i<$1->v.size(); i++) {
-	    setvp = err_if_not_set($1->v[i]);
+	for (int c=0; c<$1->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
 	    setvp->dotcat(*$3);
+	    setvp->rank = c;
 	}
 	delete $3;
 	$$ = $1;
@@ -222,6 +224,7 @@ action_labels:
 	    /* Combine setvp with rsetvp. No context ramification
 	       happens here. */
 	    setvp->dotcat(*rsetvp);
+	    setvp->rank = c;
 	}
 	delete $3;
 	$$ = $1;
@@ -229,7 +232,6 @@ action_labels:
     }
     | action_labels '[' action_range ']' {
 	cout << "<<B>> als[action_range]\n";
-	cout<<"$1 = ";$1->print();cout<<"$3 = ";$3->print();
 	if ($1->v.size() != $3->v.size() ||
 		$1->v.size() != current_contexts.size())
 	     {cout<<"FATAL 215 \n"; exit(-1);}
@@ -258,6 +260,7 @@ action_labels:
 			    for (int k=0; k<new_setvp->actions.size(); k++)
 				new_setvp->actions[k] += "[" +
 				    int2string(j) + "]";
+			    new_setvp->rank = c;
 			    vp->v.push_back(new_setvp);
 			    cxp = current_contexts[c];
 			    cxp = new Context(*cxp);
@@ -282,14 +285,7 @@ action_labels:
 			setvp = err_if_not_set($1->v[c]);
 			rvp = err_if_not_range($3->v[c]);
 			setvp->indexize(rvp->low, rvp->high);
-			/*SetValue * new_setvp = new SetValue;
-			for (int k=0; k<setvp->actions.size(); k++)
-			    for (int j=rvp->low; j<=rvp->high; j++)
-				new_setvp->actions.push_back(
-				    setvp->actions[k] + "[" + int2string(j)
-					+ "]");
-			delete $1->v[c];
-			$1->v[c] = new_setvp; */
+			/* Rank is inherited. */
 		    }
 		    delete $3;
 		    $$ = $1;
@@ -297,10 +293,11 @@ action_labels:
 		break;
 
 	    case SymbolValue::Const:
-		for (int i=0; i<$1->v.size(); i++) {
-		    setvp = err_if_not_set($1->v[i]);
-		    cvp = err_if_not_const($3->v[i]);
+		for (int c=0; c<$1->v.size(); c++) {
+		    setvp = err_if_not_set($1->v[c]);
+		    cvp = err_if_not_const($3->v[c]);
 		    setvp->indexize(cvp->value);
+		    setvp->rank = c;
 		}
 		delete $3;
 		$$ = $1;
@@ -324,6 +321,7 @@ action_labels:
 			    /* Create a new context (extending the previous
 			       one) and append the new SetValue to associate
 			       to this context.*/
+			    new_setvp->rank = c;
 			    vp->v.push_back(new_setvp);
 			    cxp = current_contexts[c];
 			    cxp = new Context(*cxp);
@@ -351,6 +349,7 @@ action_labels:
 			/* Create a new SetValue that combines setvp and
 			   rsetvp. No context ramification happens here. */
 			setvp->indexize(*rsetvp);
+			/* Rank is inherited. */
 		    }
 		    delete $3;
 		    $$ = $1;
