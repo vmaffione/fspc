@@ -133,6 +133,7 @@ struct ProcessNode;
 struct ProcessEdge {
     ProcessNode * dest;
     int action;
+    int rank;
     string unresolved_reference;
 };
 

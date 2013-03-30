@@ -743,22 +743,6 @@ action_prefix:
 
 prefix_actions:
     action_labels {
-/*
-	cout << "Action: "; $1->print();
-	ProcessNode * pnp = new ProcessNode;
-	ProcessEdge e;
-
-	pnp->type = ProcessNode::Normal;
-	pnp->frontier_shortcut.push_back(pnp);
-	for (int i=0; i<$1->strings.size(); i++) {
-	    e.action = actions.insert($1->strings[i]);
-	    e.dest = NULL;
-	    pnp->children.push_back(e);
-	}
-	delete $1;
-	//pnp->print();
-	$$ = pnp;
-*/
 	cout << "Action: "; $1->print();
 	ProcessNode * pnp = new ProcessNode;
 	ProcessEdge e;
@@ -771,6 +755,7 @@ prefix_actions:
 	    for (int i=0; i<setvp->actions.size(); i++) {
 		e.action = actions.insert(setvp->actions[i]);
 		e.dest = NULL;
+		e.rank = c;
 		pnp->children.push_back(e);
 	    }
 	}
@@ -784,34 +769,26 @@ prefix_actions:
 	ProcessNode * npnp;
 	ProcessEdge e;
 	SetValue * setvp;
-	int rank = 0;
+	int rank;
 	int c = 0;
 	bool change_node;
 
 	vector<ProcessNode*> new_frontier;
 	for (int i=0; i<$1->frontier_shortcut.size(); i++) {
 	    pnp = $1->frontier_shortcut[i];
-	    cout << "Frontier element: " << pnp << "\n";
 	    for (int j=0; j<pnp->children.size(); j++) {
 		npnp = pnp->children[j].dest = 
 			    new ProcessNode(ProcessNode::Normal);
-		setvp = err_if_not_set($3->v[c]);
-		change_node = false;
-		while (!change_node) {
-		    for (int k=0; k<setvp->actions.size(); k++) {
-			e.action = actions.insert(setvp->actions[k]);
-			e.dest = NULL;
-			npnp->children.push_back(e);
-		    }
-		    c++;
-		    if (c == $3->v.size()) {
-			c = 0;
-			change_node = true;
-		    }
+		rank = pnp->children[j].rank;
+		for (int c=0; c<$3->v.size(); c++) {
 		    setvp = err_if_not_set($3->v[c]);
-		    if (setvp->rank != rank) {
-			rank++;
-			change_node = true;
+		    if (setvp->rank == rank) {
+			for (int k=0; k<setvp->actions.size(); k++) {
+			    e.action = actions.insert(setvp->actions[k]);
+			    e.dest = NULL;
+			    e.rank = c;
+			    npnp->children.push_back(e);
+			}
 		    }
 		}
 		new_frontier.push_back(npnp);

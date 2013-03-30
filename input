@@ -1,0 +1,28 @@
+const N = 3 * 4
+range R = 1..2
+set S = {x,y,z}
+
+P2=(a[j:R]->b[R]->c[j]->P2).
+/*
+P1=(a[j:R]->b[i:R]->c[i+j]->P1).
+P2=(a[j:R]->b[R]->c[j]->P2).
+P3=(a[R]->b[i:R]->c[i]->P3).
+P4=(a[R]->b[R]->c[114]->P4).
+P5=(a[i:R]->b[j:i..2*i]->c[i+j]->P5).
+*/
+
+
+/*
+P2=(a[i:R][2*i][k:S][1+i]->P2).
+PPP=(a[j:R][i:R][i+1][i..i+4]->PPP).
+PP(K=1,J=3) = (a->b[K+2]->if (K+2*J>0) then (c->d->PP)).
+P=(a[3*2]->b[R]->P|x[S]->y->z->P|j->k->l->END) + S. */
+
+/*
+Q=(q1->q[5]->Q).
+||S=(P||Q).
+
+const H=32
+
+PP = I[0],
+I[i:R] = (a[i]->I[i+1]). */
