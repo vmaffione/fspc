@@ -759,42 +759,67 @@ prefix_actions:
 	//pnp->print();
 	$$ = pnp;
 */
-	    
+	cout << "Action: "; $1->print();
+	ProcessNode * pnp = new ProcessNode;
+	ProcessEdge e;
+	SetValue * setvp;
+
+	pnp->type = ProcessNode::Normal;
+	pnp->frontier_shortcut.push_back(pnp);
+	for (int c=0; c<$1->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
+	    for (int i=0; i<setvp->actions.size(); i++) {
+		e.action = actions.insert(setvp->actions[i]);
+		e.dest = NULL;
+		pnp->children.push_back(e);
+	    }
+	}
+	delete $1;
+	pnp->print(&actions);
+	$$ = pnp;
     }
     | prefix_actions ARROW action_labels {
-/*
 	cout << "Action(->): "; $3->print();
-	ProcessNode * rpnp = new ProcessNode;
+	ProcessNode * pnp;
+	ProcessNode * npnp;
 	ProcessEdge e;
+	SetValue * setvp;
+	int rank = 0;
+	int c = 0;
+	bool change_node;
 
-	rpnp->type = ProcessNode::Normal;
-	for (int i=0; i<$3->strings.size(); i++) {
-	    e.action = actions.insert($3->strings[i]);
-	    e.dest = NULL;
-	    rpnp->children.push_back(e);
-	}
-	delete $3;
-	//rpnp->print();
-*/
-	/* Attach an rpnp clone to each node in the frontier. */
-/*
-	vector<ProcessNode*> new_frontier(1);
-	$1->frontier_shortcut[0]->children[0].dest = rpnp;
-	new_frontier[0] = rpnp;
+	vector<ProcessNode*> new_frontier;
 	for (int i=0; i<$1->frontier_shortcut.size(); i++) {
-	    ProcessNode * pnp = $1->frontier_shortcut[i];
+	    pnp = $1->frontier_shortcut[i];
 	    cout << "Frontier element: " << pnp << "\n";
-	    for (int j=0; j<pnp->children.size(); j++)
-		if (i || j) {
-		    pnp->children[j].dest = rpnp->clone();
-		    new_frontier.push_back(pnp->children[j].dest);
+	    for (int j=0; j<pnp->children.size(); j++) {
+		npnp = pnp->children[j].dest = 
+			    new ProcessNode(ProcessNode::Normal);
+		setvp = err_if_not_set($3->v[c]);
+		change_node = false;
+		while (!change_node) {
+		    for (int k=0; k<setvp->actions.size(); k++) {
+			e.action = actions.insert(setvp->actions[k]);
+			e.dest = NULL;
+			npnp->children.push_back(e);
+		    }
+		    c++;
+		    if (c == $3->v.size()) {
+			c = 0;
+			change_node = true;
+		    }
+		    setvp = err_if_not_set($3->v[c]);
+		    if (setvp->rank != rank) {
+			rank++;
+			change_node = true;
+		    }
 		}
+		new_frontier.push_back(npnp);
+	    }
 	}
 	$1->frontier_shortcut = new_frontier;
-	
-	//$1->print();
 	$$ = $1;
-*/
+	$1->print(&actions);
     }
     ;
 
