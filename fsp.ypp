@@ -26,19 +26,24 @@ struct ActionsTable actions("Global actions table");
 
 #include "context.hpp"
 
-/* Stack of context sets. */
+/* Stack of contexts sets. */
 struct ContextsSetStack {
     vector<ContextsSet *> stack;
-    int csstop;
 
-    ContextsSetStack() : csstop(-1) { }
+    ContextsSetStack() { }
     void push(ContextsSet * ctxset) {
 	stack.push_back(ctxset);
-	csstop++;
+    }
+    void push_clone() {
+	stack.push_back(new ContextsSet(*stack.back()));
+    }
+    void update(ContextsSet * ctxset) {
+	delete stack.back();
+	stack.back() = ctxset;
     }
     void pop() {
+	delete stack.back();
 	stack.pop_back();
-	csstop--;
     }
     ContextsSet& top() { return *(stack.back()); }
 };
@@ -273,7 +278,7 @@ action_labels:
 			}
 		    }
 		    cout << "Contexts ramification\n";
-		    css.push(csp);
+		    css.update(csp);
 		    current_contexts.print();
 		    delete $1;
 		    delete $3;
@@ -337,7 +342,7 @@ action_labels:
 			}
 		    }
 		    cout << "Contexts ramification\n";
-		    css.push(csp);
+		    css.update(csp);
 		    current_contexts.print();
 		    delete $1;
 		    delete $3;
@@ -667,9 +672,16 @@ local_process:
 	    freeProcessNodeGraph((ProcessNode *)pbp);
 	delete $2;
     }
-    | '(' choice ')' {
-	//$2->print();
-	$$ = $2;
+    | '(' {
+	/* Replicate the CSS stack top so that it can be used by 'choice'. */
+	css.push_clone();
+	cout << "CSS height (push) " << css.stack.size() << "\n";
+    } choice ')' {
+	//$3->print();
+	/* Pop (and destroy) the replicated top. */
+	css.pop();
+	cout << "CSS height = (pop) " << css.stack.size() << "\n";
+	$$ = $3;
     }
     ;
 
@@ -726,7 +738,7 @@ action_prefix:
 	    }
 	} else {
 	    /* If $4 is an unresolved reference, we scan the frontier of $2
-	       recording the reference itslef, so that this reference will
+	       recording the reference itself, so that this reference will
 	       be fixed by the upper levels. */
 	    string reference = ((UnresolvedProcess *)$4)->reference;
 	    for (int i=0; i<$2->frontier_shortcut.size(); i++) {
