@@ -113,10 +113,6 @@ SymbolValue * RangeValue::clone() const
 }
 
 /*============================= SetValue ================================ */
-SetValue::SetValue()
-{
-}
-
 SetValue& SetValue::dotcat(const string& s)
 {
     for (int i=0; i<actions.size(); i++)

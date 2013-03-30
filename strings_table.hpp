@@ -31,6 +31,7 @@ struct SymbolValue {
     virtual void print() const { };
     virtual int type() const = 0;
     virtual SymbolValue * clone() const = 0;
+    virtual int setVariable(const string& s) { return -1; }
 
     static const int Const = 0;
     static const int Range = 1;
@@ -99,16 +100,17 @@ struct RangeValue: public SymbolValue {
     void print() const { cout << "[" << low << ", " << high << "]"; }
     int type() const { return SymbolValue::Range; }
     SymbolValue * clone() const;
+    virtual int setVariable(const string& s) { variable = s; return 0; }
 };
 
 struct SetValue: public SymbolValue {
     vector<string> actions;
     string variable;
     
-    SetValue();
     void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;
+    virtual int setVariable(const string& s) { variable = s; return 0; }
 
     SetValue& dotcat(const string&);
     SetValue& dotcat(const SetValue&);

@@ -190,7 +190,7 @@ action_labels:
 	vp->shared = false;
 	for (int c=0; c<current_contexts.size(); c++) {
 	    setvp = new SetValue;
-	    setvp->actions.push_back(*$1);
+	    *setvp += *$1;
 	    vp->v.push_back(setvp);
 	}
 	delete $1;
@@ -359,38 +359,10 @@ action_labels:
 
 	    default:
 		cout << "WHAT!?!?!?\n";
+		exit(-1);
 		break;
 	}
 	$$->print();
-/*
-	StringsSet * ssp;
-	ConstValue * cvp;
-	RangeValue * rvp;
-
-	switch ($3->type()) {
-	    case SymbolValue::Const:
-		cvp = ((ConstValue *)$3);
-		$1->indexize(cvp->value);
-		break;
-
-	    case SymbolValue::Range:
-		rvp = ((RangeValue *)$3);
-		$1->print();
-		$1->indexize(rvp->low, rvp->high);
-		break;
-
-	    case SymbolValue::Set:
-		ssp = ((SetValue *)$3)->ssp;
-		$1->indexize(*ssp);
-		break;
-
-	    default:
-		errstream << "Internal error: unexpected symbol type\n";
-		semantic_error();
-	};
-
-	delete $3;
-*/
     }
     ;
 
@@ -423,15 +395,9 @@ set_expr:
     ;
 
 action_range:
-    expression {
-	$$ = $1;
-    }
-    | range_expr {
-	$$ = $1;
-    }
-    | set_expr {
-	$$ = $1;
-    }
+    expression
+    | range_expr
+    | set_expr
     | variable ':' range_or_set_id {
 	cout << "Variable definition: " << *$1 << ":" << *$3 << "\n";
 	SvpVec * vp = new SvpVec;
@@ -441,18 +407,9 @@ action_range:
 	    semantic_error();
 	}
 	svp = svp->clone();
+
 	/* Pass the variable name to the upper levels.*/
-	switch (svp->type()) {
-	    case SymbolValue::Range:
-		((RangeValue *)svp)->variable = *$1;
-		break;
-	    case SymbolValue::Set:
-		((SetValue *)svp)->variable = *$1;
-		break;
-	    default:
-		errstream << "range or set identifier expected";
-		semantic_error();
-	}
+	svp->setVariable(*$1);
 	delete $1;
 	vp->shared = true;
 	for (int c=0; c<current_contexts.size(); c++)
@@ -461,21 +418,21 @@ action_range:
 	
     }
     | variable ':' range_expr {
-	/* Pass the variable to the upper levels.*/
 	RangeValue * rvp;
 	for (int i=0; i<$3->v.size(); i++) {
-	    rvp = (RangeValue *)($3->v[i]);
-	    rvp->variable = *$1;
+	    rvp = err_if_not_range($3->v[i]);
+	    /* Pass the variable to the upper levels.*/
+	    rvp->setVariable(*$1);
 	}
 	delete $1;
 	$$ = $3;
     }
     | variable ':' set_expr {
-	//TODO variable
 	SetValue * setvp;
 	for (int i=0; i<$3->v.size(); i++) {
 	    setvp = err_if_not_set($3->v[i]);
-	    setvp->variable = *$1;
+	    /* Pass the variable to the upper levels.*/
+	    setvp->setVariable(*$1);
 	}
 	delete $1;
 	$$ = $3;
@@ -567,22 +524,13 @@ set_elements:
     | set_elements ',' action_labels {
 	cout << "<<B>> set_el als\n";
 	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 719\n";exit(-1);}
-	for (int i=0; i<$1->v.size(); i++) {
-	    SetValue * setvp = err_if_not_set($1->v[i]);
-	    SetValue * rsetvp = err_if_not_set($3->v[i]);
-	    for (int k=0; k<rsetvp->actions.size(); k++)
-		setvp->actions.push_back(rsetvp->actions[k]);
-    /*
-	    $1->v.push_back($3->v[i]);
-	    $3->detach(i); */
+	for (int c=0; c<$1->v.size(); c++) {
+	    SetValue * setvp = err_if_not_set($1->v[c]);
+	    SetValue * rsetvp = err_if_not_set($3->v[c]);
+	    *setvp += *rsetvp;
 	}
 	delete $3;
 	$$ = $1;
-
-/*
-	*$1 += *$3;
-	delete $3;
-	$$ = $1; */
     }
     ;
 
