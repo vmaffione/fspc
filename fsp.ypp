@@ -98,13 +98,6 @@ inline SetValue* err_if_not_set(SymbolValue * svp)
 }
 
 
-string int2string(int x)
-{
-    stringstream sstr;
-    sstr << x;
-    return sstr.str();
-}
-
 void yyerror(const char *s);
 %}
 
@@ -211,8 +204,7 @@ action_labels:
 	SetValue * setvp;
 	for (int i=0; i<$1->v.size(); i++) {
 	    setvp = err_if_not_set($1->v[i]);
-	    for (int j=0; j<setvp->actions.size(); j++)
-		setvp->actions[j] += "." + *$3;
+	    setvp->dotcat(*$3);
 	}
 	delete $3;
 	$$ = $1;
@@ -221,31 +213,19 @@ action_labels:
 	if ($1->v.size() != $3->v.size() ||
 		$1->v.size() != current_contexts.size())
 	     {cout<<"FATAL 412 \n"; exit(-1);}
-	cout << "als.set\n";
+	cout << "<<B>> als.set\n";
 	SetValue * setvp;
 	SetValue * rsetvp;
 	for (int c=0; c<$1->v.size(); c++) {
 	    setvp = err_if_not_set($1->v[c]);
 	    rsetvp = err_if_not_set($3->v[c]);
-	    /* Create a new SetValue that combines setvp and
-	       rsetvp. No context ramification happens here. */
-	    SetValue * new_setvp = new SetValue;
-	    for (int k=0; k<setvp->actions.size(); k++)
-		for (int j=0; j<rsetvp->actions.size(); j++)
-		    new_setvp->actions.push_back(
-			    setvp->actions[k] + "." +
-			    rsetvp->actions[j]);
-	    delete $1->v[c];
-	    $1->v[c] = new_setvp;
+	    /* Combine setvp with rsetvp. No context ramification
+	       happens here. */
+	    setvp->dotcat(*rsetvp);
 	}
 	delete $3;
 	$$ = $1;
 	$$->print();
-/*
-	$1->dotcat(*$3);
-	delete $3;
-*/
-	$$ = $1;
     }
     | action_labels '[' action_range ']' {
 	cout << "<<B>> als[action_range]\n";
@@ -301,14 +281,15 @@ action_labels:
 		    for (int c=0; c<$1->v.size(); c++) {
 			setvp = err_if_not_set($1->v[c]);
 			rvp = err_if_not_range($3->v[c]);
-			SetValue * new_setvp = new SetValue;
+			setvp->indexize(rvp->low, rvp->high);
+			/*SetValue * new_setvp = new SetValue;
 			for (int k=0; k<setvp->actions.size(); k++)
 			    for (int j=rvp->low; j<=rvp->high; j++)
 				new_setvp->actions.push_back(
 				    setvp->actions[k] + "[" + int2string(j)
 					+ "]");
 			delete $1->v[c];
-			$1->v[c] = new_setvp;
+			$1->v[c] = new_setvp; */
 		    }
 		    delete $3;
 		    $$ = $1;
@@ -319,9 +300,7 @@ action_labels:
 		for (int i=0; i<$1->v.size(); i++) {
 		    setvp = err_if_not_set($1->v[i]);
 		    cvp = err_if_not_const($3->v[i]);
-		    for (int k=0; k<setvp->actions.size(); k++) 
-			setvp->actions[k] += "[" + int2string(cvp->value)
-						     + "]";
+		    setvp->indexize(cvp->value);
 		}
 		delete $3;
 		$$ = $1;
@@ -371,14 +350,7 @@ action_labels:
 			rsetvp = err_if_not_set($3->v[c]);
 			/* Create a new SetValue that combines setvp and
 			   rsetvp. No context ramification happens here. */
-			SetValue * new_setvp = new SetValue;
-			for (int k=0; k<setvp->actions.size(); k++)
-			    for (int j=0; j<rsetvp->actions.size(); j++)
-				new_setvp->actions.push_back(
-				    setvp->actions[k] + "." +
-					rsetvp->actions[j]);
-			delete $1->v[c];
-			$1->v[c] = new_setvp;
+			setvp->indexize(*rsetvp);
 		    }
 		    delete $3;
 		    $$ = $1;
@@ -433,11 +405,10 @@ set:
 	}
 	delete $1;
 	setvp = err_if_not_set(svp);
-
-	//setvp->cloneActions(vp);
+	svp = svp->clone();
 	vp->shared = true;
 	for (int c=0; c<current_contexts.size(); c++)
-	    vp->v.push_back(setvp);
+	    vp->v.push_back(svp);
 	$$ = vp;
     }
     | set_expr

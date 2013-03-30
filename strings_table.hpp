@@ -11,6 +11,9 @@
 using namespace std;
 
 
+
+string int2string(int x);
+
 struct ActionsTable {
     string name;
     map<string, int> table;
@@ -97,17 +100,8 @@ struct RangeValue: public SymbolValue {
     int type() const { return SymbolValue::Range; }
     SymbolValue * clone() const;
 };
-/*
-struct ActionValue: public SymbolValue {
-    string value;
-
-    void print() const { cout << value; }
-    int type() const { return SymbolValue::Action; }
-    SymbolValue * clone() const;
-};*/
 
 struct SetValue: public SymbolValue {
-    //StringsSet * ssp;
     vector<string> actions;
     string variable;
     
@@ -115,6 +109,14 @@ struct SetValue: public SymbolValue {
     void print() const;
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;
+
+    SetValue& dotcat(const string&);
+    SetValue& dotcat(const SetValue&);
+    SetValue& indexize(int index);
+    SetValue& indexize(const SetValue&);
+    SetValue& indexize(int low, int high);
+    SetValue& operator +=(const SetValue&);
+    SetValue& operator +=(const string&);
 };
 
 

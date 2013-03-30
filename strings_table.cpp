@@ -1,5 +1,6 @@
 #include <cstring>
 #include <set>
+#include <sstream>
 #include "strings_table.hpp"
 
 
@@ -11,6 +12,13 @@
 #define IFD(x)
 #endif
 
+
+string int2string(int x)
+{
+    stringstream sstr;
+    sstr << x;
+    return sstr.str();
+}
 
 /* ========================= ActionsTable ================================ */
 int ActionsTable::insert(const string& s)
@@ -107,6 +115,81 @@ SymbolValue * RangeValue::clone() const
 /*============================= SetValue ================================ */
 SetValue::SetValue()
 {
+}
+
+SetValue& SetValue::dotcat(const string& s)
+{
+    for (int i=0; i<actions.size(); i++)
+	actions[i] += "." + s;
+
+    return *this;
+}
+
+SetValue& SetValue::dotcat(const SetValue& ss)
+{
+    int n = actions.size();
+    int nss = ss.actions.size();
+
+    actions.resize(n * nss);
+
+    for (int j=1; j<nss; j++)
+	for (int i=0; i<n; i++)
+	    actions[j*n+i] = actions[i] + "." + ss.actions[j];
+    
+    for (int i=0; i<n; i++)
+	actions[i] += "." + ss.actions[0];
+
+    return *this;
+}
+
+SetValue& SetValue::indexize(int index)
+{
+    stringstream sstr;
+    sstr << index;
+    string suffix = "[" + sstr.str() + "]";
+
+    for (int i=0; i<actions.size(); i++)
+	actions[i] += suffix;
+
+    return *this;
+}
+
+SetValue& SetValue::indexize(const SetValue& ss)
+{
+    return dotcat(ss);
+}
+
+SetValue& SetValue::indexize(int low, int high)
+{
+    int n = actions.size();
+    int nr = high - low + 1;
+
+    actions.resize(n * nr);
+
+    for (int j=1; j<nr; j++)
+	for (int i=0; i<n; i++)
+	    actions[j*n+i] = actions[i] + "[" + int2string(low + j)  + "]";
+    
+    for (int i=0; i<n; i++)
+	actions[i] += "[" + int2string(low) + "]";
+
+    return *this;
+    
+}
+
+SetValue& SetValue::operator +=(const SetValue& ss)
+{
+    for (int i=0; i<ss.actions.size(); i++)
+	actions.push_back(ss.actions[i]);
+
+    return *this;
+}
+
+SetValue& SetValue::operator +=(const string& s)
+{
+    actions.push_back(s);
+
+    return *this;
 }
 /*
 SetValue::SetValue(SvpVec * vp) {
