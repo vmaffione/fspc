@@ -773,6 +773,9 @@ prefix_actions:
 	ProcessEdge e;
 	SetValue * setvp;
 
+	/* TODO Fai in modo che qui si parta da una frontiera on più
+	   ProcessNode*, tanti quanti i contesti subito prima di 
+	   action_prefix. */
 	pnp->type = ProcessNode::Normal;
 	pnp->frontier_shortcut.push_back(pnp);
 	for (int c=0; c<$1->v.size(); c++) {
@@ -795,9 +798,10 @@ prefix_actions:
 	ProcessEdge e;
 	SetValue * setvp;
 	int rank;
-	int c = 0;
-	bool change_node;
 
+	/* Note that this is executed (obviously) after $3 has been
+	   parsed, and so after all the context ramifications implied by
+	   the latter have been executed. */
 	vector<ProcessNode*> new_frontier;
 	for (int i=0; i<$1->frontier_shortcut.size(); i++) {
 	    pnp = $1->frontier_shortcut[i];
@@ -811,6 +815,9 @@ prefix_actions:
 			for (int k=0; k<setvp->actions.size(); k++) {
 			    e.action = actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
+			    /* We set e.rank to the index in the SvpVec $3,
+			       so that this edge will combine with actions
+			       in the next level that have the same rank. */
 			    e.rank = c;
 			    npnp->children.push_back(e);
 			}
