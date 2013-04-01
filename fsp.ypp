@@ -262,6 +262,7 @@ action_labels:
 		    /* In this case each element in action_range is in the
 		       form 'var:R', where R is a range_id or a range_expr. */
 		    csp = new ContextsSet;
+		    csp->frontier = current_contexts.frontier;
 		    vp = new SvpVec;
 		    for (int c=0; c<$1->v.size(); c++) {
 			setvp = err_if_not_set($1->v[c]);
@@ -324,6 +325,7 @@ action_labels:
 		    /* In this case each element in action_range is in the
 		       form 'var:R', where R is a set_id or a set_expr. */
 		    csp = new ContextsSet;
+		    csp->frontier = current_contexts.frontier;
 		    /* We need a new SvpVec for a new ContextSet. */
 		    vp = new SvpVec;
 		    for (int c=0; c<$1->v.size(); c++) {
@@ -725,8 +727,7 @@ choice:
     action_prefix
     | choice '|' action_prefix {
 	cout << "Choice\n";
-	/* Merge $1 head and $3 head. Don't care about frontier_shortcut
-	   merging, since we will not need them anymore. */
+	/* Merge $1 head and $3 head. */
 	for (int i=0; i<$3->children.size(); i++)
 	    $1->children.push_back($3->children[i]);
 	/* We must delete only the ProcessNode pointed by $, but not the
@@ -744,8 +745,8 @@ action_prefix:
 	if (!($4->unresolved())) {
 	    /* If $4 is not an unresolved reference, we connect the frontier 
 	       of $2 to the process $4. */
-	    for (int i=0; i<$2->frontier_shortcut.size(); i++) {
-		ProcessNode * pnp = $2->frontier_shortcut[i];
+	    for (int i=0; i<current_contexts.frontier.size(); i++) {
+		ProcessNode * pnp = current_contexts.frontier[i];
 		for (int j=0; j<pnp->children.size(); j++)
 		    pnp->children[j].dest = (ProcessNode *)$4;
 	    }
@@ -754,8 +755,8 @@ action_prefix:
 	       recording the reference itself, so that this reference will
 	       be fixed by the upper levels. */
 	    string reference = ((UnresolvedProcess *)$4)->reference;
-	    for (int i=0; i<$2->frontier_shortcut.size(); i++) {
-		ProcessNode * pnp = $2->frontier_shortcut[i];
+	    for (int i=0; i<current_contexts.frontier.size(); i++) {
+		ProcessNode * pnp = current_contexts.frontier[i];
 		for (int j=0; j<pnp->children.size(); j++) {
 		    pnp->children[j].unresolved_reference = reference;
 		}
@@ -769,27 +770,30 @@ action_prefix:
 prefix_actions:
     action_labels {
 	cout << "Action: "; $1->print();
-	ProcessNode * pnp = new ProcessNode;
+	ProcessNode * pnp;
 	ProcessEdge e;
 	SetValue * setvp;
 
-	/* TODO Fai in modo che qui si parta da una frontiera on più
-	   ProcessNode*, tanti quanti i contesti subito prima di 
-	   action_prefix. */
-	pnp->type = ProcessNode::Normal;
-	pnp->frontier_shortcut.push_back(pnp);
-	for (int c=0; c<$1->v.size(); c++) {
-	    setvp = err_if_not_set($1->v[c]);
-	    for (int i=0; i<setvp->actions.size(); i++) {
-		e.action = actions.insert(setvp->actions[i]);
-		e.dest = NULL;
-		e.rank = c;
-		pnp->children.push_back(e);
+	if (current_contexts.frontier.size() == 0) {
+	    pnp = new ProcessNode;
+	    pnp->type = ProcessNode::Normal;
+	    current_contexts.frontier.push_back(pnp);
+
+	    for (int c=0; c<$1->v.size(); c++) {
+		setvp = err_if_not_set($1->v[c]);
+		for (int i=0; i<setvp->actions.size(); i++) {
+		    e.action = actions.insert(setvp->actions[i]);
+		    e.dest = NULL;
+		    e.rank = c;
+		    pnp->children.push_back(e);
+		}
 	    }
+	    delete $1;
+	    pnp->print(&actions);
+	    $$ = pnp;
+	} else {
+	    cout<<"YTI\n"; exit(-1);
 	}
-	delete $1;
-	pnp->print(&actions);
-	$$ = pnp;
     }
     | prefix_actions ARROW action_labels {
 	cout << "Action(->): "; $3->print();
@@ -803,8 +807,8 @@ prefix_actions:
 	   parsed, and so after all the context ramifications implied by
 	   the latter have been executed. */
 	vector<ProcessNode*> new_frontier;
-	for (int i=0; i<$1->frontier_shortcut.size(); i++) {
-	    pnp = $1->frontier_shortcut[i];
+	for (int i=0; i<current_contexts.frontier.size(); i++) {
+	    pnp = current_contexts.frontier[i];
 	    for (int j=0; j<pnp->children.size(); j++) {
 		npnp = pnp->children[j].dest = 
 			    new ProcessNode(ProcessNode::Normal);
@@ -826,7 +830,7 @@ prefix_actions:
 		new_frontier.push_back(npnp);
 	    }
 	}
-	$1->frontier_shortcut = new_frontier;
+	current_contexts.frontier = new_frontier;
 	$$ = $1;
 	$1->print(&actions);
     }
@@ -1382,7 +1386,8 @@ int parser()
     }
 
     /* Initialize shared data structures: A stack containing a single
-       ContextsSet. This set contains a single empty Context. */
+       ContextsSet. This set contains a single empty Context and an
+       empty frontier. */
     ContextsSet * csp = new ContextsSet;
     csp->append(new Context);
     css.push(csp);

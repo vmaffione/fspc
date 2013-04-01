@@ -148,7 +148,6 @@ struct ProcessVisitObject {
 struct ProcessNode: public ProcessBase {
     vector<ProcessEdge> children;
     int type;
-    vector<ProcessNode*> frontier_shortcut; /* only action_prefix and down */
 
     ProcessNode() : type(ProcessNode::Normal) { }
     ProcessNode(int t) : type(t) { }
