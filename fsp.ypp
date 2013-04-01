@@ -102,6 +102,13 @@ inline SetValue* err_if_not_set(SymbolValue * svp)
     return (SetValue *)svp;
 }
 
+inline ProcessNode * err_if_not_procnode(ProcessBase * pbp) {
+    if (pbp->unresolved() || pbp->connected()) {
+	errstream << "ProcessNode expected";
+	semantic_error();
+    }
+    return (ProcessNode *)pbp;
+}
 
 void yyerror(const char *s);
 %}
@@ -157,7 +164,7 @@ void yyerror(const char *s);
 %type <svpvec_ptr> alphabet_extension_OPT
 %type <svpvec_ptr> action_range guard_OPT
 %type <svpvec_ptr> range_expr
-%type <pn_ptr> choice action_prefix prefix_actions
+%type <pb_ptr> choice action_prefix prefix_actions
 %type <pb_ptr> process_body local_process local_process_defs local_process_def
 %type <pb_ptr> sequential_composition base_local_process
 %type <pb_ptr> seq_process_list process_ref
@@ -727,38 +734,45 @@ choice:
     action_prefix
     | choice '|' action_prefix {
 	cout << "Choice\n";
+	css.pop();
+	cout << "CSS height = (pop) " << css.stack.size() << "\n";
+	css.push_clone();
+	cout << "CSS height (push) " << css.stack.size() << "\n";
 	/* Merge $1 head and $3 head. */
-	for (int i=0; i<$3->children.size(); i++)
-	    $1->children.push_back($3->children[i]);
+	ProcessNode * pnpl = err_if_not_procnode($1);
+	ProcessNode * pnpr = err_if_not_procnode($3);
+	for (int i=0; i<pnpr->children.size(); i++)
+	    pnpl->children.push_back(pnpr->children[i]);
 	/* We must delete only the ProcessNode pointed by $, but not the
 	   whole graph! */
-	delete $3;
+	delete pnpr;
 	//$1->print();
-	$$ = $1;
+	$$ = pnpl;
     }
     ;
 
 action_prefix:
     guard_OPT prefix_actions ARROW local_process {
 	// TODO guard_OPT
-
-	if (!($4->unresolved())) {
-	    /* If $4 is not an unresolved reference, we connect the frontier 
-	       of $2 to the process $4. */
-	    for (int i=0; i<current_contexts.frontier.size(); i++) {
-		ProcessNode * pnp = current_contexts.frontier[i];
-		for (int j=0; j<pnp->children.size(); j++)
-		    pnp->children[j].dest = (ProcessNode *)$4;
-	    }
-	} else {
-	    /* If $4 is an unresolved reference, we scan the frontier of $2
-	       recording the reference itself, so that this reference will
-	       be fixed by the upper levels. */
-	    string reference = ((UnresolvedProcess *)$4)->reference;
-	    for (int i=0; i<current_contexts.frontier.size(); i++) {
-		ProcessNode * pnp = current_contexts.frontier[i];
-		for (int j=0; j<pnp->children.size(); j++) {
-		    pnp->children[j].unresolved_reference = reference;
+	if (!$4->connected()) {
+	    if (!($4->unresolved())) {
+		/* If $4 is not an unresolved reference, we connect the
+		   frontier of $2 to the process $4. */
+		for (int i=0; i<current_contexts.frontier.size(); i++) {
+		    ProcessNode * pnp = current_contexts.frontier[i];
+		    for (int j=0; j<pnp->children.size(); j++)
+			pnp->children[j].dest = (ProcessNode *)$4;
+		}
+	    } else {
+		/* If $4 is an unresolved reference, we scan the frontier
+		   of $2 recording the reference itself, so that this
+		   reference will be fixed by the upper levels. */
+		string reference = ((UnresolvedProcess *)$4)->reference;
+		for (int i=0; i<current_contexts.frontier.size(); i++) {
+		    ProcessNode * pnp = current_contexts.frontier[i];
+		    for (int j=0; j<pnp->children.size(); j++) {
+			pnp->children[j].unresolved_reference = reference;
+		    }
 		}
 	    }
 	}
@@ -792,7 +806,41 @@ prefix_actions:
 	    pnp->print(&actions);
 	    $$ = pnp;
 	} else {
-	    cout<<"YTI\n"; exit(-1);
+	    vector<ProcessNode*> new_frontier;
+	    ProcessNode * pnp;
+	    ProcessNode * npnp;
+	    ProcessEdge e;
+	    SetValue * setvp;
+	    int rank;
+
+	    for (int i=0; i<current_contexts.frontier.size(); i++) {
+		pnp = current_contexts.frontier[i];
+		for (int j=0; j<pnp->children.size(); j++) {
+		    npnp = pnp->children[j].dest = 
+			new ProcessNode(ProcessNode::Normal);
+		    rank = pnp->children[j].rank;
+		    for (int c=0; c<$1->v.size(); c++) {
+			setvp = err_if_not_set($1->v[c]);
+			if (setvp->rank == rank) {
+			    for (int k=0; k<setvp->actions.size(); k++) {
+				e.action = actions.insert(setvp->actions[k]);
+				e.dest = NULL;
+				/* We set e.rank to the index in the SvpVec
+				   $1, so that this edge will combine with
+				   actions in the next level that have the
+				   same rank. */
+				e.rank = c;
+				npnp->children.push_back(e);
+			    }
+			}
+		    }
+		    new_frontier.push_back(npnp);
+		}
+	    }
+	    current_contexts.frontier = new_frontier;
+	    /* Tell the upper level rule (action_prefix) that everything is
+	       already connected. */
+	    $$ = new ConnectedProcess();
 	}
     }
     | prefix_actions ARROW action_labels {
@@ -807,6 +855,7 @@ prefix_actions:
 	   parsed, and so after all the context ramifications implied by
 	   the latter have been executed. */
 	vector<ProcessNode*> new_frontier;
+
 	for (int i=0; i<current_contexts.frontier.size(); i++) {
 	    pnp = current_contexts.frontier[i];
 	    for (int j=0; j<pnp->children.size(); j++) {

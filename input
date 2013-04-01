@@ -2,7 +2,7 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-P6=(a[i:R]->b[j:R][k:R]->c[i+j+k]->P6).
+P5=(a[i:R]->b[j:i..2*i]->c[i+j]->P5).
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).

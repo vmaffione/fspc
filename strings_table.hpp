@@ -126,6 +126,8 @@ struct SetValue: public SymbolValue {
 
 struct ProcessBase {
     virtual bool unresolved() const = 0;
+    virtual bool connected() const { return false; }
+    virtual void print(ActionsTable * atp) = 0; 
 };
 
 struct ProcessNode;
@@ -170,6 +172,13 @@ struct UnresolvedProcess: public ProcessBase {
 
     UnresolvedProcess(const string& s) : reference(s) { }
     bool unresolved() const { return true; }
+    void print(ActionsTable * atp) { cout << "Unres " << reference << "\n"; }
+};
+
+struct ConnectedProcess: public ProcessBase {
+    bool unresolved() const { return false; }
+    bool connected() const {return true; }
+    void print(ActionsTable * atp) { cout << "Connected\n"; }
 };
 
 struct ProcessValue: public SymbolValue {
