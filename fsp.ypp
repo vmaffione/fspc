@@ -768,7 +768,6 @@ choice:
 	    //$1->print();
 	}
 	$$ = $1;
-	gpp = $$;
 	gpp->print(&actions);
     }
     ;
@@ -787,9 +786,9 @@ action_prefix:
 		   current frontier (e.g. the frontier of $2) to the process
 		    $4. */
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
-		    ProcessNode * pnp = current_contexts.frontier[i];
-		    for (int j=0; j<pnp->children.size(); j++)
-			pnp->children[j].dest = (ProcessNode *)$4;
+		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
+		    int child = current_contexts.frontier[i].child;
+		    pnp->children[child].dest = (ProcessNode *)$4;
 		}
 	    } else {
 		/* If $4 is an unresolved reference, we scan the current
@@ -797,10 +796,9 @@ action_prefix:
 		   reference will be fixed by the upper levels. */
 		string reference = ((UnresolvedProcess *)$4)->reference;
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
-		    ProcessNode * pnp = current_contexts.frontier[i];
-		    for (int j=0; j<pnp->children.size(); j++) {
-			pnp->children[j].unresolved_reference = reference;
-		    }
+		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
+		    int child = current_contexts.frontier[i].child;
+		    pnp->children[child].unresolved_reference = reference;
 		}
 	    }
 	}
@@ -816,6 +814,7 @@ prefix_actions:
 	ProcessNode * pnp;
 	ProcessEdge e;
 	SetValue * setvp;
+	struct FrontierElement fe;
 
 	/* Note that this is executed (obviously) after $1 has been
 	   parsed, and so after all the context ramifications implied by
@@ -831,7 +830,6 @@ prefix_actions:
 	       in $1. */
 	    pnp = new ProcessNode;
 	    pnp->type = ProcessNode::Normal;
-	    current_contexts.frontier.push_back(pnp);
 
 	    for (int c=0; c<$1->v.size(); c++) {
 		setvp = err_if_not_set($1->v[c]);
@@ -840,12 +838,15 @@ prefix_actions:
 		    e.dest = NULL;
 		    e.rank = c;
 		    pnp->children.push_back(e);
+		    fe.pnp = pnp;
+		    fe.child = pnp->children.size() - 1;
+		    current_contexts.frontier.push_back(fe);
 		}
 	    }
 	    delete $1;
 	    pnp->print(&actions);
 	    $$ = pnp;
-	    gpp = pnp; //XXX
+	    if (gpp == NULL) gpp = pnp; //XXX
 	} else {
 	    /* If the frontier is not empty, it means that, although at the
 	       beginning of an 'action_prefix', we are in the middle of
@@ -854,57 +855,60 @@ prefix_actions:
 	       node in the frontier (e.g. a node with the edge "b"), and
 	       consider its edges.
 	    */
-	    vector<ProcessNode*> new_frontier;
+	    vector<FrontierElement> new_frontier;
 	    ProcessNode * pnp;
 	    ProcessNode * npnp;
 	    ProcessEdge e;
 	    SetValue * setvp;
 	    int rank;
+	    int child;
+	    struct FrontierElement fe;
 
 	    for (int i=0; i<current_contexts.frontier.size(); i++) {
-		pnp = current_contexts.frontier[i];
-		for (int j=0; j<pnp->children.size(); j++) {
-		    /* If the edge j is NULL-pointing, it means that we are
-		       at the beginning of a choice construct (e.g.
-		       "P=(a->b->(c->..."): We then create a node for that
-		       edge (in our example we create a node for "b". If the
-		       edge is not NULL-pointing, it means that we are in 
-		       the middle of a choice construct (e.g.
-		       "P=(a-b->(c->d->P|e->...") and so we know that the
-		       node for that edge already exists: No need to create
-		       anything.
-		    */
-		    if (pnp->children[j].dest == NULL)
-			 pnp->children[j].dest = 
-				new ProcessNode(ProcessNode::Normal);
-		    npnp = pnp->children[j].dest;
-		    /* Once we get the node pointed by the edge j (npnp), we
-		       have to combine that edge with the sets in $1. We
-		       have a combination when the rank of the edge is equal
-		       to the rank of a set. When we find a combination, we
-		       add to npnp a NULL-pointing edge for each element in 
-		       the matching set.
-		    */
-		    rank = pnp->children[j].rank;
-		    for (int c=0; c<$1->v.size(); c++) {
-			setvp = err_if_not_set($1->v[c]);
-			if (setvp->rank == rank) {
-			    for (int k=0; k<setvp->actions.size(); k++) {
-				e.action = actions.insert(setvp->actions[k]);
-				e.dest = NULL;
-				/* We set e.rank to the index in the SvpVec
-				   $1 of setvp, so that this edge will
-				   combine with actions in the next level
-				   that have the same rank. */
-				e.rank = c;
-				npnp->children.push_back(e);
-			    }
+		pnp = current_contexts.frontier[i].pnp;
+		child = current_contexts.frontier[i].child;
+		/* If the edge j is NULL-pointing, it means that we are
+		   at the beginning of a choice construct (e.g.
+		   "P=(a->b->(c->..."): We then create a node for that
+		   edge (in our example we create a node for "b". If the
+		   edge is not NULL-pointing, it means that we are in 
+		   the middle of a choice construct (e.g.
+		   "P=(a-b->(c->d->P|e->...") and so we know that the
+		   node for that edge already exists: No need to create
+		   anything.
+		 */
+		if (pnp->children[child].dest == NULL)
+		    pnp->children[child].dest = 
+			new ProcessNode(ProcessNode::Normal);
+		npnp = pnp->children[child].dest;
+		/* Once we get the node pointed by the edge j (npnp), we
+		   have to combine that edge with the sets in $1. We
+		   have a combination when the rank of the edge is equal
+		   to the rank of a set. When we find a combination, we
+		   add to npnp a NULL-pointing edge for each element in 
+		   the matching set.
+		 */
+		rank = pnp->children[child].rank;
+		for (int c=0; c<$1->v.size(); c++) {
+		    setvp = err_if_not_set($1->v[c]);
+		    if (setvp->rank == rank) {
+			for (int k=0; k<setvp->actions.size(); k++) {
+			    e.action = actions.insert(setvp->actions[k]);
+			    e.dest = NULL;
+			    /* We set e.rank to the index in the SvpVec
+			       $1 of setvp, so that this edge will
+			       combine with actions in the next level
+			       that have the same rank. */
+			    e.rank = c;
+			    npnp->children.push_back(e);
+			    /* We add the edge to the new frontier, so that
+			       it will be used for combination with the next
+			        level actions. */
+			    fe.pnp = npnp;
+			    fe.child = npnp->children.size() - 1;
+			    new_frontier.push_back(fe);
 			}
 		    }
-		    /* We add npnp to the new frontier, so that its children
-		       will be used for combination with the next level
-		       actions. */
-		    new_frontier.push_back(npnp);
 		}
 	    }
 	    /* Update the frontier. */
@@ -923,7 +927,9 @@ prefix_actions:
 	ProcessEdge e;
 	SetValue * setvp;
 	int rank;
-	vector<ProcessNode*> new_frontier;
+	int child;
+	struct FrontierElement fe;
+	vector<FrontierElement> new_frontier;
 
 	/* Here we are in the middle of a 'prefix_actions' 
 	   (e.g. "...->b->c->d->.."), and so we have to connect each edge in
@@ -931,47 +937,49 @@ prefix_actions:
 	   that contains a node with a NULL-pointing edge "c" and $3={{d}}).
 	*/
 	for (int i=0; i<current_contexts.frontier.size(); i++) {
-	    pnp = current_contexts.frontier[i];
-	    for (int j=0; j<pnp->children.size(); j++)
-		/* Here we have to do the same combination descripted above,
-		   but only if the edge in the frontier is NULL-pointing and
-		   it has not an unresolved reference associated. If the
-		   edge is not NULL-pointing, it means that we are in a 
-		   situation like this "...->a->(b->c->...|d->e->...)". In
-		   this case pnp is the node which has an edge "b" and an 
-		   edge "d", $3={{e}}: Therefore we don't have to consider the
-		   edge "b" for combinations, since it has already been used
-		   when processing the previous choice. We only have to
-		   consider "d". If an edge has an unresolved reference, 
-		   it means that we are in a situation like this
-		   "..a->(b->P|d->e->...)": this case is very similar to the
-		   previous one, but here the edge "b" is NULL-pointing,
-		   only because of the unresolved reference P: considering it
-		   for combinations would be an error.
-		*/
-		if (pnp->children[j].dest == NULL &&
-			pnp->children[j].unresolved_reference == "") {
-		    pnp->children[j].dest = 
-			new ProcessNode(ProcessNode::Normal);
-		    npnp = pnp->children[j].dest;
-		    rank = pnp->children[j].rank;
-		    for (int c=0; c<$3->v.size(); c++) {
-			setvp = err_if_not_set($3->v[c]);
-			if (setvp->rank == rank) {
-			    for (int k=0; k<setvp->actions.size(); k++) {
-				e.action = actions.insert(setvp->actions[k]);
-				e.dest = NULL;
-				/* We set e.rank to the index in the SvpVec
-				   $3, so that this edge will combine with
-				   actions in the next level that have the
-				   same rank. */
-				e.rank = c;
-				npnp->children.push_back(e);
-			    }
+	    pnp = current_contexts.frontier[i].pnp;
+	    child = current_contexts.frontier[i].child;
+	    /* Here we have to do the same combination descripted above,
+	       but only if the edge in the frontier is NULL-pointing and
+	       it has not an unresolved reference associated. If the
+	       edge is not NULL-pointing, it means that we are in a 
+	       situation like this "...->a->(b->c->...|d->e->...)". In
+	       this case pnp is the node which has an edge "b" and an 
+	       edge "d", $3={{e}}: Therefore we don't have to consider the
+	       edge "b" for combinations, since it has already been used
+	       when processing the previous choice. We only have to
+	       consider "d". If an edge has an unresolved reference, 
+	       it means that we are in a situation like this
+	       "..a->(b->P|d->e->...)": this case is very similar to the
+	       previous one, but here the edge "b" is NULL-pointing,
+	       only because of the unresolved reference P: considering it
+	       for combinations would be an error.
+	     */
+	    if (pnp->children[child].dest == NULL &&
+		    pnp->children[child].unresolved_reference == "") {
+		pnp->children[child].dest = 
+		    new ProcessNode(ProcessNode::Normal);
+		npnp = pnp->children[child].dest;
+		rank = pnp->children[child].rank;
+		for (int c=0; c<$3->v.size(); c++) {
+		    setvp = err_if_not_set($3->v[c]);
+		    if (setvp->rank == rank) {
+			for (int k=0; k<setvp->actions.size(); k++) {
+			    e.action = actions.insert(setvp->actions[k]);
+			    e.dest = NULL;
+			    /* We set e.rank to the index in the SvpVec
+			       $3, so that this edge will combine with
+			       actions in the next level that have the
+			       same rank. */
+			    e.rank = c;
+			    npnp->children.push_back(e);
+			    fe.pnp = npnp;
+			    fe.child = npnp->children.size() - 1;
+			    new_frontier.push_back(fe);
 			}
 		    }
-		    new_frontier.push_back(npnp);
 		}
+	    }
 	}
 	current_contexts.frontier = new_frontier;
 	/* Note that $1 is not used in this action, because we use the
