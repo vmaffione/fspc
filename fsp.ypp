@@ -110,6 +110,8 @@ inline ProcessNode * err_if_not_procnode(ProcessBase * pbp) {
     return (ProcessNode *)pbp;
 }
 
+static ProcessBase * gpp = NULL;
+
 void yyerror(const char *s);
 %}
 
@@ -700,9 +702,6 @@ local_process:
 	cout << "CSS height (push) " << css.stack.size() << "\n";
     } choice ')' {
 	//$3->print();
-	/* Pop (and destroy) the replicated top. */
-	css.pop();
-	cout << "CSS height = (pop) " << css.stack.size() << "\n";
 	$$ = $3;
     }
     ;
@@ -731,41 +730,70 @@ base_local_process:
     ;
 
 choice:
-    action_prefix
-    | choice '|' action_prefix {
+    action_prefix {
 	cout << "Choice\n";
+	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
 	cout << "CSS height = (pop) " << css.stack.size() << "\n";
+	$$ = $1;
+    }
+    | choice '|' {
+	/* Replicate the CSS stack top so that it can be used by
+	   'action_prefix'. */
 	css.push_clone();
 	cout << "CSS height (push) " << css.stack.size() << "\n";
-	/* Merge $1 head and $3 head. */
-	ProcessNode * pnpl = err_if_not_procnode($1);
-	ProcessNode * pnpr = err_if_not_procnode($3);
-	for (int i=0; i<pnpr->children.size(); i++)
-	    pnpl->children.push_back(pnpr->children[i]);
-	/* We must delete only the ProcessNode pointed by $, but not the
-	   whole graph! */
-	delete pnpr;
-	//$1->print();
-	$$ = pnpl;
+    } action_prefix {
+	/* Pop (and destroy) the replicated top and everything above. */
+	css.pop();
+	cout << "CSS height = (pop) " << css.stack.size() << "\n";
+	cout << "Choice\n";
+	cout << "ch|ap\n"; current_contexts.print();
+
+	/* If the frontier is empty, $1 must be the zero node, and so we
+	   just have to merge $1 and $4, adding to $1 all the edges of $4.
+	   If the frontier is not empty, it means that the choice we are
+	   processing is not onto the zero node, but somewhere in the middle
+	   of the graph: In this case the merging operation has already been
+	   done by the action associated to the rule 
+	   'prefix_actions: actions_label'.
+	 */
+	if (current_contexts.frontier.size() == 0) {
+	    ProcessNode * pnpl = err_if_not_procnode($1);
+	    ProcessNode * pnpr = err_if_not_procnode($4);
+	    for (int i=0; i<pnpr->children.size(); i++)
+		pnpl->children.push_back(pnpr->children[i]);
+	    /* We must delete only the ProcessNode pointed by $4, but not the
+	       whole graph! */
+	    delete pnpr;
+	    //$1->print();
+	}
+	$$ = $1;
+	gpp = $$;
+	gpp->print(&actions);
     }
     ;
 
 action_prefix:
     guard_OPT prefix_actions ARROW local_process {
 	// TODO guard_OPT
+	cout << "ap\n"; current_contexts.print(); $4->print(&actions);
+	/* If $4 is an istance of ConnectedProcess, it means that its first 
+	   nodes have already been connected to the frontier of $2 in the
+	   lower level rule 'prefix_actions'. Therefore the work has already
+	   been done. */
 	if (!$4->connected()) {
 	    if (!($4->unresolved())) {
 		/* If $4 is not an unresolved reference, we connect the
-		   frontier of $2 to the process $4. */
+		   current frontier (e.g. the frontier of $2) to the process
+		    $4. */
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
 		    ProcessNode * pnp = current_contexts.frontier[i];
 		    for (int j=0; j<pnp->children.size(); j++)
 			pnp->children[j].dest = (ProcessNode *)$4;
 		}
 	    } else {
-		/* If $4 is an unresolved reference, we scan the frontier
-		   of $2 recording the reference itself, so that this
+		/* If $4 is an unresolved reference, we scan the current
+		   frontier recording the reference itself, so that this
 		   reference will be fixed by the upper levels. */
 		string reference = ((UnresolvedProcess *)$4)->reference;
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
@@ -778,17 +806,29 @@ action_prefix:
 	}
 	//$2->print();
 	$$ = $2;
+	gpp->print(&actions);
     }
     ;
 
 prefix_actions:
     action_labels {
-	cout << "Action: "; $1->print();
+	cout << "pa(als): "; $1->print(); current_contexts.print();
 	ProcessNode * pnp;
 	ProcessEdge e;
 	SetValue * setvp;
 
+	/* Note that this is executed (obviously) after $1 has been
+	   parsed, and so after all the context ramifications implied by
+	   the latter have been executed. */
+
 	if (current_contexts.frontier.size() == 0) {
+	    /* If the frontier is empty, it means that we are at very
+	       beginning of a process definition (e.g. "P=(a->..." or
+	       "P(a->b->P|d->...").
+	       In this case we create the a node that will be the zero node,
+	       (or that will be merged with the zero node) and push it into
+	       the frontier and create a NULL pointing edge for each action
+	       in $1. */
 	    pnp = new ProcessNode;
 	    pnp->type = ProcessNode::Normal;
 	    current_contexts.frontier.push_back(pnp);
@@ -805,7 +845,15 @@ prefix_actions:
 	    delete $1;
 	    pnp->print(&actions);
 	    $$ = pnp;
+	    gpp = pnp; //XXX
 	} else {
+	    /* If the frontier is not empty, it means that, although at the
+	       beginning of an 'action_prefix', we are in the middle of
+	       a process definition (e.g. "P=(a->b->(c->..." or
+	       "P=(a-b->(c->d->P|e->..."). In this case we have to take each
+	       node in the frontier (e.g. a node with the edge "b"), and
+	       consider its edges.
+	    */
 	    vector<ProcessNode*> new_frontier;
 	    ProcessNode * pnp;
 	    ProcessNode * npnp;
@@ -816,8 +864,27 @@ prefix_actions:
 	    for (int i=0; i<current_contexts.frontier.size(); i++) {
 		pnp = current_contexts.frontier[i];
 		for (int j=0; j<pnp->children.size(); j++) {
-		    npnp = pnp->children[j].dest = 
-			new ProcessNode(ProcessNode::Normal);
+		    /* If the edge j is NULL-pointing, it means that we are
+		       at the beginning of a choice construct (e.g.
+		       "P=(a->b->(c->..."): We then create a node for that
+		       edge (in our example we create a node for "b". If the
+		       edge is not NULL-pointing, it means that we are in 
+		       the middle of a choice construct (e.g.
+		       "P=(a-b->(c->d->P|e->...") and so we know that the
+		       node for that edge already exists: No need to create
+		       anything.
+		    */
+		    if (pnp->children[j].dest == NULL)
+			 pnp->children[j].dest = 
+				new ProcessNode(ProcessNode::Normal);
+		    npnp = pnp->children[j].dest;
+		    /* Once we get the node pointed by the edge j (npnp), we
+		       have to combine that edge with the sets in $1. We
+		       have a combination when the rank of the edge is equal
+		       to the rank of a set. When we find a combination, we
+		       add to npnp a NULL-pointing edge for each element in 
+		       the matching set.
+		    */
 		    rank = pnp->children[j].rank;
 		    for (int c=0; c<$1->v.size(); c++) {
 			setvp = err_if_not_set($1->v[c]);
@@ -826,7 +893,76 @@ prefix_actions:
 				e.action = actions.insert(setvp->actions[k]);
 				e.dest = NULL;
 				/* We set e.rank to the index in the SvpVec
-				   $1, so that this edge will combine with
+				   $1 of setvp, so that this edge will
+				   combine with actions in the next level
+				   that have the same rank. */
+				e.rank = c;
+				npnp->children.push_back(e);
+			    }
+			}
+		    }
+		    /* We add npnp to the new frontier, so that its children
+		       will be used for combination with the next level
+		       actions. */
+		    new_frontier.push_back(npnp);
+		}
+	    }
+	    /* Update the frontier. */
+	    current_contexts.frontier = new_frontier;
+	    /* Tell the upper level rule (action_prefix) that the beginning
+	       of this prefix_actions has already been connected, and so
+	       'local_process' results already connected (see above). */
+	    $$ = new ConnectedProcess();
+	    gpp->print(&actions);
+	}
+    }
+    | prefix_actions ARROW action_labels {
+	cout << "pa(->): "; $3->print(); current_contexts.print();
+	ProcessNode * pnp;
+	ProcessNode * npnp;
+	ProcessEdge e;
+	SetValue * setvp;
+	int rank;
+	vector<ProcessNode*> new_frontier;
+
+	/* Here we are in the middle of a 'prefix_actions' 
+	   (e.g. "...->b->c->d->.."), and so we have to connect each edge in
+	   the frontier with the action sets in $3 (e.g. we have a frontier
+	   that contains a node with a NULL-pointing edge "c" and $3={{d}}).
+	*/
+	for (int i=0; i<current_contexts.frontier.size(); i++) {
+	    pnp = current_contexts.frontier[i];
+	    for (int j=0; j<pnp->children.size(); j++)
+		/* Here we have to do the same combination descripted above,
+		   but only if the edge in the frontier is NULL-pointing and
+		   it has not an unresolved reference associated. If the
+		   edge is not NULL-pointing, it means that we are in a 
+		   situation like this "...->a->(b->c->...|d->e->...)". In
+		   this case pnp is the node which has an edge "b" and an 
+		   edge "d", $3={{e}}: Therefore we don't have to consider the
+		   edge "b" for combinations, since it has already been used
+		   when processing the previous choice. We only have to
+		   consider "d". If an edge has an unresolved reference, 
+		   it means that we are in a situation like this
+		   "..a->(b->P|d->e->...)": this case is very similar to the
+		   previous one, but here the edge "b" is NULL-pointing,
+		   only because of the unresolved reference P: considering it
+		   for combinations would be an error.
+		*/
+		if (pnp->children[j].dest == NULL &&
+			pnp->children[j].unresolved_reference == "") {
+		    pnp->children[j].dest = 
+			new ProcessNode(ProcessNode::Normal);
+		    npnp = pnp->children[j].dest;
+		    rank = pnp->children[j].rank;
+		    for (int c=0; c<$3->v.size(); c++) {
+			setvp = err_if_not_set($3->v[c]);
+			if (setvp->rank == rank) {
+			    for (int k=0; k<setvp->actions.size(); k++) {
+				e.action = actions.insert(setvp->actions[k]);
+				e.dest = NULL;
+				/* We set e.rank to the index in the SvpVec
+				   $3, so that this edge will combine with
 				   actions in the next level that have the
 				   same rank. */
 				e.rank = c;
@@ -836,52 +972,15 @@ prefix_actions:
 		    }
 		    new_frontier.push_back(npnp);
 		}
-	    }
-	    current_contexts.frontier = new_frontier;
-	    /* Tell the upper level rule (action_prefix) that everything is
-	       already connected. */
-	    $$ = new ConnectedProcess();
-	}
-    }
-    | prefix_actions ARROW action_labels {
-	cout << "Action(->): "; $3->print();
-	ProcessNode * pnp;
-	ProcessNode * npnp;
-	ProcessEdge e;
-	SetValue * setvp;
-	int rank;
-
-	/* Note that this is executed (obviously) after $3 has been
-	   parsed, and so after all the context ramifications implied by
-	   the latter have been executed. */
-	vector<ProcessNode*> new_frontier;
-
-	for (int i=0; i<current_contexts.frontier.size(); i++) {
-	    pnp = current_contexts.frontier[i];
-	    for (int j=0; j<pnp->children.size(); j++) {
-		npnp = pnp->children[j].dest = 
-			    new ProcessNode(ProcessNode::Normal);
-		rank = pnp->children[j].rank;
-		for (int c=0; c<$3->v.size(); c++) {
-		    setvp = err_if_not_set($3->v[c]);
-		    if (setvp->rank == rank) {
-			for (int k=0; k<setvp->actions.size(); k++) {
-			    e.action = actions.insert(setvp->actions[k]);
-			    e.dest = NULL;
-			    /* We set e.rank to the index in the SvpVec $3,
-			       so that this edge will combine with actions
-			       in the next level that have the same rank. */
-			    e.rank = c;
-			    npnp->children.push_back(e);
-			}
-		    }
-		}
-		new_frontier.push_back(npnp);
-	    }
 	}
 	current_contexts.frontier = new_frontier;
+	/* Note that $1 is not used in this action, because we use the
+	   frontier stored in current_contexts. As a result, $1 is
+	   the result of the previous action (and so a ProcessNode* or a
+	   ConnectedProcess*. */
 	$$ = $1;
-	$1->print(&actions);
+	//$1->print(&actions);
+	gpp->print(&actions);
     }
     ;
 

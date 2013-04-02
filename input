@@ -2,7 +2,7 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-P5=(a[i:R]->b[j:i..2*i]->c[i+j]->P5).
+P=(a->(b->(d->P|e->P)|n->(m->P|o->P))).
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).
@@ -10,7 +10,9 @@ P3=(a[R]->b[i:R]->c[i]->P3).
 P4=(a[R]->b[R]->c[114]->P4).
 P5=(a[i:R]->b[j:i..2*i]->c[i+j]->P5).
 P6=(a[i:R]->b[j:R][k:R]->c[i+j+k]->P6).
-P1=(a[j:R]->b[i:R]->c[i+j]->(a->P1)).
+P7=(a->b->c->P7|d->e->f->P7).
+P8=(a[j:R]->(b[i:R]->c[i+j]->P8|d[j]->P8|e[j]->f[j*2]->P8)).
+P=(a->(b->(d->P|e->P)|n->(m->P|o->P))).
 */
 
 
