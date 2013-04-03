@@ -604,12 +604,17 @@ process_def:
 	freeProcessNodeGraph(pvp->pnp);
 
 	/* Extend the alphabet if is the case. */
-    /*
 	if ($6) {
-	    for (int i=0; i<$6->strings.size(); i++)
-		lts.updateAlphabet(actions.insert($6->strings[i]));
-		delete $6;
-	} */
+	    SetValue * setvp;
+	    if ($6->v.size() != 1) {
+		errstream << "Multiset alphabet extension";
+		semantic_error();
+	    }
+	    setvp = err_if_not_set($6->v[0]);
+	    for (int i=0; i<setvp->actions.size(); i++)
+		lts.updateAlphabet(actions.insert(setvp->actions[i]));
+		delete setvp;
+	}
 
 	/* Remove process parameters from the identifiers. */
 	for (int i=0; i<parameters.size(); i++) {
@@ -619,7 +624,6 @@ process_def:
 	parameters.clear();
 
 	lts.print();
-
 	lts.graphvizOutput((*$1 += ".gv").c_str());
 	delete $1;
 
@@ -773,28 +777,40 @@ choice:
     ;
 
 action_prefix:
-    guard_OPT prefix_actions ARROW local_process {
-	// TODO guard_OPT
-	cout << "ap\n"; current_contexts.print(); $4->print(&actions);
-	/* If $4 is an istance of ConnectedProcess, it means that its first 
-	   nodes have already been connected to the frontier of $2 in the
-	   lower level rule 'prefix_actions'. Therefore the work has already
-	   been done. */
-	if (!$4->connected()) {
-	    if (!($4->unresolved())) {
-		/* If $4 is not an unresolved reference, we connect the
-		   current frontier (e.g. the frontier of $2) to the process
-		    $4. */
+    guard_OPT {
+	ConstValue * cvp;
+	vector<bool> filter(current_contexts.size());
+	cout << "ap\n"; current_contexts.print();
+	if ($1) {
+	    for (int c=0; c<current_contexts.size(); c++) {
+		cvp = err_if_not_const($1->v[c]);
+		filter[c] = !!cvp->value;
+	    }
+	    current_contexts.filter(filter);
+	    cout << "filtered\n"; current_contexts.print();
+	}
+    } prefix_actions ARROW local_process {
+	$5->print(&actions);
+
+	/* If $5 is an istance of ConnectedProcess, it means that its first 
+	   nodes have already been connected to the frontier of $3 in the
+	   lower level rule 'prefix_actions'. Therefore there is nothing to
+	   be done here. */
+	if (!$5->connected()) {
+	    if (!($5->unresolved())) {
+		/* If $5 is not an unresolved reference, we connect the
+		   current frontier (e.g. the frontier of $3) to the process
+		    $5. */
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
 		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
 		    int child = current_contexts.frontier[i].child;
-		    pnp->children[child].dest = (ProcessNode *)$4;
+		    pnp->children[child].dest = (ProcessNode *)$5;
 		}
 	    } else {
-		/* If $4 is an unresolved reference, we scan the current
+		/* If $5 is an unresolved reference, we scan the current
 		   frontier recording the reference itself, so that this
 		   reference will be fixed by the upper levels. */
-		string reference = ((UnresolvedProcess *)$4)->reference;
+		string reference = ((UnresolvedProcess *)$5)->reference;
 		for (int i=0; i<current_contexts.frontier.size(); i++) {
 		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
 		    int child = current_contexts.frontier[i].child;
@@ -802,8 +818,8 @@ action_prefix:
 		}
 	    }
 	}
-	//$2->print();
-	$$ = $2;
+	//$3->print();
+	$$ = $3;
 	gpp->print(&actions);
     }
     ;
@@ -822,12 +838,13 @@ prefix_actions:
 
 	if (current_contexts.frontier.size() == 0) {
 	    /* If the frontier is empty, it means that we are at very
-	       beginning of a process definition (e.g. "P=(a->..." or
-	       "P(a->b->P|d->...").
-	       In this case we create the a node that will be the zero node,
-	       (or that will be merged with the zero node) and push it into
-	       the frontier and create a NULL pointing edge for each action
-	       in $1. */
+	       beginning of a process definition (e.g. "P=(a->..."), or
+	       we are processing a choice alternative to the very first
+	       choice (e.g. "P(a->b->P|d->...").
+	       In this case we create a node that will be the zero node,
+	       (or that will be merged with the zero node) and add to it a
+	       NULL pointing edge for each action in $1. All these edges
+	       are pushed into the current frontier. */
 	    pnp = new ProcessNode;
 	    pnp->type = ProcessNode::Normal;
 
@@ -851,9 +868,8 @@ prefix_actions:
 	    /* If the frontier is not empty, it means that, although at the
 	       beginning of an 'action_prefix', we are in the middle of
 	       a process definition (e.g. "P=(a->b->(c->..." or
-	       "P=(a-b->(c->d->P|e->..."). In this case we have to take each
-	       node in the frontier (e.g. a node with the edge "b"), and
-	       consider its edges.
+	       "P=(a-b->(c->d->P|e->..."). In this case we have consider all
+	       the edges in the frontier (e.g. the edge "b").
 	    */
 	    vector<FrontierElement> new_frontier;
 	    ProcessNode * pnp;
@@ -867,24 +883,24 @@ prefix_actions:
 	    for (int i=0; i<current_contexts.frontier.size(); i++) {
 		pnp = current_contexts.frontier[i].pnp;
 		child = current_contexts.frontier[i].child;
-		/* If the edge j is NULL-pointing, it means that we are
+		/* If the edge i is NULL-pointing, it means that we are
 		   at the beginning of a choice construct (e.g.
 		   "P=(a->b->(c->..."): We then create a node for that
-		   edge (in our example we create a node for "b". If the
+		   edge (in our example we create a node for "b"). If the
 		   edge is not NULL-pointing, it means that we are in 
 		   the middle of a choice construct (e.g.
-		   "P=(a-b->(c->d->P|e->...") and so we know that the
-		   node for that edge already exists: No need to create
-		   anything.
+		   "P=(a-b->(c->d->P|e->...") and so the node has already
+		   been created when processing the first choice element.
+		   There is no need to create anything.
 		 */
 		if (pnp->children[child].dest == NULL)
 		    pnp->children[child].dest = 
 			new ProcessNode(ProcessNode::Normal);
 		npnp = pnp->children[child].dest;
-		/* Once we get the node pointed by the edge j (npnp), we
+		/* Once we get the node pointed by the edge i (npnp), we
 		   have to combine that edge with the sets in $1. We
 		   have a combination when the rank of the edge is equal
-		   to the rank of a set. When we find a combination, we
+		   to the rank of the set. When we find a combination, we
 		   add to npnp a NULL-pointing edge for each element in 
 		   the matching set.
 		 */
@@ -934,7 +950,7 @@ prefix_actions:
 	/* Here we are in the middle of a 'prefix_actions' 
 	   (e.g. "...->b->c->d->.."), and so we have to connect each edge in
 	   the frontier with the action sets in $3 (e.g. we have a frontier
-	   that contains a node with a NULL-pointing edge "c" and $3={{d}}).
+	   that contains a NULL-pointing edge "c" and $3={{d}}).
 	*/
 	for (int i=0; i<current_contexts.frontier.size(); i++) {
 	    pnp = current_contexts.frontier[i].pnp;
@@ -945,16 +961,15 @@ prefix_actions:
 	       edge is not NULL-pointing, it means that we are in a 
 	       situation like this "...->a->(b->c->...|d->e->...)". In
 	       this case pnp is the node which has an edge "b" and an 
-	       edge "d", $3={{e}}: Therefore we don't have to consider the
-	       edge "b" for combinations, since it has already been used
-	       when processing the previous choice. We only have to
+	       edge "d", and $3={{e}}: Therefore we don't have to consider
+	       the edge "b" for combinations, since it has already been used
+	       when processing the previous choice element. We only have to
 	       consider "d". If an edge has an unresolved reference, 
 	       it means that we are in a situation like this
 	       "..a->(b->P|d->e->...)": this case is very similar to the
 	       previous one, but here the edge "b" is NULL-pointing,
 	       only because of the unresolved reference P: considering it
-	       for combinations would be an error.
-	     */
+	       for combinations would be an error. */
 	    if (pnp->children[child].dest == NULL &&
 		    pnp->children[child].unresolved_reference == "") {
 		pnp->children[child].dest = 
@@ -997,10 +1012,8 @@ guard_OPT:
 	$$ = NULL;
     }
     | WHEN expression {
-	ConstValue * cvp;
-	for (int i=0; i<$2->v.size(); i++) {
+	for (int i=0; i<$2->v.size(); i++)
 	    err_if_not_const($2->v[i]);
-	}
 	$$ = $2;
     }
     ;
