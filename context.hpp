@@ -8,11 +8,12 @@ using namespace std;
 
 
 class Context {
+  public:
     vector<string> names;
     vector<SymbolValue *> values;
+    bool ruled_out;
 
-  public:
-    Context() { }
+    Context() { ruled_out = 0; }
     Context(const Context&);
     bool lookup(const string& s, SymbolValue*& ret);
     bool insert(const string& s, int value);
@@ -28,7 +29,6 @@ struct FrontierElement {
 
 struct ContextsSet {
     vector<Context *> s;
-    vector<bool> excluded_mask;
     vector<FrontierElement> frontier;
 
     ContextsSet() { }

@@ -8,6 +8,7 @@ Context::Context(const Context& ctx)
     values.resize(ctx.values.size());
     for (int i=0; i<values.size(); i++)
 	    values[i] = ctx.values[i]->clone();
+    ruled_out = ctx.ruled_out;
 }
 
 bool Context::lookup(const string& s, SymbolValue*& ret) {
@@ -76,17 +77,16 @@ ContextsSet::ContextsSet(const ContextsSet& cs)
 	s[i] = new Context(*cs.s[i]);
     }
     frontier = cs.frontier;
-    excluded_mask = cs.excluded_mask;
 }
 
 void ContextsSet::append(Context * ctx) { 
-    s.push_back(ctx); excluded_mask.push_back(false);
+    s.push_back(ctx);
 }
 void ContextsSet::rule_out(int c) {
-    excluded_mask[c] = true;
+    s[c]->ruled_out = true;
 }
 bool ContextsSet::is_ruled_out(int c) const {
-    return excluded_mask[c];
+    return s[c]->ruled_out;
 }
 
 void ContextsSet::print() const {
