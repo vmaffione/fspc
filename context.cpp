@@ -76,21 +76,17 @@ ContextsSet::ContextsSet(const ContextsSet& cs)
 	s[i] = new Context(*cs.s[i]);
     }
     frontier = cs.frontier;
+    excluded_mask = cs.excluded_mask;
 }
 
-void ContextsSet::filter(const vector<bool> & filter_mask)
-{
-    vector<Context *> news;
-    vector<int> mapping(s.size());
-
-    for (int i=0; i<filter_mask.size(); i++)
-	if (filter_mask[i]) {
-	    news.push_back(s[i]);
-	    mapping[i] = news.size() - 1;
-	} else {
-	    delete s[i];
-	}
-    s = news;
+void ContextsSet::append(Context * ctx) { 
+    s.push_back(ctx); excluded_mask.push_back(false);
+}
+void ContextsSet::rule_out(int c) {
+    excluded_mask[c] = true;
+}
+bool ContextsSet::is_ruled_out(int c) const {
+    return excluded_mask[c];
 }
 
 void ContextsSet::print() const {

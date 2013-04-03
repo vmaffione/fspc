@@ -779,14 +779,13 @@ choice:
 action_prefix:
     guard_OPT {
 	ConstValue * cvp;
-	vector<bool> filter(current_contexts.size());
 	cout << "ap\n"; current_contexts.print();
 	if ($1) {
 	    for (int c=0; c<current_contexts.size(); c++) {
 		cvp = err_if_not_const($1->v[c]);
-		filter[c] = !!cvp->value;
+		if (!cvp->value)
+		    current_contexts.rule_out(c);
 	    }
-	    current_contexts.filter(filter);
 	    cout << "filtered\n"; current_contexts.print();
 	}
     } prefix_actions ARROW local_process {
@@ -849,6 +848,7 @@ prefix_actions:
 	    pnp->type = ProcessNode::Normal;
 
 	    for (int c=0; c<$1->v.size(); c++) {
+		if (current_contexts.is_ruled_out(c)) continue;
 		setvp = err_if_not_set($1->v[c]);
 		for (int i=0; i<setvp->actions.size(); i++) {
 		    e.action = actions.insert(setvp->actions[i]);
@@ -906,6 +906,7 @@ prefix_actions:
 		 */
 		rank = pnp->children[child].rank;
 		for (int c=0; c<$1->v.size(); c++) {
+		    if (current_contexts.is_ruled_out(c)) continue;
 		    setvp = err_if_not_set($1->v[c]);
 		    if (setvp->rank == rank) {
 			for (int k=0; k<setvp->actions.size(); k++) {
@@ -977,6 +978,7 @@ prefix_actions:
 		npnp = pnp->children[child].dest;
 		rank = pnp->children[child].rank;
 		for (int c=0; c<$3->v.size(); c++) {
+		    if (current_contexts.is_ruled_out(c)) continue;
 		    setvp = err_if_not_set($3->v[c]);
 		    if (setvp->rank == rank) {
 			for (int k=0; k<setvp->actions.size(); k++) {

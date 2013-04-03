@@ -28,14 +28,16 @@ struct FrontierElement {
 
 struct ContextsSet {
     vector<Context *> s;
+    vector<bool> excluded_mask;
     vector<FrontierElement> frontier;
 
     ContextsSet() { }
     ContextsSet(const ContextsSet&);
     int size() const { return s.size(); }
     Context*& operator[](int i) { return s[i]; }
-    void append(Context * ctx) { s.push_back(ctx); }
-    void filter(const vector<bool>&);
+    void append(Context * ctx);
+    void rule_out(int c);
+    bool is_ruled_out(int c) const;
     void print() const;
     ~ContextsSet();
 };
