@@ -682,23 +682,43 @@ local_process:
 	}
 	delete $2;
     }
-    | IF expression THEN local_process ELSE local_process {
-	ConstValue * cvp; 
-	ProcessBase * pbp;
-	if ($2->v.size() > 1) {cout < "TODO IF THEN\n"; exit(-1);} //TODO
-	cvp = err_if_not_const($2->v[0]);
-	if (cvp->value) {
-	    pbp = $6;
-	    $$ = $4;
-	} else {
-	    pbp = $4;
-	    $$ = $6;
+    | IF expression THEN {
+	ConstValue * cvp;
+
+	css.push_clone();
+	for (int c=0; c<current_contexts.size(); c++) {
+	    cvp = err_if_not_const($2->v[c]);
+	    if (!cvp->value) {
+		current_contexts.rule_out(c);
+	    }
 	}
-	if (pbp->unresolved())
-	    delete pbp;
-	else
-	    freeProcessNodeGraph((ProcessNode *)pbp);
+	cout << "IFTHENELSE\n";
+    } local_process ELSE {
+	ConstValue * cvp;
+
+	css.pop();
+	css.push_clone();
+	for (int c=0; c<current_contexts.size(); c++) {
+	    cvp = err_if_not_const($2->v[c]);
+	    if (cvp->value) {
+		current_contexts.rule_out(c);
+	    }
+	}
+    } local_process {
+	ConstValue * cvp;
+	ProcessBase * pbp;
+
+	css.pop();
+	// TODO vectorize output!
+	for (int c=0; c<current_contexts.size(); c++) {
+	    cvp = err_if_not_const($2->v[c]);
+	    if (cvp->value)
+		pbp = $5;
+	    else
+		pbp = $8;
+	}
 	delete $2;
+	$$ = pbp;
     }
     | '(' {
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
