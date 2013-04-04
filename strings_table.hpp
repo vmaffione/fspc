@@ -46,6 +46,8 @@ struct SvpVec {
     vector<SymbolValue *> v;
     bool shared;
 
+    SvpVec() : shared(false) { }
+
     SymbolValue * detach(int i) {
 	SymbolValue* ret;
 	if (i < v.size()) {

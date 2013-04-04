@@ -166,6 +166,7 @@ void yyerror(const char *s);
 %type <svpvec_ptr> alphabet_extension_OPT
 %type <svpvec_ptr> action_range guard_OPT
 %type <svpvec_ptr> range_expr
+%type <svpvec_ptr> index_ranges_OPT index_ranges
 %type <pb_ptr> choice action_prefix prefix_actions
 %type <pb_ptr> process_body local_process local_process_defs local_process_def
 %type <pb_ptr> sequential_composition base_local_process
@@ -650,6 +651,28 @@ local_process_defs:
 local_process_def:
     process_id index_ranges_OPT '=' local_process {
 	// TODO index_ranges_OPT
+
+	if ($4->unresolved()) {
+	    errstream << "Local process " << 
+		    ((UnresolvedProcess * )$4)->reference << " undeclared\n";
+	    semantic_error();
+	}
+
+	// switch ($2->v[0].type())
+
+	/* Insert a new ProcessValue in the symbol table, attaching the
+	   'local_process' to it. */
+	ProcessValue * pvp = new ProcessValue;
+	cout << "Process " << *$1 << "[] defined\n";
+	if (!processes.insert(*$1, pvp)) {
+	    errstream << "process " << *$1 << " declared twice";
+	    semantic_error();
+	}
+	pvp->pnp = err_if_not_procnode($4);
+
+	//pvp->pnp->print(&actions);
+
+	delete $1;
 	$$ = $4;
     }
     ;
@@ -1050,14 +1073,58 @@ indices:
     ;
 
 index_ranges_OPT:
+    {
+	$$ = NULL;
+    }
     | index_ranges
     ;
 
 index_ranges:
-    '[' expression ']'
-    | index_ranges '[' expression ']'
-    | '[' action_range ']'
-    | index_ranges '[' action_range ']'
+    '[' action_range ']' {
+	SvpVec * vp;
+	SetValue * setvp;
+	ConstValue * cvp;
+
+	//TODO need rank here!
+	/* Here we are sure to have only the empty context. */
+	if ($2->v.size() != 1) {cout << "FATAL 523\n";exit(-1);}
+	switch ($2->v[0]->type()) {
+	    case SymbolValue::Const:
+		cvp = err_if_not_const($2->v[0]);
+		setvp = new SetValue;
+		setvp->actions.push_back("[" + int2string(cvp->value) + "]");
+		break;
+	    default:
+		cout << "STILL TO IMPLEMENT 523\n";
+		exit(1);    
+	}
+	delete $2;
+
+	vp = new SvpVec;
+	vp->v.push_back(setvp);
+	$$ = vp;
+    }
+    | index_ranges '[' action_range ']' {
+	SvpVec * vp;
+	SetValue * setvp;
+	ConstValue * cvp;
+
+	if ($3->v.size() != $1->v.size()) {cout << "FATAL 836\n";exit(-1);}
+	switch ($3->v[0]->type()) {
+	    case SymbolValue::Const:
+		for (int c=0; c<$1->v.size(); c++) {
+		    setvp = err_if_not_set($1->v[c]);
+		    cvp = err_if_not_const($3->v[c]);
+		    setvp->indexize(cvp->value);
+		}
+		delete $3;
+		$$ = $1;
+		break;
+	    default:
+		cout << "STILL TO IMPLEMENT 836\n";
+		exit(1);    
+	}
+    }
     ;
 
 sequential_composition:
