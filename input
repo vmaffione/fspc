@@ -2,8 +2,7 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-
-P8=(a[j:R]->(b[i:R]->c[i+j]->P8|d[j]->P8|e[j]->f[j*2]->P8)).
+P9=(a->(b->(d->(g->P9|h->i->P9)|e->P9|f->P9)|n->(m->P9|q->(t->u->P9|v->P9)|o->p->P9))).
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).

@@ -645,6 +645,7 @@ process_def:
 	   the rule and push the parameters into the 'identifiers' table
 	   in this action. */
 	init_fakenode();
+	gpp = NULL;
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	SHH("process_def --> ... process_body ...");
@@ -741,14 +742,17 @@ local_process_defs:
     ;
 
 local_process_def:
-    process_id index_ranges_OPT '=' local_process {
+    process_id index_ranges_OPT '=' {
+	init_fakenode();
+	gpp = NULL;
+    } local_process {
 	SHH("local_process_def --> process_id = local_process");
-	IN(cout << *$1 << ": "; $4->print(&actions));
+	IN(cout << *$1 << ": "; $5->print(&actions));
 	// TODO index_ranges_OPT
 
-	if ($4->unresolved()) {
+	if ($5->unresolved()) {
 	    errstream << "Local process " << 
-		    ((UnresolvedProcess * )$4)->reference << " undeclared\n";
+		    ((UnresolvedProcess * )$5)->reference << " undeclared\n";
 	    semantic_error();
 	}
 
@@ -762,12 +766,12 @@ local_process_def:
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
 	}
-	pvp->pnp = err_if_not_procnode($4);
+	pvp->pnp = err_if_not_procnode($5);
 
 	//pvp->pnp->print(&actions);
 
 	delete $1;
-	$$ = $4;
+	$$ = $5;
 	OUT($$->print(&actions));
     }
     ;
@@ -923,28 +927,8 @@ choice:
 	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
 	cout << "CSS height = (pop) " << css.stack.size() << "\n";
-
-	/* If the frontier is empty, $1 must be the zero node, and so we
-	   just have to merge $1 and $4, adding to $1 all the edges of $4.
-	   If the frontier is not empty, it means that the choice we are
-	   processing is not onto the zero node, but somewhere in the middle
-	   of the graph: In this case the merging operation has already been
-	   done by the action associated to the rule 
-	   'prefix_actions: actions_label'.
-	 */
-	if (current_contexts.frontier.size() == 0) {
-	    ProcessNode * pnpl = err_if_not_procnode($1);
-	    ProcessNode * pnpr = err_if_not_procnode($4);
-	    for (int i=0; i<pnpr->children.size(); i++)
-		pnpl->children.push_back(pnpr->children[i]);
-	    /* We must delete only the ProcessNode pointed by $4, but not the
-	       whole graph! */
-	    delete pnpr;
-	    //$1->print();
-	}
 	$$ = $1;
 	OUT($$->print(&actions));
-	PROX(gpp->print(&actions));
     }
     ;
 
@@ -1004,114 +988,88 @@ prefix_actions:
 	IN($1->print(); current_contexts.print());
 	PROP("prefix_actions --> action_labels");
 	PROX(cout<<"$1 = "; $1->print());
-	ProcessNode * pnp;
-	ProcessEdge e;
-	SetValue * setvp;
-	struct FrontierElement fe;
 
 	/* Note that this is executed (obviously) after $1 has been
 	   parsed, and so after all the context ramifications implied by
 	   the latter have been executed. */
 
-	if (current_contexts.frontier.size() == 0) {
-	    /* If the frontier is empty, it means that we are at very
-	       beginning of a process definition (e.g. "P=(a->..."), or
-	       we are processing a choice alternative to the very first
-	       choice (e.g. "P(a->b->P|d->...").
-	       In this case we create a node that will be the zero node,
-	       (or that will be merged with the zero node) and add to it a
-	       NULL pointing edge for each action in $1. All these edges
-	       are pushed into the current frontier. */
-	    pnp = new ProcessNode;
-	    pnp->type = ProcessNode::Normal;
+	/* If the frontier is not empty, it means that, although at the
+	   beginning of an 'action_prefix', we are in the middle of
+	   a process definition (e.g. "P=(a->b->(c->..." or
+	   "P=(a-b->(c->d->P|e->..."). In this case we have consider all
+	   the edges in the frontier (e.g. the edge "b").
+	 */
+	vector<FrontierElement> new_frontier;
+	ProcessNode * pnp;
+	ProcessNode * npnp;
+	ProcessEdge e;
+	SetValue * setvp;
+	int rank;
+	int child;
+	struct FrontierElement fe;
+	bool zero = false;
 
+	for (int i=0; i<current_contexts.frontier.size(); i++) {
+	    pnp = current_contexts.frontier[i].pnp;
+	    child = current_contexts.frontier[i].child;
+	    /* If the edge i is NULL-pointing, it means that we are
+	       at the beginning of a choice construct (e.g.
+	       "P=(a->b->(c->..."): We then create a node for that
+	       edge (in our example we create a node for "b"). If the
+	       edge is not NULL-pointing, it means that we are in 
+	       the middle of a choice construct (e.g.
+	       "P=(a-b->(c->d->P|e->...") and so the node has already
+	       been created when processing the first choice element.
+	       There is no need to create anything.
+	     */
+	    if (pnp->children[child].dest == NULL)
+		pnp->children[child].dest = 
+		    new ProcessNode(ProcessNode::Normal);
+	    npnp = pnp->children[child].dest;
+	    if (gpp == NULL) {
+		gpp = npnp;
+		zero = true;
+	    }
+	    /* Once we get the node pointed by the edge i (npnp), we
+	       have to combine that edge with the sets in $1. We
+	       have a combination when the rank of the edge is equal
+	       to the rank of the set. When we find a combination, we
+	       add to npnp a NULL-pointing edge for each element in 
+	       the matching set.
+	     */
+	    rank = pnp->children[child].rank;
 	    for (int c=0; c<$1->v.size(); c++) {
 		if (current_contexts.is_ruled_out(c)) continue;
 		setvp = err_if_not_set($1->v[c]);
-		for (int i=0; i<setvp->actions.size(); i++) {
-		    e.action = actions.insert(setvp->actions[i]);
-		    e.dest = NULL;
-		    e.rank = c;
-		    pnp->children.push_back(e);
-		    fe.pnp = pnp;
-		    fe.child = pnp->children.size() - 1;
-		    current_contexts.frontier.push_back(fe);
-		}
-	    }
-	    delete $1;
-	    $$ = pnp;
-	    if (gpp == NULL) gpp = pnp; //XXX
-	} else {
-	    /* If the frontier is not empty, it means that, although at the
-	       beginning of an 'action_prefix', we are in the middle of
-	       a process definition (e.g. "P=(a->b->(c->..." or
-	       "P=(a-b->(c->d->P|e->..."). In this case we have consider all
-	       the edges in the frontier (e.g. the edge "b").
-	    */
-	    vector<FrontierElement> new_frontier;
-	    ProcessNode * pnp;
-	    ProcessNode * npnp;
-	    ProcessEdge e;
-	    SetValue * setvp;
-	    int rank;
-	    int child;
-	    struct FrontierElement fe;
-
-	    for (int i=0; i<current_contexts.frontier.size(); i++) {
-		pnp = current_contexts.frontier[i].pnp;
-		child = current_contexts.frontier[i].child;
-		/* If the edge i is NULL-pointing, it means that we are
-		   at the beginning of a choice construct (e.g.
-		   "P=(a->b->(c->..."): We then create a node for that
-		   edge (in our example we create a node for "b"). If the
-		   edge is not NULL-pointing, it means that we are in 
-		   the middle of a choice construct (e.g.
-		   "P=(a-b->(c->d->P|e->...") and so the node has already
-		   been created when processing the first choice element.
-		   There is no need to create anything.
-		 */
-		if (pnp->children[child].dest == NULL)
-		    pnp->children[child].dest = 
-			new ProcessNode(ProcessNode::Normal);
-		npnp = pnp->children[child].dest;
-		/* Once we get the node pointed by the edge i (npnp), we
-		   have to combine that edge with the sets in $1. We
-		   have a combination when the rank of the edge is equal
-		   to the rank of the set. When we find a combination, we
-		   add to npnp a NULL-pointing edge for each element in 
-		   the matching set.
-		 */
-		rank = pnp->children[child].rank;
-		for (int c=0; c<$1->v.size(); c++) {
-		    if (current_contexts.is_ruled_out(c)) continue;
-		    setvp = err_if_not_set($1->v[c]);
-		    if (setvp->rank == rank) {
-			for (int k=0; k<setvp->actions.size(); k++) {
-			    e.action = actions.insert(setvp->actions[k]);
-			    e.dest = NULL;
-			    /* We set e.rank to the index in the SvpVec
-			       $1 of setvp, so that this edge will
-			       combine with actions in the next level
-			       that have the same rank. */
-			    e.rank = c;
-			    npnp->children.push_back(e);
-			    /* We add the edge to the new frontier, so that
-			       it will be used for combination with the next
-			        level actions. */
-			    fe.pnp = npnp;
-			    fe.child = npnp->children.size() - 1;
-			    new_frontier.push_back(fe);
-			}
+		if (setvp->rank == rank) {
+		    for (int k=0; k<setvp->actions.size(); k++) {
+			e.action = actions.insert(setvp->actions[k]);
+			e.dest = NULL;
+			/* We set e.rank to the index in the SvpVec
+			   $1 of setvp, so that this edge will
+			   combine with actions in the next level
+			   that have the same rank. */
+			e.rank = c;
+			npnp->children.push_back(e);
+			/* We add the edge to the new frontier, so that
+			   it will be used for combination with the next
+			   level actions. */
+			fe.pnp = npnp;
+			fe.child = npnp->children.size() - 1;
+			new_frontier.push_back(fe);
 		    }
 		}
 	    }
-	    /* Update the frontier. */
-	    current_contexts.frontier = new_frontier;
-	    /* Tell the upper level rule (action_prefix) that the beginning
-	       of this prefix_actions has already been connected, and so
-	       'local_process' results already connected (see above). */
-	    $$ = new ConnectedProcess();
 	}
+	/* Update the frontier. */
+	current_contexts.frontier = new_frontier;
+	/* Tell the upper level rule (action_prefix) that the beginning
+	   of this prefix_actions has already been connected, and so
+	   'local_process' results already connected (see above). */
+	if (zero)
+	    $$ = gpp;
+	else
+	    $$ = new ConnectedProcess();
 	OUT($$->print(&actions));
 	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
     }
@@ -1823,10 +1781,10 @@ int parser()
        ContextsSet. This set contains a single empty Context and an
        empty frontier. */
     ContextsSet * csp = new ContextsSet;
-/*    struct FrontierElement fe;
+    struct FrontierElement fe;
     fe.pnp = &fakenode;
     fe.child = 0;
-    csp->frontier.push_back(fe);*/
+    csp->frontier.push_back(fe);
     csp->append(new Context);
     css.push(csp);
 
