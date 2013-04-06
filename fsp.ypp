@@ -166,6 +166,7 @@ void yyerror(const char *s);
     class ProcessNode * pn_ptr;
     class ProcessBase * pb_ptr;
     struct SvpVec * svpvec_ptr;
+    struct Pvec * pvec_ptr;
 }
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -202,10 +203,11 @@ void yyerror(const char *s);
 %type <svpvec_ptr> action_range guard_OPT
 %type <svpvec_ptr> range_expr
 %type <svpvec_ptr> index_ranges_OPT index_ranges
-%type <pb_ptr> choice action_prefix prefix_actions
-%type <pb_ptr> process_body local_process local_process_defs local_process_def
-%type <pb_ptr> sequential_composition base_local_process
-%type <pb_ptr> seq_process_list process_ref
+
+%type <pvec_ptr> choice action_prefix prefix_actions
+%type <pvec_ptr> process_body local_process local_process_defs local_process_def
+%type <pvec_ptr> sequential_composition base_local_process
+%type <pvec_ptr> seq_process_list process_ref
 
 %glr-parser
 
@@ -651,13 +653,10 @@ process_def:
 	SHH("process_def --> ... process_body ...");
 	IN(cout<<*$1<< ": "; $5->print(&actions));
 	PROP("process_def --> ... process_body ...");
-	if ($5->unresolved()) {
-	    errstream << "Local process " << 
-		    ((UnresolvedProcess * )$5)->reference << " undeclared\n";
-	    semantic_error();
-	}
 
-	PROX(cout<<*$1<<" = "; $5->print(&actions));
+	if ($5->v.size() != 1) {cout << "FATAL 82\n"; exit(-1); }
+	ProcessBase * pbp = $5->v[0];
+	PROX(cout<<*$1<<" = "; pbp->print(&actions));
 
 	/* Insert a new ProcessValue in the symbol table, attaching the
 	   process_body to it. */
@@ -667,7 +666,7 @@ process_def:
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
 	}
-	pvp->pnp = (ProcessNode *)$5;
+	pvp->pnp = err_if_not_procnode(pbp);
 
 	/* Try to resolve all the undefined references into this process. */
 	struct ProcessVisitObject f;
@@ -743,7 +742,7 @@ local_process_defs:
 
 local_process_def:
     process_id index_ranges_OPT '=' {
-	init_fakenode();
+/*	init_fakenode();
 	gpp = NULL;
     } local_process {
 	SHH("local_process_def --> process_id = local_process");
@@ -758,8 +757,6 @@ local_process_def:
 
 	// switch ($2->v[0].type())
 
-	/* Insert a new ProcessValue in the symbol table, attaching the
-	   'local_process' to it. */
 	ProcessValue * pvp = new ProcessValue;
 	cout << "Process " << *$1 << "[] defined\n";
 	if (!processes.insert(*$1, pvp)) {
@@ -772,7 +769,7 @@ local_process_def:
 
 	delete $1;
 	$$ = $5;
-	OUT($$->print(&actions));
+	OUT($$->print(&actions)); */
     }
     ;
 
@@ -794,12 +791,14 @@ local_process:
 	OUT($$->print(&actions));
     }
     | sequential_composition {
+/*
 	SHH("local_process --> sequential_composition");
 	$$ = $1;
 	OUT($$->print(&actions));
+*/
     }
     | IF expression THEN local_process {
-	SHH("local_process --> IF expression THEN local_process");
+/*	SHH("local_process --> IF expression THEN local_process");
 	IN($2->print();$4->print(&actions));
 	ConstValue * cvp;
 	if ($2->v.size() > 1) {cout < "TODO IF THEN\n"; exit(-1);} //TODO
@@ -807,7 +806,6 @@ local_process:
 	if (cvp->value)
 	    $$ = $4;
 	else {
-	    /* If the condition is not true, return a STOP process. */
 	    if ($4->unresolved())
 		delete $4;
 	    else
@@ -815,10 +813,10 @@ local_process:
 	    $$ = new ProcessNode;
 	}
 	delete $2;
-	OUT($$->print(&actions));
+	OUT($$->print(&actions));*/
     }
     | IF expression THEN {
-	SHH("local_process --> IF expression THEN (cont)");
+/*	SHH("local_process --> IF expression THEN (cont)");
 	ConstValue * cvp;
 
 	css.push_clone();
@@ -858,7 +856,7 @@ local_process:
 	}
 	delete $2;
 	$$ = pbp;
-	OUT($$->print(&actions));
+	OUT($$->print(&actions)); */
     }
     | '(' {
 	SHH("local_process --> (   (cont)");
@@ -877,30 +875,51 @@ local_process:
 base_local_process:
     END {
 	SHH("base_local_process --> END");
-	$$ = new ProcessNode(ProcessNode::End);
+	Pvec * pvec = new Pvec;
+	ProcessNode * pnp = new ProcessNode(ProcessNode::End);
+
+	for (int c=0; c<current_contexts.size(); c++)
+	    pvec->v.push_back(pnp);
+	$$ = pvec;
 	OUT($$->print(&actions));
     }
     | STOP {
 	SHH("base_local_process --> STOP");
-	$$ = new ProcessNode;
+	Pvec * pvec = new Pvec;
+	ProcessNode * pnp = new ProcessNode;
+
+	for (int c=0; c<current_contexts.size(); c++)
+	    pvec->v.push_back(pnp);
+	$$ = pvec;
 	OUT($$->print(&actions));
     }
     | ERROR {
 	SHH("base_local_process --> ERROR");
-	$$ = new ProcessNode(ProcessNode::Error);
+	Pvec * pvec = new Pvec;
+	ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
+
+	for (int c=0; c<current_contexts.size(); c++)
+	    pvec->v.push_back(pnp);
+	$$ = pvec;
 	OUT($$->print(&actions));
     }
     | process_id indices_OPT {
 	SHH("base_local_process --> process_id indices_OPT");
 	//TODO implement indices_OPT
 	SymbolValue * svp;
+	Pvec * pvec = new Pvec;
+	ProcessBase * pbp;
+
 	/* If the process referenced is already defined, return it.
 	   Otherwise return a new UnresolvedProcess object, so that the
 	   upper level sees that *$1 is unresolved. */
 	if (processes.lookup(*$1, svp))
-	    $$ = ((ProcessValue *)svp)->pnp;
+	    pbp = ((ProcessValue *)svp)->pnp;
 	else
-	    $$ = new UnresolvedProcess(*$1);
+	    pbp = new UnresolvedProcess(*$1);
+	for (int c=0; c<current_contexts.size(); c++)
+	    pvec->v.push_back(pbp);
+	$$ = pvec;
 	OUT($$->print(&actions));
     }
     ;
@@ -953,28 +972,28 @@ action_prefix:
 	   nodes have already been connected to the frontier of $3 in the
 	   lower level rule 'prefix_actions'. Therefore there is nothing to
 	   be done here. */
-	if (!$5->connected()) {
-	    if (!($5->unresolved())) {
+cout << $5->v.size() << endl;
+	if (!$5->v[0]->connected()) {
+	    for (int i=0; i<current_contexts.frontier.size(); i++) {
+		ProcessNode * pnp = current_contexts.frontier[i].pnp;
+		int child = current_contexts.frontier[i].child;
+		int rank = pnp->children[child].rank;
+		cout << "r s: " << rank << " " << $5->v.size() << "\n";
+		if (!$5->v[rank]->unresolved())
 		/* If $5 is not an unresolved reference, we connect the
 		   current frontier (e.g. the frontier of $3) to the process
 		    $5. */
-		for (int i=0; i<current_contexts.frontier.size(); i++) {
-		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
-		    int child = current_contexts.frontier[i].child;
-		    pnp->children[child].dest = (ProcessNode *)$5;
-		}
-	    } else {
+		    pnp->children[child].dest =
+				    err_if_not_procnode($5->v[rank]);
+		else
 		/* If $5 is an unresolved reference, we scan the current
 		   frontier recording the reference itself, so that this
 		   reference will be fixed by the upper levels. */
-		string reference = ((UnresolvedProcess *)$5)->reference;
-		for (int i=0; i<current_contexts.frontier.size(); i++) {
-		    ProcessNode * pnp = current_contexts.frontier[i].pnp;
-		    int child = current_contexts.frontier[i].child;
-		    pnp->children[child].unresolved_reference = reference;
-		}
+		    pnp->children[child].unresolved_reference =
+			    ((UnresolvedProcess *)$5->v[rank])->reference;
 	    }
 	}
+
 	//$3->print();
 	$$ = $3;
 	OUT($$->print(&actions));
@@ -1000,6 +1019,7 @@ prefix_actions:
 	   the edges in the frontier (e.g. the edge "b").
 	 */
 	vector<FrontierElement> new_frontier;
+	Pvec * pvec = new Pvec;
 	ProcessNode * pnp;
 	ProcessNode * npnp;
 	ProcessEdge e;
@@ -1008,6 +1028,7 @@ prefix_actions:
 	int child;
 	struct FrontierElement fe;
 	bool zero = false;
+	int max_rank = 0;
 
 	for (int i=0; i<current_contexts.frontier.size(); i++) {
 	    pnp = current_contexts.frontier[i].pnp;
@@ -1038,6 +1059,7 @@ prefix_actions:
 	       the matching set.
 	     */
 	    rank = pnp->children[child].rank;
+	    if (rank > max_rank) max_rank = rank;
 	    for (int c=0; c<$1->v.size(); c++) {
 		if (current_contexts.is_ruled_out(c)) continue;
 		setvp = err_if_not_set($1->v[c]);
@@ -1066,10 +1088,16 @@ prefix_actions:
 	/* Tell the upper level rule (action_prefix) that the beginning
 	   of this prefix_actions has already been connected, and so
 	   'local_process' results already connected (see above). */
-	if (zero)
-	    $$ = gpp;
-	else
-	    $$ = new ConnectedProcess();
+	if (zero) {
+	    // TODO vectorize
+	    pvec->v.push_back(gpp);
+	}
+	else {
+	    ProcessBase * pbp = new ConnectedProcess();
+	    for (int c=0; c<max_rank+1; c++)
+		pvec->v.push_back(pbp);
+	}
+	$$ = pvec;
 	OUT($$->print(&actions));
 	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
     }
@@ -1258,8 +1286,6 @@ process_ref:
     process_id argument_OPT {
 	SHH("process_ref --> process_id argument_OPT");
 	//TODO
-	ProcessNode * pnp = new ProcessNode;
-	$$ = pnp;
     }
     ;
 
