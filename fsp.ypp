@@ -117,17 +117,20 @@ static ProcessBase * gpp = NULL;
 #define SHH(x) cout<< "SHH >> " << x << "\n";
 #define OUT(x) cout<<"OUT:"; x
 #define IN(x) cout<<"IN:"; x
-#define PRO(x)
+#define PROX(x)
+#define PROP(x)
 #elif (DEBUG==1)
 #define SHH(x)
 #define OUT(x)
 #define IN(x)
-#define PRO(x) cout<<"PRO:";x;cout<<"\n"
+#define PROX(x) cout<<"PROX: ";x;cout<<"\n"
+#define PROP(x) cout<<"PROP:==============================================================\n      " << x << "\n"
 #else
 #define SHH(x)
 #define OUT(x)
 #define IN(x)
-#define PRO(x)
+#define PROP(x)
+#define PROX(x)
 #endif
 
 
@@ -327,7 +330,6 @@ action_labels:
 		    }
 		    cout << "Contexts ramification\n";
 		    css.update(csp);
-		    current_contexts.print();
 		    delete $1;
 		    delete $3;
 		    $$ = vp;
@@ -394,7 +396,6 @@ action_labels:
 		    }
 		    cout << "Contexts ramification\n";
 		    css.update(csp);
-		    current_contexts.print();
 		    delete $1;
 		    delete $3;
 		    $$ = vp;
@@ -635,18 +636,19 @@ process_def:
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	SHH("process_def --> ... process_body ...");
 	IN(cout<<*$1<< ": "; $5->print(&actions));
+	PROP("process_def --> ... process_body ...");
 	if ($5->unresolved()) {
 	    errstream << "Local process " << 
 		    ((UnresolvedProcess * )$5)->reference << " undeclared\n";
 	    semantic_error();
 	}
 
-	PRO(cout<<*$1<<" = "; $5->print(&actions));
+	PROX(cout<<*$1<<" = "; $5->print(&actions));
 
 	/* Insert a new ProcessValue in the symbol table, attaching the
 	   process_body to it. */
 	ProcessValue * pvp = new ProcessValue;
-	cout << "Process " << *$1 << " defined\n";
+	PROX(cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<< Process " << *$1 << " defined >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 	if (!processes.insert(*$1, pvp)) {
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
@@ -659,7 +661,7 @@ process_def:
 	f.opaque = &actions;
 	pvp->pnp->visit(f);
 
-	PRO(cout<<"resolved: "; pvp->pnp->print(&actions));
+	PROX(cout<<"resolved: "; pvp->pnp->print(&actions));
 
 	/* Convert the collection of ProcessNodes in an Lts object. */
 	Lts lts(pvp->pnp, &actions);
@@ -845,7 +847,8 @@ local_process:
 	SHH("local_process --> (   (cont)");
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
 	css.push_clone();
-	cout << "CSS height (push) " << css.stack.size() << "\n";
+	PROX(cout << "CSS height (push) " << css.stack.size());
+	PROX(current_contexts.print());
     } choice ')' {
 	SHH("local_process --> (cont)  choice )");
 	//$3->print();
@@ -888,27 +891,25 @@ base_local_process:
 choice:
     action_prefix {
 	SHH("choice --> action_prefix");
-	cout << "Choice\n";
 	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
-	cout << "CSS height = (pop) " << css.stack.size() << "\n";
 	$$ = $1;
 	OUT($$->print(&actions));
+	PROX(cout << "CSS height = (pop) " << css.stack.size());
     }
     | choice '|' {
 	SHH("choice --> choice | (cont)");
 	/* Replicate the CSS stack top so that it can be used by
 	   'action_prefix'. */
 	css.push_clone();
-	cout << "CSS height (push) " << css.stack.size() << "\n";
+	PROX(cout << "CSS height (push) " << css.stack.size());
+	PROX(current_contexts.print());
     } action_prefix {
 	SHH("choice --> (cont) action_prefix");
 	IN($1->print(&actions); $4->print(&actions));
 	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
 	cout << "CSS height = (pop) " << css.stack.size() << "\n";
-	cout << "Choice\n";
-	cout << "ch|ap\n"; current_contexts.print();
 
 	/* If the frontier is empty, $1 must be the zero node, and so we
 	   just have to merge $1 and $4, adding to $1 all the edges of $4.
@@ -930,15 +931,15 @@ choice:
 	}
 	$$ = $1;
 	OUT($$->print(&actions));
-	gpp->print(&actions);
+	PROX(gpp->print(&actions));
     }
     ;
 
 action_prefix:
     guard_OPT {
 	SHH("action_prefix --> guard_OPT (cont)");
+	PROP("action_prefix --> guard_OPT (cont)");
 	ConstValue * cvp;
-	current_contexts.print();
 	if ($1) {
 	    for (int c=0; c<current_contexts.size(); c++) {
 		cvp = err_if_not_const($1->v[c]);
@@ -950,7 +951,7 @@ action_prefix:
     } prefix_actions ARROW local_process {
 	SHH("action_prefix --> (cont) prefix_actions -> local_process");
 	IN($3->print(&actions); $5->print(&actions));
-
+	PROP("action_prefix --> (cont) prefix_actions -> local_process");
 	/* If $5 is an istance of ConnectedProcess, it means that its first 
 	   nodes have already been connected to the frontier of $3 in the
 	   lower level rule 'prefix_actions'. Therefore there is nothing to
@@ -980,7 +981,7 @@ action_prefix:
 	//$3->print();
 	$$ = $3;
 	OUT($$->print(&actions));
-	gpp->print(&actions);
+	PROX(current_contexts.print(); cout<<"$$ = "; gpp->print(&actions));
     }
     ;
 
@@ -988,6 +989,8 @@ prefix_actions:
     action_labels {
 	SHH("prefix_actions --> action_labels");
 	IN($1->print(); current_contexts.print());
+	PROP("prefix_actions --> action_labels");
+	PROX(cout<<"$1 = "; $1->print());
 	ProcessNode * pnp;
 	ProcessEdge e;
 	SetValue * setvp;
@@ -1097,11 +1100,13 @@ prefix_actions:
 	    $$ = new ConnectedProcess();
 	}
 	OUT($$->print(&actions));
-	gpp->print(&actions);
+	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
     }
     | prefix_actions ARROW action_labels {
 	SHH("prefix_actions --> prefix_actions -> action_labels");
 	IN($3->print(); current_contexts.print());
+	PROP("prefix_actions --> prefix_actions -> action_labels");
+	PROX(cout<<"$3 = "; $3->print());
 	ProcessNode * pnp;
 	ProcessNode * npnp;
 	ProcessEdge e;
@@ -1168,7 +1173,7 @@ prefix_actions:
 	   ConnectedProcess*. */
 	$$ = $1;
 	OUT($$->print(&actions));
-	gpp->print(&actions);
+	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
     }
     ;
 
