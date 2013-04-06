@@ -92,8 +92,48 @@ void SymbolsTable::print() const
     }
 }
 
+/* ================================ SvpVec ==============================*/
+SvpVec::SvpVec(): shared(false) {
+}
 
-/*============================= ConstValue =============================*/
+SymbolValue * SvpVec::detach(int i) {
+    SymbolValue* ret;
+    if (i < v.size()) {
+	ret = v[i];
+	v[i] = NULL;
+    } else {
+	cerr << "Internal error: tried to detach out of bounds\n";
+	return NULL;
+    }
+    return ret;
+}
+
+void SvpVec::print() {
+    cout << "{";
+    for (int i=0; i<v.size(); i++)
+	if (v[i]) {
+	    v[i]->print();
+	    cout << ", ";
+	}
+    cout << "}\n";
+}
+
+SvpVec::~SvpVec() {
+    if (shared) {
+	for (int i=0; i<v.size(); i++) {
+	    if (v[i]) {
+		delete v[i];
+		break;
+	    }
+	}
+    } else {
+	for (int i=0; i<v.size(); i++)
+	    if (v[i])
+		delete v[i];
+    }
+}
+
+/* ============================= ConstValue =============================*/
 SymbolValue * ConstValue::clone() const
 {
     ConstValue * cv = new ConstValue;
@@ -204,15 +244,14 @@ void SetValue::print() const
     cout << "}\n";
 }
 
-/* ============================= ActionValue ============================ */
-/*
-SymbolValue * ActionValue::clone() const
+/* ============================= Pvec ============================ */
+void Pvec::print(struct ActionsTable * atp)
 {
-    ActionValue * avp = new ActionValue;
-    avp->name = name;
+    cout << "Pvec:\n";
+    for (int i=0; i<v.size(); i++)
+	v[i]->print(atp);
+}
 
-    return avp;
-}*/
 
 /*======================= ProcessNode & Process Value =====================*/
 

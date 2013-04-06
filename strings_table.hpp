@@ -46,44 +46,10 @@ struct SvpVec {
     vector<SymbolValue *> v;
     bool shared;
 
-    SvpVec() : shared(false) { }
-
-    SymbolValue * detach(int i) {
-	SymbolValue* ret;
-	if (i < v.size()) {
-	    ret = v[i];
-	    v[i] = NULL;
-	} else {
-	    cerr << "Internal error: tried to detach out of bounds\n";
-	    return NULL;
-	}
-	return ret;
-    }
-
-    void print() {
-	cout << "{";
-	for (int i=0; i<v.size(); i++)
-	    if (v[i]) {
-		v[i]->print();
-		cout << ", ";
-	    }
-	cout << "}\n";
-    }
-
-    ~SvpVec() {
-	if (shared) {
-	    for (int i=0; i<v.size(); i++) {
-		if (v[i]) {
-		    delete v[i];
-		    break;
-		}
-	    }
-	} else {
-	    for (int i=0; i<v.size(); i++)
-		if (v[i])
-		    delete v[i];
-	}
-    }
+    SvpVec();
+    SymbolValue * detach(int i);
+    void print();
+    ~SvpVec();
 };
 
 struct ConstValue: public SymbolValue {
@@ -130,6 +96,12 @@ struct ProcessBase {
     virtual bool unresolved() const = 0;
     virtual bool connected() const { return false; }
     virtual void print(ActionsTable * atp) = 0; 
+};
+
+struct Pvec {
+    vector<ProcessBase *> v;
+
+    void print(struct ActionsTable * atp);
 };
 
 struct ProcessNode;
