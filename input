@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P7=(a->b->c->P7|d->e->f->P7).
+P8=(a[j:R]->(b[i:R]->c[i+j]->P8|d[j]->P8|e[j]->f[j*2]->P8)).
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).

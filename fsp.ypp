@@ -112,6 +112,19 @@ inline ProcessNode * err_if_not_procnode(ProcessBase * pbp) {
 
 static ProcessBase * gpp = NULL;
 
+static struct ProcessNode fakenode;
+static void init_fakenode()
+{
+    vector<ProcessEdge> cv;
+    struct ProcessEdge e;
+
+    e.dest = NULL;
+    e.rank = 0;	    /* Will combine with everything. */
+    e.action = 0;   /* Not significant. */
+    cv.push_back(e);
+    fakenode.children = cv;
+}
+
 #define DEBUG 1
 #if (DEBUG==2)
 #define SHH(x) cout<< "SHH >> " << x << "\n";
@@ -631,7 +644,7 @@ process_def:
 	   A cleaner approach would be to get a list of parameters from
 	   the rule and push the parameters into the 'identifiers' table
 	   in this action. */
-	;
+	init_fakenode();
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	SHH("process_def --> ... process_body ...");
@@ -1810,6 +1823,10 @@ int parser()
        ContextsSet. This set contains a single empty Context and an
        empty frontier. */
     ContextsSet * csp = new ContextsSet;
+/*    struct FrontierElement fe;
+    fe.pnp = &fakenode;
+    fe.child = 0;
+    csp->frontier.push_back(fe);*/
     csp->append(new Context);
     css.push(csp);
 
