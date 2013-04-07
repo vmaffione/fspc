@@ -206,7 +206,7 @@ void yyerror(const char *s);
 
 %type <pvec_ptr> choice action_prefix prefix_actions
 %type <pvec_ptr> process_body local_process local_process_defs local_process_def
-%type <pvec_ptr> sequential_composition base_local_process
+%type <pvec_ptr> sequential_composition base_local_process else_OPT
 %type <pvec_ptr> seq_process_list process_ref
 
 %glr-parser
@@ -801,6 +801,11 @@ local_process:
 	SHH("local_process --> IF expression THEN (cont)");
 	ConstValue * cvp;
 
+	/* Prepare a clone of the current ContextsSet to rule out those
+	   contexts that makes 'expression' false. In this way when executing
+	   the translation of the following 'local_process', only the
+	   selected contexts are expanded, while the others are not
+	   translated (e.g. are filtered out). */
 	css.push_clone();
 	for (int c=0; c<current_contexts.size(); c++) {
 	    cvp = err_if_not_const($2->v[c]);
@@ -809,59 +814,37 @@ local_process:
 	    }
 	}
     } local_process {
-	SHH("local_process --> (cont) local_process");
-	IN($2->print();$5->print(&actions));
+	SHH("local_process --> (cont) local_process (cont)");
+	ConstValue * cvp;
+
+	css.pop();
+	css.push_clone();
+	/* Clean the previous clone and prepare another one for the else
+	   branch, in the same way descripted above. */
+	for (int c=0; c<current_contexts.size(); c++) {
+	    cvp = err_if_not_const($2->v[c]);
+	    if (cvp->value)
+		current_contexts.rule_out(c);
+	}
+    } else_OPT {
+	SHH("local_process --> (cont) else_OPT");
+	IN($2->print(); $5->print(&actions); if ($7) $7->print(&actions));
 	Pvec * pvec = new Pvec;
 	ConstValue * cvp;
 
 	css.pop();
+	/* Clean the previous cloned ContextsSet and fill the return vector
+	   *pvec, depending on the truth values contained in $2. */
 	for (int c=0; c<current_contexts.size(); c++) {
 	    cvp = err_if_not_const($2->v[c]);
 	    if (cvp->value)
 		pvec->v.push_back($5->v[c]);
+	    else if ($7)
+		pvec->v.push_back($7->v[c]);
 	    else
+		/* If $7 == NULL there is no else branch, and so we insert
+		   a STOP state. */
 		pvec->v.push_back(new ProcessNode);
-	}
-	delete $2;
-	$$ = pvec;
-	OUT($$->print(&actions));
-    }
-    | IF expression THEN {
-	SHH("local_process --> IF expression THEN (cont)");
-	ConstValue * cvp;
-
-	css.push_clone();
-	for (int c=0; c<current_contexts.size(); c++) {
-	    cvp = err_if_not_const($2->v[c]);
-	    if (!cvp->value) {
-		current_contexts.rule_out(c);
-	    }
-	}
-    } local_process ELSE {
-	SHH("local_process --> (cont) local_process ELSE (cont)");
-	ConstValue * cvp;
-
-	css.pop();
-	css.push_clone();
-	for (int c=0; c<current_contexts.size(); c++) {
-	    cvp = err_if_not_const($2->v[c]);
-	    if (cvp->value) {
-		current_contexts.rule_out(c);
-	    }
-	}
-    } local_process {
-	SHH("local_process --> (cont) local_process");
-	IN($2->print(); $5->print(&actions); $8->print(&actions));
-	Pvec * pvec = new Pvec;
-	ConstValue * cvp;
-
-	css.pop();
-	for (int c=0; c<current_contexts.size(); c++) {
-	    cvp = err_if_not_const($2->v[c]);
-	    if (cvp->value)
-		pvec->v.push_back($5->v[c]);
-	    else
-		pvec->v.push_back($8->v[c]);
 	}
 	delete $2;
 	$$ = pvec;
@@ -880,6 +863,14 @@ local_process:
 	OUT($$->print(&actions));
     }
     ;
+
+else_OPT:
+    {
+	$$ = NULL;
+    }
+    | ELSE local_process {
+	$$ = $2;
+    }
 
 base_local_process:
     END {
