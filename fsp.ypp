@@ -719,7 +719,6 @@ process_body:
     | local_process ',' local_process_defs {
 	SHH("process_body --> local_process , local_process_defs");
 	IN($1->print(&actions); $3->print(&actions));
-	// TODO compose
 	$$ = $1;
 	OUT($$->print(&actions));
     }
@@ -734,7 +733,6 @@ local_process_defs:
     | local_process_defs ',' local_process_def {
 	SHH("local_process_defs --> local_process_defs , local_process_def");
 	IN($1->print(&actions); $3->print(&actions));
-	// TODO compose
 	$$ = $1;
 	OUT($$->print(&actions));
     }
@@ -742,34 +740,23 @@ local_process_defs:
 
 local_process_def:
     process_id index_ranges_OPT '=' {
-/*	init_fakenode();
-	gpp = NULL;
+	init_fakenode();
     } local_process {
 	SHH("local_process_def --> process_id = local_process");
 	IN(cout << *$1 << ": "; $5->print(&actions));
-	// TODO index_ranges_OPT
-
-	if ($5->unresolved()) {
-	    errstream << "Local process " << 
-		    ((UnresolvedProcess * )$5)->reference << " undeclared\n";
-	    semantic_error();
-	}
-
-	// switch ($2->v[0].type())
-
 	ProcessValue * pvp = new ProcessValue;
+
+	// TODO index_ranges_OPT
 	cout << "Process " << *$1 << "[] defined\n";
 	if (!processes.insert(*$1, pvp)) {
 	    errstream << "process " << *$1 << " declared twice";
 	    semantic_error();
 	}
-	pvp->pnp = err_if_not_procnode($5);
-
-	//pvp->pnp->print(&actions);
+	pvp->pnp = err_if_not_procnode($5->v[0]);
 
 	delete $1;
 	$$ = $5;
-	OUT($$->print(&actions)); */
+	OUT($$->print(&actions));
     }
     ;
 
@@ -1025,8 +1012,15 @@ prefix_actions:
 	int rank;
 	int child;
 	struct FrontierElement fe;
-	bool zero = false;
+	bool zero;
 	int max_rank = 0;
+
+	zero = true;
+	for (int i=0; i<current_contexts.frontier.size(); i++)
+	    if (current_contexts.frontier[i].pnp != &fakenode) {
+		zero = false;
+		break;
+	    }
 
 	for (int i=0; i<current_contexts.frontier.size(); i++) {
 	    pnp = current_contexts.frontier[i].pnp;
@@ -1045,10 +1039,7 @@ prefix_actions:
 		pnp->children[child].dest = 
 		    new ProcessNode(ProcessNode::Normal);
 	    npnp = pnp->children[child].dest;
-	    if (gpp == NULL) {
-		gpp = npnp;
-		zero = true;
-	    }
+
 	    /* Once we get the node pointed by the edge i (npnp), we
 	       have to combine that edge with the sets in $1. We
 	       have a combination when the rank of the edge is equal
@@ -1083,14 +1074,18 @@ prefix_actions:
 	}
 	/* Update the frontier. */
 	current_contexts.frontier = new_frontier;
-	/* Tell the upper level rule (action_prefix) that the beginning
-	   of this prefix_actions has already been connected, and so
-	   'local_process' results already connected (see above). */
 	if (zero) {
-	    // TODO vectorize
-	    pvec->v.push_back(gpp);
+	    if (max_rank+1 != fakenode.children.size()) {
+		cout << "FATAL 819\n"; exit(-1);
+	    }
+	    for (int c=0; c<max_rank+1; c++)
+		pvec->v.push_back(fakenode.children[c].dest);
+	    if (gpp == NULL) gpp = fakenode.children[0].dest;  //XXX DEBUG
 	}
 	else {
+	    /* Tell the upper level rule (action_prefix) that the beginning
+	       of this prefix_actions has already been connected, and so
+	       'local_process' results already connected (see above). */
 	    ProcessBase * pbp = new ConnectedProcess();
 	    for (int c=0; c<max_rank+1; c++)
 		pvec->v.push_back(pbp);
@@ -1222,7 +1217,8 @@ index_ranges:
 	    case SymbolValue::Const:
 		cvp = err_if_not_const($2->v[0]);
 		setvp = new SetValue;
-		setvp->actions.push_back("[" + int2string(cvp->value) + "]");
+		setvp->actions.push_back("");
+		setvp->indexize(cvp->value);
 		break;
 	    default:
 		cout << "STILL TO IMPLEMENT 523\n";

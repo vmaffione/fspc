@@ -2,7 +2,7 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-P=(a[i:R]->b[j:R]->if (i+j>3) then (c[i]->d[i]->P) else (e[3*i*i]->P)).
+P=(a->b->P1),P1 = (c->d->P2),P2 = (e->f->P).
 
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
@@ -18,6 +18,7 @@ P10=(a->(b->(d->P10|e->P10)|n->(m->P10|o->P10))).
 P11=(a->b->if 0 then (d->e->P11) else (f->g->P11)).
 P=(a->b->P1),P1 = (c->d->P2),P2 = (e->f->P).
 P13=(pre->(a->b[i:R]->if i==1 then (c[i]->P13) else (d[2*i*i]->e[i]->P13)|g->h->P13)).
+P14=(a[i:R]->b[j:R]->if (i+j>3) then (c[i]->d[i]->P14) else (e[3*i*i]->P14)).
 */
 
 
