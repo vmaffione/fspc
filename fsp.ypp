@@ -114,7 +114,6 @@ inline ProcessNode * err_if_not_procnode(ProcessBase * pbp) {
     return (ProcessNode *)pbp;
 }
 
-static ProcessBase * gpp = NULL;
 
 static struct ProcessNode fakenode;
 static void init_fakenode()
@@ -127,6 +126,14 @@ static void init_fakenode()
     e.action = 0;   /* Not significant. */
     cv.push_back(e);
     fakenode.children = cv;
+}
+
+static void print_forest()
+{
+    cout << "Current ProcessNode forest:\n";
+    for (int i=0; i<fakenode.children.size(); i++)
+	if (fakenode.children[i].dest)
+	    fakenode.children[i].dest->print(&actions);
 }
 
 #define DEBUG 1
@@ -981,7 +988,7 @@ action_prefix:
 	//$3->print();
 	$$ = $3;
 	OUT($$->print(&actions));
-	PROX(current_contexts.print(); cout<<"$$ = "; gpp->print(&actions));
+	PROX(current_contexts.print(); cout<<"$$ = "; print_forest());
     }
     ;
 
@@ -1077,7 +1084,6 @@ prefix_actions:
 	    assert(max_rank+1 == fakenode.children.size());
 	    for (int c=0; c<max_rank+1; c++)
 		pvec->v.push_back(fakenode.children[c].dest);
-	    gpp = fakenode.children[0].dest;  //XXX DEBUG
 	}
 	else {
 	    /* Tell the upper level rule (action_prefix) that the beginning
@@ -1089,7 +1095,7 @@ prefix_actions:
 	}
 	$$ = pvec;
 	OUT($$->print(&actions));
-	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
+	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
     }
     | prefix_actions ARROW action_labels {
 	SHH("prefix_actions --> prefix_actions -> action_labels");
@@ -1162,7 +1168,7 @@ prefix_actions:
 	   ConnectedProcess*. */
 	$$ = $1;
 	OUT($$->print(&actions));
-	PROX(current_contexts.print(); cout<<"$$ = \n"; gpp->print(&actions));
+	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
     }
     ;
 
