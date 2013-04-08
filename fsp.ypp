@@ -74,6 +74,32 @@ void semantic_error()
     exit(-1);
 }
 
+    // TODO TEMPLATE!!
+static Context* extended_context(Context * ctx, const string& var, 
+				const string& val)
+{
+    ctx = new Context(*ctx);
+    if (!ctx->insert(var, val)) {
+	errstream << "Variable " << var
+	    << " declared twice\n";
+	semantic_error();
+    }
+
+    return ctx;
+}
+
+static Context* extended_context(Context * ctx, const string& var, int val)
+{
+    ctx = new Context(*ctx);
+    if (!ctx->insert(var, val)) {
+	errstream << "Variable " << var
+	    << " declared twice\n";
+	semantic_error();
+    }
+
+    return ctx;
+}
+
 /* Helper function used to get a ConstValue* from a SymbolValue*. If the
    object pointed is not a constant, a semantic error is issued. */
 inline ConstValue* err_if_not_const(SymbolValue * svp)
@@ -208,7 +234,7 @@ void yyerror(const char *s);
 %type <svpvec_ptr> alphabet_extension_OPT
 %type <svpvec_ptr> action_range guard_OPT
 %type <svpvec_ptr> range_expr
-%type <svpvec_ptr> index_ranges_OPT index_ranges
+%type <svpvec_ptr> index_ranges_OPT index_ranges indices_OPT indices
 
 %type <pvec_ptr> choice action_prefix prefix_actions
 %type <pvec_ptr> process_body local_process local_process_defs local_process_def
@@ -328,23 +354,17 @@ action_labels:
 			rvp = err_if_not_range($3->v[c]);
 			for (int j=rvp->low; j<=rvp->high; j++) {
 			    SetValue * new_setvp = new SetValue(*setvp);
-			    for (int k=0; k<new_setvp->actions.size(); k++)
-				new_setvp->actions[k] += "[" +
-				    int2string(j) + "]";
+			    new_setvp->indexize(j);
 			    /* When a context spread happens, each new_setvp
 			       inherits the rank of the generating setvp. */
 			    new_setvp->rank = setvp->rank;
-			    /* Create a new context (extending the previous
-			       one) and append the new SetValue to associate
-			       to this context.*/
+			    /* Append the new SetValue to associate to this
+			       context.*/
 			    vp->v.push_back(new_setvp);
-			    cxp = current_contexts[c];
-			    cxp = new Context(*cxp);
-			    if (!cxp->insert(rvp->variable, j)) {
-				errstream << "Variable " << rvp->variable
-				    << " declared twice\n";
-				semantic_error();
-			    }
+			    /* Create a new context (extending the previous
+			       one) */
+			    cxp = extended_context(current_contexts[c],
+							rvp->variable, j);
 			    csp->append(cxp);
 			}
 		    }
@@ -391,24 +411,17 @@ action_labels:
 			rsetvp = err_if_not_set($3->v[c]);
 			for (int j=0; j<rsetvp->actions.size(); j++) {
 			    SetValue * new_setvp = new SetValue(*setvp);
-			    for (int k=0; k<new_setvp->actions.size(); k++)
-				new_setvp->actions[k] += "." +
-				    rsetvp->actions[j];
+			    new_setvp->dotcat(rsetvp->actions[j]);
 			    /* When a context spread happens, each new_setvp
 			       inherits the rank of the generating setvp. */
 			    new_setvp->rank = setvp->rank;
-			    /* Create a new context (extending the previous
-			       one) and append the new SetValue to associate
-			       to this context.*/
+			    /* Append the new SetValue to associate to this
+			       context.*/
 			    vp->v.push_back(new_setvp);
-			    cxp = current_contexts[c];
-			    cxp = new Context(*cxp);
-			    if (!cxp->insert(rsetvp->variable,
-				    rsetvp->actions[j])) {
-				errstream << "Variable " << rsetvp->variable
-				    << " declared twice\n";
-				semantic_error();
-			    }
+			    /* Create a new context (extending the previous
+			       one) */
+			    cxp = extended_context(current_contexts[c],
+				    rsetvp->variable, rsetvp->actions[j]);
 			    /* Append the new Context to the new ContextSet. 
 				*/
 			    csp->append(cxp);
@@ -434,9 +447,9 @@ action_labels:
 		break;
 
 	    default:
-		cout << "WHAT!?!?!?\n";
-		exit(-1);
-		break;
+		cerr << "I should not reach this point.\n";
+		assert(0);
+		exit(1);
 	}
 	OUT($$->print());
     }
@@ -746,21 +759,33 @@ local_process_defs:
 
 local_process_def:
     process_id index_ranges_OPT '=' {
+	cout << "index_ranges_OPT:\n";
+	$2->print();
 	init_fakenode();
     } local_process {
 	SHH("local_process_def --> process_id = local_process");
 	IN(cout << *$1 << ": "; $5->print(&actions));
-	ProcessValue * pvp = new ProcessValue;
+	ProcessValue * pvp;
+	SetValue * setvp;
 
-	// TODO index_ranges_OPT
-	cout << "Process " << *$1 << "[] defined\n";
-	if (!processes.insert(*$1, pvp)) {
-	    errstream << "process " << *$1 << " declared twice";
-	    semantic_error();
+	for (int c=0; c<$2->v.size(); c++) {
+	    setvp = err_if_not_set($2->v[c]);
+	    for (int j=0; j<setvp->actions.size(); j++) {
+		pvp = new ProcessValue;
+		pvp->pnp = err_if_not_procnode($5->v[c]);
+		if (j)
+		    pvp->pnp = pvp->pnp->clone();
+		cout << "Process " << *$1 + setvp->actions[j]
+			<< "[] defined\n";
+		if (!processes.insert(*$1 + setvp->actions[j], pvp)) {
+		    errstream << "process " << *$1 + setvp->actions[j]
+				    << " declared twice";
+		    semantic_error();
+		}
+	    }
 	}
-	pvp->pnp = err_if_not_procnode($5->v[0]);
-
 	delete $1;
+	delete $2;
 	$$ = $5;
 	OUT($$->print(&actions));
     }
@@ -898,20 +923,27 @@ base_local_process:
     }
     | process_id indices_OPT {
 	SHH("base_local_process --> process_id indices_OPT");
-	//TODO implement indices_OPT
 	SymbolValue * svp;
 	Pvec * pvec = new Pvec;
 	ProcessBase * pbp;
+	SetValue * setvp;
+	string name;
 
-	/* If the process referenced is already defined, return it.
-	   Otherwise return a new UnresolvedProcess object, so that the
-	   upper level sees that *$1 is unresolved. */
-	if (processes.lookup(*$1, svp))
-	    pbp = ((ProcessValue *)svp)->pnp;
-	else
-	    pbp = new UnresolvedProcess(*$1);
-	for (int c=0; c<current_contexts.size(); c++)
+	assert($2->v.size() == current_contexts.size());
+	for (int c=0; c<$2->v.size(); c++) {
+	    setvp = err_if_not_set($2->v[c]);
+	    assert(setvp->actions.size() == 1);
+	    name = *$1 + setvp->actions[0];
+	    /* If the process referenced is already defined, return it.
+	       Otherwise return a new UnresolvedProcess object, so that the
+	       upper level sees that 'name' is unresolved. */
+	    if (processes.lookup(name, svp))
+		pbp = ((ProcessValue *)svp)->pnp;
+	    else
+		pbp = new UnresolvedProcess(name);
 	    pvec->v.push_back(pbp);
+	}
+
 	$$ = pvec;
 	OUT($$->print(&actions));
     }
@@ -1186,21 +1218,63 @@ guard_OPT:
     ;
 
 indices_OPT:
+    {
+	SvpVec * vp = new SvpVec;
+	SetValue * setvp;
+
+	for (int c=0; c<current_contexts.size(); c++) {    
+	    setvp = new SetValue;
+	    setvp->actions.push_back("");
+	    vp->v.push_back(setvp);
+	}
+	$$ = vp;
+    }
     | indices
     ;
 
 indices:
     '[' expression ']' {
 	SHH("indices --> [ expression ]");
+
+	SvpVec * vp = new SvpVec;
+	SetValue * setvp;
+	ConstValue * cvp;
+
+	assert($2->v.size() == current_contexts.size());
+	for (int c=0; c<$2->v.size(); c++) {
+	    setvp = new SetValue;
+	    cvp = err_if_not_const($2->v[c]);
+	    setvp->actions.push_back("[" + int2string(cvp->value) + "]");
+	    vp->v.push_back(setvp);
+	}
+	delete $2;
+	$$ = vp;
     }
     | indices '[' expression ']' {
 	SHH("indices --> indices [ expression ]");
+	SetValue * setvp;
+	ConstValue * cvp;
+
+	assert($1->v.size() == $3->v.size());
+	for (int c=0; c<$3->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
+	    cvp = err_if_not_const($3->v[c]);
+	    setvp->indexize(cvp->value);
+	}
+	delete $3;
+	$$ = $1;
     }
     ;
 
 index_ranges_OPT:
     {
-	$$ = NULL;
+	SvpVec * vp = new SvpVec;
+	SetValue * setvp = new SetValue;
+	
+	assert(current_contexts.size() == 1);
+	setvp->actions.push_back("");
+	vp->v.push_back(setvp);
+	$$ = vp;
     }
     | index_ranges
     ;
@@ -1213,14 +1287,14 @@ index_ranges:
 	SetValue * setvp;
 	ConstValue * cvp;
 
-	//TODO need rank here!
 	/* Here we are sure to have only the empty context. */
-	if ($2->v.size() != 1) {cout << "FATAL 523\n";exit(-1);}
+	assert(current_contexts.size() == 1 && $2->v.size() == 1);
+	setvp = new SetValue;
+	setvp->actions.push_back("");
+	//TODO need rank here!
 	switch ($2->v[0]->type()) {
 	    case SymbolValue::Const:
 		cvp = err_if_not_const($2->v[0]);
-		setvp = new SetValue;
-		setvp->actions.push_back("");
 		setvp->indexize(cvp->value);
 		break;
 	    default:
@@ -1237,7 +1311,6 @@ index_ranges:
     | index_ranges '[' action_range ']' {
 	SHH("index_ranges --> index_ranges [ action_range ]");
 	IN($1->print(); $3->print());
-	SvpVec * vp;
 	SetValue * setvp;
 	ConstValue * cvp;
 
@@ -1249,13 +1322,13 @@ index_ranges:
 		    cvp = err_if_not_const($3->v[c]);
 		    setvp->indexize(cvp->value);
 		}
-		delete $3;
-		$$ = $1;
 		break;
 	    default:
 		cout << "STILL TO IMPLEMENT 836\n";
 		exit(1);    
 	}
+	delete $3;
+	$$ = $1;
 	OUT($$->print());
     }
     ;

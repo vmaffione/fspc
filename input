@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P=(a->b->P1),P1 = (c->d->P2),P2 = (e->f->P).
+P=(a[j:R]->b[i:S]->c[j]->P[1]),P[1] = (c->d->P[2]),P[2] = (e->f->P).
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).
