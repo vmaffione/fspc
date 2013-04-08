@@ -8,6 +8,10 @@
 
 using namespace std;
 
+//#define NDEBUG
+#include <assert.h>
+
+
 /* Stuff from flex that bison needs to know about. */
 extern int yylex();
 extern FILE * yyin;
@@ -159,12 +163,7 @@ void yyerror(const char *s);
     int int_value;
     float float_value;
     std::string *string_ptr;
-    class StringsSet *sset_ptr;
     class SymbolValue *sv_ptr;
-    class RangeValue *rv_ptr;
-    class Lts *lv_ptr;
-    class ProcessNode * pn_ptr;
-    class ProcessBase * pb_ptr;
     struct SvpVec * svpvec_ptr;
     struct Pvec * pvec_ptr;
 }
@@ -265,8 +264,9 @@ action_labels:
     | action_labels '.' LowerCaseID {
 	SHH("action_labels --> action_labels . LowerCaseID");
 	IN($1->print());
-	if ($1->v.size() != current_contexts.size()) {cout<<"FATAL 561\n";exit(-1);}
 	SetValue * setvp;
+
+	assert($1->v.size() == current_contexts.size());
 	for (int c=0; c<$1->v.size(); c++) {
 	    setvp = err_if_not_set($1->v[c]);
 	    setvp->dotcat(*$3);
@@ -277,9 +277,8 @@ action_labels:
     }
     | action_labels '.' set {
 	SHH("action_labels --> action_labels . set");
-	if ($1->v.size() != $3->v.size() ||
-		$1->v.size() != current_contexts.size())
-	     {cout<<"FATAL 412 \n"; exit(-1);}
+	assert($1->v.size() == $3->v.size() &&
+		    $1->v.size() == current_contexts.size());
 	SetValue * setvp;
 	SetValue * rsetvp;
 	for (int c=0; c<$1->v.size(); c++) {
@@ -297,9 +296,8 @@ action_labels:
     | action_labels '[' action_range ']' {
 	SHH("action_labels --> action_labels [ action_range ]");
 	IN($1->print(); $3->print());
-	if ($1->v.size() != $3->v.size() ||
-		$1->v.size() != current_contexts.size())
-	     {cout<<"FATAL 215 \n"; exit(-1);}
+	assert($1->v.size() == $3->v.size() &&
+		$1->v.size() == current_contexts.size());
 	SvpVec * vp;
 	SetValue * setvp;
 	SetValue * rsetvp;
@@ -541,10 +539,11 @@ range_expr:
     expression DOTDOT expression {
 	SHH("range_expr --> expression .. expression");
 	IN($1->print(); $3->print());
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
 	RangeValue * rvp;
 	ConstValue * cvp;
 	SvpVec * vp = new SvpVec;
+
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    rvp = new RangeValue;
 	    cvp = err_if_not_const($1->v[i]);
@@ -626,7 +625,8 @@ set_elements:
     | set_elements ',' action_labels {
 	SHH("set_elements --> set_elements , action_labels");
 	IN($1->print(); $3->print());
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL 719\n";exit(-1);}
+
+	assert($1->v.size() == $3->v.size());
 	for (int c=0; c<$1->v.size(); c++) {
 	    SetValue * setvp = err_if_not_set($1->v[c]);
 	    SetValue * rsetvp = err_if_not_set($3->v[c]);
@@ -647,14 +647,13 @@ process_def:
 	   the rule and push the parameters into the 'identifiers' table
 	   in this action. */
 	init_fakenode();
-	gpp = NULL;
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	SHH("process_def --> ... process_body ...");
 	IN(cout<<*$1<< ": "; $5->print(&actions));
 	PROP("process_def --> ... process_body ...");
 
-	if ($5->v.size() != 1) {cout << "FATAL 82\n"; exit(-1); }
+	assert($5->v.size() == 1);
 	ProcessBase * pbp = $5->v[0];
 	PROX(cout<<*$1<<" = "; pbp->print(&actions));
 
@@ -1075,12 +1074,10 @@ prefix_actions:
 	/* Update the frontier. */
 	current_contexts.frontier = new_frontier;
 	if (zero) {
-	    if (max_rank+1 != fakenode.children.size()) {
-		cout << "FATAL 819\n"; exit(-1);
-	    }
+	    assert(max_rank+1 == fakenode.children.size());
 	    for (int c=0; c<max_rank+1; c++)
 		pvec->v.push_back(fakenode.children[c].dest);
-	    if (gpp == NULL) gpp = fakenode.children[0].dest;  //XXX DEBUG
+	    gpp = fakenode.children[0].dest;  //XXX DEBUG
 	}
 	else {
 	    /* Tell the upper level rule (action_prefix) that the beginning
@@ -1238,7 +1235,7 @@ index_ranges:
 	SetValue * setvp;
 	ConstValue * cvp;
 
-	if ($3->v.size() != $1->v.size()) {cout << "FATAL 836\n";exit(-1);}
+	assert($3->v.size() == $1->v.size());
 	switch ($3->v[0]->type()) {
 	    case SymbolValue::Const:
 		for (int c=0; c<$1->v.size(); c++) {
@@ -1451,7 +1448,7 @@ simple_expression:
 or_expr:
     and_expr
     | or_expr OR and_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1465,7 +1462,7 @@ or_expr:
 and_expr:
     bitor_expr
     | and_expr AND bitor_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1479,7 +1476,7 @@ and_expr:
 bitor_expr:
     bitxor_expr
     | bitor_expr '|' bitxor_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1493,7 +1490,7 @@ bitor_expr:
 bitxor_expr:
     bitand_expr
     | bitxor_expr '^' bitand_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1507,7 +1504,7 @@ bitxor_expr:
 bitand_expr:
     equality_expr
     | bitand_expr '&' equality_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1521,7 +1518,7 @@ bitand_expr:
 equality_expr:
     relational_expr
     | equality_expr EQUAL relational_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1531,7 +1528,7 @@ equality_expr:
 	$$ = $1;
     }
     | equality_expr NOTEQUAL relational_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1545,7 +1542,7 @@ equality_expr:
 relational_expr:
     shift_expr
     | relational_expr '<' shift_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1555,7 +1552,7 @@ relational_expr:
 	$$ = $1;
     }
     | relational_expr '>' shift_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1565,7 +1562,7 @@ relational_expr:
 	$$ = $1;
     }
     | relational_expr LOE shift_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1575,7 +1572,7 @@ relational_expr:
 	$$ = $1;
     }
     | relational_expr GOE shift_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1589,7 +1586,7 @@ relational_expr:
 shift_expr:
     additive_expr
     | shift_expr LSHIFT additive_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1599,7 +1596,7 @@ shift_expr:
 	$$ = $1;
     }
     | shift_expr RSHIFT additive_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1613,7 +1610,7 @@ shift_expr:
 additive_expr:
     multiplicative_expr
     | additive_expr '+' multiplicative_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1623,7 +1620,7 @@ additive_expr:
 	$$ = $1;
     }
     | additive_expr '-' multiplicative_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1637,7 +1634,7 @@ additive_expr:
 multiplicative_expr:
     unary_expr
     | multiplicative_expr '*' unary_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1647,7 +1644,7 @@ multiplicative_expr:
 	$$ = $1;
     }
     | multiplicative_expr '/' unary_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
@@ -1657,7 +1654,7 @@ multiplicative_expr:
 	$$ = $1;
     }
     | multiplicative_expr '%' unary_expr {
-	if ($1->v.size() != $3->v.size()) {cout<<"FATAL\n";exit(1);}
+	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
