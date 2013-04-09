@@ -1,5 +1,4 @@
 #include <iostream>
-#include "strings_table.hpp"
 #include "parser.hpp"
 #include "lts.hpp"
 

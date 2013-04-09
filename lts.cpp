@@ -1,7 +1,7 @@
 #include <map>
 #include <fstream>
 #include "lts.hpp"
-#include "strings_table.hpp"
+#include "symbols_table.hpp"
 
 using namespace std;
 

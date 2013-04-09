@@ -17,10 +17,10 @@ extern int yylex();
 extern FILE * yyin;
 
 /* Symbols tables. */
-#include "strings_table.hpp"
-struct SymbolsTable identifiers;
-struct SymbolsTable local_processes;
-struct SymbolsTable processes;
+#include "symbols_table.hpp"
+struct SymbolsTable identifiers; /* Const, Range, Set and Parameter names. */
+struct SymbolsTable local_processes; /* Names of local processes. */
+struct SymbolsTable processes; /* Names of global processes. */
 
 /* Main actions table. */
 struct ActionsTable actions("Global actions table");
@@ -29,31 +29,11 @@ struct ActionsTable actions("Global actions table");
 
 
 #include "context.hpp"
-
-/* Stack of contexts sets. */
-struct ContextsSetStack {
-    vector<ContextsSet *> stack;
-
-    ContextsSetStack() { }
-    void push(ContextsSet * ctxset) {
-	stack.push_back(ctxset);
-    }
-    void push_clone() {
-	stack.push_back(new ContextsSet(*stack.back()));
-    }
-    void update(ContextsSet * ctxset) {
-	delete stack.back();
-	stack.back() = ctxset;
-    }
-    void pop() {
-	delete stack.back();
-	stack.pop_back();
-    }
-    ContextsSet& top() { return *(stack.back()); }
-};
-
 static struct ContextsSetStack css;
 #define current_contexts css.top()
+
+/* Inline utilities. */
+#include "utils.hpp"
 
 
 /* Storage for a list of parameters identifiers to remove from the 
@@ -65,80 +45,7 @@ vector<string *> parameters;
 static void fix_unresolved_references(ProcessNode * pnp, void * opaque);
 
 
-/* For semantic errors */
-stringstream errstream;
-
-static void semantic_error()
-{
-    cout << "Semantic error: " << errstream.str() << "\n";
-    exit(-1);
-}
-
-template <class T>
-static Context* extended_context(Context * ctx, const string& var, 
-				const T& val)
-{
-    ctx = new Context(*ctx);
-    if (!ctx->insert(var, val)) {
-	errstream << "Variable " << var
-	    << " declared twice\n";
-	semantic_error();
-    }
-
-    return ctx;
-}
-
-/* Helper function used to get a ConstValue* from a SymbolValue*. If the
-   object pointed is not a constant, a semantic error is issued. */
-inline ConstValue* err_if_not_const(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::Const) {
-	errstream << "Const expected";
-	semantic_error();
-    }
-
-    return (ConstValue *)svp;
-}
-
-inline RangeValue* err_if_not_range(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::Range) {
-	errstream << "Range expected";
-	semantic_error();
-    }
-
-    return (RangeValue *)svp;
-}
-
-inline SetValue* err_if_not_set(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::Set) {
-	errstream << "Set expected";
-	semantic_error();
-    }
-
-    return (SetValue *)svp;
-}
-
-inline ProcessValue* err_if_not_process(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::Process) {
-	errstream << "Process expected";
-	semantic_error();
-    }
-
-    return (ProcessValue *)svp;
-}
-
-inline ProcessNode * err_if_not_procnode(ProcessBase * pbp) {
-    if (pbp->unresolved() || pbp->connected()) {
-	errstream << "ProcessNode expected";
-	semantic_error();
-    }
-    return (ProcessNode *)pbp;
-}
-
-/* Left contains SetValue*, while right is the result of 'action_range'. */
+/* Left contains a SetValue*, while right is the result of 'action_range'. */
 SvpVec * indexize_svpvec(SvpVec * left, SvpVec * right)
 {
     SvpVec * vp;

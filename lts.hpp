@@ -7,7 +7,7 @@
 #include <string>
 #include <set>
 
-#include "strings_table.hpp"
+#include "symbols_table.hpp"
 
 using namespace std;
 
