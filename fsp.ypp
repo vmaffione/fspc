@@ -18,9 +18,9 @@ extern FILE * yyin;
 
 /* Symbols tables. */
 #include "strings_table.hpp"
-//TODO define these tables here.. move from fspc.cpp
-extern struct SymbolsTable identifiers;
-extern struct SymbolsTable processes;
+struct SymbolsTable identifiers;
+struct SymbolsTable local_processes;
+struct SymbolsTable processes;
 
 /* Main actions table. */
 struct ActionsTable actions("Global actions table");
@@ -415,7 +415,10 @@ struct Aliases {
 		    cout << "Process " << groups[i][j].name << " defined (" << npvp->pnp << ")\n";
 		}
 	}
-	//TODO autoclean aliases ?
+    }
+
+    void clear() {
+	groups.clear();
     }
 
     void print() {
@@ -833,9 +836,9 @@ process_def:
 		    ((UnresolvedProcess* )pbp)->reference);
 	    aliases.print();
 	} 
-	aliases.fill_process_table(processes);
+	aliases.fill_process_table(local_processes);
 	if (pbp->unresolved()) {
-	    if(!processes.lookup(*$1, svp)) {
+	    if(!local_processes.lookup(*$1, svp)) {
 		errstream << "process " << *$1 << " undeclared";
 		semantic_error();
 	    }
@@ -845,7 +848,7 @@ process_def:
 	       process_body to it. */
 	    pvp = new ProcessValue;
 	    pvp->pnp = err_if_not_procnode(pbp);
-	    if (!processes.insert(*$1, pvp)) {
+	    if (!local_processes.insert(*$1, pvp)) {
 		errstream << "process " << *$1 << " declared twice";
 		semantic_error();
 	    }
@@ -887,6 +890,10 @@ process_def:
 	    delete parameters[i];
 	}
 	parameters.clear();
+
+	/* Clear 'local_processes' and 'aliases'. */
+	local_processes.clear();
+	aliases.clear();
 
 	lts.print();
 	lts.graphvizOutput((*$1 += ".gv").c_str());
@@ -950,7 +957,7 @@ local_process_def:
 		    pvp->pnp = err_if_not_procnode($5->v[c]);
 		    if (j)
 			pvp->pnp = pvp->pnp->clone();
-		    if (!processes.insert(procname, pvp)) {
+		    if (!local_processes.insert(procname, pvp)) {
 			errstream << "process " << procname
 			    << " declared twice";
 			semantic_error();
@@ -1113,7 +1120,7 @@ base_local_process:
 	    /* If the process referenced is already defined, return it.
 	       Otherwise return a new UnresolvedProcess object, so that the
 	       upper level sees that 'name' is unresolved. */
-	    if (processes.lookup(name, svp))
+	    if (local_processes.lookup(name, svp))
 		pbp = ((ProcessValue *)svp)->pnp;
 	    else
 		pbp = new UnresolvedProcess(name);
@@ -2014,7 +2021,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	if (e.dest == NULL) {
 	    cout << "Unref " << pnp << ": " << actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
-	    if (!processes.lookup(e.unresolved_reference, svp)) {
+	    if (!local_processes.lookup(e.unresolved_reference, svp)) {
 		errstream << "Local process " << pnp << ": "
 		    << e.unresolved_reference << " undeclared\n";
 		semantic_error();

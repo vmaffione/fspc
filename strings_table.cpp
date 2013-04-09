@@ -80,6 +80,16 @@ bool SymbolsTable::remove(const string& name)
     return table.erase(name);
 }
 
+void SymbolsTable::clear()
+{
+    map<string, SymbolValue*>::iterator it;
+
+    for (it=table.begin(); it!=table.end(); it++) {
+	delete it->second;
+    }
+    table.clear();
+}
+
 void SymbolsTable::print() const
 {
     map<string, SymbolValue*>::const_iterator it;

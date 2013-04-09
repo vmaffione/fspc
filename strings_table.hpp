@@ -132,8 +132,6 @@ struct ProcessNode: public ProcessBase {
     bool unresolved() const { return false; }
     void visit(struct ProcessVisitObject);
 
-    //void detachChildren() { children.clear(); }
-
     static const int Normal = 0;
     static const int End = 1;
     static const int Error = 2;
@@ -172,6 +170,7 @@ struct SymbolsTable {
     bool insert(const string& name, SymbolValue *);
     bool lookup(const string& name, SymbolValue*&) const;
     bool remove(const string& name);
+    void clear();
     void print() const;
 };
 

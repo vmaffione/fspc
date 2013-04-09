@@ -7,10 +7,6 @@ using namespace std;
 
 
 
-struct SymbolsTable identifiers;
-struct SymbolsTable processes;
-
-
 int main ()
 {
     int ret;
