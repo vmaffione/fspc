@@ -348,6 +348,8 @@ ProcessNode * ProcessNode::clone() const
 	cloned->children.resize(nc);
 	for (int i=0; i<nc; i++) {
 	    cloned->children[i].action = current->children[i].action;
+	    cloned->children[i].unresolved_reference =
+		current->children[i].unresolved_reference;
 	    if (current->children[i].dest) {
 		frontier.push_back(current->children[i].dest);
 		cloned->children[i].dest = new ProcessNode;

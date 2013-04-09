@@ -177,12 +177,25 @@ static void init_fakenode()
 {
     vector<ProcessEdge> cv;
     struct ProcessEdge e;
+    struct FrontierElement fe;
+    vector<FrontierElement> frontier;
 
-    e.dest = NULL;
-    e.rank = 0;	    /* Will combine with everything. */
-    e.action = 0;   /* Not significant. */
-    cv.push_back(e);
+    /* The fakenode must have a child for each contexts. In this way the 
+       actions associated to the rule 'prefix_actions-->action_labels' can
+       correctly expand each context and return a ProcessNode* for each
+       child. */
+    fe.pnp = &fakenode;
+    for (int c=0; c<current_contexts.size(); c++) {
+	e.dest = NULL;
+	e.rank = c;	/* The child will combine with the c-th context. */
+	e.action = 0;	/* Not significant. */
+	cv.push_back(e);
+	/* Put the child in the frontier. */
+	fe.child = c;
+	frontier.push_back(fe);
+    }
     fakenode.children = cv;
+    current_contexts.frontier = frontier;
 }
 
 static void print_forest()
@@ -842,7 +855,6 @@ local_process_def:
     process_id index_ranges_OPT '=' {
 	cout << "index_ranges_OPT:\n";
 	$2->print();
-	// TODO tell how to init fakenode (N children)
 	init_fakenode();
     } local_process {
 	SHH("local_process_def --> process_id = local_process");
@@ -1951,10 +1963,6 @@ int parser()
        ContextsSet. This set contains a single empty Context and an
        empty frontier. */
     ContextsSet * csp = new ContextsSet;
-    struct FrontierElement fe;
-    fe.pnp = &fakenode;
-    fe.child = 0;
-    csp->frontier.push_back(fe);
     csp->append(new Context);
     css.push(csp);
 
