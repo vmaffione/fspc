@@ -5,7 +5,7 @@
 using namespace std;
 
 
-#include "fsp.tab.hpp"  // to get the token types definition that we return
+#include "parser.hpp"  // to get the token types definition that we return
 
 
 //#define DEBUG
@@ -26,6 +26,10 @@ UpperCaseID	[A-Z][A-Z0-9]*
 /* We don't want to take a standard yywrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
 %option noyywrap
+
+%option outfile="scanner.cpp"
+
+/* %option batch */
 
 %%
 
@@ -159,3 +163,4 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 }
 %%
 
+/* User code: Functions that can be exported. */

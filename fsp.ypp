@@ -34,8 +34,7 @@ using namespace std;
 
 %code {
 /* Stuff from flex that bison needs to know about. */
-extern int yylex();
-extern FILE * yyin;
+#include "scanner.hpp"
 
 
 //#define NDEBUG
@@ -445,6 +444,9 @@ void yyerror(const char *s);
    this to resolve conflicts at runtime. */
 %glr-parser
 
+/* Name of the parser implementation file. */
+%output "parser.cpp"
+
 /* Create a parser header file. This is needed because we define yylex()
    in another source file (the FLEX generated scanner source file). */
 %defines
@@ -453,6 +455,7 @@ void yyerror(const char *s);
     states and what is done for each type of lookahead token in that state
 %verbose
 */
+
 
 
 %%

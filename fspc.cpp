@@ -1,9 +1,9 @@
 #include <iostream>
-#include "parser.hpp"
 #include "lts.hpp"
 
 using namespace std;
 
+extern int parser();
 
 
 int main ()
