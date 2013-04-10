@@ -199,6 +199,8 @@ ScannerFileBuffer::~ScannerFileBuffer()
 
 ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
 {
+    YY_BUFFER_STATE last = YY_CURRENT_BUFFER;
+
     buffer = buf;
     size = sz;
     yybs = yy_scan_bytes(buf, size);
@@ -206,6 +208,12 @@ ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
 	cerr << "yy_scan_bytes() returned NULL\n";
 	throw int();
     }
+    /* The yy_scan_bytes() function has a side effect: it calls
+       yy_switch_to_buffer() on the new buffer. Since we don't want this side
+       effect, we revert to the last buffer (if any) by calling the function
+       yy_switch_to_buffer() again. */
+    if (last)
+	yy_switch_to_buffer(last);
 }
 
 

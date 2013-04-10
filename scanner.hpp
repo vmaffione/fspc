@@ -30,7 +30,6 @@ class ScannerStringBuffer: public ScannerBuffer {
 
   public:
     ScannerStringBuffer(const char *, int);
-    ~ScannerStringBuffer();
     void useless() {}
 };
 

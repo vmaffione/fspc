@@ -877,28 +877,34 @@ local_process_defs:
     ;
 
 local_process_def:
-    process_id index_ranges_OPT '=' {
+    process_id {
+	/* The following nonterminal 'index_ranges_OPT' may result
+	   in contexts ramifications, and so css.update() must be called. We
+	   therefore push a clone of the current ContextsSet, which is the
+	   initial empty one, so that the initial one is not modified. */
+	css.push_clone();
+    } index_ranges_OPT '=' {
 	cout << "index_ranges_OPT:\n";
-	$2->print();
+	$3->print();
 	init_fakenode();
     } local_process {
 	SHH("local_process_def --> process_id = local_process");
-	IN(cout << *$1 << ": "; $5->print(&actions));
+	IN(cout << *$1 << ": "; $6->print(&actions));
 	ProcessValue * pvp;
 	SetValue * setvp;
 	string procname;
 
-	for (int c=0; c<$2->v.size(); c++) {
-	    setvp = err_if_not_set($2->v[c]);
+	for (int c=0; c<$3->v.size(); c++) {
+	    setvp = err_if_not_set($3->v[c]);
 	    for (int j=0; j<setvp->actions.size(); j++) {
 		procname = *$1 + setvp->actions[j];
-		if ($5->v[c]->unresolved()) {
+		if ($6->v[c]->unresolved()) {
 		    aliases.insert(procname,
-			((UnresolvedProcess* )$5->v[c])->reference);
+			((UnresolvedProcess* )$6->v[c])->reference);
 		    aliases.print();
 		} else {
 		    pvp = new ProcessValue;
-		    pvp->pnp = err_if_not_procnode($5->v[c]);
+		    pvp->pnp = err_if_not_procnode($6->v[c]);
 		    if (j)
 			pvp->pnp = pvp->pnp->clone();
 		    if (!local_processes.insert(procname, pvp)) {
@@ -910,9 +916,12 @@ local_process_def:
 		}
 	    }
 	}
+	/* Pop out the cloned (maybe dirty) ContextsState, so that we
+	   correctly restore the empty initial state. */
+	css.pop();
 	delete $1;
-	delete $2;
-	$$ = $5;
+	delete $3;
+	$$ = $6;
 	OUT($$->print(&actions));
     }
     ;
@@ -1975,16 +1984,11 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
     }
 }
 
+const char * ex = "P=(a->b->P).";
 
 int parser()
 {
     const char * input_name = "input";
-
-    /* Set flex to read from it instead of defaulting to STDIN. */
-    /*if (scanner_setup(input_name))
-	return -1;*/
-    ScannerFileBuffer sfb(input_name);
-    sfb.select();
 
     /* Initialize shared data structures: A stack containing a single
        ContextsSet. This set contains a single empty Context and an
@@ -1993,12 +1997,16 @@ int parser()
     csp->append(new Context);
     css.push(csp);
 
-
-    /* Parse through the input until there is no more. */
-    do {
-	yyparse();
-    } while (0);
     
+    ScannerFileBuffer sfb(input_name);
+    sfb.select();
+    yyparse();
+
+/*
+    ScannerStringBuffer ssb(ex,12);
+    ssb.select();
+    yyparse(); */
+
     return 0;
 }
 
