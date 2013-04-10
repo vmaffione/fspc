@@ -3,7 +3,7 @@ CFLAGS=-g -Wall
 
 
 fspc: fspc.o lex.yy.o fsp.tab.o symbols_table.o lts.o context.o
-	$(CC) -g fspc.o fsp.tab.o lex.yy.o symbols_table.o lts.o context.o -lfl -o fspc
+	$(CC) -g fspc.o fsp.tab.o lex.yy.o symbols_table.o lts.o context.o -o fspc
 
 fspc.o: symbols_table.hpp parser.hpp lts.cpp
 

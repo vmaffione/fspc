@@ -8,9 +8,6 @@
 
 using namespace std;
 
-/* Stuff from flex that bison needs to know about. */
-extern int yylex();
-extern FILE * yyin;
 }
 
 
@@ -36,6 +33,11 @@ extern FILE * yyin;
 
 
 %code {
+/* Stuff from flex that bison needs to know about. */
+extern int yylex();
+extern FILE * yyin;
+
+
 //#define NDEBUG
 #include <assert.h>
 

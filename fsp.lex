@@ -23,6 +23,10 @@ UpperCaseID	[A-Z][A-Z0-9]*
 
 %x COMMENTS
 
+/* We don't want to take a standard yywrap() from fl.so, and so we can
+   avoid linking the executable with -lfl. */
+%option noyywrap
+
 %%
 
 "/*" {
