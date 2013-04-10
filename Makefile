@@ -16,7 +16,7 @@ context.o: context.hpp symbols_table.hpp
 fsp.tab.o: context.hpp symbols_table.hpp fsp.tab.cpp lts.hpp utils.hpp
 
 fsp.tab.cpp fsp.tab.hpp: fsp.ypp fsp.y
-	bison -d fsp.ypp
+	bison fsp.ypp
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 lex.yy.o: lex.yy.c

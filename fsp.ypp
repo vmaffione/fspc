@@ -1,4 +1,4 @@
-%{
+%code top {
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -8,16 +8,37 @@
 
 using namespace std;
 
-//#define NDEBUG
-#include <assert.h>
-
-
 /* Stuff from flex that bison needs to know about. */
 extern int yylex();
 extern FILE * yyin;
+}
 
+
+%code requires {
 /* Symbols tables. */
 #include "symbols_table.hpp"
+}
+
+
+// Bison fundamentally works by asking flex to get the next token, which it
+// returns as an object of type "YYSTYPE".  But tokens could be of any
+// arbitrary data type!  So we deal with that in Bison by defining a C union
+// holding each of the types of tokens that Flex could return, and have Bison
+// use that union instead of "int" for the definition of "YYSTYPE":
+%union {
+    int int_value;
+    float float_value;
+    std::string *string_ptr;
+    class SymbolValue *sv_ptr;
+    struct SvpVec * svpvec_ptr;
+    struct Pvec * pvec_ptr;
+}
+
+
+%code {
+//#define NDEBUG
+#include <assert.h>
+
 struct SymbolsTable identifiers; /* Const, Range, Set and Parameter names. */
 struct SymbolsTable local_processes; /* Names of local processes. */
 struct SymbolsTable processes; /* Names of global processes. */
@@ -375,25 +396,11 @@ static struct Aliases aliases;
 
 
 void yyerror(const char *s);
-%}
-
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "YYSTYPE".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "YYSTYPE":
-%union {
-    int int_value;
-    float float_value;
-    std::string *string_ptr;
-    class SymbolValue *sv_ptr;
-    struct SvpVec * svpvec_ptr;
-    struct Pvec * pvec_ptr;
 }
+
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
 // by convention), and associate each with a field of the union:
-
 
 %token IF THEN ELSE
 %token WHEN
@@ -427,11 +434,24 @@ void yyerror(const char *s);
 %type <svpvec_ptr> index_ranges_OPT index_ranges indices_OPT indices
 
 %type <pvec_ptr> choice action_prefix prefix_actions
-%type <pvec_ptr> process_body local_process local_process_defs local_process_def
+%type <pvec_ptr> process_body local_process local_process_defs 
+%type <pvec_ptr> local_process_def
 %type <pvec_ptr> sequential_composition base_local_process else_OPT
 %type <pvec_ptr> seq_process_list process_ref
 
+/* Generate a Generic LR parser, instead of a standard LR parser. We need
+   this to resolve conflicts at runtime. */
 %glr-parser
+
+/* Create a parser header file. This is needed because we define yylex()
+   in another source file (the FLEX generated scanner source file). */
+%defines
+
+/* Write an extra output file containing verbose descriptions of the parser
+    states and what is done for each type of lookahead token in that state
+%verbose
+*/
+
 
 %%
 

@@ -33,10 +33,9 @@ UpperCaseID	[A-Z][A-Z0-9]*
     BEGIN(INITIAL);
 }
 
-<COMMENTS>. {
-    /* Throw away everything when in the COMMENTS state */
+<COMMENTS>[ \n\t\r]|. {
+    /* Throw away anything when in comments state */
 }
-
 
 {DIGIT}+ {
     yylval.int_value = atoi(yytext);
@@ -146,7 +145,7 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
     return yytext[0];
 }
 
-[ \t\n]+ {
+[ \t\n\r]+ {
     /* eat up whitespaces */
 }
 
