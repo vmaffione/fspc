@@ -164,3 +164,64 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 %%
 
 /* User code: Functions that can be exported. */
+
+#include "scanner.hpp"
+
+/* ======================= ScannerBuffer & co. ========================== */
+void ScannerBuffer::select()
+{
+    yy_switch_to_buffer(yybs);
+}
+
+ScannerBuffer::~ScannerBuffer()
+{
+    yy_delete_buffer(yybs);
+}
+
+ScannerFileBuffer::ScannerFileBuffer(const char * input_name)
+{
+    fin = fopen(input_name, "r");
+    if (!fin) {
+	cerr << "I can't open " << input_name << " !\n";
+	throw int();
+    }
+    yybs = yy_create_buffer(fin, YY_BUF_SIZE);
+    if (yybs == NULL) {
+	cerr << "yy_create_buffer() returned NULL\n";
+	throw int();
+    }
+}
+
+ScannerFileBuffer::~ScannerFileBuffer()
+{
+    fclose(fin);
+}
+
+ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
+{
+    buffer = buf;
+    size = sz;
+    yybs = yy_scan_bytes(buf, size);
+    if (yybs == NULL) {
+	cerr << "yy_scan_bytes() returned NULL\n";
+	throw int();
+    }
+}
+
+
+/* XXX Deprecated. */
+int scanner_setup(const char * input_name)
+{
+    FILE *fin = fopen(input_name, "r");
+    if (!fin) {
+	cout << "I can't open " << input_name << " !\n";
+	return -1;
+    }
+
+    yyin = fin;
+
+    cout << "FLEX buffer " << YY_CURRENT_BUFFER << "\n";
+
+    return 0;
+}
+

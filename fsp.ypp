@@ -1978,11 +1978,13 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 
 int parser()
 {
-    FILE *fin = fopen("input", "r");
-    if (!fin) {
-	cout << "I can't open 'input'!" << endl;
-	return -1;
-    }
+    const char * input_name = "input";
+
+    /* Set flex to read from it instead of defaulting to STDIN. */
+    /*if (scanner_setup(input_name))
+	return -1;*/
+    ScannerFileBuffer sfb(input_name);
+    sfb.select();
 
     /* Initialize shared data structures: A stack containing a single
        ContextsSet. This set contains a single empty Context and an
@@ -1992,16 +1994,14 @@ int parser()
     css.push(csp);
 
 
-    /* Set flex to read from it instead of defaulting to STDIN. */
-    yyin = fin;
-
     /* Parse through the input until there is no more. */
     do {
 	yyparse();
-    } while (!feof(yyin));
+    } while (0);
     
     return 0;
 }
+
 
 void yyerror(const char *s) {
     cout << "Syntax error:" << s << endl;
