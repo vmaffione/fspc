@@ -381,21 +381,12 @@ struct SymbolsTable process_models;
 
 #define DEBUG 1
 #if (DEBUG==2)
-#define SHH(x) cout<< "SHH >> " << x << "\n";
-#define OUT(x) cout<<"OUT:"; x
-#define IN(x) cout<<"IN:"; x
 #define PROX(x)
 #define PROP(x)
 #elif (DEBUG==1)
-#define SHH(x)
-#define OUT(x)
-#define IN(x)
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
 #define PROP(x) cout<<"PROP:==============================================================\n      " << x << "\n"
 #else
-#define SHH(x)
-#define OUT(x)
-#define IN(x)
 #define PROP(x)
 #define PROX(x)
 #endif
@@ -487,7 +478,6 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
-	SHH("action_labels --> LowerCaseID");
 	SvpVec * vp;
 	SetValue * setvp; 
 
@@ -507,16 +497,11 @@ action_labels:
 	}
 	delete $1;
 	$$ = vp;
-	OUT(vp->print());
     }
     | set {
-	SHH("action_labels --> set");
 	$$ = $1;
-	OUT($$->print());
     }
     | action_labels '.' LowerCaseID {
-	SHH("action_labels --> action_labels . LowerCaseID");
-	IN($1->print());
 	SetValue * setvp;
 
 	assert($1->v.size() == current_contexts.size());
@@ -529,7 +514,6 @@ action_labels:
 	$$ = $1;
     }
     | action_labels '.' set {
-	SHH("action_labels --> action_labels . set");
 	assert($1->v.size() == $3->v.size() &&
 		    $1->v.size() == current_contexts.size());
 	SetValue * setvp;
@@ -544,22 +528,17 @@ action_labels:
 	}
 	delete $3;
 	$$ = $1;
-	OUT($$->print());
     }
     | action_labels '[' action_range ']' {
-	SHH("action_labels --> action_labels [ action_range ]");
-	IN($1->print(); $3->print());
 
 	assert($1->v.size() == $3->v.size() &&
 		$1->v.size() == current_contexts.size());
 	$$ = indexize_svpvec($1, $3);
-	OUT($$->print());
     }
     ;
 
 set:
     set_id {
-	SHH("set --> set_id");
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 	SetValue * setvp;
@@ -574,43 +553,30 @@ set:
 	for (int c=0; c<current_contexts.size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
-	OUT($$->print());
     }
     | set_expr {
-	SHH("set --> set_expr");
 	$$ = $1;
-	OUT($$->print());
     }
     ;
 
 set_expr:
     '{' set_elements '}' {
-	SHH("set_expr --> { set_elements }");
 	$2->print();
 	$$ = $2;
-	OUT($$->print());
     }
     ;
 
 action_range:
     expression {
-	SHH("action_range --> expression");
 	$$ = $1;
-	OUT($$->print());
     }
     | range_expr {
-	SHH("action_range --> range_expr");
 	$$ = $1;
-	OUT($$->print());
     }
     | set_expr {
-	SHH("action_range --> set_expr");
 	$$ = $1;
-	OUT($$->print());
     }
     | variable ':' range_or_set_id {
-	SHH("action_range --> variable : range_or_set_id");
-	IN(cout << *$1 << ": " << *$3 << "\n");
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 
@@ -627,11 +593,8 @@ action_range:
 	for (int c=0; c<current_contexts.size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
-	OUT($$->print());
     }
     | variable ':' range_expr {
-	SHH("action_range --> variable : range_expr");
-	IN(cout << *$1 << ": "; $3->print());
 	RangeValue * rvp;
 	for (int i=0; i<$3->v.size(); i++) {
 	    rvp = err_if_not_range($3->v[i]);
@@ -640,11 +603,8 @@ action_range:
 	}
 	delete $1;
 	$$ = $3;
-	OUT($$->print());
     }
     | variable ':' set_expr {
-	SHH("action_range --> variable : set_expr");
-	IN(cout << *$1 << ": "; $3->print());
 	SetValue * setvp;
 	for (int i=0; i<$3->v.size(); i++) {
 	    setvp = err_if_not_set($3->v[i]);
@@ -653,14 +613,11 @@ action_range:
 	}
 	delete $1;
 	$$ = $3;
-	OUT($$->print());
     }
     ;
 
 range_expr:
     expression DOTDOT expression {
-	SHH("range_expr --> expression .. expression");
-	IN($1->print(); $3->print());
 	RangeValue * rvp;
 	ConstValue * cvp;
 	SvpVec * vp = new SvpVec;
@@ -677,7 +634,6 @@ range_expr:
 	delete $1;
 	delete $3;
 	$$ = vp;
-	OUT($$->print());
     }
     ;
 
@@ -692,7 +648,6 @@ constant_def:
 	}
 	ConstValue* cvp = err_if_not_const($4->v[0]);
 	$4->detach(0);
-	OUT(cout << "Const " << *$2 << "=" << cvp->value << "\n");
 	if (!identifiers.insert(*$2, cvp)) {
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
@@ -711,7 +666,6 @@ range_def:
 	RangeValue* rvp = new RangeValue;
 	ConstValue * cvp1 = err_if_not_const($4->v[0]);
 	ConstValue * cvp2 = err_if_not_const($6->v[0]);
-	OUT(cout << "Range " << *$2 << "[" << cvp1->value << ", " << cvp2->value << "]\n");
 	rvp->low = cvp1->value;
 	rvp->high = cvp2->value;
 	//delete cvp1; // done below
@@ -727,7 +681,6 @@ range_def:
 
 set_def:
     SET set_id '=' '{' set_elements '}' {
-	OUT(cout << "Set\n"; $5->print());
 	// TODO convert from SvpVec to SetValue
 	if (!identifiers.insert(*$2, $5->v[0])) {
 	    errstream << "set " << *$2 << " declared twice";
@@ -740,14 +693,9 @@ set_def:
 
 set_elements:
     action_labels {
-	SHH("set_elements --> action_labels");
 	$$ = $1;
-	OUT($$->print());
     }
     | set_elements ',' action_labels {
-	SHH("set_elements --> set_elements , action_labels");
-	IN($1->print(); $3->print());
-
 	assert($1->v.size() == $3->v.size());
 	for (int c=0; c<$1->v.size(); c++) {
 	    SetValue * setvp = err_if_not_set($1->v[c]);
@@ -756,7 +704,6 @@ set_elements:
 	}
 	delete $3;
 	$$ = $1;
-	OUT($$->print());
     }
     ;
 
@@ -771,8 +718,6 @@ process_def:
 	init_fakenode();
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
-	SHH("process_def --> ... process_body ...");
-	IN(cout<<*$1<< ": "; $5->print(&actions));
 	PROP("process_def --> ... process_body ...");
 	PROX(cout<<*$1<<" = "; $5->v[0]->print(&actions));
 
@@ -855,29 +800,19 @@ process_def:
 
 process_body:
     local_process {
-	SHH("process_body --> local_process");
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     | local_process ',' local_process_defs {
-	SHH("process_body --> local_process , local_process_defs");
-	IN($1->print(&actions); $3->print(&actions));
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     ;
 
 local_process_defs:
     local_process_def {
-	SHH("local_process_defs --> local_process_def");
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     | local_process_defs ',' local_process_def {
-	SHH("local_process_defs --> local_process_defs , local_process_def");
-	IN($1->print(&actions); $3->print(&actions));
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     ;
 
@@ -893,8 +828,6 @@ local_process_def:
 	$3->print();
 	init_fakenode();
     } local_process {
-	SHH("local_process_def --> process_id = local_process");
-	IN(cout << *$1 << ": "; $6->print(&actions));
 	ProcessValue * pvp;
 	SetValue * setvp;
 	string procname;
@@ -927,7 +860,6 @@ local_process_def:
 	delete $1;
 	delete $3;
 	$$ = $6;
-	OUT($$->print(&actions));
     }
     ;
 
@@ -936,27 +868,20 @@ alphabet_extension_OPT:
 	$$ = NULL;
     }
     | '+' set {
-	SHH("alphabet_extension_OPT --> + set");
 	$$ = $2;
-	OUT($$->print());
     }
     ;
 
 local_process:
     base_local_process {
-	SHH("local_process --> base_local_process");
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     | sequential_composition {
 /*
-	SHH("local_process --> sequential_composition");
 	$$ = $1;
-	OUT($$->print(&actions));
 */
     }
     | IF expression THEN {
-	SHH("local_process --> IF expression THEN (cont)");
 	ConstValue * cvp;
 
 	/* Prepare a clone of the current ContextsSet to rule out those
@@ -972,7 +897,6 @@ local_process:
 	    }
 	}
     } local_process {
-	SHH("local_process --> (cont) local_process (cont)");
 	ConstValue * cvp;
 
 	css.pop();
@@ -985,8 +909,6 @@ local_process:
 		current_contexts.rule_out(c);
 	}
     } else_OPT {
-	SHH("local_process --> (cont) else_OPT");
-	IN($2->print(); $5->print(&actions); if ($7) $7->print(&actions));
 	Pvec * pvec = new Pvec;
 	ConstValue * cvp;
 
@@ -1006,19 +928,15 @@ local_process:
 	}
 	delete $2;
 	$$ = pvec;
-	OUT($$->print(&actions));
     }
     | '(' {
-	SHH("local_process --> (   (cont)");
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
 	css.push_clone();
 	PROX(cout << "CSS height (push) " << css.stack.size());
 	PROX(current_contexts.print());
     } choice ')' {
-	SHH("local_process --> (cont)  choice )");
 	//$3->print();
 	$$ = $3;
-	OUT($$->print(&actions));
     }
     ;
 
@@ -1032,37 +950,30 @@ else_OPT:
 
 base_local_process:
     END {
-	SHH("base_local_process --> END");
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode(ProcessNode::End);
 
 	for (int c=0; c<current_contexts.size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
-	OUT($$->print(&actions));
     }
     | STOP {
-	SHH("base_local_process --> STOP");
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode;
 
 	for (int c=0; c<current_contexts.size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
-	OUT($$->print(&actions));
     }
     | ERROR {
-	SHH("base_local_process --> ERROR");
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
 
 	for (int c=0; c<current_contexts.size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
-	OUT($$->print(&actions));
     }
     | process_id indices_OPT {
-	SHH("base_local_process --> process_id indices_OPT");
 	SymbolValue * svp;
 	Pvec * pvec = new Pvec;
 	ProcessBase * pbp;
@@ -1086,40 +997,32 @@ base_local_process:
 	}
 
 	$$ = pvec;
-	OUT($$->print(&actions));
     }
     ;
 
 choice:
     action_prefix {
-	SHH("choice --> action_prefix");
 	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
 	$$ = $1;
-	OUT($$->print(&actions));
 	PROX(cout << "CSS height = (pop) " << css.stack.size());
     }
     | choice '|' {
-	SHH("choice --> choice | (cont)");
 	/* Replicate the CSS stack top so that it can be used by
 	   'action_prefix'. */
 	css.push_clone();
 	PROX(cout << "CSS height (push) " << css.stack.size());
 	PROX(current_contexts.print());
     } action_prefix {
-	SHH("choice --> (cont) action_prefix");
-	IN($1->print(&actions); $4->print(&actions));
 	/* Pop (and destroy) the replicated top and everything above. */
 	css.pop();
 	cout << "CSS height = (pop) " << css.stack.size() << "\n";
 	$$ = $1;
-	OUT($$->print(&actions));
     }
     ;
 
 action_prefix:
     guard_OPT {
-	SHH("action_prefix --> guard_OPT (cont)");
 	PROP("action_prefix --> guard_OPT (cont)");
 	ConstValue * cvp;
 	if ($1) {
@@ -1131,8 +1034,6 @@ action_prefix:
 	    cout << "filtered\n"; current_contexts.print();
 	}
     } prefix_actions ARROW local_process {
-	SHH("action_prefix --> (cont) prefix_actions -> local_process");
-	IN($3->print(&actions); $5->print(&actions));
 	PROP("action_prefix --> (cont) prefix_actions -> local_process");
 	/* If $5 is an istance of ConnectedProcess, it means that its first 
 	   nodes have already been connected to the frontier of $3 in the
@@ -1160,15 +1061,12 @@ action_prefix:
 
 	//$3->print();
 	$$ = $3;
-	OUT($$->print(&actions));
 	PROX(current_contexts.print(); cout<<"$$ = "; print_forest());
     }
     ;
 
 prefix_actions:
     action_labels {
-	SHH("prefix_actions --> action_labels");
-	IN($1->print(); current_contexts.print());
 	PROP("prefix_actions --> action_labels");
 	PROX(cout<<"$1 = "; $1->print());
 
@@ -1267,12 +1165,9 @@ prefix_actions:
 		pvec->v.push_back(pbp);
 	}
 	$$ = pvec;
-	OUT($$->print(&actions));
 	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
     }
     | prefix_actions ARROW action_labels {
-	SHH("prefix_actions --> prefix_actions -> action_labels");
-	IN($3->print(); current_contexts.print());
 	PROP("prefix_actions --> prefix_actions -> action_labels");
 	PROX(cout<<"$3 = "; $3->print());
 	ProcessNode * pnp;
@@ -1340,7 +1235,6 @@ prefix_actions:
 	   the result of the previous action (and so a ProcessNode* or a
 	   ConnectedProcess*. */
 	$$ = $1;
-	OUT($$->print(&actions));
 	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
     }
     ;
@@ -1350,11 +1244,9 @@ guard_OPT:
 	$$ = NULL;
     }
     | WHEN expression {
-	SHH("guard_OPT --> WHEN expression");
 	for (int i=0; i<$2->v.size(); i++)
 	    err_if_not_const($2->v[i]);
 	$$ = $2;
-	OUT($$->print());
     }
     ;
 
@@ -1375,8 +1267,6 @@ indices_OPT:
 
 indices:
     '[' expression ']' {
-	SHH("indices --> [ expression ]");
-
 	SvpVec * vp = new SvpVec;
 	SetValue * setvp;
 	ConstValue * cvp;
@@ -1392,7 +1282,6 @@ indices:
 	$$ = vp;
     }
     | indices '[' expression ']' {
-	SHH("indices --> indices [ expression ]");
 	SetValue * setvp;
 	ConstValue * cvp;
 
@@ -1422,8 +1311,6 @@ index_ranges_OPT:
 
 index_ranges:
     '[' action_range ']' {
-	SHH("index_ranges --> [ action_range ]");
-	IN($2->print());
 	SvpVec * vp;
 	SetValue * setvp;
 	ConstValue * cvp;
@@ -1441,61 +1328,47 @@ index_ranges:
 	vp->v.push_back(setvp);
 	$$ = indexize_svpvec(vp, $2);
 
-	OUT($$->print());
     }
     | index_ranges '[' action_range ']' {
-	SHH("index_ranges --> index_ranges [ action_range ]");
-	IN($1->print(); $3->print());
-
 	assert($3->v.size() == $1->v.size());
 	if ($3->v[0]->type() == SymbolValue::Set) {
 	    errstream << "Unexpected set";
 	    semantic_error();
 	}
 	$$ = indexize_svpvec($1, $3);
-
-	OUT($$->print());
     }
     ;
 
 sequential_composition:
     seq_process_list ';' base_local_process {
-	SHH("sequential_composition --> seq_process_list ; \
-		base_local_process");
 	$$ = $1;
     }
     ;
 
 seq_process_list:
     process_ref {
-	SHH("seq_process_list --> process_ref");
 	$$ = $1;
     }
     | seq_process_list ';' process_ref {
-	SHH("seq_process_list --> seq_process_list ; process_ref");
 	$$ = $1;
     }
     ;
 
 process_ref:
     process_id argument_OPT {
-	SHH("process_ref --> process_id argument_OPT");
 	//TODO
     }
     ;
 
 argument_OPT:
     |'(' argument_list ')' {
-	SHH("argument_OPT --> ( argument_list )");
     }
     ;
 
 argument_list:
     expression {
-	SHH("argument_list --> expression");
     }
     | argument_list ',' expression {
-	SHH("argument_list --> argument_list , expression");
     }
     ;
 
@@ -1548,28 +1421,23 @@ ranges:
 /* Parameters */
 param_OPT:
     | param {
-	SHH("param_OPT -->  param");
     }
     ;
 
 param:
     '(' parameter_list ')' {
-	SHH("param -> ( parameter_list )");
     }
     ;
 
 parameter_list:
     parameter {
-	SHH("parameter_list --> parameter");
     }
     | parameter_list ',' parameter {
-	SHH("parameter_list --> parameter_list , parameter");
     }
     ;
 
 parameter:
     parameter_id '=' expression {
-	SHH("parameter --> parameter_id = expression");
 	if ($3->v.size() != 1) {
 	    // XXX this should never happen..
 	    errstream << "Illegal use of variables in parameter declaration";
@@ -1635,17 +1503,13 @@ menu_def:
 /* An expression or a simple_expression: standard operators and priorities. */
 expression:
     or_expr {
-	SHH("expression --> or_expr");
 	$$ = $1;
-	OUT($$->print());
     }
     ;
 
 simple_expression:
     additive_expr {
-	SHH("simple_expression --> additive_expr");
 	$$ = $1;
-	OUT($$->print());
     }
     ;
 
