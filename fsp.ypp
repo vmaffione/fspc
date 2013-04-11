@@ -40,8 +40,17 @@ using namespace std;
 /* Inline utilities. */
 #include "utils.hpp"
 
+/* Context, ContextsSet and ContextsSetStack. */
+#include "context.hpp"
+
 /* Definition of the Global class. */
 #include "global.hpp"
+
+/* Stuff from flex that bison needs to know about. */
+#include "scanner.hpp"
+
+/* Lts definitions and operations. */
+#include "lts.hpp"
 
 
 template <class T>
@@ -887,7 +896,7 @@ action_prefix:
 
 	//$3->print();
 	$$ = $3;
-	PROX(g.current_contexts().print(); cout<<"$$ = "; g.print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = "; g.print_fakenode_forest());
     }
     ;
 
@@ -991,7 +1000,7 @@ prefix_actions:
 		pvec->v.push_back(pbp);
 	}
 	$$ = pvec;
-	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_fakenode_forest());
     }
     | prefix_actions ARROW action_labels {
 	PROP("prefix_actions --> prefix_actions -> action_labels");
@@ -1061,7 +1070,7 @@ prefix_actions:
 	   the result of the previous action (and so a ProcessNode* or a
 	   ConnectedProcess*. */
 	$$ = $1;
-	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_fakenode_forest());
     }
     ;
 
