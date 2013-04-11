@@ -8,6 +8,9 @@
 
 using namespace std;
 
+//#define NDEBUG
+#include <assert.h>
+
 }
 
 
@@ -37,196 +40,20 @@ using namespace std;
 #include "scanner.hpp"
 
 
-//#define NDEBUG
-#include <assert.h>
 
-struct SymbolsTable identifiers; /* Const, Range, Set and Parameter names. */
-struct SymbolsTable local_processes; /* Names of local processes. */
-struct SymbolsTable processes; /* Names of global processes. */
 
-/* Main actions table. */
-struct ActionsTable actions("Global actions table");
-
+/* Lts definitions and operations. */
 #include "lts.hpp"
 
-
+/* Context, ContextsSet and ContextsSetStack. */
 #include "context.hpp"
-static struct ContextsSetStack css;
-#define current_contexts css.top()
 
 /* Inline utilities. */
 #include "utils.hpp"
 
-
-/* Storage for a list of parameters identifiers to remove from the 
-   identifiers table when a process definition has been completed. */
-vector<string *> parameters;
-
-
 /* Fix unresolved ProcessNode references due to cyclic processes. */
 static void fix_unresolved_references(ProcessNode * pnp, void * opaque);
 
-
-/* Left contains a SetValue*, while right is the result of 'action_range'. */
-SvpVec * indexize_svpvec(SvpVec * left, SvpVec * right)
-{
-    SvpVec * vp;
-    SetValue * setvp;
-    SetValue * rsetvp;
-    RangeValue * rvp;
-    ConstValue * cvp;
-    ContextsSet * csp; 
-    Context * cxp;
-
-    /* type() and 'variable' is the same for all the elements in 
-       action_range. */
-    switch (right->v[0]->type()) {
-	case SymbolValue::Range:
-	    rvp = err_if_not_range(right->v[0]);
-	    if (rvp->variable != "") {
-		/* In this case each element in action_range is in the
-		   form 'var:R', where R is a range_id or a range_expr. */
-		csp = new ContextsSet;
-		csp->frontier = current_contexts.frontier;
-		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rvp = err_if_not_range(right->v[c]);
-		    for (int j=rvp->low; j<=rvp->high; j++) {
-			SetValue * new_setvp = new SetValue(*setvp);
-			new_setvp->indexize(j);
-			/* When a context spread happens, each new_setvp
-			   inherits the rank of the generating setvp. */
-			new_setvp->rank = setvp->rank;
-			/* Append the new SetValue to associate to this
-			   context.*/
-			vp->v.push_back(new_setvp);
-			/* Create a new context (extending the previous
-			   one) */
-			cxp = extended_context(current_contexts[c],
-				rvp->variable, j);
-			csp->append(cxp);
-		    }
-		}
-		cout << "Contexts ramification\n";
-		css.update(csp);
-		delete left;
-		delete right;
-		return vp;
-	    } else {
-		/* In this case each element in action_range is in the
-		   form "R", where R is a range_id or a range_expr. */
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rvp = err_if_not_range(right->v[c]);
-		    setvp->indexize(rvp->low, rvp->high);
-		    /* Rank is inherited. */
-		}
-		delete right;
-		return left;
-	    }
-	    break;
-
-	case SymbolValue::Const:
-	    for (int c=0; c<left->v.size(); c++) {
-		setvp = err_if_not_set(left->v[c]);
-		cvp = err_if_not_const(right->v[c]);
-		setvp->indexize(cvp->value);
-		/* Rank is inherited. */
-	    }
-	    delete right;
-	    return left;
-	    break;
-	case SymbolValue::Set:
-	    setvp = err_if_not_set(right->v[0]);
-	    if (setvp->variable != "") {
-		/* In this case each element in action_range is in the
-		   form 'var:R', where R is a set_id or a set_expr. */
-		csp = new ContextsSet;
-		csp->frontier = current_contexts.frontier;
-		/* We need a new SvpVec for a new ContextSet. */
-		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rsetvp = err_if_not_set(right->v[c]);
-		    for (int j=0; j<rsetvp->actions.size(); j++) {
-			SetValue * new_setvp = new SetValue(*setvp);
-			new_setvp->dotcat(rsetvp->actions[j]);
-			/* When a context spread happens, each new_setvp
-			   inherits the rank of the generating setvp. */
-			new_setvp->rank = setvp->rank;
-			/* Append the new SetValue to associate to this
-			   context.*/
-			vp->v.push_back(new_setvp);
-			/* Create a new context (extending the previous
-			   one) */
-			cxp = extended_context(current_contexts[c],
-				rsetvp->variable, rsetvp->actions[j]);
-			/* Append the new Context to the new ContextSet. 
-			 */
-			csp->append(cxp);
-		    }
-		}
-		cout << "Contexts ramification\n";
-		css.update(csp);
-		delete left;
-		delete right;
-		return vp;
-	    } else {
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rsetvp = err_if_not_set(right->v[c]);
-		    /* Create a new SetValue that combines setvp and
-		       rsetvp. No context ramification happens here. */
-		    setvp->indexize(*rsetvp);
-		    /* Rank is inherited. */
-		}
-		delete right;
-		return left;
-	    }
-	    break;
-
-	default:
-	    cerr << "I should not reach this point.\n";
-	    assert(0);
-	    exit(1);
-    }
-}
-
-
-static struct ProcessNode fakenode;
-static void init_fakenode()
-{
-    vector<ProcessEdge> cv;
-    struct ProcessEdge e;
-    struct FrontierElement fe;
-    vector<FrontierElement> frontier;
-
-    /* The fakenode must have a child for each contexts. In this way the 
-       actions associated to the rule 'prefix_actions-->action_labels' can
-       correctly expand each context and return a ProcessNode* for each
-       child. */
-    fe.pnp = &fakenode;
-    for (int c=0; c<current_contexts.size(); c++) {
-	e.dest = NULL;
-	e.rank = c;	/* The child will combine with the c-th context. */
-	e.action = 0;	/* Not significant. */
-	cv.push_back(e);
-	/* Put the child in the frontier. */
-	fe.child = c;
-	frontier.push_back(fe);
-    }
-    fakenode.children = cv;
-    current_contexts.frontier = frontier;
-}
-
-static void print_forest()
-{
-    cout << "Current ProcessNode forest:\n";
-    for (int i=0; i<fakenode.children.size(); i++)
-	if (fakenode.children[i].dest)
-	    fakenode.children[i].dest->print(&actions);
-}
 
 
 struct AliasElement {
@@ -371,11 +198,199 @@ struct Aliases {
     }
 };
 
-static struct Aliases aliases;
+struct Global {
+    /* Main actions table. */
+    struct ActionsTable actions;
+
+    /* Const, Range, Set and Parameter names. */
+    struct SymbolsTable identifiers;
+
+    /* Names of local processes. */
+    struct SymbolsTable local_processes;
+
+    /* Names of global processes. */
+    struct SymbolsTable processes;
+
+    struct ContextsSetStack css;
+
+    /* Storage for a list of parameters identifiers to remove from the 
+       identifiers table when a process definition has been completed. */
+    vector<string *> parameters;
+
+    struct ProcessNode fakenode;
+
+    struct Aliases aliases;
+
+    int record_mode_on;
+    struct SymbolsTable process_models;
+
+    Global() : actions("Global actions table"), record_mode_on(0) { }
+
+    ContextsSet& current_contexts() { return css.top(); }
+
+    void init_fakenode() {
+	vector<ProcessEdge> cv;
+	struct ProcessEdge e;
+	struct FrontierElement fe;
+	vector<FrontierElement> frontier;
+
+	/* The fakenode must have a child for each contexts. In this way the 
+	   actions associated to the rule 'prefix_actions-->action_labels' can
+	   correctly expand each context and return a ProcessNode* for each
+	   child. */
+	fe.pnp = &fakenode;
+	for (int c=0; c<current_contexts().size(); c++) {
+	    e.dest = NULL;
+	    e.rank = c;	/* The child will combine with the c-th context. */
+	    e.action = 0;	/* Not significant. */
+	    cv.push_back(e);
+	    /* Put the child in the frontier. */
+	    fe.child = c;
+	    frontier.push_back(fe);
+	}
+	fakenode.children = cv;
+	current_contexts().frontier = frontier;
+    }
+
+    void print_forest() {
+	cout << "Current ProcessNode fakenode forest:\n";
+	for (int i=0; i<fakenode.children.size(); i++)
+	    if (fakenode.children[i].dest)
+		fakenode.children[i].dest->print(&actions);
+    }
+};
+
+//#define current_contexts g.css.top()
+
+/* Left contains a SetValue*, while right is the result of 'action_range'. */
+SvpVec * indexize_svpvec(struct Global * gp, SvpVec * left, SvpVec * right)
+{
+    SvpVec * vp;
+    SetValue * setvp;
+    SetValue * rsetvp;
+    RangeValue * rvp;
+    ConstValue * cvp;
+    ContextsSet * csp; 
+    Context * cxp;
+
+    /* type() and 'variable' is the same for all the elements in 
+       action_range. */
+    switch (right->v[0]->type()) {
+	case SymbolValue::Range:
+	    rvp = err_if_not_range(right->v[0]);
+	    if (rvp->variable != "") {
+		/* In this case each element in action_range is in the
+		   form 'var:R', where R is a range_id or a range_expr. */
+		csp = new ContextsSet;
+		csp->frontier = gp->current_contexts().frontier;
+		vp = new SvpVec;
+		for (int c=0; c<left->v.size(); c++) {
+		    setvp = err_if_not_set(left->v[c]);
+		    rvp = err_if_not_range(right->v[c]);
+		    for (int j=rvp->low; j<=rvp->high; j++) {
+			SetValue * new_setvp = new SetValue(*setvp);
+			new_setvp->indexize(j);
+			/* When a context spread happens, each new_setvp
+			   inherits the rank of the generating setvp. */
+			new_setvp->rank = setvp->rank;
+			/* Append the new SetValue to associate to this
+			   context.*/
+			vp->v.push_back(new_setvp);
+			/* Create a new context (extending the previous
+			   one) */
+			cxp = extended_context(gp->current_contexts()[c],
+				rvp->variable, j);
+			csp->append(cxp);
+		    }
+		}
+		cout << "Contexts ramification\n";
+		gp->css.update(csp);
+		delete left;
+		delete right;
+		return vp;
+	    } else {
+		/* In this case each element in action_range is in the
+		   form "R", where R is a range_id or a range_expr. */
+		for (int c=0; c<left->v.size(); c++) {
+		    setvp = err_if_not_set(left->v[c]);
+		    rvp = err_if_not_range(right->v[c]);
+		    setvp->indexize(rvp->low, rvp->high);
+		    /* Rank is inherited. */
+		}
+		delete right;
+		return left;
+	    }
+	    break;
+
+	case SymbolValue::Const:
+	    for (int c=0; c<left->v.size(); c++) {
+		setvp = err_if_not_set(left->v[c]);
+		cvp = err_if_not_const(right->v[c]);
+		setvp->indexize(cvp->value);
+		/* Rank is inherited. */
+	    }
+	    delete right;
+	    return left;
+	    break;
+	case SymbolValue::Set:
+	    setvp = err_if_not_set(right->v[0]);
+	    if (setvp->variable != "") {
+		/* In this case each element in action_range is in the
+		   form 'var:R', where R is a set_id or a set_expr. */
+		csp = new ContextsSet;
+		csp->frontier = gp->current_contexts().frontier;
+		/* We need a new SvpVec for a new ContextSet. */
+		vp = new SvpVec;
+		for (int c=0; c<left->v.size(); c++) {
+		    setvp = err_if_not_set(left->v[c]);
+		    rsetvp = err_if_not_set(right->v[c]);
+		    for (int j=0; j<rsetvp->actions.size(); j++) {
+			SetValue * new_setvp = new SetValue(*setvp);
+			new_setvp->dotcat(rsetvp->actions[j]);
+			/* When a context spread happens, each new_setvp
+			   inherits the rank of the generating setvp. */
+			new_setvp->rank = setvp->rank;
+			/* Append the new SetValue to associate to this
+			   context.*/
+			vp->v.push_back(new_setvp);
+			/* Create a new context (extending the previous
+			   one) */
+			cxp = extended_context(gp->current_contexts()[c],
+				rsetvp->variable, rsetvp->actions[j]);
+			/* Append the new Context to the new ContextSet. 
+			 */
+			csp->append(cxp);
+		    }
+		}
+		cout << "Contexts ramification\n";
+		gp->css.update(csp);
+		delete left;
+		delete right;
+		return vp;
+	    } else {
+		for (int c=0; c<left->v.size(); c++) {
+		    setvp = err_if_not_set(left->v[c]);
+		    rsetvp = err_if_not_set(right->v[c]);
+		    /* Create a new SetValue that combines setvp and
+		       rsetvp. No context ramification happens here. */
+		    setvp->indexize(*rsetvp);
+		    /* Rank is inherited. */
+		}
+		delete right;
+		return left;
+	    }
+	    break;
+
+	default:
+	    cerr << "I should not reach this point.\n";
+	    assert(0);
+	    exit(1);
+    }
+}
 
 
-int record_mode_on = 0;
-struct SymbolsTable process_models;
+
+struct Global g;
 
 
 
@@ -483,7 +498,7 @@ action_labels:
 
 	vp = new SvpVec;
 	vp->shared = false;
-	for (int c=0; c<current_contexts.size(); c++) {
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    setvp = new SetValue;
 	    *setvp += *$1;
 	    /* We assign a different rank to each setvp in vp (and so one
@@ -504,7 +519,7 @@ action_labels:
     | action_labels '.' LowerCaseID {
 	SetValue * setvp;
 
-	assert($1->v.size() == current_contexts.size());
+	assert($1->v.size() == g.current_contexts().size());
 	for (int c=0; c<$1->v.size(); c++) {
 	    setvp = err_if_not_set($1->v[c]);
 	    setvp->dotcat(*$3);
@@ -515,7 +530,7 @@ action_labels:
     }
     | action_labels '.' set {
 	assert($1->v.size() == $3->v.size() &&
-		    $1->v.size() == current_contexts.size());
+		    $1->v.size() == g.current_contexts().size());
 	SetValue * setvp;
 	SetValue * rsetvp;
 	for (int c=0; c<$1->v.size(); c++) {
@@ -532,8 +547,8 @@ action_labels:
     | action_labels '[' action_range ']' {
 
 	assert($1->v.size() == $3->v.size() &&
-		$1->v.size() == current_contexts.size());
-	$$ = indexize_svpvec($1, $3);
+		$1->v.size() == g.current_contexts().size());
+	$$ = indexize_svpvec(&g, $1, $3);
     }
     ;
 
@@ -542,7 +557,7 @@ set:
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 	SetValue * setvp;
-	if (!identifiers.lookup(*$1, svp)) {
+	if (!g.identifiers.lookup(*$1, svp)) {
 	    errstream << "set " << *$1 << " undeclared";
 	    semantic_error();
 	}
@@ -550,7 +565,7 @@ set:
 	setvp = err_if_not_set(svp);
 	svp = svp->clone();
 	vp->shared = true;
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
     }
@@ -580,7 +595,7 @@ action_range:
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 
-	if (!identifiers.lookup(*$3, svp)) {
+	if (!g.identifiers.lookup(*$3, svp)) {
 	    errstream << "range/set " << *$3 << " undeclared";
 	    semantic_error();
 	}
@@ -590,7 +605,7 @@ action_range:
 	svp->setVariable(*$1);
 	delete $1;
 	vp->shared = true;
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
     }
@@ -648,7 +663,7 @@ constant_def:
 	}
 	ConstValue* cvp = err_if_not_const($4->v[0]);
 	$4->detach(0);
-	if (!identifiers.insert(*$2, cvp)) {
+	if (!g.identifiers.insert(*$2, cvp)) {
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -672,7 +687,7 @@ range_def:
 	//delete cvp2;
 	delete $4;
 	delete $6;
-	if (!identifiers.insert(*$2, rvp)) {
+	if (!g.identifiers.insert(*$2, rvp)) {
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -682,7 +697,7 @@ range_def:
 set_def:
     SET set_id '=' '{' set_elements '}' {
 	// TODO convert from SvpVec to SetValue
-	if (!identifiers.insert(*$2, $5->v[0])) {
+	if (!g.identifiers.insert(*$2, $5->v[0])) {
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error();
 	}
@@ -713,13 +728,13 @@ process_def:
     process_id param_OPT {
 	/* Parameters have been pushed inside the 'param_OPT' rule.
 	   A cleaner approach would be to get a list of parameters from
-	   the rule and push the parameters into the 'identifiers' table
+	   the rule and push the parameters into the 'g.identifiers' table
 	   in this action. */
-	init_fakenode();
+	g.init_fakenode();
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	PROP("process_def --> ... process_body ...");
-	PROX(cout<<*$1<<" = "; $5->v[0]->print(&actions));
+	PROX(cout<<*$1<<" = "; $5->v[0]->print(&g.actions));
 
 	ProcessBase * pbp = $5->v[0];
 	SymbolValue * svp;
@@ -727,13 +742,13 @@ process_def:
 
 	assert($5->v.size() == 1);
 	if (pbp->unresolved()) {
-	    aliases.insert(*$1, 
+	    g.aliases.insert(*$1, 
 		    ((UnresolvedProcess* )pbp)->reference);
-	    aliases.print();
+	    g.aliases.print();
 	} 
-	aliases.fill_process_table(local_processes);
+	g.aliases.fill_process_table(g.local_processes);
 	if (pbp->unresolved()) {
-	    if(!local_processes.lookup(*$1, svp)) {
+	    if(!g.local_processes.lookup(*$1, svp)) {
 		errstream << "process " << *$1 << " undeclared";
 		semantic_error();
 	    }
@@ -743,7 +758,7 @@ process_def:
 	       process_body to it. */
 	    pvp = new ProcessValue;
 	    pvp->pnp = err_if_not_procnode(pbp);
-	    if (!local_processes.insert(*$1, pvp)) {
+	    if (!g.local_processes.insert(*$1, pvp)) {
 		errstream << "process " << *$1 << " declared twice";
 		semantic_error();
 	    }
@@ -755,13 +770,13 @@ process_def:
 	/* Try to resolve all the undefined references into this process. */
 	struct ProcessVisitObject f;
 	f.vfp = &fix_unresolved_references;
-	f.opaque = &actions;
+	f.opaque = &g.actions;
 	pvp->pnp->visit(f);
 
-	PROX(cout<<"resolved: "; pvp->pnp->print(&actions));
+	PROX(cout<<"resolved: "; pvp->pnp->print(&g.actions));
 
 	/* Convert the collection of ProcessNodes in an Lts object. */
-	Lts lts(pvp->pnp, &actions);
+	Lts lts(pvp->pnp, &g.actions);
 
 	/* Now we can free the graph pointed by pvp->pnp. */
 	freeProcessNodeGraph(pvp->pnp);
@@ -775,20 +790,20 @@ process_def:
 	    }
 	    setvp = err_if_not_set($6->v[0]);
 	    for (int i=0; i<setvp->actions.size(); i++)
-		lts.updateAlphabet(actions.insert(setvp->actions[i]));
+		lts.updateAlphabet(g.actions.insert(setvp->actions[i]));
 		delete setvp;
 	}
 
-	/* Remove process parameters from the identifiers. */
-	for (int i=0; i<parameters.size(); i++) {
-	    identifiers.remove(*(parameters[i]));
-	    delete parameters[i];
+	/* Remove process parameters from the g.identifiers. */
+	for (int i=0; i<g.parameters.size(); i++) {
+	    g.identifiers.remove(*(g.parameters[i]));
+	    delete g.parameters[i];
 	}
-	parameters.clear();
+	g.parameters.clear();
 
-	/* Clear 'local_processes' and 'aliases'. */
-	local_processes.clear();
-	aliases.clear();
+	/* Clear 'g.local_processes' and 'g.aliases'. */
+	g.local_processes.clear();
+	g.aliases.clear();
 
 	lts.print();
 	lts.graphvizOutput((*$1 += ".gv").c_str());
@@ -819,14 +834,14 @@ local_process_defs:
 local_process_def:
     process_id {
 	/* The following nonterminal 'index_ranges_OPT' may result
-	   in contexts ramifications, and so css.update() must be called. We
+	   in contexts ramifications, and so g.css.update() must be called. We
 	   therefore push a clone of the current ContextsSet, which is the
 	   initial empty one, so that the initial one is not modified. */
-	css.push_clone();
+	g.css.push_clone();
     } index_ranges_OPT '=' {
 	cout << "index_ranges_OPT:\n";
 	$3->print();
-	init_fakenode();
+	g.init_fakenode();
     } local_process {
 	ProcessValue * pvp;
 	SetValue * setvp;
@@ -837,15 +852,15 @@ local_process_def:
 	    for (int j=0; j<setvp->actions.size(); j++) {
 		procname = *$1 + setvp->actions[j];
 		if ($6->v[c]->unresolved()) {
-		    aliases.insert(procname,
+		    g.aliases.insert(procname,
 			((UnresolvedProcess* )$6->v[c])->reference);
-		    aliases.print();
+		    g.aliases.print();
 		} else {
 		    pvp = new ProcessValue;
 		    pvp->pnp = err_if_not_procnode($6->v[c]);
 		    if (j)
 			pvp->pnp = pvp->pnp->clone();
-		    if (!local_processes.insert(procname, pvp)) {
+		    if (!g.local_processes.insert(procname, pvp)) {
 			errstream << "process " << procname
 			    << " declared twice";
 			semantic_error();
@@ -856,7 +871,7 @@ local_process_def:
 	}
 	/* Pop out the cloned (maybe dirty) ContextsState, so that we
 	   correctly restore the empty initial state. */
-	css.pop();
+	g.css.pop();
 	delete $1;
 	delete $3;
 	$$ = $6;
@@ -889,33 +904,33 @@ local_process:
 	   the translation of the following 'local_process', only the
 	   selected contexts are expanded, while the others are not
 	   translated (e.g. are filtered out). */
-	css.push_clone();
-	for (int c=0; c<current_contexts.size(); c++) {
+	g.css.push_clone();
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    cvp = err_if_not_const($2->v[c]);
 	    if (!cvp->value) {
-		current_contexts.rule_out(c);
+		g.current_contexts().rule_out(c);
 	    }
 	}
     } local_process {
 	ConstValue * cvp;
 
-	css.pop();
-	css.push_clone();
+	g.css.pop();
+	g.css.push_clone();
 	/* Clean the previous clone and prepare another one for the else
 	   branch, in the same way descripted above. */
-	for (int c=0; c<current_contexts.size(); c++) {
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    cvp = err_if_not_const($2->v[c]);
 	    if (cvp->value)
-		current_contexts.rule_out(c);
+		g.current_contexts().rule_out(c);
 	}
     } else_OPT {
 	Pvec * pvec = new Pvec;
 	ConstValue * cvp;
 
-	css.pop();
+	g.css.pop();
 	/* Clean the previous cloned ContextsSet and fill the return vector
 	   *pvec, depending on the truth values contained in $2. */
-	for (int c=0; c<current_contexts.size(); c++) {
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    cvp = err_if_not_const($2->v[c]);
 	    if (cvp->value)
 		pvec->v.push_back($5->v[c]);
@@ -931,9 +946,9 @@ local_process:
     }
     | '(' {
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
-	css.push_clone();
-	PROX(cout << "CSS height (push) " << css.stack.size());
-	PROX(current_contexts.print());
+	g.css.push_clone();
+	PROX(cout << "CSS height (push) " << g.css.stack.size());
+	PROX(g.current_contexts().print());
     } choice ')' {
 	//$3->print();
 	$$ = $3;
@@ -953,7 +968,7 @@ base_local_process:
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode(ProcessNode::End);
 
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
     }
@@ -961,7 +976,7 @@ base_local_process:
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode;
 
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
     }
@@ -969,7 +984,7 @@ base_local_process:
 	Pvec * pvec = new Pvec;
 	ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
 
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
     }
@@ -980,7 +995,7 @@ base_local_process:
 	SetValue * setvp;
 	string name;
 
-	assert($2->v.size() == current_contexts.size());
+	assert($2->v.size() == g.current_contexts().size());
 	for (int c=0; c<$2->v.size(); c++) {
 	    setvp = err_if_not_set($2->v[c]);
 	    assert(setvp->actions.size() == 1);
@@ -989,7 +1004,7 @@ base_local_process:
 	    /* If the process referenced is already defined, return it.
 	       Otherwise return a new UnresolvedProcess object, so that the
 	       upper level sees that 'name' is unresolved. */
-	    if (local_processes.lookup(name, svp))
+	    if (g.local_processes.lookup(name, svp))
 		pbp = ((ProcessValue *)svp)->pnp;
 	    else
 		pbp = new UnresolvedProcess(name);
@@ -1003,20 +1018,20 @@ base_local_process:
 choice:
     action_prefix {
 	/* Pop (and destroy) the replicated top and everything above. */
-	css.pop();
+	g.css.pop();
 	$$ = $1;
-	PROX(cout << "CSS height = (pop) " << css.stack.size());
+	PROX(cout << "CSS height = (pop) " << g.css.stack.size());
     }
     | choice '|' {
 	/* Replicate the CSS stack top so that it can be used by
 	   'action_prefix'. */
-	css.push_clone();
-	PROX(cout << "CSS height (push) " << css.stack.size());
-	PROX(current_contexts.print());
+	g.css.push_clone();
+	PROX(cout << "CSS height (push) " << g.css.stack.size());
+	PROX(g.current_contexts().print());
     } action_prefix {
 	/* Pop (and destroy) the replicated top and everything above. */
-	css.pop();
-	cout << "CSS height = (pop) " << css.stack.size() << "\n";
+	g.css.pop();
+	cout << "CSS height = (pop) " << g.css.stack.size() << "\n";
 	$$ = $1;
     }
     ;
@@ -1026,12 +1041,12 @@ action_prefix:
 	PROP("action_prefix --> guard_OPT (cont)");
 	ConstValue * cvp;
 	if ($1) {
-	    for (int c=0; c<current_contexts.size(); c++) {
+	    for (int c=0; c<g.current_contexts().size(); c++) {
 		cvp = err_if_not_const($1->v[c]);
 		if (!cvp->value)
-		    current_contexts.rule_out(c);
+		    g.current_contexts().rule_out(c);
 	    }
-	    cout << "filtered\n"; current_contexts.print();
+	    cout << "filtered\n"; g.current_contexts().print();
 	}
     } prefix_actions ARROW local_process {
 	PROP("action_prefix --> (cont) prefix_actions -> local_process");
@@ -1040,9 +1055,9 @@ action_prefix:
 	   lower level rule 'prefix_actions'. Therefore there is nothing to
 	   be done here. */
 
-	for (int i=0; i<current_contexts.frontier.size(); i++) {
-	    ProcessNode * pnp = current_contexts.frontier[i].pnp;
-	    int child = current_contexts.frontier[i].child;
+	for (int i=0; i<g.current_contexts().frontier.size(); i++) {
+	    ProcessNode * pnp = g.current_contexts().frontier[i].pnp;
+	    int child = g.current_contexts().frontier[i].child;
 	    int rank = pnp->children[child].rank;
 	    if ($5->v[rank]->connected()) continue;
 	    if (!$5->v[rank]->unresolved())
@@ -1061,7 +1076,7 @@ action_prefix:
 
 	//$3->print();
 	$$ = $3;
-	PROX(current_contexts.print(); cout<<"$$ = "; print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = "; g.print_forest());
     }
     ;
 
@@ -1093,15 +1108,15 @@ prefix_actions:
 	int max_rank = 0;
 
 	zero = true;
-	for (int i=0; i<current_contexts.frontier.size(); i++)
-	    if (current_contexts.frontier[i].pnp != &fakenode) {
+	for (int i=0; i<g.current_contexts().frontier.size(); i++)
+	    if (g.current_contexts().frontier[i].pnp != &g.fakenode) {
 		zero = false;
 		break;
 	    }
 
-	for (int i=0; i<current_contexts.frontier.size(); i++) {
-	    pnp = current_contexts.frontier[i].pnp;
-	    child = current_contexts.frontier[i].child;
+	for (int i=0; i<g.current_contexts().frontier.size(); i++) {
+	    pnp = g.current_contexts().frontier[i].pnp;
+	    child = g.current_contexts().frontier[i].child;
 	    /* If the edge i is NULL-pointing, it means that we are
 	       at the beginning of a choice construct (e.g.
 	       "P=(a->b->(c->..."): We then create a node for that
@@ -1127,11 +1142,11 @@ prefix_actions:
 	    rank = pnp->children[child].rank;
 	    if (rank > max_rank) max_rank = rank;
 	    for (int c=0; c<$1->v.size(); c++) {
-		if (current_contexts.is_ruled_out(c)) continue;
+		if (g.current_contexts().is_ruled_out(c)) continue;
 		setvp = err_if_not_set($1->v[c]);
 		if (setvp->rank == rank) {
 		    for (int k=0; k<setvp->actions.size(); k++) {
-			e.action = actions.insert(setvp->actions[k]);
+			e.action = g.actions.insert(setvp->actions[k]);
 			e.dest = NULL;
 			/* We set e.rank to the index in the SvpVec
 			   $1 of setvp, so that this edge will
@@ -1150,11 +1165,11 @@ prefix_actions:
 	    }
 	}
 	/* Update the frontier. */
-	current_contexts.frontier = new_frontier;
+	g.current_contexts().frontier = new_frontier;
 	if (zero) {
-	    assert(max_rank+1 == fakenode.children.size());
+	    assert(max_rank+1 == g.fakenode.children.size());
 	    for (int c=0; c<max_rank+1; c++)
-		pvec->v.push_back(fakenode.children[c].dest);
+		pvec->v.push_back(g.fakenode.children[c].dest);
 	}
 	else {
 	    /* Tell the upper level rule (action_prefix) that the beginning
@@ -1165,7 +1180,7 @@ prefix_actions:
 		pvec->v.push_back(pbp);
 	}
 	$$ = pvec;
-	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_forest());
     }
     | prefix_actions ARROW action_labels {
 	PROP("prefix_actions --> prefix_actions -> action_labels");
@@ -1184,9 +1199,9 @@ prefix_actions:
 	   the frontier with the action sets in $3 (e.g. we have a frontier
 	   that contains a NULL-pointing edge "c" and $3={{d}}).
 	*/
-	for (int i=0; i<current_contexts.frontier.size(); i++) {
-	    pnp = current_contexts.frontier[i].pnp;
-	    child = current_contexts.frontier[i].child;
+	for (int i=0; i<g.current_contexts().frontier.size(); i++) {
+	    pnp = g.current_contexts().frontier[i].pnp;
+	    child = g.current_contexts().frontier[i].child;
 	    /* Here we have to do the same combination descripted above,
 	       but only if the edge in the frontier is NULL-pointing and
 	       it has not an unresolved reference associated. If the
@@ -1209,11 +1224,11 @@ prefix_actions:
 		npnp = pnp->children[child].dest;
 		rank = pnp->children[child].rank;
 		for (int c=0; c<$3->v.size(); c++) {
-		    if (current_contexts.is_ruled_out(c)) continue;
+		    if (g.current_contexts().is_ruled_out(c)) continue;
 		    setvp = err_if_not_set($3->v[c]);
 		    if (setvp->rank == rank) {
 			for (int k=0; k<setvp->actions.size(); k++) {
-			    e.action = actions.insert(setvp->actions[k]);
+			    e.action = g.actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
 			    /* We set e.rank to the index in the SvpVec
 			       $3, so that this edge will combine with
@@ -1229,13 +1244,13 @@ prefix_actions:
 		}
 	    }
 	}
-	current_contexts.frontier = new_frontier;
+	g.current_contexts().frontier = new_frontier;
 	/* Note that $1 is not used in this action, because we use the
-	   frontier stored in current_contexts. As a result, $1 is
+	   frontier stored in g.current_contexts(). As a result, $1 is
 	   the result of the previous action (and so a ProcessNode* or a
 	   ConnectedProcess*. */
 	$$ = $1;
-	PROX(current_contexts.print(); cout<<"$$ = \n"; print_forest());
+	PROX(g.current_contexts().print(); cout<<"$$ = \n"; g.print_forest());
     }
     ;
 
@@ -1255,7 +1270,7 @@ indices_OPT:
 	SvpVec * vp = new SvpVec;
 	SetValue * setvp;
 
-	for (int c=0; c<current_contexts.size(); c++) {    
+	for (int c=0; c<g.current_contexts().size(); c++) {    
 	    setvp = new SetValue;
 	    setvp->actions.push_back("");
 	    vp->v.push_back(setvp);
@@ -1271,7 +1286,7 @@ indices:
 	SetValue * setvp;
 	ConstValue * cvp;
 
-	assert($2->v.size() == current_contexts.size());
+	assert($2->v.size() == g.current_contexts().size());
 	for (int c=0; c<$2->v.size(); c++) {
 	    setvp = new SetValue;
 	    cvp = err_if_not_const($2->v[c]);
@@ -1301,7 +1316,7 @@ index_ranges_OPT:
 	SvpVec * vp = new SvpVec;
 	SetValue * setvp = new SetValue;
 	
-	assert(current_contexts.size() == 1);
+	assert(g.current_contexts().size() == 1);
 	setvp->actions.push_back("");
 	vp->v.push_back(setvp);
 	$$ = vp;
@@ -1316,7 +1331,7 @@ index_ranges:
 	ConstValue * cvp;
 
 	/* Here we are sure to have only the empty context. */
-	assert(current_contexts.size() == 1 && $2->v.size() == 1);
+	assert(g.current_contexts().size() == 1 && $2->v.size() == 1);
 
 	if ($2->v[0]->type() == SymbolValue::Set) {
 	    errstream << "Unexpected set";
@@ -1326,7 +1341,7 @@ index_ranges:
 	setvp->actions.push_back("");
 	vp = new SvpVec;
 	vp->v.push_back(setvp);
-	$$ = indexize_svpvec(vp, $2);
+	$$ = indexize_svpvec(&g, vp, $2);
 
     }
     | index_ranges '[' action_range ']' {
@@ -1335,7 +1350,7 @@ index_ranges:
 	    errstream << "Unexpected set";
 	    semantic_error();
 	}
-	$$ = indexize_svpvec($1, $3);
+	$$ = indexize_svpvec(&g, $1, $3);
     }
     ;
 
@@ -1446,11 +1461,11 @@ parameter:
 	ConstValue * cvp = err_if_not_const($3->v[0]);
 	$3->detach(0);
 	SymbolValue * svp = cvp;
-	if (!identifiers.insert(*$1, svp)) {
+	if (!g.identifiers.insert(*$1, svp)) {
 	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error();
 	}
-	parameters.push_back($1);
+	g.parameters.push_back($1);
 	delete $3;
     }	
     ;
@@ -1772,7 +1787,7 @@ base_expr:
 	/* Return a ConstValue* for each context (in non shared mode). */
 	vp = new SvpVec;
 	vp->shared = false;
-	for (int c=0; c<current_contexts.size(); c++) {
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    cvp = new ConstValue;
 	    cvp->value = $1;
 	    vp->v.push_back(cvp);
@@ -1785,9 +1800,9 @@ base_expr:
 
 	vp = new SvpVec;
 	vp->shared = false;
-	for (int c=0; c<current_contexts.size(); c++) {
+	for (int c=0; c<g.current_contexts().size(); c++) {
 	    SymbolValue * svp;
-	    if (!(current_contexts[c]->lookup(*$1, svp))) {
+	    if (!(g.current_contexts()[c]->lookup(*$1, svp))) {
 		errstream << "variable " << *$1 << " undeclared\n";
 		semantic_error();
 	    }
@@ -1802,7 +1817,7 @@ base_expr:
 	SvpVec * vp; 
 	
 	/* Lookup the identifier and clone the associated object. */
-	if (!identifiers.lookup(*$1, svp)) {
+	if (!g.identifiers.lookup(*$1, svp)) {
 	    errstream << "const/range/set/parameter " << *$1
 			    << " undeclared";
 	    semantic_error();
@@ -1812,7 +1827,7 @@ base_expr:
 	/* Return a ConstValue* for each context (in non shared mode). */
 	vp = new SvpVec;
 	vp->shared = false;
-	for (int c=0; c<current_contexts.size(); c++)
+	for (int c=0; c<g.current_contexts().size(); c++)
 	    vp->v.push_back(svp->clone());
 	$$ = vp;
     }
@@ -1841,9 +1856,9 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	ProcessEdge& e = pnp->children[i];
 	SymbolValue * svp;
 	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": " << actions.reverse[e.action]
+	    cout << "Unref " << pnp << ": " << g.actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
-	    if (!local_processes.lookup(e.unresolved_reference, svp)) {
+	    if (!g.local_processes.lookup(e.unresolved_reference, svp)) {
 		errstream << "Local process " << pnp << ": "
 		    << e.unresolved_reference << " undeclared\n";
 		semantic_error();
@@ -1864,7 +1879,7 @@ int parser()
        empty frontier. */
     ContextsSet * csp = new ContextsSet;
     csp->append(new Context);
-    css.push(csp);
+    g.css.push(csp);
 
     /*
     ScannerFileBuffer sfb(input_name);
