@@ -1,6 +1,7 @@
 %{
 #include <cstdio>
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 
@@ -216,6 +217,57 @@ ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
 	yy_switch_to_buffer(last);
 }
 
+
+void InputBuffersStack::push(const char * input_name)
+{
+    struct BufferInfo bi;
+
+    bi.fin = fopen(input_name, "r");
+    if (!bi.fin) {
+	cerr << "I can't open " << input_name << " !\n";
+	throw int();
+    }
+    bi.yybs = yy_create_buffer(bi.fin, YY_BUF_SIZE);
+    if (bi.yybs == NULL) {
+	cerr << "yy_create_buffer() returned NULL\n";
+	throw int();
+    }
+    bi.type = BufferInfo::File;
+    buffers.push_back(bi);
+    yy_switch_to_buffer(bi.yybs);
+}
+
+void InputBuffersStack::push(const char * buffer, int size)
+{
+    BufferInfo bi;
+
+    bi.buffer = buffer;
+    bi.size = size;
+    bi.yybs = yy_scan_bytes(buffer, size);
+    if (bi.yybs == NULL) {
+	cerr << "yy_scan_bytes() returned NULL\n";
+	throw int();
+    }
+    bi.type = BufferInfo::String;
+    buffers.push_back(bi);
+    /* The yy_scan_bytes() function has a side effect: it calls
+       yy_switch_to_buffer() on the new buffer. Therefore it's not
+       necessary to call it again. */
+}
+
+void InputBuffersStack::pop()
+{
+    BufferInfo& bi = buffers.back();
+
+    if (bi.type == BufferInfo::File) {
+	fclose(bi.fin);
+    }
+
+    yy_delete_buffer(bi.yybs);
+    assert(buffers.size());
+    buffers.pop_back();
+    yy_switch_to_buffer(buffers.back().yybs);
+}
 
 /* XXX Deprecated. */
 int scanner_setup(const char * input_name)

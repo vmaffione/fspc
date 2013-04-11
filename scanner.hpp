@@ -2,9 +2,11 @@
 #define __SCANNER_HH
 
 int yylex();
+
+/* Interface 1 */
 int scanner_setup(const char *);
 
-
+/* Interface 2 */
 class ScannerBuffer {
     virtual void useless() = 0;
 
@@ -33,5 +35,25 @@ class ScannerStringBuffer: public ScannerBuffer {
     void useless() {}
 };
 
+/* Interface 3 */
+struct BufferInfo {
+    struct yy_buffer_state * yybs;
+    int type;
+    FILE * fin;
+    const char * buffer;
+    int size;
+
+    static const int File = 0;
+    static const int String = 1;
+};
+
+class InputBuffersStack {
+    vector<BufferInfo> buffers;
+
+  public:
+    void push(const char * input_name);
+    void push(const char * buffer, int size);
+    void pop();
+};
 
 #endif

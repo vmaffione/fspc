@@ -32,7 +32,7 @@ using namespace std;
 }
 
 
-%code {
+%{
 /* Stuff from flex that bison needs to know about. */
 #include "scanner.hpp"
 
@@ -374,6 +374,11 @@ struct Aliases {
 static struct Aliases aliases;
 
 
+int record_mode_on = 0;
+struct SymbolsTable process_models;
+
+
+
 #define DEBUG 1
 #if (DEBUG==2)
 #define SHH(x) cout<< "SHH >> " << x << "\n";
@@ -397,7 +402,7 @@ static struct Aliases aliases;
 
 
 void yyerror(const char *s);
-}
+%}
 
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
@@ -1997,15 +2002,20 @@ int parser()
     csp->append(new Context);
     css.push(csp);
 
-    
+    /*
     ScannerFileBuffer sfb(input_name);
     sfb.select();
     yyparse();
 
-/*
     ScannerStringBuffer ssb(ex,12);
     ssb.select();
     yyparse(); */
+
+    InputBuffersStack ibs;
+
+    ibs.push(input_name);
+    yyparse();
+    ibs.pop();
 
     return 0;
 }
