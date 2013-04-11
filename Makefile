@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-g -Wall
 
-OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o
+OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o
 
 fspc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspc
@@ -19,6 +19,8 @@ parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp
 translator.o: translator.hpp
 
 utils.o: utils.hpp
+
+callbacks.o: utils.hpp context.hpp translator.hpp lts.hpp
 
 parser.cpp parser.hpp: fsp.ypp fsp.y
 	bison fsp.ypp

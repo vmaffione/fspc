@@ -2,8 +2,8 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-
 P = P[1][1], P[i:R][R] = (a[i]->P[3-i][2]).
+
 /*
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).
 P2=(a[j:R]->b[R]->c[j]->P2).

@@ -52,6 +52,9 @@ using namespace std;
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
+/* Callbacks. */
+#include "callbacks.hpp"
+
 
 template <class T>
 static Context* extended_context(Context * ctx,
@@ -299,25 +302,7 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
-	SvpVec * vp;
-	SetValue * setvp; 
-
-	vp = new SvpVec;
-	vp->shared = false;
-	for (int c=0; c<tr.current_contexts().size(); c++) {
-	    setvp = new SetValue;
-	    *setvp += *$1;
-	    /* We assign a different rank to each setvp in vp (and so one
-	       per context). Note that this assignment happens before
-	       parsing anithing else in the composite action. For istance,
-	       if we have to parse 'a[i:R][S][i+1]', this action is executed
-	       as soon as 'a' is parsed, and so before parsing the rest
-	       of the composite action. */
-	    setvp->rank = c;
-	    vp->v.push_back(setvp);
-	}
-	delete $1;
-	$$ = vp;
+	$$ = callback__1(tr, $1);
     }
     | set {
 	$$ = $1;
