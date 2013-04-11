@@ -47,7 +47,7 @@ struct Aliases {
     void print();
 };
 
-struct Global {
+struct FspTranslator {
     /* Main actions table. */
     struct ActionsTable actions;
 
@@ -74,7 +74,7 @@ struct Global {
     struct SymbolsTable process_models;
 
 
-    Global() : actions("Global actions table"), record_mode_on(0) { }
+    FspTranslator() : actions("Global actions table"), record_mode_on(0) { }
 
     ContextsSet& current_contexts() { return css.top(); }
 

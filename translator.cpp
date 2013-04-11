@@ -1,4 +1,4 @@
-#include "global.hpp"
+#include "translator.hpp"
 
 
 void Aliases::insert(const string& left, const string& right) {
@@ -125,7 +125,7 @@ void Aliases::print()
 		<< groups[i][j].assigned << "\n";
 }
 
-void Global::init_fakenode() {
+void FspTranslator::init_fakenode() {
     vector<ProcessEdge> cv;
     struct ProcessEdge e;
     struct FrontierElement fe;
@@ -149,7 +149,7 @@ void Global::init_fakenode() {
     current_contexts().frontier = frontier;
 }
 
-void Global::print_fakenode_forest() {
+void FspTranslator::print_fakenode_forest() {
     cout << "Current ProcessNode fakenode forest:\n";
     for (int i=0; i<fakenode.children.size(); i++)
 	if (fakenode.children[i].dest)
