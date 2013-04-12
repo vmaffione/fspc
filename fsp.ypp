@@ -204,6 +204,11 @@ SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * righ
 /* A global data structure containing everything the translator needs. */
 struct FspTranslator tr;
 
+vector <void *> ps;
+inline void AA(void * barg, int midx, int tot)
+{
+    assert(barg == ps[ps.size()-1-tot+(midx)]);
+}
 
 
 #define DEBUG
@@ -303,11 +308,14 @@ fsp_definition:
 action_labels:
     LowerCaseID {
 	$$ = callback__1(tr, $1);
+	ps.push_back($$);
     }
     | set {
+	AA($1,1,1);
 	$$ = $1;
     }
     | action_labels '.' LowerCaseID {
+	AA($1,1,1);
 	SetValue * setvp;
 
 	assert($1->v.size() == tr.current_contexts().size());
@@ -320,6 +328,7 @@ action_labels:
 	$$ = $1;
     }
     | action_labels '.' set {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size() &&
 		    $1->v.size() == tr.current_contexts().size());
 	SetValue * setvp;
@@ -334,23 +343,28 @@ action_labels:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | action_labels '[' action_range ']' {
-
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size() &&
 		$1->v.size() == tr.current_contexts().size());
 	$$ = indexize_svpvec(&tr, $1, $3);
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 set:
     set_id {
+	AA($1,1,1);
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 	SetValue * setvp;
 	if (!tr.identifiers.lookup(*$1, svp)) {
 	    stringstream errstream;
-errstream << "set " << *$1 << " undeclared";
+	    errstream << "set " << *$1 << " undeclared";
 	    semantic_error(errstream);
 	}
 	delete $1;
@@ -360,14 +374,18 @@ errstream << "set " << *$1 << " undeclared";
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
+	ps.pop_back();
+	ps.push_back($$);
     }
     | set_expr {
+	AA($1,1,1);
 	$$ = $1;
     }
     ;
 
 set_expr:
     '{' set_elements '}' {
+	AA($2,1,1);
 	$2->print();
 	$$ = $2;
     }
@@ -375,21 +393,25 @@ set_expr:
 
 action_range:
     expression {
+	AA($1,1,1);
 	$$ = $1;
     }
     | range_expr {
+	AA($1,1,1);
 	$$ = $1;
     }
     | set_expr {
+	AA($1,1,1);
 	$$ = $1;
     }
     | variable ':' range_or_set_id {
+	AA($1,1,2); AA($3,2,2);
 	SvpVec * vp = new SvpVec;
 	SymbolValue * svp;
 
 	if (!tr.identifiers.lookup(*$3, svp)) {
 	    stringstream errstream;
-errstream << "range/set " << *$3 << " undeclared";
+	    errstream << "range/set " << *$3 << " undeclared";
 	    semantic_error(errstream);
 	}
 	svp = svp->clone();
@@ -401,8 +423,12 @@ errstream << "range/set " << *$3 << " undeclared";
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    vp->v.push_back(svp);
 	$$ = vp;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     | variable ':' range_expr {
+	AA($1,1,2); AA($3,2,2);
 	RangeValue * rvp;
 	for (int i=0; i<$3->v.size(); i++) {
 	    rvp = err_if_not_range($3->v[i]);
@@ -411,8 +437,12 @@ errstream << "range/set " << *$3 << " undeclared";
 	}
 	delete $1;
 	$$ = $3;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     | variable ':' set_expr {
+	AA($1,1,2); AA($3,2,2);
 	SetValue * setvp;
 	for (int i=0; i<$3->v.size(); i++) {
 	    setvp = err_if_not_set($3->v[i]);
@@ -421,11 +451,15 @@ errstream << "range/set " << *$3 << " undeclared";
 	}
 	delete $1;
 	$$ = $3;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 range_expr:
     expression DOTDOT expression {
+	AA($1,1,2); AA($3,2,2);
 	RangeValue * rvp;
 	ConstValue * cvp;
 	SvpVec * vp = new SvpVec;
@@ -442,6 +476,9 @@ range_expr:
 	delete $1;
 	delete $3;
 	$$ = vp;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
@@ -449,29 +486,33 @@ range_expr:
 /* Const, Range, Set */
 constant_def:
     CONST constant_id '=' simple_expression {
+	AA($2,1,2); AA($4,2,2);
 	if ($4->v.size() != 1) {
 	    // XXX this should never happen, because we get an "undeclared"
 	    stringstream errstream;
-errstream << "Illegal use of variables in const declaration";
+	    errstream << "Illegal use of variables in const declaration";
 	    semantic_error(errstream);
 	}
 	ConstValue* cvp = err_if_not_const($4->v[0]);
 	$4->detach(0);
 	if (!tr.identifiers.insert(*$2, cvp)) {
 	    stringstream errstream;
-errstream << "const " << *$2 << " declared twice";
+	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error(errstream);
 	}
 	delete $4;
 	delete $2;
+	ps.pop_back();
+	ps.pop_back();
     };
 
 range_def:
     RANGE range_id '=' simple_expression DOTDOT simple_expression {
+	AA($2,1,3); AA($4,2,3); AA($6,3,3);
 	if ($4->v.size() != 1 || $6->v.size() != 1) {
 	    // XXX this should never happen, because we get an "undeclared"
 	    stringstream errstream;
-errstream << "Illegal use of variables in range declaration";
+	    errstream << "Illegal use of variables in range declaration";
 	    semantic_error(errstream);
 	}
 	RangeValue* rvp = new RangeValue;
@@ -485,30 +526,37 @@ errstream << "Illegal use of variables in range declaration";
 	delete $6;
 	if (!tr.identifiers.insert(*$2, rvp)) {
 	    stringstream errstream;
-errstream << "range " << *$2 << " declared twice";
+	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error(errstream);
 	}
 	delete $2;
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
     };
 
 set_def:
     SET set_id '=' '{' set_elements '}' {
-	// TODO convert from SvpVec to SetValue
+	AA($2,1,2); AA($5,2,2);
 	if (!tr.identifiers.insert(*$2, $5->v[0])) {
 	    stringstream errstream;
-errstream << "set " << *$2 << " declared twice";
+	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error(errstream);
 	}
 	$5->detach(0);
 	delete $5;
 	delete $2;
+	ps.pop_back();
+	ps.pop_back();
     };
 
 set_elements:
     action_labels {
+	AA($1,1,1);
 	$$ = $1;
     }
     | set_elements ',' action_labels {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int c=0; c<$1->v.size(); c++) {
 	    SetValue * setvp = err_if_not_set($1->v[c]);
@@ -517,6 +565,7 @@ set_elements:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
@@ -524,6 +573,7 @@ set_elements:
 /* Processes */
 process_def:
     process_id param_OPT {
+	AA($1,1,1);
 	/* Parameters have been pushed inside the 'param_OPT' rule.
 	   A cleaner approach would be to get a list of parameters from
 	   the rule and push the parameters into the 'tr.identifiers' table
@@ -531,6 +581,7 @@ process_def:
 	tr.init_fakenode();
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
+	AA($1,1,3); AA($5,2,3); AA($6,3,3);
 	PROP("process_def --> ... process_body ...");
 	PROX(cout<<*$1<<" = "; $5->v[0]->print(&tr.actions));
 
@@ -548,7 +599,7 @@ process_def:
 	if (pbp->unresolved()) {
 	    if(!tr.local_processes.lookup(*$1, svp)) {
 		stringstream errstream;
-errstream << "process " << *$1 << " undeclared";
+	errstream << "process " << *$1 << " undeclared";
 		semantic_error(errstream);
 	    }
 	    pvp = err_if_not_process(svp);
@@ -559,7 +610,7 @@ errstream << "process " << *$1 << " undeclared";
 	    pvp->pnp = err_if_not_procnode(pbp);
 	    if (!tr.local_processes.insert(*$1, pvp)) {
 		stringstream errstream;
-errstream << "process " << *$1 << " declared twice";
+	errstream << "process " << *$1 << " declared twice";
 		semantic_error(errstream);
 	    }
 	    cout << "Process " << *$1 << " defined (" << pvp->pnp << ")\n";
@@ -586,7 +637,7 @@ errstream << "process " << *$1 << " declared twice";
 	    SetValue * setvp;
 	    if ($6->v.size() != 1) {
 		stringstream errstream;
-errstream << "Multiset alphabet extension";
+		errstream << "Multiset alphabet extension";
 		semantic_error(errstream);
 	    }
 	    setvp = err_if_not_set($6->v[0]);
@@ -611,39 +662,51 @@ errstream << "Multiset alphabet extension";
 	delete $1;
 
 	// TODO implement everything is OPT
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
     }
     ;
 
 process_body:
     local_process {
+	AA($1,1,1);
 	$$ = $1;
     }
     | local_process ',' local_process_defs {
+	AA($1,1,2); AA($3,2,2);
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 local_process_defs:
     local_process_def {
+	AA($1,1,1);
 	$$ = $1;
     }
     | local_process_defs ',' local_process_def {
+	AA($1,1,2); AA($3,2,2);
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 local_process_def:
     process_id {
+	AA($1,1,1);
 	/* The following nonterminal 'index_ranges_OPT' may result
 	   in contexts ramifications, and so tr.css.update() must be called. We
 	   therefore push a clone of the current ContextsSet, which is the
 	   initial empty one, so that the initial one is not modified. */
 	tr.css.push_clone();
     } index_ranges_OPT '=' {
+	AA($1,1,2); AA($3,2,2);
 	cout << "index_ranges_OPT:\n";
 	$3->print();
 	tr.init_fakenode();
     } local_process {
+	AA($1,1,3); AA($3,2,3); AA($6,3,3);
 	ProcessValue * pvp;
 	SetValue * setvp;
 	string procname;
@@ -677,20 +740,27 @@ errstream << "process " << procname
 	delete $1;
 	delete $3;
 	$$ = $6;
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 alphabet_extension_OPT:
     {
 	$$ = NULL;
+	ps.push_back($$);
     }
     | '+' set {
+	AA($2,1,1);
 	$$ = $2;
     }
     ;
 
 local_process:
     base_local_process {
+	AA($1,1,1);
 	$$ = $1;
     }
     | sequential_composition {
@@ -699,6 +769,7 @@ local_process:
 */
     }
     | IF expression THEN {
+	AA($2,1,1);
 	ConstValue * cvp;
 
 	/* Prepare a clone of the current ContextsSet to rule out those
@@ -714,6 +785,7 @@ local_process:
 	    }
 	}
     } local_process {
+	AA($2,1,2); AA($5,2,2);
 	ConstValue * cvp;
 
 	tr.css.pop();
@@ -726,6 +798,7 @@ local_process:
 		tr.current_contexts().rule_out(c);
 	}
     } else_OPT {
+	AA($2,1,3); AA($5,2,3); AA($7,3,3);
 	Pvec * pvec = new Pvec;
 	ConstValue * cvp;
 
@@ -745,6 +818,10 @@ local_process:
 	}
 	delete $2;
 	$$ = pvec;
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     | '(' {
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
@@ -752,6 +829,7 @@ local_process:
 	PROX(cout << "CSS height (push) " << tr.css.stack.size());
 	PROX(tr.current_contexts().print());
     } choice ')' {
+	AA($3,1,1);
 	//$3->print();
 	$$ = $3;
     }
@@ -760,8 +838,10 @@ local_process:
 else_OPT:
     {
 	$$ = NULL;
+	ps.push_back($$);
     }
     | ELSE local_process {
+	AA($2,1,1);
 	$$ = $2;
     }
 
@@ -773,6 +853,7 @@ base_local_process:
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
+	ps.push_back($$);
     }
     | STOP {
 	Pvec * pvec = new Pvec;
@@ -781,6 +862,7 @@ base_local_process:
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
+	ps.push_back($$);
     }
     | ERROR {
 	Pvec * pvec = new Pvec;
@@ -789,8 +871,10 @@ base_local_process:
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    pvec->v.push_back(pnp);
 	$$ = pvec;
+	ps.push_back($$);
     }
     | process_id indices_OPT {
+	AA($1,1,2); AA($2,2,2);
 	SymbolValue * svp;
 	Pvec * pvec = new Pvec;
 	ProcessBase * pbp;
@@ -814,32 +898,40 @@ base_local_process:
 	}
 
 	$$ = pvec;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 choice:
     action_prefix {
+	AA($1,1,1);
 	/* Pop (and destroy) the replicated top and everything above. */
 	tr.css.pop();
 	$$ = $1;
 	PROX(cout << "CSS height = (pop) " << tr.css.stack.size());
     }
     | choice '|' {
+	AA($1,1,1);
 	/* Replicate the CSS stack top so that it can be used by
 	   'action_prefix'. */
 	tr.css.push_clone();
 	PROX(cout << "CSS height (push) " << tr.css.stack.size());
 	PROX(tr.current_contexts().print());
     } action_prefix {
+	AA($1,1,2); AA($4,2,2);
 	/* Pop (and destroy) the replicated top and everything above. */
 	tr.css.pop();
 	cout << "CSS height = (pop) " << tr.css.stack.size() << "\n";
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 action_prefix:
     guard_OPT {
+	AA($1,1,1);
 	PROP("action_prefix --> guard_OPT (cont)");
 	ConstValue * cvp;
 	if ($1) {
@@ -851,6 +943,7 @@ action_prefix:
 	    cout << "filtered\n"; tr.current_contexts().print();
 	}
     } prefix_actions ARROW local_process {
+	AA($1,1,3); AA($3,2,3); AA($5,3,3);
 	PROP("action_prefix --> (cont) prefix_actions -> local_process");
 	/* If $5 is an istance of ConnectedProcess, it means that its first 
 	   nodes have already been connected to the frontier of $3 in the
@@ -879,11 +972,16 @@ action_prefix:
 	//$3->print();
 	$$ = $3;
 	PROX(tr.current_contexts().print(); cout<<"$$ = "; tr.print_fakenode_forest());
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 prefix_actions:
     action_labels {
+	AA($1,1,1);
 	PROP("prefix_actions --> action_labels");
 	PROX(cout<<"$1 = "; $1->print());
 
@@ -983,8 +1081,11 @@ prefix_actions:
 	}
 	$$ = pvec;
 	PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
+	ps.pop_back();
+	ps.push_back($$);
     }
     | prefix_actions ARROW action_labels {
+	AA($1,1,2); AA($3,2,2);
 	PROP("prefix_actions --> prefix_actions -> action_labels");
 	PROX(cout<<"$3 = "; $3->print());
 	ProcessNode * pnp;
@@ -1053,14 +1154,17 @@ prefix_actions:
 	   ConnectedProcess*. */
 	$$ = $1;
 	PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
+	ps.pop_back();
     }
     ;
 
 guard_OPT:
     {
 	$$ = NULL;
+	ps.push_back($$);
     }
     | WHEN expression {
+	AA($2,1,1);
 	for (int i=0; i<$2->v.size(); i++)
 	    err_if_not_const($2->v[i]);
 	$$ = $2;
@@ -1078,12 +1182,14 @@ indices_OPT:
 	    vp->v.push_back(setvp);
 	}
 	$$ = vp;
+	ps.push_back($$);
     }
     | indices
     ;
 
 indices:
     '[' expression ']' {
+	AA($2,1,1);
 	SvpVec * vp = new SvpVec;
 	SetValue * setvp;
 	ConstValue * cvp;
@@ -1097,8 +1203,11 @@ indices:
 	}
 	delete $2;
 	$$ = vp;
+	ps.pop_back();
+	ps.push_back($$);
     }
     | indices '[' expression ']' {
+	AA($1,1,2); AA($3,2,2);
 	SetValue * setvp;
 	ConstValue * cvp;
 
@@ -1110,6 +1219,7 @@ indices:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
@@ -1122,12 +1232,14 @@ index_ranges_OPT:
 	setvp->actions.push_back("");
 	vp->v.push_back(setvp);
 	$$ = vp;
+	ps.push_back($$);
     }
     | index_ranges
     ;
 
 index_ranges:
     '[' action_range ']' {
+	AA($2,1,1);
 	SvpVec * vp;
 	SetValue * setvp;
 	ConstValue * cvp;
@@ -1137,7 +1249,7 @@ index_ranges:
 
 	if ($2->v[0]->type() == SymbolValue::Set) {
 	    stringstream errstream;
-errstream << "Unexpected set";
+	    errstream << "Unexpected set";
 	    semantic_error(errstream);
 	}
 	setvp = new SetValue;
@@ -1145,16 +1257,21 @@ errstream << "Unexpected set";
 	vp = new SvpVec;
 	vp->v.push_back(setvp);
 	$$ = indexize_svpvec(&tr, vp, $2);
-
+	ps.pop_back();
+	ps.push_back($$);
     }
     | index_ranges '[' action_range ']' {
+	AA($1,1,2); AA($3,2,2);
 	assert($3->v.size() == $1->v.size());
 	if ($3->v[0]->type() == SymbolValue::Set) {
 	    stringstream errstream;
-errstream << "Unexpected set";
+	    errstream << "Unexpected set";
 	    semantic_error(errstream);
 	}
 	$$ = indexize_svpvec(&tr, $1, $3);
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
@@ -1257,10 +1374,11 @@ parameter_list:
 
 parameter:
     parameter_id '=' expression {
+	AA($1,1,2); AA($3,2,2);
 	if ($3->v.size() != 1) {
 	    // XXX this should never happen..
 	    stringstream errstream;
-errstream << "Illegal use of variables in parameter declaration";
+	    errstream << "Illegal use of variables in parameter declaration";
 	    semantic_error(errstream);
 	}
 	ConstValue * cvp = err_if_not_const($3->v[0]);
@@ -1268,11 +1386,13 @@ errstream << "Illegal use of variables in parameter declaration";
 	SymbolValue * svp = cvp;
 	if (!tr.identifiers.insert(*$1, svp)) {
 	    stringstream errstream;
-errstream << "identifier " << *$1 << " already declared";
+	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error(errstream);
 	}
 	tr.parameters.push_back($1);
 	delete $3;
+	ps.pop_back();
+	ps.pop_back();
     }	
     ;
 
@@ -1337,6 +1457,7 @@ simple_expression:
 or_expr:
     and_expr
     | or_expr OR and_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1345,12 +1466,14 @@ or_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 and_expr:
     bitor_expr
     | and_expr AND bitor_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1359,12 +1482,14 @@ and_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 bitor_expr:
     bitxor_expr
     | bitor_expr '|' bitxor_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1373,12 +1498,14 @@ bitor_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 bitxor_expr:
     bitand_expr
     | bitxor_expr '^' bitand_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1387,12 +1514,14 @@ bitxor_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 bitand_expr:
     equality_expr
     | bitand_expr '&' equality_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1401,12 +1530,14 @@ bitand_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 equality_expr:
     relational_expr
     | equality_expr EQUAL relational_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1415,8 +1546,10 @@ equality_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | equality_expr NOTEQUAL relational_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1425,12 +1558,14 @@ equality_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 relational_expr:
     shift_expr
     | relational_expr '<' shift_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1439,8 +1574,10 @@ relational_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | relational_expr '>' shift_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1449,8 +1586,10 @@ relational_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | relational_expr LOE shift_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1459,8 +1598,10 @@ relational_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | relational_expr GOE shift_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1469,12 +1610,14 @@ relational_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 shift_expr:
     additive_expr
     | shift_expr LSHIFT additive_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1483,8 +1626,10 @@ shift_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | shift_expr RSHIFT additive_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1493,56 +1638,70 @@ shift_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 additive_expr:
     multiplicative_expr
     | additive_expr '+' multiplicative_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    //cout << vpl->value << " + " << vpr->value << "\n";
 	    vpl->value += vpr->value;
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | additive_expr '-' multiplicative_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    //cout << vpl->value << " - " << vpr->value << "\n";
 	    vpl->value -= vpr->value;
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 multiplicative_expr:
     unary_expr
     | multiplicative_expr '*' unary_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    //cout << vpl->value << " * " << vpr->value << "\n";
 	    vpl->value *= vpr->value;
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | multiplicative_expr '/' unary_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
 	    ConstValue * vpr = err_if_not_const($3->v[i]);
+	    //cout << vpl->value << " / " << vpr->value << "\n";
 	    vpl->value /= vpr->value;
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     | multiplicative_expr '%' unary_expr {
+	AA($1,1,2); AA($3,2,2);
 	assert($1->v.size() == $3->v.size());
 	for (int i=0; i<$1->v.size(); i++) {
 	    ConstValue * vpl = err_if_not_const($1->v[i]);
@@ -1551,36 +1710,37 @@ multiplicative_expr:
 	}
 	delete $3;
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 unary_expr:
     base_expr
     | '+' base_expr {
+	AA($2,1,1);
 	for (int i=0; i<$2->v.size(); i++) {
 	    err_if_not_const($2->v[i]);
 	}
 	$$ = $2;
     }
     | '-' base_expr {
-	SvpVec * vp = new SvpVec;
+	AA($2,1,1);
 	ConstValue * cvp;
 	for (int i=0; i<$2->v.size(); i++) {
 	    cvp = err_if_not_const($2->v[i]);
-	    cvp->value *= -1;;
-	    vp->v.push_back(cvp);
+	    cvp->value *= -1;
 	}
-	$$ = vp;
+	$$ = $2;
     }
     | '!' base_expr {
-	SvpVec * vp = new SvpVec;
+	AA($2,1,1);
 	ConstValue * cvp;
 	for (int i=0; i<$2->v.size(); i++) {
 	    cvp = err_if_not_const($2->v[i]);
 	    cvp->value = !(cvp->value);
-	    vp->v.push_back(cvp);
+	    //cout << "UU ! " << cvp->value << "\n";
 	}
-	$$ = vp;
+	$$ = $2;
     }
     ;
 
@@ -1599,6 +1759,8 @@ base_expr:
 	    vp->v.push_back(cvp);
 	}
 	$$ = vp;
+	ps.push_back(vp);
+	cout << "UU " << $1 << "\n";
     }
     | variable {
 	/* Return a ConstValue* for each context (in non shared mode). */
@@ -1618,6 +1780,7 @@ errstream << "variable " << *$1 << " undeclared\n";
 	}
 	delete $1;
 	$$ = vp;
+	ps.push_back(vp);
     }
     | const_range_set_parameter_id {
 	SymbolValue * svp;
@@ -1638,21 +1801,22 @@ errstream << "const/range/set/parameter " << *$1
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    vp->v.push_back(svp->clone());
 	$$ = vp;
+	ps.push_back(vp);
     }
     | '(' expression ')' { $$ = $2; }
     ;
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
-variable: LowerCaseID;
-constant_id: UpperCaseID;
-range_id: UpperCaseID;
-set_id: UpperCaseID;
-range_or_set_id: set_id;
-const_range_set_parameter_id: set_id;
-parameter_id: UpperCaseID;
-process_id: UpperCaseID;
-progress_id: UpperCaseID;
-menu_id: UpperCaseID;
+variable: LowerCaseID { ps.push_back($1); };
+constant_id: UpperCaseID { ps.push_back($1); };
+range_id: UpperCaseID { ps.push_back($1); };
+set_id: UpperCaseID { ps.push_back($1); };
+range_or_set_id: set_id { ps.push_back($1); };
+const_range_set_parameter_id: set_id { ps.push_back($1); };
+parameter_id: UpperCaseID { ps.push_back($1); };
+process_id: UpperCaseID { ps.push_back($1); };
+progress_id: UpperCaseID { ps.push_back($1); };
+menu_id: UpperCaseID { ps.push_back($1); };
 
 %%
 
