@@ -726,7 +726,7 @@ local_process_def:
 			pvp->pnp = pvp->pnp->clone();
 		    if (!tr.local_processes.insert(procname, pvp)) {
 			stringstream errstream;
-errstream << "process " << procname
+			errstream << "process " << procname
 			    << " declared twice";
 			semantic_error(errstream);
 		    }
@@ -969,7 +969,6 @@ action_prefix:
 		    ((UnresolvedProcess *)$5->v[rank])->reference;
 	}
 
-	//$3->print();
 	$$ = $3;
 	PROX(tr.current_contexts().print(); cout<<"$$ = "; tr.print_fakenode_forest());
 	ps.pop_back();
@@ -1444,12 +1443,14 @@ menu_def:
 /* An expression or a simple_expression: standard operators and priorities. */
 expression:
     or_expr {
+	AA($1,1,1);
 	$$ = $1;
     }
     ;
 
 simple_expression:
     additive_expr {
+	AA($1,1,1);
 	$$ = $1;
     }
     ;
@@ -1759,10 +1760,11 @@ base_expr:
 	    vp->v.push_back(cvp);
 	}
 	$$ = vp;
-	ps.push_back(vp);
-	cout << "UU " << $1 << "\n";
+	ps.push_back($$);
+	//cout << "UU " << $1 << "\n";
     }
     | variable {
+	AA($1,1,1);
 	/* Return a ConstValue* for each context (in non shared mode). */
 	SvpVec * vp;
 
@@ -1780,17 +1782,19 @@ errstream << "variable " << *$1 << " undeclared\n";
 	}
 	delete $1;
 	$$ = vp;
-	ps.push_back(vp);
+	ps.pop_back();
+	ps.push_back($$);
     }
     | const_range_set_parameter_id {
+	AA($1,1,1);
 	SymbolValue * svp;
 	SvpVec * vp; 
 	
 	/* Lookup the identifier and clone the associated object. */
 	if (!tr.identifiers.lookup(*$1, svp)) {
 	    stringstream errstream;
-errstream << "const/range/set/parameter " << *$1
-			    << " undeclared";
+	    errstream << "const/range/set/parameter " << *$1
+		<< " undeclared";
 	    semantic_error(errstream);
 	}
 	delete $1;
@@ -1801,9 +1805,13 @@ errstream << "const/range/set/parameter " << *$1
 	for (int c=0; c<tr.current_contexts().size(); c++)
 	    vp->v.push_back(svp->clone());
 	$$ = vp;
-	ps.push_back(vp);
+	ps.pop_back();
+	ps.push_back($$);
     }
-    | '(' expression ')' { $$ = $2; }
+    | '(' expression ')' {
+	AA($2,1,1);
+	$$ = $2;
+    }
     ;
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
@@ -1811,8 +1819,8 @@ variable: LowerCaseID { ps.push_back($1); };
 constant_id: UpperCaseID { ps.push_back($1); };
 range_id: UpperCaseID { ps.push_back($1); };
 set_id: UpperCaseID { ps.push_back($1); };
-range_or_set_id: set_id { ps.push_back($1); };
-const_range_set_parameter_id: set_id { ps.push_back($1); };
+range_or_set_id: set_id { AA($1,1,1); };
+const_range_set_parameter_id: set_id { AA($1,1,1); };
 parameter_id: UpperCaseID { ps.push_back($1); };
 process_id: UpperCaseID { ps.push_back($1); };
 progress_id: UpperCaseID { ps.push_back($1); };
