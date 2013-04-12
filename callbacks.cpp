@@ -502,3 +502,474 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
     return three;
 }
 
+void * callback__19(FspTranslator& tr, SvpVec * one)
+{
+    ConstValue * cvp;
+
+    /* Prepare a clone of the current ContextsSet to rule out those
+       contexts that makes 'expression' false. In this way when executing
+       the translation of the following 'local_process', only the
+       selected contexts are expanded, while the others are not
+       translated (e.tr. are filtered out). */
+    tr.css.push_clone();
+    for (int c=0; c<tr.current_contexts().size(); c++) {
+	cvp = err_if_not_const(one->v[c]);
+	if (!cvp->value) {
+	    tr.current_contexts().rule_out(c);
+	}
+    }
+
+    return NULL;
+}
+
+void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
+{
+    ConstValue * cvp;
+
+    tr.css.pop();
+    tr.css.push_clone();
+    /* Clean the previous clone and prepare another one for the else
+       branch, in the same way descripted above. */
+    for (int c=0; c<tr.current_contexts().size(); c++) {
+	cvp = err_if_not_const(one->v[c]);
+	if (cvp->value)
+	    tr.current_contexts().rule_out(c);
+    }
+
+    return NULL;
+}
+
+Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
+{
+    Pvec * pvec = new Pvec;
+    ConstValue * cvp;
+
+    tr.css.pop();
+    /* Clean the previous cloned ContextsSet and fill the return vector
+     *pvec, depending on the truth values contained in $2. */
+    for (int c=0; c<tr.current_contexts().size(); c++) {
+	cvp = err_if_not_const(one->v[c]);
+	if (cvp->value)
+	    pvec->v.push_back(two->v[c]);
+	else if (three)
+	    pvec->v.push_back(three->v[c]);
+	else
+	    /* If $7 == NULL there is no else branch, and so we insert
+	       a STOP state. */
+	    pvec->v.push_back(new ProcessNode);
+    }
+    delete one;
+
+    return pvec;
+}
+
+Pvec * callback__22(FspTranslator& tr)
+{
+    /* Replicate the CSS stack top so that it can be used by 'choice'. */
+    tr.css.push_clone();
+
+    return NULL;
+}
+
+Pvec * callback__23(FspTranslator& tr)
+{
+    Pvec * pvec = new Pvec;
+    ProcessNode * pnp = new ProcessNode(ProcessNode::End);
+
+    for (int c=0; c<tr.current_contexts().size(); c++)
+	pvec->v.push_back(pnp);
+
+    return pvec;
+}
+
+Pvec * callback__24(FspTranslator& tr)
+{
+    Pvec * pvec = new Pvec;
+    ProcessNode * pnp = new ProcessNode;
+
+    for (int c=0; c<tr.current_contexts().size(); c++)
+	pvec->v.push_back(pnp);
+
+    return pvec;
+}
+
+Pvec * callback__25(FspTranslator& tr)
+{
+    Pvec * pvec = new Pvec;
+    ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
+
+    for (int c=0; c<tr.current_contexts().size(); c++)
+	pvec->v.push_back(pnp);
+
+    return pvec;
+}
+
+Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two)
+{
+    SymbolValue * svp;
+    Pvec * pvec = new Pvec;
+    ProcessBase * pbp;
+    SetValue * setvp;
+    string name;
+
+    assert(two->v.size() == tr.current_contexts().size());
+    for (int c=0; c<two->v.size(); c++) {
+	setvp = err_if_not_set(two->v[c]);
+	assert(setvp->actions.size() == 1);
+	name = *one + setvp->actions[0];
+	cout << "looking for " << name << endl;
+	/* If the process referenced is already defined, return it.
+	   Otherwise return a new UnresolvedProcess object, so that the
+	   upper level sees that 'name' is unresolved. */
+	if (tr.local_processes.lookup(name, svp))
+	    pbp = ((ProcessValue *)svp)->pnp;
+	else
+	    pbp = new UnresolvedProcess(name);
+	pvec->v.push_back(pbp);
+    }
+
+    return pvec;
+}
+
+Pvec * callback__27(FspTranslator& tr, Pvec * one)
+{
+    /* Pop (and destroy) the replicated top and everything above. */
+    tr.css.pop();
+    
+    return one;
+}
+
+Pvec * callback__28(FspTranslator& tr, Pvec * one)
+{
+    /* Replicate the CSS stack top so that it can be used by
+       'action_prefix'. */
+    tr.css.push_clone();
+
+    return NULL;
+}
+
+Pvec * callback__29(FspTranslator& tr, Pvec * one, Pvec * two)
+{
+    /* Pop (and destroy) the replicated top and everything above. */
+    tr.css.pop();
+
+    return one;
+}
+
+Pvec * callback__30(FspTranslator& tr, SvpVec * one)
+{
+    PROP("action_prefix --> guard_OPT (cont)");
+    ConstValue * cvp;
+    if (one) {
+	for (int c=0; c<tr.current_contexts().size(); c++) {
+	    cvp = err_if_not_const(one->v[c]);
+	    if (!cvp->value)
+		tr.current_contexts().rule_out(c);
+	}
+	cout << "filtered\n"; tr.current_contexts().print();
+    }
+
+    return NULL;
+}
+
+Pvec * callback__31(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
+{
+    PROP("action_prefix --> (cont) prefix_actions -> local_process");
+    /* If $5 is an istance of ConnectedProcess, it means that its first 
+       nodes have already been connected to the frontier of $3 in the
+       lower level rule 'prefix_actions'. Therefore there is nothing to
+       be done here. */
+
+    for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+	ProcessNode * pnp = tr.current_contexts().frontier[i].pnp;
+	int child = tr.current_contexts().frontier[i].child;
+	int rank = pnp->children[child].rank;
+	if (three->v[rank]->connected()) continue;
+	if (!three->v[rank]->unresolved())
+	    /* If $5 is not an unresolved reference, we connect the
+	       current frontier (e.tr. the frontier of $3) to the process
+	       $5. */
+	    pnp->children[child].dest =
+		err_if_not_procnode(three->v[rank]);
+	else
+	    /* If $5 is an unresolved reference, we scan the current
+	       frontier recording the reference itself, so that this
+	       reference will be fixed by the upper levels. */
+	    pnp->children[child].unresolved_reference =
+		((UnresolvedProcess *)three->v[rank])->reference;
+    }
+
+    PROX(tr.current_contexts().print(); cout<<"$$ = "; tr.print_fakenode_forest());
+    return two;
+}
+
+Pvec * callback__32(FspTranslator& tr, SvpVec * one)
+{
+    PROP("prefix_actions --> action_labels");
+    PROX(cout<<"$1 = "; one->print());
+
+    /* Note that this is executed (obviously) after 'one' has been
+       parsed, and so after all the context ramifications implied by
+       the latter have been executed. */
+
+    /* If the frontier is not empty, it means that, although at the
+       beginning of an 'action_prefix', we are in the middle of
+       a process definition (e.tr. "P=(a->b->(c->..." or
+       "P=(a-b->(c->d->P|e->..."). In this case we have consider all
+       the edges in the frontier (e.tr. the edge "b").
+       */
+    vector<FrontierElement> new_frontier;
+    Pvec * pvec = new Pvec;
+    ProcessNode * pnp;
+    ProcessNode * npnp;
+    ProcessEdge e;
+    SetValue * setvp;
+    int rank;
+    int child;
+    struct FrontierElement fe;
+    bool zero;
+    int max_rank = 0;
+
+    zero = true;
+    for (int i=0; i<tr.current_contexts().frontier.size(); i++)
+	if (tr.current_contexts().frontier[i].pnp != &tr.fakenode) {
+	    zero = false;
+	    break;
+	}
+
+    for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+	pnp = tr.current_contexts().frontier[i].pnp;
+	child = tr.current_contexts().frontier[i].child;
+	/* If the edge i is NULL-pointing, it means that we are
+	   at the beginning of a choice construct (e.tr.
+	   "P=(a->b->(c->..."): We then create a node for that
+	   edge (in our example we create a node for "b"). If the
+	   edge is not NULL-pointing, it means that we are in 
+	   the middle of a choice construct (e.tr.
+	   "P=(a-b->(c->d->P|e->...") and so the node has already
+	   been created when processing the first choice element.
+	   There is no need to create anythintr.
+	   */
+	if (pnp->children[child].dest == NULL)
+	    pnp->children[child].dest = 
+		new ProcessNode(ProcessNode::Normal);
+	npnp = pnp->children[child].dest;
+
+	/* Once we get the node pointed by the edge i (npnp), we
+	   have to combine that edge with the sets in 'one'. We
+	   have a combination when the rank of the edge is equal
+	   to the rank of the set. When we find a combination, we
+	   add to npnp a NULL-pointing edge for each element in 
+	   the matching set.
+	   */
+	rank = pnp->children[child].rank;
+	if (rank > max_rank) max_rank = rank;
+	for (int c=0; c<one->v.size(); c++) {
+	    if (tr.current_contexts().is_ruled_out(c)) continue;
+	    setvp = err_if_not_set(one->v[c]);
+	    if (setvp->rank == rank) {
+		for (int k=0; k<setvp->actions.size(); k++) {
+		    e.action = tr.actions.insert(setvp->actions[k]);
+		    e.dest = NULL;
+		    /* We set e.rank to the index in the SvpVec
+		       'one' of setvp, so that this edge will
+		       combine with actions in the next level
+		       that have the same rank. */
+		    e.rank = c;
+		    npnp->children.push_back(e);
+		    /* We add the edge to the new frontier, so that
+		       it will be used for combination with the next
+		       level actions. */
+		    fe.pnp = npnp;
+		    fe.child = npnp->children.size() - 1;
+		    new_frontier.push_back(fe);
+		}
+	    }
+	}
+    }
+    /* Update the frontier. */
+    tr.current_contexts().frontier = new_frontier;
+    if (zero) {
+	assert(max_rank+1 == tr.fakenode.children.size());
+	for (int c=0; c<max_rank+1; c++)
+	    pvec->v.push_back(tr.fakenode.children[c].dest);
+    }
+    else {
+	/* Tell the upper level rule (action_prefix) that the beginning
+	   of this prefix_actions has already been connected, and so
+	   'local_process' results already connected (see above). */
+	ProcessBase * pbp = new ConnectedProcess();
+	for (int c=0; c<max_rank+1; c++)
+	    pvec->v.push_back(pbp);
+    }
+    PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
+
+    return pvec;
+}
+
+Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
+{
+	PROP("prefix_actions --> prefix_actions -> action_labels");
+	PROX(cout<<"$3 = "; two->print());
+	ProcessNode * pnp;
+	ProcessNode * npnp;
+	ProcessEdge e;
+	SetValue * setvp;
+	int rank;
+	int child;
+	struct FrontierElement fe;
+	vector<FrontierElement> new_frontier;
+
+	/* Here we are in the middle of a 'prefix_actions' 
+	   (e.tr. "...->b->c->d->.."), and so we have to connect each edge in
+	   the frontier with the action sets in 'two' (e.tr. we have a frontier
+	   that contains a NULL-pointing edge "c" and 'two'={{d}}).
+	*/
+	for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+	    pnp = tr.current_contexts().frontier[i].pnp;
+	    child = tr.current_contexts().frontier[i].child;
+	    /* Here we have to do the same combination descripted above,
+	       but only if the edge in the frontier is NULL-pointing and
+	       it has not an unresolved reference associated. If the
+	       edge is not NULL-pointing, it means that we are in a 
+	       situation like this "...->a->(b->c->...|d->e->...)". In
+	       this case pnp is the node which has an edge "b" and an 
+	       edge "d", and 'two'={{e}}: Therefore we don't have to consider
+	       the edge "b" for combinations, since it has already been used
+	       when processing the previous choice element. We only have to
+	       consider "d". If an edge has an unresolved reference, 
+	       it means that we are in a situation like this
+	       "..a->(b->P|d->e->...)": this case is very similar to the
+	       previous one, but here the edge "b" is NULL-pointing,
+	       only because of the unresolved reference P: considering it
+	       for combinations would be an error. */
+	    if (pnp->children[child].dest == NULL &&
+		    pnp->children[child].unresolved_reference == "") {
+		pnp->children[child].dest = 
+		    new ProcessNode(ProcessNode::Normal);
+		npnp = pnp->children[child].dest;
+		rank = pnp->children[child].rank;
+		for (int c=0; c<two->v.size(); c++) {
+		    if (tr.current_contexts().is_ruled_out(c)) continue;
+		    setvp = err_if_not_set(two->v[c]);
+		    if (setvp->rank == rank) {
+			for (int k=0; k<setvp->actions.size(); k++) {
+			    e.action = tr.actions.insert(setvp->actions[k]);
+			    e.dest = NULL;
+			    /* We set e.rank to the index in the SvpVec
+			       'two', so that this edge will combine with
+			       actions in the next level that have the
+			       same rank. */
+			    e.rank = c;
+			    npnp->children.push_back(e);
+			    fe.pnp = npnp;
+			    fe.child = npnp->children.size() - 1;
+			    new_frontier.push_back(fe);
+			}
+		    }
+		}
+	    }
+	}
+	tr.current_contexts().frontier = new_frontier;
+	/* Note that 'one' is not used in this action, because we use the
+	   frontier stored in tr.current_contexts(). As a result, 'one' is
+	   the result of the previous action (and so a ProcessNode* or a
+	   ConnectedProcess*. */
+	PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
+
+	return one;
+}
+
+SvpVec * callback__34(FspTranslator& tr)
+{
+    SvpVec * vp = new SvpVec;
+    SetValue * setvp;
+
+    for (int c=0; c<tr.current_contexts().size(); c++) {    
+	setvp = new SetValue;
+	setvp->actions.push_back("");
+	vp->v.push_back(setvp);
+    }
+    return vp;
+}
+
+SvpVec * callback__35(FspTranslator& tr, SvpVec * one)
+{
+    SvpVec * vp = new SvpVec;
+    SetValue * setvp;
+    ConstValue * cvp;
+
+    assert(one->v.size() == tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	setvp = new SetValue;
+	cvp = err_if_not_const(one->v[c]);
+	setvp->actions.push_back("[" + int2string(cvp->value) + "]");
+	vp->v.push_back(setvp);
+    }
+    delete one;
+
+    return vp;
+}
+
+SvpVec * callback__36(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    SetValue * setvp;
+    ConstValue * cvp;
+
+    assert(one->v.size() == two->v.size());
+    for (int c=0; c<two->v.size(); c++) {
+	setvp = err_if_not_set(one->v[c]);
+	cvp = err_if_not_const(two->v[c]);
+	setvp->indexize(cvp->value);
+    }
+    delete two;
+
+    return one;
+}
+
+SvpVec * callback__37(FspTranslator& tr)
+{
+    SvpVec * vp = new SvpVec;
+    SetValue * setvp = new SetValue;
+
+    assert(tr.current_contexts().size() == 1);
+    setvp->actions.push_back("");
+    vp->v.push_back(setvp);
+
+    return vp;
+}
+
+SvpVec * callback__38(FspTranslator& tr, SvpVec * one)
+{
+    SvpVec * vp;
+    SetValue * setvp;
+    ConstValue * cvp;
+
+    /* Here we are sure to have only the empty context. */
+    assert(tr.current_contexts().size() == 1 && one->v.size() == 1);
+
+    if (one->v[0]->type() == SymbolValue::Set) {
+	stringstream errstream;
+	errstream << "Unexpected set";
+	semantic_error(errstream);
+    }
+    setvp = new SetValue;
+    setvp->actions.push_back("");
+    vp = new SvpVec;
+    vp->v.push_back(setvp);
+
+    return indexize_svpvec(&tr, vp, one);
+}
+
+SvpVec * callback__39(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    assert(two->v.size() == one->v.size());
+    if (two->v[0]->type() == SymbolValue::Set) {
+	stringstream errstream;
+	errstream << "Unexpected set";
+	semantic_error(errstream);
+    }
+
+    return indexize_svpvec(&tr, one, two);
+}
+
