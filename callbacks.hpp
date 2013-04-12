@@ -37,3 +37,28 @@ SvpVec * callback__36(FspTranslator& tr, SvpVec * one, SvpVec * two);
 SvpVec * callback__37(FspTranslator& tr);
 SvpVec * callback__38(FspTranslator& tr, SvpVec * one);
 SvpVec * callback__39(FspTranslator& tr, SvpVec * one, SvpVec * two);
+
+SvpVec * callback__41(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__42(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__43(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__44(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__45(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__46(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__47(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__48(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__49(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__50(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__51(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__52(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__53(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__54(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__55(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__56(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__57(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__58(FspTranslator& tr, SvpVec * one, SvpVec * two);
+SvpVec * callback__59(FspTranslator& tr, SvpVec * one);
+SvpVec * callback__60(FspTranslator& tr, SvpVec * one);
+SvpVec * callback__61(FspTranslator& tr, int one);
+SvpVec * callback__62(FspTranslator& tr, string * one);
+SvpVec * callback__63(FspTranslator& tr, string * one);
+

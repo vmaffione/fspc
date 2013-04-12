@@ -761,14 +761,7 @@ or_expr:
     and_expr
     | or_expr OR and_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = vpl->value || vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__41(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -777,14 +770,7 @@ and_expr:
     bitor_expr
     | and_expr AND bitor_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = vpl->value && vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__42(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -793,14 +779,7 @@ bitor_expr:
     bitxor_expr
     | bitor_expr '|' bitxor_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value |= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__43(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -809,14 +788,7 @@ bitxor_expr:
     bitand_expr
     | bitxor_expr '^' bitand_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value ^= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__44(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -825,14 +797,7 @@ bitand_expr:
     equality_expr
     | bitand_expr '&' equality_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value &= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__45(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -841,26 +806,12 @@ equality_expr:
     relational_expr
     | equality_expr EQUAL relational_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value == vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__46(tr, $1, $3);
 	ps.pop_back();
     }
     | equality_expr NOTEQUAL relational_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value != vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__47(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -869,50 +820,22 @@ relational_expr:
     shift_expr
     | relational_expr '<' shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value < vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__48(tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr '>' shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value > vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__49(tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr LOE shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value <= vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__50(tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr GOE shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = (vpl->value >= vpr->value);
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__51(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -921,26 +844,12 @@ shift_expr:
     additive_expr
     | shift_expr LSHIFT additive_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value <<= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__52(tr, $1, $3);
 	ps.pop_back();
     }
     | shift_expr RSHIFT additive_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value >>= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__53(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -949,28 +858,12 @@ additive_expr:
     multiplicative_expr
     | additive_expr '+' multiplicative_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    //cout << vpl->value << " + " << vpr->value << "\n";
-	    vpl->value += vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__54(tr, $1, $3);
 	ps.pop_back();
     }
     | additive_expr '-' multiplicative_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    //cout << vpl->value << " - " << vpr->value << "\n";
-	    vpl->value -= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__55(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -979,40 +872,17 @@ multiplicative_expr:
     unary_expr
     | multiplicative_expr '*' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    //cout << vpl->value << " * " << vpr->value << "\n";
-	    vpl->value *= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__56(tr, $1, $3);
 	ps.pop_back();
     }
     | multiplicative_expr '/' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    //cout << vpl->value << " / " << vpr->value << "\n";
-	    vpl->value /= vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__57(tr, $1, $3);
 	ps.pop_back();
     }
     | multiplicative_expr '%' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    ConstValue * vpl = err_if_not_const($1->v[i]);
-	    ConstValue * vpr = err_if_not_const($3->v[i]);
-	    vpl->value = vpl->value % vpr->value;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__58(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1028,85 +898,30 @@ unary_expr:
     }
     | '-' base_expr {
 	AA($2,1,1);
-	ConstValue * cvp;
-	for (int i=0; i<$2->v.size(); i++) {
-	    cvp = err_if_not_const($2->v[i]);
-	    cvp->value *= -1;
-	}
-	$$ = $2;
+	$$ = callback__59(tr, $2);
     }
     | '!' base_expr {
 	AA($2,1,1);
-	ConstValue * cvp;
-	for (int i=0; i<$2->v.size(); i++) {
-	    cvp = err_if_not_const($2->v[i]);
-	    cvp->value = !(cvp->value);
-	    //cout << "UU ! " << cvp->value << "\n";
-	}
-	$$ = $2;
+	$$ = callback__60(tr, $2);
     }
     ;
 
 /* TODO: complete base_expr */
 base_expr:
     INTEGER {
-	SvpVec * vp;
-	ConstValue * cvp;
-
-	/* Return a ConstValue* for each context (in non shared mode). */
-	vp = new SvpVec;
-	vp->shared = false;
-	for (int c=0; c<tr.current_contexts().size(); c++) {
-	    cvp = new ConstValue;
-	    cvp->value = $1;
-	    vp->v.push_back(cvp);
-	}
-	$$ = vp;
+	$$ = callback__61(tr, $1);
 	ps.push_back($$);
 	//cout << "UU " << $1 << "\n";
     }
     | variable {
 	AA($1,1,1);
-	/* Return a ConstValue* for each context (in non shared mode). */
-	SvpVec * vp;
-
-	vp = new SvpVec;
-	vp->shared = false;
-	for (int c=0; c<tr.current_contexts().size(); c++) {
-	    SymbolValue * svp;
-	    if (!(tr.current_contexts()[c]->lookup(*$1, svp))) {
-		stringstream errstream;
-errstream << "variable " << *$1 << " undeclared\n";
-		semantic_error(errstream);
-	    }
-	    svp = svp->clone();
-	    vp->v.push_back(svp);
-	}
-	delete $1;
-	$$ = vp;
+	$$ = callback__62(tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | const_range_set_parameter_id {
 	AA($1,1,1);
-	SymbolValue * svp;
-	SvpVec * vp; 
-	
-	/* Lookup the identifier and clone the associated object. */
-	if (!tr.identifiers.lookup(*$1, svp)) {
-	    stringstream errstream;
-	    errstream << "const/range/set/parameter " << *$1
-		<< " undeclared";
-	    semantic_error(errstream);
-	}
-	delete $1;
-
-	/* Return a ConstValue* for each context (in non shared mode). */
-	vp = new SvpVec;
-	vp->shared = false;
-	for (int c=0; c<tr.current_contexts().size(); c++)
-	    vp->v.push_back(svp->clone());
-	$$ = vp;
+	$$ = callback__63(tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
