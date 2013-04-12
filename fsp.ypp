@@ -56,150 +56,6 @@ using namespace std;
 #include "callbacks.hpp"
 
 
-template <class T>
-static Context* extended_context(Context * ctx,
-				const string& var, const T& val)
-{
-    ctx = new Context(*ctx);
-    if (!ctx->insert(var, val)) {
-	stringstream errstream;
-	errstream << "Variable " << var << " declared twice\n";
-	semantic_error(errstream);
-    }
-
-    return ctx;
-}
-
-/* Fix unresolved ProcessNode references due to cyclic processes. */
-static void fix_unresolved_references(ProcessNode * pnp, void * opaque);
-
-
-/* Left contains a SetValue*, while right is the result of 'action_range'. */
-SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * right)
-{
-    SvpVec * vp;
-    SetValue * setvp;
-    SetValue * rsetvp;
-    RangeValue * rvp;
-    ConstValue * cvp;
-    ContextsSet * csp; 
-    Context * cxp;
-
-    /* type() and 'variable' is the same for all the elements in 
-       action_range. */
-    switch (right->v[0]->type()) {
-	case SymbolValue::Range:
-	    rvp = err_if_not_range(right->v[0]);
-	    if (rvp->variable != "") {
-		/* In this case each element in action_range is in the
-		   form 'var:R', where R is a range_id or a range_expr. */
-		csp = new ContextsSet;
-		csp->frontier = gp->current_contexts().frontier;
-		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rvp = err_if_not_range(right->v[c]);
-		    for (int j=rvp->low; j<=rvp->high; j++) {
-			SetValue * new_setvp = new SetValue(*setvp);
-			new_setvp->indexize(j);
-			/* When a context spread happens, each new_setvp
-			   inherits the rank of the generating setvp. */
-			new_setvp->rank = setvp->rank;
-			/* Append the new SetValue to associate to this
-			   context.*/
-			vp->v.push_back(new_setvp);
-			/* Create a new context (extending the previous
-			   one) */
-			cxp = extended_context(gp->current_contexts()[c],
-				rvp->variable, j);
-			csp->append(cxp);
-		    }
-		}
-		cout << "Contexts ramification\n";
-		gp->css.update(csp);
-		delete left;
-		delete right;
-		return vp;
-	    } else {
-		/* In this case each element in action_range is in the
-		   form "R", where R is a range_id or a range_expr. */
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rvp = err_if_not_range(right->v[c]);
-		    setvp->indexize(rvp->low, rvp->high);
-		    /* Rank is inherited. */
-		}
-		delete right;
-		return left;
-	    }
-	    break;
-
-	case SymbolValue::Const:
-	    for (int c=0; c<left->v.size(); c++) {
-		setvp = err_if_not_set(left->v[c]);
-		cvp = err_if_not_const(right->v[c]);
-		setvp->indexize(cvp->value);
-		/* Rank is inherited. */
-	    }
-	    delete right;
-	    return left;
-	    break;
-	case SymbolValue::Set:
-	    setvp = err_if_not_set(right->v[0]);
-	    if (setvp->variable != "") {
-		/* In this case each element in action_range is in the
-		   form 'var:R', where R is a set_id or a set_expr. */
-		csp = new ContextsSet;
-		csp->frontier = gp->current_contexts().frontier;
-		/* We need a new SvpVec for a new ContextSet. */
-		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rsetvp = err_if_not_set(right->v[c]);
-		    for (int j=0; j<rsetvp->actions.size(); j++) {
-			SetValue * new_setvp = new SetValue(*setvp);
-			new_setvp->dotcat(rsetvp->actions[j]);
-			/* When a context spread happens, each new_setvp
-			   inherits the rank of the generating setvp. */
-			new_setvp->rank = setvp->rank;
-			/* Append the new SetValue to associate to this
-			   context.*/
-			vp->v.push_back(new_setvp);
-			/* Create a new context (extending the previous
-			   one) */
-			cxp = extended_context(gp->current_contexts()[c],
-				rsetvp->variable, rsetvp->actions[j]);
-			/* Append the new Context to the new ContextSet. 
-			 */
-			csp->append(cxp);
-		    }
-		}
-		cout << "Contexts ramification\n";
-		gp->css.update(csp);
-		delete left;
-		delete right;
-		return vp;
-	    } else {
-		for (int c=0; c<left->v.size(); c++) {
-		    setvp = err_if_not_set(left->v[c]);
-		    rsetvp = err_if_not_set(right->v[c]);
-		    /* Create a new SetValue that combines setvp and
-		       rsetvp. No context ramification happens here. */
-		    setvp->indexize(*rsetvp);
-		    /* Rank is inherited. */
-		}
-		delete right;
-		return left;
-	    }
-	    break;
-
-	default:
-	    cerr << "I should not reach this point.\n";
-	    assert(0);
-	    exit(1);
-    }
-}
-
 
 /* A global data structure containing everything the translator needs. */
 struct FspTranslator tr;
@@ -316,40 +172,16 @@ action_labels:
     }
     | action_labels '.' LowerCaseID {
 	AA($1,1,1);
-	SetValue * setvp;
-
-	assert($1->v.size() == tr.current_contexts().size());
-	for (int c=0; c<$1->v.size(); c++) {
-	    setvp = err_if_not_set($1->v[c]);
-	    setvp->dotcat(*$3);
-	    /* Rank is inherited. */
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__2(tr, $1, $3);
     }
     | action_labels '.' set {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size() &&
-		    $1->v.size() == tr.current_contexts().size());
-	SetValue * setvp;
-	SetValue * rsetvp;
-	for (int c=0; c<$1->v.size(); c++) {
-	    setvp = err_if_not_set($1->v[c]);
-	    rsetvp = err_if_not_set($3->v[c]);
-	    /* Combine setvp with rsetvp. No context ramification
-	       happens here. */
-	    setvp->dotcat(*rsetvp);
-	    /* Rank is inherited. */
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__3(tr, $1, $3);
 	ps.pop_back();
     }
     | action_labels '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size() &&
-		$1->v.size() == tr.current_contexts().size());
-	$$ = indexize_svpvec(&tr, $1, $3);
+	$$ = callback__4(tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -359,21 +191,7 @@ action_labels:
 set:
     set_id {
 	AA($1,1,1);
-	SvpVec * vp = new SvpVec;
-	SymbolValue * svp;
-	SetValue * setvp;
-	if (!tr.identifiers.lookup(*$1, svp)) {
-	    stringstream errstream;
-	    errstream << "set " << *$1 << " undeclared";
-	    semantic_error(errstream);
-	}
-	delete $1;
-	setvp = err_if_not_set(svp);
-	svp = svp->clone();
-	vp->shared = true;
-	for (int c=0; c<tr.current_contexts().size(); c++)
-	    vp->v.push_back(svp);
-	$$ = vp;
+	$$ = callback__5(tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -406,51 +224,21 @@ action_range:
     }
     | variable ':' range_or_set_id {
 	AA($1,1,2); AA($3,2,2);
-	SvpVec * vp = new SvpVec;
-	SymbolValue * svp;
-
-	if (!tr.identifiers.lookup(*$3, svp)) {
-	    stringstream errstream;
-	    errstream << "range/set " << *$3 << " undeclared";
-	    semantic_error(errstream);
-	}
-	svp = svp->clone();
-
-	/* Pass the variable name to the upper levels.*/
-	svp->setVariable(*$1);
-	delete $1;
-	vp->shared = true;
-	for (int c=0; c<tr.current_contexts().size(); c++)
-	    vp->v.push_back(svp);
-	$$ = vp;
+	$$ = callback__6(tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | variable ':' range_expr {
 	AA($1,1,2); AA($3,2,2);
-	RangeValue * rvp;
-	for (int i=0; i<$3->v.size(); i++) {
-	    rvp = err_if_not_range($3->v[i]);
-	    /* Pass the variable to the upper levels.*/
-	    rvp->setVariable(*$1);
-	}
-	delete $1;
-	$$ = $3;
+	$$ = callback__7(tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | variable ':' set_expr {
 	AA($1,1,2); AA($3,2,2);
-	SetValue * setvp;
-	for (int i=0; i<$3->v.size(); i++) {
-	    setvp = err_if_not_set($3->v[i]);
-	    /* Pass the variable to the upper levels.*/
-	    setvp->setVariable(*$1);
-	}
-	delete $1;
-	$$ = $3;
+	$$ = callback__8(tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -460,22 +248,7 @@ action_range:
 range_expr:
     expression DOTDOT expression {
 	AA($1,1,2); AA($3,2,2);
-	RangeValue * rvp;
-	ConstValue * cvp;
-	SvpVec * vp = new SvpVec;
-
-	assert($1->v.size() == $3->v.size());
-	for (int i=0; i<$1->v.size(); i++) {
-	    rvp = new RangeValue;
-	    cvp = err_if_not_const($1->v[i]);
-	    rvp->low = cvp->value;
-	    cvp = err_if_not_const($3->v[i]);
-	    rvp->high = cvp->value;
-	    vp->v.push_back(rvp);
-	}
-	delete $1;
-	delete $3;
-	$$ = vp;
+	$$ = callback__9(tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -557,14 +330,7 @@ set_elements:
     }
     | set_elements ',' action_labels {
 	AA($1,1,2); AA($3,2,2);
-	assert($1->v.size() == $3->v.size());
-	for (int c=0; c<$1->v.size(); c++) {
-	    SetValue * setvp = err_if_not_set($1->v[c]);
-	    SetValue * rsetvp = err_if_not_set($3->v[c]);
-	    *setvp += *rsetvp;
-	}
-	delete $3;
-	$$ = $1;
+	$$ = callback__13(tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -574,94 +340,11 @@ set_elements:
 process_def:
     process_id param_OPT {
 	AA($1,1,1);
-	/* Parameters have been pushed inside the 'param_OPT' rule.
-	   A cleaner approach would be to get a list of parameters from
-	   the rule and push the parameters into the 'tr.identifiers' table
-	   in this action. */
-	tr.init_fakenode();
+	callback__14(tr, $1);
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	AA($1,1,3); AA($5,2,3); AA($6,3,3);
-	PROP("process_def --> ... process_body ...");
-	PROX(cout<<*$1<<" = "; $5->v[0]->print(&tr.actions));
-
-	ProcessBase * pbp = $5->v[0];
-	SymbolValue * svp;
-	ProcessValue * pvp = NULL;
-
-	assert($5->v.size() == 1);
-	if (pbp->unresolved()) {
-	    tr.aliases.insert(*$1, 
-		    ((UnresolvedProcess* )pbp)->reference);
-	    tr.aliases.print();
-	} 
-	tr.aliases.fill_process_table(tr.local_processes);
-	if (pbp->unresolved()) {
-	    if(!tr.local_processes.lookup(*$1, svp)) {
-		stringstream errstream;
-	errstream << "process " << *$1 << " undeclared";
-		semantic_error(errstream);
-	    }
-	    pvp = err_if_not_process(svp);
-	} else {
-	    /* Insert a new ProcessValue in the symbol table, attaching the
-	       process_body to it. */
-	    pvp = new ProcessValue;
-	    pvp->pnp = err_if_not_procnode(pbp);
-	    if (!tr.local_processes.insert(*$1, pvp)) {
-		stringstream errstream;
-	errstream << "process " << *$1 << " declared twice";
-		semantic_error(errstream);
-	    }
-	    cout << "Process " << *$1 << " defined (" << pvp->pnp << ")\n";
-	}
-
-	PROX(cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<< Process " << *$1 << " defined >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-
-	/* Try to resolve all the undefined references into this process. */
-	struct ProcessVisitObject f;
-	f.vfp = &fix_unresolved_references;
-	f.opaque = &tr.actions;
-	pvp->pnp->visit(f);
-
-	PROX(cout<<"resolved: "; pvp->pnp->print(&tr.actions));
-
-	/* Convert the collection of ProcessNodes in an Lts object. */
-	Lts lts(pvp->pnp, &tr.actions);
-
-	/* Now we can free the graph pointed by pvp->pnp. */
-	freeProcessNodeGraph(pvp->pnp);
-
-	/* Extend the alphabet if is the case. */
-	if ($6) {
-	    SetValue * setvp;
-	    if ($6->v.size() != 1) {
-		stringstream errstream;
-		errstream << "Multiset alphabet extension";
-		semantic_error(errstream);
-	    }
-	    setvp = err_if_not_set($6->v[0]);
-	    for (int i=0; i<setvp->actions.size(); i++)
-		lts.updateAlphabet(tr.actions.insert(setvp->actions[i]));
-		delete setvp;
-	}
-
-	/* Remove process parameters from the tr.identifiers. */
-	for (int i=0; i<tr.parameters.size(); i++) {
-	    tr.identifiers.remove(*(tr.parameters[i]));
-	    delete tr.parameters[i];
-	}
-	tr.parameters.clear();
-
-	/* Clear 'tr.local_processes' and 'tr.aliases'. */
-	tr.local_processes.clear();
-	tr.aliases.clear();
-
-	lts.print();
-	lts.graphvizOutput((*$1 += ".gv").c_str());
-	delete $1;
-
-	// TODO implement everything is OPT
+	callback__15(tr, $1, $5, $6);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -695,51 +378,15 @@ local_process_defs:
 local_process_def:
     process_id {
 	AA($1,1,1);
-	/* The following nonterminal 'index_ranges_OPT' may result
-	   in contexts ramifications, and so tr.css.update() must be called. We
-	   therefore push a clone of the current ContextsSet, which is the
-	   initial empty one, so that the initial one is not modified. */
-	tr.css.push_clone();
+	callback__16(tr, $1);
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
 	cout << "index_ranges_OPT:\n";
 	$3->print();
-	tr.init_fakenode();
+	callback__17(tr, $1, $3);
     } local_process {
 	AA($1,1,3); AA($3,2,3); AA($6,3,3);
-	ProcessValue * pvp;
-	SetValue * setvp;
-	string procname;
-
-	for (int c=0; c<$3->v.size(); c++) {
-	    setvp = err_if_not_set($3->v[c]);
-	    for (int j=0; j<setvp->actions.size(); j++) {
-		procname = *$1 + setvp->actions[j];
-		if ($6->v[c]->unresolved()) {
-		    tr.aliases.insert(procname,
-			((UnresolvedProcess* )$6->v[c])->reference);
-		    tr.aliases.print();
-		} else {
-		    pvp = new ProcessValue;
-		    pvp->pnp = err_if_not_procnode($6->v[c]);
-		    if (j)
-			pvp->pnp = pvp->pnp->clone();
-		    if (!tr.local_processes.insert(procname, pvp)) {
-			stringstream errstream;
-			errstream << "process " << procname
-			    << " declared twice";
-			semantic_error(errstream);
-		    }
-		    cout << "Process " << procname << " defined (" << pvp->pnp << ")\n";
-		}
-	    }
-	}
-	/* Pop out the cloned (maybe dirty) ContextsState, so that we
-	   correctly restore the empty initial state. */
-	tr.css.pop();
-	delete $1;
-	delete $3;
-	$$ = $6;
+	$$ = callback__18(tr, $1, $3, $6);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -1828,26 +1475,6 @@ menu_id: UpperCaseID { ps.push_back($1); };
 
 %%
 
-static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
-{
-    ActionsTable * atp = (ActionsTable *)opaque;
-
-    for (int i=0; i<pnp->children.size(); i++) {
-	ProcessEdge& e = pnp->children[i];
-	SymbolValue * svp;
-	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": " << tr.actions.reverse[e.action]
-		<< " -> " << e.unresolved_reference << "\n";				
-	    if (!tr.local_processes.lookup(e.unresolved_reference, svp)) {
-		stringstream errstream;
-errstream << "Local process " << pnp << ": "
-		    << e.unresolved_reference << " undeclared\n";
-		semantic_error(errstream);
-	    }
-	    e.dest = ((ProcessValue *)svp)->pnp;
-	}
-    }
-}
 
 const char * ex = "P=(a->b->P).";
 
