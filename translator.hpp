@@ -49,10 +49,10 @@ struct Aliases {
 };
 
 
-struct GlobalData;
+struct FspCompiler;
 
 struct FspTranslator {
-    GlobalData * gdp;
+    FspCompiler * gdp;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
@@ -65,7 +65,7 @@ struct FspTranslator {
     struct Aliases aliases;
 
 
-    FspTranslator(struct GlobalData * p) : gdp(p) {
+    FspTranslator(struct FspCompiler * p) : gdp(p) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -82,7 +82,7 @@ struct FspTranslator {
 };
 
 
-struct GlobalData {
+struct FspCompiler {
     /* Main actions table. */
     struct ActionsTable actions;
 
@@ -103,7 +103,7 @@ struct GlobalData {
     /* The main translator. */
     FspTranslator tr;
 
-    GlobalData() : actions("Global actions table"), record_mode_on(0), 
+    FspCompiler() : actions("Global actions table"), record_mode_on(0), 
 							    tr(this) { }
 
 };
