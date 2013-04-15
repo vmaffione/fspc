@@ -365,7 +365,7 @@ SvpVec * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-void * callback__15(FspTranslator& tr, string * one, Pvec * two,
+Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three)
 {
     PROP("process_def --> ... process_body ...");
@@ -447,6 +447,8 @@ void * callback__15(FspTranslator& tr, string * one, Pvec * two,
     delete one;
 
     // TODO implement everything is OPT
+
+    return NULL;
 }
 
 SvpVec * callback__16(FspTranslator& tr, string * one)
@@ -460,9 +462,11 @@ SvpVec * callback__16(FspTranslator& tr, string * one)
     return NULL;
 }
 
-void * callback__17(FspTranslator& tr, string * one, SvpVec * two)
+Pvec * callback__17(FspTranslator& tr, string * one, SvpVec * two)
 {
     tr.init_fakenode();
+
+    return NULL;
 }
 
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
@@ -504,7 +508,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
     return three;
 }
 
-void * callback__19(FspTranslator& tr, SvpVec * one)
+Pvec * callback__19(FspTranslator& tr, SvpVec * one)
 {
     ConstValue * cvp;
 
@@ -524,7 +528,7 @@ void * callback__19(FspTranslator& tr, SvpVec * one)
     return NULL;
 }
 
-void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
+Pvec * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
 {
     ConstValue * cvp;
 
