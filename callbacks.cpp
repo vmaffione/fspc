@@ -449,13 +449,15 @@ void * callback__15(FspTranslator& tr, string * one, Pvec * two,
     // TODO implement everything is OPT
 }
 
-void * callback__16(FspTranslator& tr, string * one)
+SvpVec * callback__16(FspTranslator& tr, string * one)
 {
     /* The following nonterminal 'index_ranges_OPT' may result
        in contexts ramifications, and so tr.css.update() must be called. We
        therefore push a clone of the current ContextsSet, which is the
        initial empty one, so that the initial one is not modified. */
     tr.css.push_clone();
+
+    return NULL;
 }
 
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two)

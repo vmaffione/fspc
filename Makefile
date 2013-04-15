@@ -14,13 +14,13 @@ strings_set.o: strings_set.hpp strings_set.cpp
 
 context.o: context.hpp symbols_table.hpp
 
-parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp
+parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o
 
 translator.o: translator.hpp
 
 utils.o: utils.hpp
 
-callbacks.o: utils.hpp context.hpp translator.hpp lts.hpp
+callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp
 
 parser.cpp parser.hpp: fsp.ypp fsp.y
 	bison fsp.ypp

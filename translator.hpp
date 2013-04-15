@@ -15,6 +15,7 @@ using namespace std;
 #include "context.hpp"
 #include "symbols_table.hpp"
 #include "utils.hpp"
+#include "callbacks.hpp"
 
 
 struct AliasElement {
@@ -71,10 +72,12 @@ struct FspTranslator {
     struct Aliases aliases;
 
     int record_mode_on;
+    vector<Callback *> * current_record;
     struct SymbolsTable process_models;
 
 
-    FspTranslator() : actions("Global actions table"), record_mode_on(0) { }
+    FspTranslator() : actions("Global actions table"), record_mode_on(0),
+		      current_record(NULL) { }
 
     ContextsSet& current_contexts() { return css.top(); }
 
