@@ -10,6 +10,7 @@
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
+#include "callbacks.hpp"
 
 
 #define DEBUG
@@ -21,6 +22,20 @@
 #define PROX(x)
 #endif
 
+void ParametricProcess::clear()
+{
+    parameter_names.clear();
+    parameter_defaults.clear();
+    record.clear();
+}
+
+void ParametricProcess::print() const
+{
+    cout << "Parameters (defaults):\n";
+    for (int i=0; i<parameter_names.size(); i++)
+	cout << parameter_names[i] << " (" << parameter_defaults[i] << ")\n";
+    cout << "   List of " << record.size() << " callbacks\n";
+}
 
 
 template <class T>

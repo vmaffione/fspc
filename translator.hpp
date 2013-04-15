@@ -72,12 +72,11 @@ struct FspTranslator {
     struct Aliases aliases;
 
     int record_mode_on;
-    vector<Callback *> * current_record;
+    ParametricProcess parametric;
     struct SymbolsTable process_models;
 
 
-    FspTranslator() : actions("Global actions table"), record_mode_on(0),
-		      current_record(NULL) { }
+    FspTranslator() : actions("Global actions table"), record_mode_on(0) { }
 
     ContextsSet& current_contexts() { return css.top(); }
 

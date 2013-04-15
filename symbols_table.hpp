@@ -6,7 +6,6 @@
 #include <string>
 #include <map>
 
-//#include "strings_set.hpp"
 
 using namespace std;
 
@@ -38,7 +37,7 @@ struct SymbolValue {
     static const int Set = 2;
     static const int Lts = 3;
     static const int Process = 4;
-    static const int ProcessDefinition = 5;
+    static const int ParametricProcess = 5;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -161,17 +160,6 @@ struct ProcessValue: public SymbolValue {
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;
 };
-
-struct ProcessDefinition: public SymbolValue {
-    vector<string> parameter_names;
-    vector<int> parameter_default;
-    string definition;
-
-    void print() const;
-    int type() const { return SymbolValue::ProcessDefinition; }
-    SymbolValue * clone() const { return NULL; }
-};
-
 
 
 struct SymbolsTable {

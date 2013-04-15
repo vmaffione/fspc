@@ -69,6 +69,17 @@ struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;
 };
 
+struct ParametricProcess: public SymbolValue {
+    vector<string> parameter_names;
+    vector<int> parameter_defaults;
+    vector<Callback *> record;
+
+    void print() const;
+    int type() const { return SymbolValue::ParametricProcess; }
+    SymbolValue * clone() const { return NULL; }
+    void clear();
+};
+
 /*1*/
 struct Callback_V_S : public Callback {
     typedef SvpVec * (*FPT)(FspTranslator&, string *);
