@@ -76,7 +76,14 @@ struct FspTranslator {
     struct SymbolsTable process_models;
 
 
-    FspTranslator() : actions("Global actions table"), record_mode_on(0) { }
+    FspTranslator() : actions("Global actions table"), record_mode_on(0) {
+	/* Initialize shared data structures: A stack containing a single
+	   ContextsSet. This set contains a single empty Context and an
+	   empty frontier. */
+	ContextsSet * csp = new ContextsSet;
+	csp->append(new Context);
+	css.push(csp);
+    }
 
     ContextsSet& current_contexts() { return css.top(); }
 
