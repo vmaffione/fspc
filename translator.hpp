@@ -48,35 +48,24 @@ struct Aliases {
     void print();
 };
 
-struct FspTranslator {
-    /* Main actions table. */
-    struct ActionsTable actions;
 
-    /* Const, Range, Set and Parameter names. */
-    struct SymbolsTable identifiers;
+struct GlobalData;
+
+struct FspTranslator {
+    GlobalData * gdp;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
 
-    /* Names of global processes. */
-    struct SymbolsTable processes;
-
+    /* A stack of contexts set for translating a process_def. */
     struct ContextsSetStack css;
-
-    /* Storage for a list of parameters identifiers to remove from the 
-       identifiers table when a process definition has been completed. */
-    vector<string *> parameters;
 
     struct ProcessNode fakenode;
 
     struct Aliases aliases;
 
-    int record_mode_on;
-    ParametricProcess parametric;
-    struct SymbolsTable process_models;
 
-
-    FspTranslator() : actions("Global actions table"), record_mode_on(0) {
+    FspTranslator(struct GlobalData * p) : gdp(p) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -91,5 +80,34 @@ struct FspTranslator {
 
     void print_fakenode_forest();
 };
+
+
+struct GlobalData {
+    /* Main actions table. */
+    struct ActionsTable actions;
+
+    /* Const, Range, Set and Parameter names. */
+    struct SymbolsTable identifiers;
+
+    /* Names of global processes. */
+    struct SymbolsTable processes;
+    
+    int record_mode_on;
+    ParametricProcess parametric;
+    struct SymbolsTable process_models;
+
+    /* Storage for a list of parameters identifiers to remove from the 
+       identifiers table when a process definition has been completed. */
+    vector<string *> parameters; //XXX obsoleted by 'parametric'??
+
+    /* The main translator. */
+    FspTranslator tr;
+
+    GlobalData() : actions("Global actions table"), record_mode_on(0), 
+							    tr(this) { }
+
+};
+
+
 
 #endif

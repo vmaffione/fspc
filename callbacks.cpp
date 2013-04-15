@@ -187,7 +187,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	ProcessEdge& e = pnp->children[i];
 	SymbolValue * svp;
 	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": " << trp->actions.reverse[e.action]
+	    cout << "Unref " << pnp << ": " << trp->gdp->actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
 	    if (!trp->local_processes.lookup(e.unresolved_reference, svp)) {
 		stringstream errstream;
@@ -272,7 +272,7 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
     SetValue * setvp;
-    if (!tr.identifiers.lookup(*one, svp)) {
+    if (!tr.gdp->identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "set " << *one << " undeclared";
 	semantic_error(errstream);
@@ -292,7 +292,7 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
 
-    if (!tr.identifiers.lookup(*two, svp)) {
+    if (!tr.gdp->identifiers.lookup(*two, svp)) {
 	stringstream errstream;
 	errstream << "range/set " << *two << " undeclared";
 	semantic_error(errstream);
@@ -373,7 +373,7 @@ SvpVec * callback__14(FspTranslator& tr, string * one)
 {
     /* Parameters have been pushed inside the 'param_OPT' rule.
        A cleaner approach would be to get a list of parameters from
-       the rule and push the parameters into the 'tr.identifiers' table
+       the rule and push the parameters into the 'tr.gdp->identifiers' table
        in this action. */
     tr.init_fakenode();
 
@@ -384,7 +384,7 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three)
 {
     PROP("process_def --> ... process_body ...");
-    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.actions));
+    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.gdp->actions));
 
     ProcessBase * pbp = two->v[0];
     SymbolValue * svp;
@@ -424,10 +424,10 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
     f.opaque = &tr;
     pvp->pnp->visit(f);
 
-    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.actions));
+    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.gdp->actions));
 
     /* Convert the collection of ProcessNodes in an Lts object. */
-    Lts lts(pvp->pnp, &tr.actions);
+    Lts lts(pvp->pnp, &tr.gdp->actions);
 
     /* Now we can free the graph pointed by pvp->pnp. */
     freeProcessNodeGraph(pvp->pnp);
@@ -442,16 +442,9 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	}
 	setvp = err_if_not_set(three->v[0]);
 	for (int i=0; i<setvp->actions.size(); i++)
-	    lts.updateAlphabet(tr.actions.insert(setvp->actions[i]));
+	    lts.updateAlphabet(tr.gdp->actions.insert(setvp->actions[i]));
 	delete setvp;
     }
-
-    /* Remove process parameters from the tr.identifiers. */
-    for (int i=0; i<tr.parameters.size(); i++) {
-	tr.identifiers.remove(*(tr.parameters[i]));
-	delete tr.parameters[i];
-    }
-    tr.parameters.clear();
 
     /* Clear 'tr.local_processes' and 'tr.aliases'. */
     tr.local_processes.clear();
@@ -790,7 +783,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	    setvp = err_if_not_set(one->v[c]);
 	    if (setvp->rank == rank) {
 		for (int k=0; k<setvp->actions.size(); k++) {
-		    e.action = tr.actions.insert(setvp->actions[k]);
+		    e.action = tr.gdp->actions.insert(setvp->actions[k]);
 		    e.dest = NULL;
 		    /* We set e.rank to the index in the SvpVec
 		       'one' of setvp, so that this edge will
@@ -875,7 +868,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 		    setvp = err_if_not_set(two->v[c]);
 		    if (setvp->rank == rank) {
 			for (int k=0; k<setvp->actions.size(); k++) {
-			    e.action = tr.actions.insert(setvp->actions[k]);
+			    e.action = tr.gdp->actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
 			    /* We set e.rank to the index in the SvpVec
 			       'two', so that this edge will combine with
@@ -1302,7 +1295,7 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     SvpVec * vp; 
 
     /* Lookup the identifier and clone the associated object. */
-    if (!tr.identifiers.lookup(*one, svp)) {
+    if (!tr.gdp->identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "const/range/set/parameter " << *one << " undeclared";
 	semantic_error(errstream);

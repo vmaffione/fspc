@@ -58,7 +58,7 @@ using namespace std;
 
 
 /* A global data structure containing everything the translator needs. */
-struct FspTranslator tr;
+struct GlobalData g;
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
    order to check that the callback playback systems can work properly. */
@@ -165,9 +165,9 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
-	$$ = callback__1(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__1, *$1));
+	$$ = callback__1(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__1, *$1));
 	ps.push_back($$);
     }
     | set {
@@ -176,23 +176,23 @@ action_labels:
     }
     | action_labels '.' LowerCaseID {
 	AA($1,1,1);
-	$$ = callback__2(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VS(&callback__2, *$3));
+	$$ = callback__2(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VS(&callback__2, *$3));
 	
     }
     | action_labels '.' set {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__3(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__3));
+	$$ = callback__3(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__3));
 	ps.pop_back();
     }
     | action_labels '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__4(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__4));
+	$$ = callback__4(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__4));
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -202,9 +202,9 @@ action_labels:
 set:
     set_id {
 	AA($1,1,1);
-	$$ = callback__5(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__5, *$1));
+	$$ = callback__5(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__5, *$1));
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -237,9 +237,9 @@ action_range:
     }
     | variable ':' range_or_set_id {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__6(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_SS(&callback__6,
+	$$ = callback__6(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_SS(&callback__6,
 								*$1, *$3));
 	ps.pop_back();
 	ps.pop_back();
@@ -247,18 +247,18 @@ action_range:
     }
     | variable ':' range_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__7(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_SV(&callback__7, *$1));
+	$$ = callback__7(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_SV(&callback__7, *$1));
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | variable ':' set_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__8(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_SV(&callback__8, *$1));
+	$$ = callback__8(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_SV(&callback__8, *$1));
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -268,9 +268,9 @@ action_range:
 range_expr:
     expression DOTDOT expression {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__9(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__9));
+	$$ = callback__9(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__9));
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -290,7 +290,7 @@ constant_def:
 	}
 	ConstValue* cvp = err_if_not_const($4->v[0]);
 	$4->detach(0);
-	if (!tr.identifiers.insert(*$2, cvp)) {
+	if (!g.identifiers.insert(*$2, cvp)) {
 	    stringstream errstream;
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error(errstream);
@@ -319,7 +319,7 @@ range_def:
 	//delete cvp2;
 	delete $4;
 	delete $6;
-	if (!tr.identifiers.insert(*$2, rvp)) {
+	if (!g.identifiers.insert(*$2, rvp)) {
 	    stringstream errstream;
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error(errstream);
@@ -333,7 +333,7 @@ range_def:
 set_def:
     SET set_id '=' '{' set_elements '}' {
 	AA($2,1,2); AA($5,2,2);
-	if (!tr.identifiers.insert(*$2, $5->v[0])) {
+	if (!g.identifiers.insert(*$2, $5->v[0])) {
 	    stringstream errstream;
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error(errstream);
@@ -352,9 +352,9 @@ set_elements:
     }
     | set_elements ',' action_labels {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__13(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__13));
+	$$ = callback__13(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__13));
 	ps.pop_back();
     }
     ;
@@ -364,21 +364,28 @@ set_elements:
 process_def:
     process_id param_OPT {
 	AA($1,1,1);
-	callback__14(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__14, *$1));
+	callback__14(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__14, *$1));
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	AA($1,1,3); AA($5,2,3); AA($6,3,3);
-	callback__15(tr, $1, $5, $6);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_SPV(&callback__15,
+	callback__15(g.tr, $1, $5, $6);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_SPV(&callback__15,
 									*$1));
-	if (tr.record_mode_on) {
-	    /* Store tr.parametric. */
+	/* Remove process parameters from g.identifiers. */
+	for (int i=0; i<g.parameters.size(); i++) {
+	    g.identifiers.remove(*(g.parameters[i]));
+	    delete g.parameters[i];
+	}
+	g.parameters.clear();
+
+	if (g.record_mode_on) {
+	    /* Store g.parametric. */
 	    
-	    tr.parametric.clear();
-	    tr.record_mode_on = 0;
+	    g.parametric.clear();
+	    g.record_mode_on = 0;
 	}
 	ps.pop_back();
 	ps.pop_back();
@@ -413,22 +420,22 @@ local_process_defs:
 local_process_def:
     process_id {
 	AA($1,1,1);
-	callback__16(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__16, *$1));
+	callback__16(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__16, *$1));
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
 	cout << "index_ranges_OPT:\n";
 	$3->print();
-	callback__17(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_SV(&callback__17,
+	callback__17(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_SV(&callback__17,
 									*$1));
     } local_process {
 	AA($1,1,3); AA($3,2,3); AA($6,3,3);
-	$$ = callback__18(tr, $1, $3, $6);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_SVP(&callback__18,
+	$$ = callback__18(g.tr, $1, $3, $6);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_SVP(&callback__18,
 									*$1));
 	ps.pop_back();
 	ps.pop_back();
@@ -460,30 +467,30 @@ local_process:
     }
     | IF expression THEN {
 	AA($2,1,1);
-	callback__19(tr, $2);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_V(&callback__19));
+	callback__19(g.tr, $2);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_V(&callback__19));
     } local_process {
 	AA($2,1,2); AA($5,2,2);
-	callback__20(tr, $2, $5);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_VP(&callback__20));
+	callback__20(g.tr, $2, $5);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_VP(&callback__20));
     } else_OPT {
 	AA($2,1,3); AA($5,2,3); AA($7,3,3);
-	$$ = callback__21(tr, $2, $5, $7);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_VPP(&callback__21));
+	$$ = callback__21(g.tr, $2, $5, $7);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_VPP(&callback__21));
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | '(' {
-	callback__22(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P(&callback__22));
-	PROX(cout << "CSS height (push) " << tr.css.stack.size());
-	PROX(tr.current_contexts().print());
+	callback__22(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P(&callback__22));
+	PROX(cout << "CSS height (push) " << g.tr.css.stack.size());
+	PROX(g.tr.current_contexts().print());
     } choice ')' {
 	AA($3,1,1);
 	//$3->print();
@@ -503,28 +510,28 @@ else_OPT:
 
 base_local_process:
     END {
-	$$ = callback__23(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P(&callback__23));
+	$$ = callback__23(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P(&callback__23));
 	ps.push_back($$);
     }
     | STOP {
-	$$ = callback__24(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P(&callback__24));
+	$$ = callback__24(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P(&callback__24));
 	ps.push_back($$);
     }
     | ERROR {
-	$$ = callback__25(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P(&callback__25));
+	$$ = callback__25(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P(&callback__25));
 	ps.push_back($$);
     }
     | process_id indices_OPT {
 	AA($1,1,2); AA($2,2,2);
-	$$ = callback__26(tr, $1, $2);;
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_SV(&callback__26,
+	$$ = callback__26(g.tr, $1, $2);;
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_SV(&callback__26,
 									*$1));
 	ps.pop_back();
 	ps.pop_back();
@@ -535,24 +542,24 @@ base_local_process:
 choice:
     action_prefix {
 	AA($1,1,1);
-	$$ = callback__27(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_P(&callback__27));
-	PROX(cout << "CSS height = (pop) " << tr.css.stack.size());
+	$$ = callback__27(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_P(&callback__27));
+	PROX(cout << "CSS height = (pop) " << g.tr.css.stack.size());
     }
     | choice '|' {
 	AA($1,1,1);
-	callback__28(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_P(&callback__28));
-	PROX(cout << "CSS height (push) " << tr.css.stack.size());
-	PROX(tr.current_contexts().print());
+	callback__28(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_P(&callback__28));
+	PROX(cout << "CSS height (push) " << g.tr.css.stack.size());
+	PROX(g.tr.current_contexts().print());
     } action_prefix {
 	AA($1,1,2); AA($4,2,2);
-	$$ = callback__29(tr, $1, $4);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_PP(&callback__29));
-	cout << "CSS height = (pop) " << tr.css.stack.size() << "\n";
+	$$ = callback__29(g.tr, $1, $4);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_PP(&callback__29));
+	cout << "CSS height = (pop) " << g.tr.css.stack.size() << "\n";
 	ps.pop_back();
     }
     ;
@@ -560,14 +567,14 @@ choice:
 action_prefix:
     guard_OPT {
 	AA($1,1,1);
-	callback__30(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_V(&callback__30));
+	callback__30(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_V(&callback__30));
     } prefix_actions ARROW local_process {
 	AA($1,1,3); AA($3,2,3); AA($5,3,3);
-	$$ = callback__31(tr, $1, $3, $5);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_VPP(&callback__31));
+	$$ = callback__31(g.tr, $1, $3, $5);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_VPP(&callback__31));
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -578,17 +585,17 @@ action_prefix:
 prefix_actions:
     action_labels {
 	AA($1,1,1);
-	$$ = callback__32(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_V(&callback__32));
+	$$ = callback__32(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_V(&callback__32));
 	ps.pop_back();
 	ps.push_back($$);
     }
     | prefix_actions ARROW action_labels {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__33(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_P_PV(&callback__33));
+	$$ = callback__33(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_P_PV(&callback__33));
 	ps.pop_back();
     }
     ;
@@ -606,9 +613,9 @@ guard_OPT:
 
 indices_OPT:
     {
-	$$ = callback__34(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V(&callback__34));
+	$$ = callback__34(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V(&callback__34));
 	ps.push_back($$);
     }
     | indices
@@ -617,26 +624,26 @@ indices_OPT:
 indices:
     '[' expression ']' {
 	AA($2,1,1);
-	$$ = callback__35(tr, $2);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_V(&callback__35));
+	$$ = callback__35(g.tr, $2);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_V(&callback__35));
 	ps.pop_back();
 	ps.push_back($$);
     }
     | indices '[' expression ']' {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__36(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__36));
+	$$ = callback__36(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__36));
 	ps.pop_back();
     }
     ;
 
 index_ranges_OPT:
     {
-	$$ = callback__37(tr);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V(&callback__37));
+	$$ = callback__37(g.tr);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V(&callback__37));
 	ps.push_back($$);
     }
     | index_ranges
@@ -645,17 +652,17 @@ index_ranges_OPT:
 index_ranges:
     '[' action_range ']' {
 	AA($2,1,1);
-	$$ = callback__38(tr, $2);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_V(&callback__38));
+	$$ = callback__38(g.tr, $2);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_V(&callback__38));
 	ps.pop_back();
 	ps.push_back($$);
     }
     | index_ranges '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__39(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__39));
+	$$ = callback__39(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__39));
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -746,7 +753,7 @@ param_OPT:
     | param {
 	/* Since there are some parameters, we have to enable the 'record'
 	   mode. */
-	tr.record_mode_on = 1;
+	g.record_mode_on = 1;
     }
     ;
 
@@ -774,15 +781,15 @@ parameter:
 	ConstValue * cvp = err_if_not_const($3->v[0]);
 	$3->detach(0);
 	SymbolValue * svp = cvp;
-	if (!tr.identifiers.insert(*$1, svp)) {
+	if (!g.identifiers.insert(*$1, svp)) {
 	    stringstream errstream;
 	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error(errstream);
 	}
-	tr.parameters.push_back($1);
-	/* Update tr.parametric. */
-	tr.parametric.parameter_names.push_back(*$1);
-	tr.parametric.parameter_defaults.push_back(cvp->value);
+	g.parameters.push_back($1);
+	/* Update g.parametric. */
+	g.parametric.parameter_names.push_back(*$1);
+	g.parametric.parameter_defaults.push_back(cvp->value);
 
 	delete $3;
 	ps.pop_back();
@@ -854,9 +861,9 @@ or_expr:
     and_expr
     | or_expr OR and_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__41(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__41));
+	$$ = callback__41(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__41));
 	ps.pop_back();
     }
     ;
@@ -865,9 +872,9 @@ and_expr:
     bitor_expr
     | and_expr AND bitor_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__42(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__42));
+	$$ = callback__42(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__42));
 	ps.pop_back();
     }
     ;
@@ -876,9 +883,9 @@ bitor_expr:
     bitxor_expr
     | bitor_expr '|' bitxor_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__43(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__43));
+	$$ = callback__43(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__43));
 	ps.pop_back();
     }
     ;
@@ -887,9 +894,9 @@ bitxor_expr:
     bitand_expr
     | bitxor_expr '^' bitand_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__44(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__44));
+	$$ = callback__44(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__44));
 	ps.pop_back();
     }
     ;
@@ -898,9 +905,9 @@ bitand_expr:
     equality_expr
     | bitand_expr '&' equality_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__45(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__45));
+	$$ = callback__45(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__45));
 	ps.pop_back();
     }
     ;
@@ -909,16 +916,16 @@ equality_expr:
     relational_expr
     | equality_expr EQUAL relational_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__46(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__46));
+	$$ = callback__46(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__46));
 	ps.pop_back();
     }
     | equality_expr NOTEQUAL relational_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__47(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__47));
+	$$ = callback__47(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__47));
 	ps.pop_back();
     }
     ;
@@ -927,30 +934,30 @@ relational_expr:
     shift_expr
     | relational_expr '<' shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__48(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__48));
+	$$ = callback__48(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__48));
 	ps.pop_back();
     }
     | relational_expr '>' shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__49(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__49));
+	$$ = callback__49(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__49));
 	ps.pop_back();
     }
     | relational_expr LOE shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__50(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__50));
+	$$ = callback__50(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__50));
 	ps.pop_back();
     }
     | relational_expr GOE shift_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__51(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__51));
+	$$ = callback__51(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__51));
 	ps.pop_back();
     }
     ;
@@ -959,16 +966,16 @@ shift_expr:
     additive_expr
     | shift_expr LSHIFT additive_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__52(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__52));
+	$$ = callback__52(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__52));
 	ps.pop_back();
     }
     | shift_expr RSHIFT additive_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__53(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__53));
+	$$ = callback__53(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__53));
 	ps.pop_back();
     }
     ;
@@ -977,16 +984,16 @@ additive_expr:
     multiplicative_expr
     | additive_expr '+' multiplicative_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__54(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__54));
+	$$ = callback__54(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__54));
 	ps.pop_back();
     }
     | additive_expr '-' multiplicative_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__55(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__55));
+	$$ = callback__55(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__55));
 	ps.pop_back();
     }
     ;
@@ -995,23 +1002,23 @@ multiplicative_expr:
     unary_expr
     | multiplicative_expr '*' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__56(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__56));
+	$$ = callback__56(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__56));
 	ps.pop_back();
     }
     | multiplicative_expr '/' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__57(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__57));
+	$$ = callback__57(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__57));
 	ps.pop_back();
     }
     | multiplicative_expr '%' unary_expr {
 	AA($1,1,2); AA($3,2,2);
-	$$ = callback__58(tr, $1, $3);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_VV(&callback__58));
+	$$ = callback__58(g.tr, $1, $3);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_VV(&callback__58));
 	ps.pop_back();
     }
     ;
@@ -1027,40 +1034,40 @@ unary_expr:
     }
     | '-' base_expr {
 	AA($2,1,1);
-	$$ = callback__59(tr, $2);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_V(&callback__59));
+	$$ = callback__59(g.tr, $2);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_V(&callback__59));
     }
     | '!' base_expr {
 	AA($2,1,1);
-	$$ = callback__60(tr, $2);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_V(&callback__60));
+	$$ = callback__60(g.tr, $2);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_V(&callback__60));
     }
     ;
 
 /* TODO: complete base_expr */
 base_expr:
     INTEGER {
-	$$ = callback__61(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_I(&callback__61));
+	$$ = callback__61(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_I(&callback__61));
 	ps.push_back($$);
 	//cout << "UU " << $1 << "\n";
     }
     | variable {
 	AA($1,1,1);
-	$$ = callback__62(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__62, *$1));
+	$$ = callback__62(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__62, *$1));
 	ps.pop_back();
 	ps.push_back($$);
     }
     | const_range_set_parameter_id {
 	AA($1,1,1);
-	$$ = callback__63(tr, $1);
-	if (tr.record_mode_on)
-	    tr.parametric.record.push_back(new Callback_V_S(&callback__63, *$1));
+	$$ = callback__63(g.tr, $1);
+	if (g.record_mode_on)
+	    g.parametric.record.push_back(new Callback_V_S(&callback__63, *$1));
 	ps.pop_back();
 	ps.push_back($$);
     }
