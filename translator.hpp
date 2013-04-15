@@ -94,11 +94,7 @@ struct FspCompiler {
     
     int record_mode_on;
     ParametricProcess parametric;
-    struct SymbolsTable process_models;
-
-    /* Storage for a list of parameters identifiers to remove from the 
-       identifiers table when a process definition has been completed. */
-    vector<string *> parameters; //XXX obsoleted by 'parametric'??
+    struct SymbolsTable parametric_processes;
 
     /* The main translator. */
     FspTranslator tr;

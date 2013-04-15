@@ -381,15 +381,13 @@ process_def:
 	    c.parametric.record.push_back(
 				    new Callback_P_SPV(&callback__15, *$1));
 	callback__15(c.tr, $1, $5, $6);
+
 	/* Remove process parameters from c.identifiers. */
-	for (int i=0; i<c.parameters.size(); i++) {
-	    c.identifiers.remove(*(c.parameters[i]));
-	    delete c.parameters[i];
-	}
-	c.parameters.clear();
+	for (int i=0; i<c.parametric.parameter_names.size(); i++)
+	    c.identifiers.remove(c.parametric.parameter_names[i]);
 
 	if (c.record_mode_on) {
-	    /* Store c.parametric. */
+	    /* Store c.parametric in parametric_processes. */
 	    
 	    c.parametric.clear();
 	    c.record_mode_on = 0;
@@ -794,11 +792,12 @@ parameter:
 	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error(errstream);
 	}
-	c.parameters.push_back($1);
+
 	/* Update c.parametric. */
 	c.parametric.parameter_names.push_back(*$1);
 	c.parametric.parameter_defaults.push_back(cvp->value);
 
+	delete $1;
 	delete $3;
 	ps.pop_back();
 	ps.pop_back();
