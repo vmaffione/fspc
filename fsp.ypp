@@ -405,7 +405,6 @@ process_def:
 	lts = new Lts(pvp->pnp, &c.actions);
 
 	/* Now we can free the graph pointed by pvp->pnp. TODO */
-	freeProcessNodeGraph(pvp->pnp);
 
 	/* Extend the alphabet if is the case. */
 	if (pvp->setvp) {
@@ -416,7 +415,6 @@ process_def:
 
 	lts->print();
 	lts->graphvizOutput((name + ".gv").c_str());
-
 	/* Remove process parameters from c.identifiers. */
 	for (int i=0; i<c.parametric->parameter_names.size(); i++)
 	    c.identifiers.remove(c.parametric->parameter_names[i]);
@@ -800,6 +798,7 @@ process_ref:
 	ParametricProcess * ppp;
 	ProcessValue * pvp;
 	SvpVec * vp = new SvpVec;
+	vector< vector<int > >* vvip = $2;
 
 	/* Lookup 'process_id' in the 'parametric_process' table. */
 	if (!c.parametric_processes.lookup(*$1, svp)) {
@@ -809,18 +808,23 @@ process_ref:
 	}
 	ppp = err_if_not_parametric(svp);
 
-	if ((*$2)[0].size() != ppp->parameter_names.size()) {
+	if (!vvip) {
+	    vvip = new vector< vector<int> >;
+	    for (int k=0; k<c.tr.current_contexts().size(); k++)
+		vvip->push_back(ppp->parameter_defaults);
+	}
+	if ((*vvip)[0].size() != ppp->parameter_names.size()) {
 	    stringstream errstream;
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
 
-	for (int k=0; k<$2->size(); k++) {
+	for (int k=0; k<vvip->size(); k++) {
 	    string name = *$1;
 	    struct ProcessVisitObject f;
 	    ChifseqData vd;
 
-	    pvp = ppp->replay(c, (*$2)[k]);
+	    pvp = ppp->replay(c, (*vvip)[k]);
 	    /* Compute the process name. TODO */
 	    
 	    /* Check that the process is sequential. */
@@ -837,7 +841,7 @@ process_ref:
 	    vp->v.push_back(new ProcnodePairValue(pvp->pnp, vd.tail_prev));
 	}
 	delete $1;
-	delete $2;
+	delete vvip;
 
 	$$ = vp;
 	ps.pop_back();
@@ -848,7 +852,7 @@ process_ref:
 
 argument_OPT:
     {
-	$$ = new vector< vector<int> >(c.tr.current_contexts().size());
+	$$ = NULL;
 	ps.push_back($$);
     }
     |'(' argument_list ')' {

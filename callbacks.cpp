@@ -481,7 +481,8 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	pvp->setvp = err_if_not_set(three->v[0]);
 	three->detach(0);
 	delete three;
-    }
+    } else
+	pvp->setvp = NULL;
 
     /* Clear 'tr.local_processes' and 'tr.aliases'. */
     tr.local_processes.clear();
