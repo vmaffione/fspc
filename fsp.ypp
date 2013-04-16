@@ -71,6 +71,23 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
+struct ChifseqData {
+    bool sequential;
+    ProcessNode * tail;
+    ProcessNode * tail_prev;
+};
+
+static void check_if_sequential(ProcessNode * pnp, void * opaque)
+{
+    ChifseqData * d = static_cast<ChifseqData *>(opaque);
+
+    d->sequential = d->sequential && (pnp->children.size() == 1 || 
+	    (pnp->children.size() == 0 && pnp->type == ProcessNode::End));
+    d->tail_prev = d->tail;
+    d->tail = pnp;
+}
+
+
 #define DEBUG
 #ifdef DEBUG
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
@@ -123,7 +140,8 @@ void yyerror(const char *s);
 %type <pvec_ptr> process_body local_process local_process_defs 
 %type <pvec_ptr> local_process_def
 %type <pvec_ptr> sequential_composition base_local_process else_OPT
-%type <pvec_ptr> seq_process_list process_ref
+
+%type <svpvec_ptr> seq_process_list process_ref
 
 %type <vvint_ptr> argument_list argument_OPT
 
@@ -365,6 +383,7 @@ set_elements:
 process_def:
     process_id param_OPT {
 	AA($1,1,1);
+	c.record_mode_on = 1;
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				    new Callback_N_S(&callback__14, *$1));
@@ -396,7 +415,7 @@ process_def:
 	}
 
 	lts->print();
-	lts->graphvizOutput((name += ".gv").c_str());
+	lts->graphvizOutput((name + ".gv").c_str());
 
 	/* Remove process parameters from c.identifiers. */
 	for (int i=0; i<c.parametric->parameter_names.size(); i++)
@@ -419,12 +438,12 @@ process_def:
 				<< " already declared";
 		semantic_error(errstream);
 	    }
-	    
+	    // XXX
 	    c.parametric->print();
-	    c.parametric->replay(c, c.parametric->parameter_defaults);
+	    //c.parametric->replay(c, c.parametric->parameter_defaults);
+
 	    /* Prepare for the next parametric process. */
 	    c.parametric = new ParametricProcess;
-	    
 	    c.record_mode_on = 0;
 	}
 	ps.pop_back();
@@ -504,6 +523,7 @@ local_process:
 	$$ = $1;
     }
     | sequential_composition {
+	AA($1,1,1);
 	$$ = $1;
     }
     | IF expression THEN {
@@ -716,33 +736,123 @@ index_ranges:
 
 sequential_composition:
     seq_process_list ';' base_local_process {
-	$$ = $1;
+	AA($1,1,2); AA($3,2,2);
+	assert($1->v.size() == $3->v.size() &&
+		$3->v.size() == c.tr.current_contexts().size());
+	Pvec * pvec = new Pvec;
+
+	for (int c=0; c<$1->v.size(); c++) {
+	    ProcnodePairValue * pair = err_if_not_procnodepair($1->v[0]);
+	    ProcessBase * pbp = $3->v[c];
+
+	    assert(!pbp->connected());
+	    assert(pair->second->children.size() == 1);
+	    delete pair->second->children[0].dest;
+	    if (pbp->unresolved()) {
+		pair->second->children[0].dest = NULL;
+		pair->second->children[0].unresolved_reference =
+		    ((UnresolvedProcess *)pbp)->reference;
+	    } else {
+		ProcessNode * pnp = err_if_not_procnode(pbp);
+		pair->second->children[0].dest = pnp;
+	    }
+	    pvec->v.push_back(pair->first);
+	}
+	delete $1;
+	delete $3;
+
+	$$ = pvec;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 seq_process_list:
     process_ref {
+	AA($1,1,1);
 	$$ = $1;
     }
     | seq_process_list ';' process_ref {
+	AA($1,1,2); AA($3,2,2);
+	for (int c=0; c<$1->v.size(); c++) {
+	    ProcnodePairValue * lpair = err_if_not_procnodepair($1->v[c]);
+	    ProcnodePairValue * rpair = err_if_not_procnodepair($3->v[c]);
+
+	    /* Concatenate the two processes. */
+	    assert(lpair->second->children.size() == 1);
+	    delete lpair->second->children[0].dest;
+	    lpair->second->children[0].dest = rpair->first;
+	    lpair->second = rpair->second;
+	}
+	delete $3;
+
 	$$ = $1;
+	ps.pop_back();
     }
     ;
 
 process_ref:
     process_id argument_OPT {
+	AA($1,1,2); AA($2,2,2);
 	SymbolValue * svp;
 	Lts * lts;
+	ParametricProcess * ppp;
+	ProcessValue * pvp;
+	SvpVec * vp = new SvpVec;
 
 	/* Lookup 'process_id' in the 'parametric_process' table. */
-	//c.parametric_processes.lookup(*$1, svp);
-	//TODO
+	if (!c.parametric_processes.lookup(*$1, svp)) {
+	    stringstream errstream;
+	    errstream << "Process " << *$1 << " undeclared\n";
+	    semantic_error(errstream);
+	}
+	ppp = err_if_not_parametric(svp);
+
+	if ((*$2)[0].size() != ppp->parameter_names.size()) {
+	    stringstream errstream;
+	    errstream << "Parameters mismatch\n";
+	    semantic_error(errstream);
+	}
+
+	for (int k=0; k<$2->size(); k++) {
+	    string name = *$1;
+	    struct ProcessVisitObject f;
+	    ChifseqData vd;
+
+	    pvp = ppp->replay(c, (*$2)[k]);
+	    /* Compute the process name. TODO */
+	    
+	    /* Check that the process is sequential. */
+	    f.vfp = &check_if_sequential;
+	    vd.sequential = true;
+	    vd.tail = vd.tail_prev = NULL;
+	    f.opaque = &vd;
+	    pvp->pnp->visit(f);
+	    if (!vd.sequential) {
+		stringstream errstream;
+		errstream << "Process " << *$1 << " undeclared\n";
+		semantic_error(errstream);
+	    }
+	    vp->v.push_back(new ProcnodePairValue(pvp->pnp, vd.tail_prev));
+	}
 	delete $1;
+	delete $2;
+
+	$$ = vp;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 argument_OPT:
+    {
+	$$ = new vector< vector<int> >(c.tr.current_contexts().size());
+	ps.push_back($$);
+    }
     |'(' argument_list ')' {
+	AA($2,1,1);
 	$$ = $2;
     }
     ;
@@ -830,11 +940,7 @@ ranges:
 
 /* Parameters */
 param_OPT:
-    | param {
-	/* Since there are some parameters, we have to enable the 'record'
-	   mode. */
-	c.record_mode_on = 1;
-    }
+    | param
     ;
 
 param:

@@ -22,7 +22,7 @@
 #define PROX(x)
 #endif
 
-void ParametricProcess::replay(struct FspCompiler& c,
+ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
 					    const vector<int>& values)
 {
     vector<void *> stack;
@@ -47,7 +47,7 @@ void ParametricProcess::replay(struct FspCompiler& c,
 	}
     }
 
-    /* Do the replay work. */
+    /* Replay the callbacks. */
     for (int i=0; i<record.size(); i++) {
 	cout << record[i]->is_void() << ", " << stack.size() << " ";
 	record[i]->print();
@@ -60,14 +60,8 @@ void ParametricProcess::replay(struct FspCompiler& c,
     /* Remove the parameters from c.identifiers. */
     for (int i=0; i<parameter_names.size(); i++)
 	c.identifiers.remove(parameter_names[i]);
-    
-}
 
-void ParametricProcess::clear()
-{
-    parameter_names.clear();
-    parameter_defaults.clear();
-    record.clear();
+    return static_cast<ProcessValue *>(stack.back());
 }
 
 void ParametricProcess::print() const
@@ -76,6 +70,18 @@ void ParametricProcess::print() const
     for (int i=0; i<parameter_names.size(); i++)
 	cout << parameter_names[i] << " (" << parameter_defaults[i] << ")\n";
     cout << "   List of " << record.size() << " callbacks\n";
+}
+
+
+ParametricProcess* err_if_not_parametric(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::ParametricProcess) {
+	stringstream errstream;
+	errstream << "Parametric process expected";
+	semantic_error(errstream);
+    }
+
+    return (ParametricProcess *)svp;
 }
 
 
@@ -240,7 +246,6 @@ errstream << "Local process " << pnp << ": "
 	}
     }
 }
-
 
 /* action_labels: LowerCaseID */
 SvpVec * callback__1(FspTranslator& tr, string * one) 

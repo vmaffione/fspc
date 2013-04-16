@@ -254,6 +254,12 @@ void SetValue::print() const
     cout << "}\n";
 }
 
+/* ========================= ProcnodePairValue =========================*/
+SymbolValue * ProcnodePairValue::clone() const
+{
+    return new ProcnodePairValue(*this);
+}
+
 /*
 SymbolValue * LtsValue::clone() const
 {

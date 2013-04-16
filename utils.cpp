@@ -52,6 +52,17 @@ errstream << "Process expected";
     return (ProcessValue *)svp;
 }
 
+ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::ProcnodePair) {
+	stringstream errstream;
+	errstream << "ProcnodePair expected";
+	semantic_error(errstream);
+    }
+
+    return (ProcnodePairValue *)svp;
+}
+
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {
     if (pbp->unresolved() || pbp->connected()) {

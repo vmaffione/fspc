@@ -38,6 +38,7 @@ struct SymbolValue {
     static const int Lts = 3;
     static const int Process = 4;
     static const int ParametricProcess = 5;
+    static const int ProcnodePair = 6;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -175,6 +176,16 @@ struct ProcessValue: public SymbolValue {
     SymbolValue * clone() const;
 };
 
+struct ProcnodePairValue: public SymbolValue {
+    struct ProcessNode * first;
+    struct ProcessNode * second;
+
+    ProcnodePairValue() : first(NULL), second(NULL) { }
+    ProcnodePairValue(ProcessNode * h, ProcessNode * t) : first(h), second(t) { }
+    void print() const { cout << first << "," << second; }
+    int type() const { return SymbolValue::ProcnodePair; }
+    SymbolValue * clone() const;
+};
 
 struct SymbolsTable {
     map<string, SymbolValue*> table;

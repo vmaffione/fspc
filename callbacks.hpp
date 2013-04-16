@@ -79,12 +79,14 @@ struct ParametricProcess: public SymbolValue {
     vector<int> parameter_defaults;
     vector<Callback *> record;
 
-    void replay(struct FspCompiler& c, const vector<int>& values);
-    void clear();
+    ProcessValue * replay(struct FspCompiler& c, const vector<int>& values);
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }
 };
+
+ParametricProcess* err_if_not_parametric(SymbolValue * svp);
+
 
 /*1*/
 struct Callback_V_S : public Callback {
