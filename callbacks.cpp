@@ -22,6 +22,46 @@
 #define PROX(x)
 #endif
 
+void ParametricProcess::replay(struct FspCompiler& c,
+					    const vector<int>& values)
+{
+    vector<void *> stack;
+    FspTranslator tr(&c);
+    ConstValue * cvp;
+    SymbolValue * svp;
+
+    cout << "Replay!!\n";
+    assert(values.size() == parameter_defaults.size());
+    assert(parameter_defaults.size() == parameter_names.size());
+
+    /* Load the parameters into c.identifiers. */
+    for (int i=0; i<parameter_names.size(); i++) {
+	cvp = new ConstValue;
+	cvp->value = values[i];
+	svp = cvp;
+	if (!c.identifiers.insert(parameter_names[i], svp)) {
+	    stringstream errstream;
+	    errstream << "identifier " << parameter_names[i]
+			    << " already declared";
+	    semantic_error(errstream);
+	}
+    }
+
+    /* Do the replay work. */
+    for (int i=0; i<record.size(); i++) {
+	cout << record[i]->is_void() << ", " << stack.size() << " ";
+	record[i]->print();
+	void * ret = record[i]->execute(tr, stack);
+	if (!(record[i]->is_void()))
+	    stack.push_back(ret);
+    }
+
+    /* Remove the parameters from c.identifiers. */
+    for (int i=0; i<parameter_names.size(); i++)
+	c.identifiers.remove(parameter_names[i]);
+    
+}
+
 void ParametricProcess::clear()
 {
     parameter_names.clear();
@@ -369,7 +409,7 @@ SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two)
     return one;
 }
 
-SvpVec * callback__14(FspTranslator& tr, string * one)
+void * callback__14(FspTranslator& tr, string * one)
 {
     /* Parameters have been pushed inside the 'param_OPT' rule.
        A cleaner approach would be to get a list of parameters from
@@ -459,7 +499,7 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
     return NULL;
 }
 
-SvpVec * callback__16(FspTranslator& tr, string * one)
+void * callback__16(FspTranslator& tr, string * one)
 {
     /* The following nonterminal 'index_ranges_OPT' may result
        in contexts ramifications, and so tr.css.update() must be called. We
@@ -470,7 +510,7 @@ SvpVec * callback__16(FspTranslator& tr, string * one)
     return NULL;
 }
 
-Pvec * callback__17(FspTranslator& tr, string * one, SvpVec * two)
+void * callback__17(FspTranslator& tr, string * one, SvpVec * two)
 {
     tr.init_fakenode();
 
@@ -516,7 +556,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
     return three;
 }
 
-Pvec * callback__19(FspTranslator& tr, SvpVec * one)
+void * callback__19(FspTranslator& tr, SvpVec * one)
 {
     ConstValue * cvp;
 
@@ -536,7 +576,7 @@ Pvec * callback__19(FspTranslator& tr, SvpVec * one)
     return NULL;
 }
 
-Pvec * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
+void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
 {
     ConstValue * cvp;
 
@@ -653,7 +693,7 @@ Pvec * callback__27(FspTranslator& tr, Pvec * one)
     return one;
 }
 
-Pvec * callback__28(FspTranslator& tr, Pvec * one)
+void * callback__28(FspTranslator& tr, Pvec * one)
 {
     /* Replicate the CSS stack top so that it can be used by
        'action_prefix'. */
@@ -670,7 +710,7 @@ Pvec * callback__29(FspTranslator& tr, Pvec * one, Pvec * two)
     return one;
 }
 
-Pvec * callback__30(FspTranslator& tr, SvpVec * one)
+void * callback__30(FspTranslator& tr, SvpVec * one)
 {
     PROP("action_prefix --> guard_OPT (cont)");
     ConstValue * cvp;

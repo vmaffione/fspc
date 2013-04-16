@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P(K=99) = (p[K]->END).
+P(K=99) = (p1[K]->p2[K+3]->END).
 /*
 P = P[1][1], P[i:R][R] = (a[i]->P[3-i][2]).
 P1=(a[j:R]->b[i:R]->c[i+j]->P1).

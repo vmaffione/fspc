@@ -34,3 +34,6 @@ scanner.cpp: fsp.lex parser.hpp
 
 clean:
 	-rm *.o fspc scanner.cpp parser.cpp parser.hpp
+
+tags:
+	cscope -R
