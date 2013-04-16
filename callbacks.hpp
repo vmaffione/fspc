@@ -348,7 +348,7 @@ struct Callback_V_I : public Callback {
     FPT cbp;
     int one;
 
-    Callback_V_I(FPT fp) : cbp(fp) { }
+    Callback_V_I(FPT fp, int i) : cbp(fp), one(i) { }
     void * execute(FspTranslator &tr, vector<void *>& stack) {
 	return (*cbp)(tr, one);
     }

@@ -1065,7 +1065,8 @@ unary_expr:
 base_expr:
     INTEGER {
 	if (c.record_mode_on)
-	    c.parametric.record.push_back(new Callback_V_I(&callback__61));
+	    c.parametric.record.push_back(
+				new Callback_V_I(&callback__61, $1));
 	$$ = callback__61(c.tr, $1);
 	ps.push_back($$);
 	//cout << "UU " << $1 << "\n";
