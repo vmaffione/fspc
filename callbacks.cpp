@@ -421,7 +421,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
+ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three)
 {
     PROP("process_def --> ... process_body ...");
@@ -467,35 +467,24 @@ Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.gdp->actions));
 
-    /* Convert the collection of ProcessNodes in an Lts object. */
-    Lts * lts = new Lts(pvp->pnp, &tr.gdp->actions);
-
-    /* Now we can free the graph pointed by pvp->pnp. */
-    freeProcessNodeGraph(pvp->pnp);
-
-    /* Extend the alphabet if is the case. */
     if (three) {
-	SetValue * setvp;
 	if (three->v.size() != 1) {
 	    stringstream errstream;
 	    errstream << "Multiset alphabet extension";
 	    semantic_error(errstream);
 	}
-	setvp = err_if_not_set(three->v[0]);
-	for (int i=0; i<setvp->actions.size(); i++)
-	    lts->updateAlphabet(tr.gdp->actions.insert(setvp->actions[i]));
-	delete setvp;
+	pvp->setvp = err_if_not_set(three->v[0]);
+	three->detach(0);
+	delete three;
     }
 
     /* Clear 'tr.local_processes' and 'tr.aliases'. */
     tr.local_processes.clear();
     tr.aliases.clear();
-
     delete one;
-
     // TODO implement everything is OPT
 
-    return lts;
+    return pvp;
 }
 
 void * callback__16(FspTranslator& tr, string * one)

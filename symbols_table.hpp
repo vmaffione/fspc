@@ -163,9 +163,13 @@ struct ConnectedProcess: public ProcessBase {
 };
 
 struct ProcessValue: public SymbolValue {
+    /* A pointer to the first ProcessNode. */
     struct ProcessNode * pnp;
 
-    ProcessValue() : pnp(NULL) {}
+    /* A set that holds the extension. */
+    struct SetValue * setvp; 
+
+    ProcessValue() : pnp(NULL), setvp(NULL) { }
     void print(ActionsTable * atp) const { if(pnp) pnp->print(atp); }
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;

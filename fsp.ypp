@@ -374,12 +374,26 @@ process_def:
 	AA($1,1,3); AA($5,2,3); AA($6,3,3);
 	string name = *$1;
 	Lts * lts;
+	ProcessValue * pvp;
 	SymbolValue * svp;
 
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				    new Callback_P_SPV(&callback__15, *$1));
-	lts = callback__15(c.tr, $1, $5, $6);
+	pvp = callback__15(c.tr, $1, $5, $6);
+
+	/* Convert the collection of ProcessNodes in an Lts object. */
+	lts = new Lts(pvp->pnp, &c.actions);
+
+	/* Now we can free the graph pointed by pvp->pnp. TODO */
+	freeProcessNodeGraph(pvp->pnp);
+
+	/* Extend the alphabet if is the case. */
+	if (pvp->setvp) {
+	    for (int i=0; i<pvp->setvp->actions.size(); i++)
+		lts->updateAlphabet(c.actions.insert(pvp->setvp->actions[i]));
+	    delete pvp->setvp;
+	}
 
 	lts->print();
 	lts->graphvizOutput((name += ".gv").c_str());
