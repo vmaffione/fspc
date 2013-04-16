@@ -420,7 +420,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
+Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three)
 {
     PROP("process_def --> ... process_body ...");
@@ -467,7 +467,7 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.gdp->actions));
 
     /* Convert the collection of ProcessNodes in an Lts object. */
-    Lts lts(pvp->pnp, &tr.gdp->actions);
+    Lts * lts = new Lts(pvp->pnp, &tr.gdp->actions);
 
     /* Now we can free the graph pointed by pvp->pnp. */
     freeProcessNodeGraph(pvp->pnp);
@@ -482,7 +482,7 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	}
 	setvp = err_if_not_set(three->v[0]);
 	for (int i=0; i<setvp->actions.size(); i++)
-	    lts.updateAlphabet(tr.gdp->actions.insert(setvp->actions[i]));
+	    lts->updateAlphabet(tr.gdp->actions.insert(setvp->actions[i]));
 	delete setvp;
     }
 
@@ -490,13 +490,13 @@ Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two,
     tr.local_processes.clear();
     tr.aliases.clear();
 
-    lts.print();
-    lts.graphvizOutput((*one += ".gv").c_str());
+    lts->print();
+    lts->graphvizOutput((*one += ".gv").c_str());
     delete one;
 
     // TODO implement everything is OPT
 
-    return NULL;
+    return lts;
 }
 
 void * callback__16(FspTranslator& tr, string * one)

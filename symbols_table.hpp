@@ -90,6 +90,16 @@ struct SetValue: public SymbolValue {
     SetValue& operator +=(const string&);
 };
 
+/*
+struct LtsValue: public SymbolValue {
+    struct Lts * ltsp;
+
+    LtsValue() : ltsp(NULL) { }
+    LtsValue(struct Lts * p) : ltsp(p) { }
+    void print(ActionsTable * atp) const { if (ltsp) ltsp->print(); }
+    int type() const { return SymbolValue::Lts; }
+    SymbolValue * clone() const;
+};*/
 
 struct ProcessBase {
     virtual bool unresolved() const = 0;
@@ -156,7 +166,7 @@ struct ProcessValue: public SymbolValue {
     struct ProcessNode * pnp;
 
     ProcessValue() : pnp(NULL) {}
-    void print(ActionsTable * atp) const { pnp->print(atp); }
+    void print(ActionsTable * atp) const { if(pnp) pnp->print(atp); }
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;
 };

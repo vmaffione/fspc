@@ -254,6 +254,17 @@ void SetValue::print() const
     cout << "}\n";
 }
 
+/*
+SymbolValue * LtsValue::clone() const
+{
+    LtsValue * lv = new LtsValue;
+    if (ltsp)
+	lv->ltsp = new Lts(*ltsp);
+
+    return lv;
+}*/
+
+
 /* ============================= Pvec ============================ */
 void Pvec::print(struct ActionsTable * atp)
 {

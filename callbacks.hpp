@@ -18,7 +18,7 @@ SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
-Pvec * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three); /*7*/
+class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three); /*7*/
 void * callback__16(FspTranslator& tr, string * one); /*19*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
@@ -178,7 +178,7 @@ struct Callback_P_SV : public Callback {
 
 /*7*/
 struct Callback_P_SPV : public Callback {
-    typedef Pvec * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *);
+    typedef Lts * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *);
     FPT cbp;
     string one;
 
