@@ -93,15 +93,18 @@ struct FspCompiler {
     struct SymbolsTable processes;
     
     int record_mode_on;
-    ParametricProcess parametric;
+    ParametricProcess * parametric;
     struct SymbolsTable parametric_processes;
 
     /* The main translator. */
     FspTranslator tr;
 
     FspCompiler() : actions("Global actions table"), record_mode_on(0), 
-							    tr(this) { }
+			    parametric(new ParametricProcess), tr(this) { }
 
+    ~FspCompiler() {
+	delete parametric;
+    }
 };
 
 
