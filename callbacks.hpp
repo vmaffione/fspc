@@ -25,7 +25,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three)
 void * callback__19(FspTranslator& tr, SvpVec * one); /*21*/
 void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two); /*22*/
 Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three); /*11*/
-Pvec * callback__22(FspTranslator& tr); /*12*/
+void * callback__22(FspTranslator& tr); /*24*/
 Pvec * callback__23(FspTranslator& tr); /*12*/
 Pvec * callback__24(FspTranslator& tr); /*12*/
 Pvec * callback__25(FspTranslator& tr); /*12*/
@@ -66,7 +66,6 @@ SvpVec * callback__60(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__61(FspTranslator& tr, int one); /*18*/
 SvpVec * callback__62(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__63(FspTranslator& tr, string * one); /*1*/
-void * callback__null(FspTranslator&tr); /*24*/
 
 
 struct Callback {
@@ -432,10 +431,23 @@ struct Callback_N_P : public Callback {
 
 /*24*/
 struct Callback_N : public Callback {
+    typedef void * (*FPT)(FspTranslator&);
+    FPT cbp;
+
+    Callback_N(FPT fp) : cbp(fp) { }
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	return (*cbp)(tr);
+    }
+    void print() const { cout << "N" << "\n";}
+    bool is_void() const { return true; }
+};
+
+/*25*/
+struct Callback_null : public Callback {
 
     void * execute(FspTranslator &tr, vector<void *>& stack) {
 	return NULL;
     }
-    void print() const { cout << "N" << "\n";}
+    void print() const { cout << "null" << "\n";}
 };
 #endif

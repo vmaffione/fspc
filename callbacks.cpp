@@ -55,6 +55,7 @@ void ParametricProcess::replay(struct FspCompiler& c,
 	if (!(record[i]->is_void()))
 	    stack.push_back(ret);
     }
+    assert(stack.size() == 1);
 
     /* Remove the parameters from c.identifiers. */
     for (int i=0; i<parameter_names.size(); i++)
@@ -490,8 +491,6 @@ Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     tr.local_processes.clear();
     tr.aliases.clear();
 
-    lts->print();
-    lts->graphvizOutput((*one += ".gv").c_str());
     delete one;
 
     // TODO implement everything is OPT
@@ -617,7 +616,7 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
     return pvec;
 }
 
-Pvec * callback__22(FspTranslator& tr)
+void * callback__22(FspTranslator& tr)
 {
     /* Replicate the CSS stack top so that it can be used by 'choice'. */
     tr.css.push_clone();
