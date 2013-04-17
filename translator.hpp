@@ -52,7 +52,7 @@ struct Aliases {
 struct FspCompiler;
 
 struct FspTranslator {
-    FspCompiler * gdp;
+    FspCompiler& cr;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
@@ -65,7 +65,7 @@ struct FspTranslator {
     struct Aliases aliases;
 
 
-    FspTranslator(struct FspCompiler * p) : gdp(p) {
+    FspTranslator(struct FspCompiler&  r) : cr(r) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -103,7 +103,7 @@ struct FspCompiler {
     ProcessNodeAllocator pna;
 
     FspCompiler() : actions("Global actions table"), record_mode_on(0), 
-			    parametric(new ParametricProcess), tr(this) { }
+			    parametric(new ParametricProcess), tr(*this) { }
 
     ~FspCompiler() {
 	delete parametric;

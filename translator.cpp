@@ -153,6 +153,6 @@ void FspTranslator::print_fakenode_forest() {
     cout << "Current ProcessNode fakenode forest:\n";
     for (int i=0; i<fakenode.children.size(); i++)
 	if (fakenode.children[i].dest)
-	    fakenode.children[i].dest->print(&gdp->actions);
+	    fakenode.children[i].dest->print(&cr.actions);
 }
 

@@ -28,7 +28,7 @@ ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
 					    const vector<int>& values)
 {
     vector<void *> stack;
-    FspTranslator tr(&c);
+    FspTranslator tr(c);
     ConstValue * cvp;
     SymbolValue * svp;
 
@@ -237,7 +237,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	SymbolValue * svp;
 	if (e.dest == NULL) {
 	    cout << "Unref " << pnp << ": "
-		<< trp->gdp->actions.reverse[e.action]
+		<< trp->cr.actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
 	    if (!trp->local_processes.lookup(e.unresolved_reference, svp)) {
 		stringstream errstream;
@@ -344,7 +344,7 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
     SetValue * setvp;
-    if (!tr.gdp->identifiers.lookup(*one, svp)) {
+    if (!tr.cr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "set " << *one << " undeclared";
 	semantic_error(errstream);
@@ -364,7 +364,7 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
 
-    if (!tr.gdp->identifiers.lookup(*two, svp)) {
+    if (!tr.cr.identifiers.lookup(*two, svp)) {
 	stringstream errstream;
 	errstream << "range/set " << *two << " undeclared";
 	semantic_error(errstream);
@@ -445,7 +445,7 @@ void * callback__14(FspTranslator& tr, string * one)
 {
     /* Parameters have been pushed inside the 'param_OPT' rule.
        A cleaner approach would be to get a list of parameters from
-       the rule and push the parameters into the 'tr.gdp->identifiers' table
+       the rule and push the parameters into the 'tr.cr.identifiers' table
        in this action. */
     tr.init_fakenode();
 
@@ -456,7 +456,7 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three)
 {
     PROP("process_def --> ... process_body ...");
-    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.gdp->actions));
+    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.cr.actions));
 
     ProcessBase * pbp = two->v[0];
     SymbolValue * svp;
@@ -496,7 +496,7 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
     f.opaque = &tr;
     pvp->pnp->visit(f);
 
-    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.gdp->actions));
+    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
 
     if (three) {
 	if (three->v.size() != 1) {
@@ -843,7 +843,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	    setvp = err_if_not_set(one->v[c]);
 	    if (setvp->rank == rank) {
 		for (int k=0; k<setvp->actions.size(); k++) {
-		    e.action = tr.gdp->actions.insert(setvp->actions[k]);
+		    e.action = tr.cr.actions.insert(setvp->actions[k]);
 		    e.dest = NULL;
 		    /* We set e.rank to the index in the SvpVec
 		       'one' of setvp, so that this edge will
@@ -928,7 +928,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 		    setvp = err_if_not_set(two->v[c]);
 		    if (setvp->rank == rank) {
 			for (int k=0; k<setvp->actions.size(); k++) {
-			    e.action = tr.gdp->actions.insert(setvp->actions[k]);
+			    e.action = tr.cr.actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
 			    /* We set e.rank to the index in the SvpVec
 			       'two', so that this edge will combine with
@@ -1355,7 +1355,7 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     SvpVec * vp; 
 
     /* Lookup the identifier and clone the associated object. */
-    if (!tr.gdp->identifiers.lookup(*one, svp)) {
+    if (!tr.cr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "const/range/set/parameter " << *one << " undeclared";
 	semantic_error(errstream);
@@ -1428,7 +1428,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     ArgumentsValue * avp;
 
     /* Lookup 'process_id' in the 'parametric_process' table. */
-    if (!tr.gdp->parametric_processes.lookup(*one, svp)) {
+    if (!tr.cr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "Process " << *one << " undeclared\n";
 	semantic_error(errstream);
@@ -1456,7 +1456,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
-	pvp = ppp->replay(*(tr.gdp), avp->args);
+	pvp = ppp->replay(tr.cr, avp->args);
 	/* Compute the process name. TODO */
 
 	/* Check that the process is sequential. */
