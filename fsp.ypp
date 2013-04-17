@@ -395,6 +395,7 @@ process_def:
 	    setvp = err_if_not_set($6->v[0]);
 	    for (int i=0; i<setvp->actions.size(); i++)
 		lts->updateAlphabet(c.actions.insert(setvp->actions[i]));
+	    c.parametric->alphabet_extension = *setvp;
 	}
 
 	/* Don't delete pnp, since this has been inserted in
@@ -430,9 +431,7 @@ process_def:
 				<< " already declared";
 		semantic_error(errstream);
 	    }
-	    // XXX
-	    c.parametric->print();
-	    //c.parametric->replay(c, c.parametric->parameter_defaults);
+	    c.parametric->print(); // XXX
 
 	    /* Prepare for the next parametric process. */
 	    c.parametric = new ParametricProcess;
@@ -882,6 +881,11 @@ process_ref:
 
 	    /* Convert pnp to an Lts. */
 	    lts = new Lts(pnp, &c.actions);
+
+	    /* Extend the alphabet. */
+	    for (int i=0; i<ppp->alphabet_extension.actions.size(); i++)
+		lts->updateAlphabet(
+			c.actions.insert(ppp->alphabet_extension.actions[i]));
 
 	    vp->v.push_back(lts);
 	}
