@@ -247,6 +247,23 @@ errstream << "Local process " << pnp << ": "
     }
 }
 
+struct ChifseqData {
+    bool sequential;
+    ProcessNode * tail;
+    ProcessNode * tail_prev;
+};
+
+static void check_if_sequential(ProcessNode * pnp, void * opaque)
+{
+    ChifseqData * d = static_cast<ChifseqData *>(opaque);
+
+    d->sequential = d->sequential && (pnp->children.size() == 1 || 
+	    (pnp->children.size() == 0 && pnp->type == ProcessNode::End));
+    d->tail_prev = d->tail;
+    d->tail = pnp;
+}
+
+
 /* action_labels: LowerCaseID */
 SvpVec * callback__1(FspTranslator& tr, string * one) 
 {
@@ -1390,3 +1407,100 @@ SvpVec * callback__65(FspTranslator& tr, SvpVec * one, SvpVec * two)
 
     return one;
 }
+
+SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
+{
+    SymbolValue * svp;
+    Lts * lts;
+    ParametricProcess * ppp;
+    ProcessValue * pvp;
+    SvpVec * vp = new SvpVec;
+    SvpVec * argvp = two;
+    ArgumentsValue * avp;
+
+    /* Lookup 'process_id' in the 'parametric_process' table. */
+    if (!tr.gdp->parametric_processes.lookup(*one, svp)) {
+	stringstream errstream;
+	errstream << "Process " << *one << " undeclared\n";
+	semantic_error(errstream);
+    }
+    ppp = err_if_not_parametric(svp);
+
+    if (!argvp) {
+
+	argvp = new SvpVec;
+	for (int k=0; k<tr.current_contexts().size(); k++) {
+	    avp = new ArgumentsValue;
+	    avp->args = ppp->parameter_defaults;
+	    argvp->v.push_back(avp);
+	}
+    }
+
+    for (int k=0; k<argvp->v.size(); k++) {
+	string name = *one;
+	struct ProcessVisitObject f;
+	ChifseqData vd;
+
+	avp = err_if_not_arguments(argvp->v[k]);
+	if (avp->args.size() != ppp->parameter_names.size()) {
+	    stringstream errstream;
+	    errstream << "Parameters mismatch\n";
+	    semantic_error(errstream);
+	}
+	pvp = ppp->replay(*(tr.gdp), avp->args);
+	/* Compute the process name. TODO */
+
+	/* Check that the process is sequential. */
+	f.vfp = &check_if_sequential;
+	vd.sequential = true;
+	vd.tail = vd.tail_prev = NULL;
+	f.opaque = &vd;
+	pvp->pnp->visit(f);
+	if (!vd.sequential) {
+	    stringstream errstream;
+	    errstream << "Process " << *one << " undeclared\n";
+	    semantic_error(errstream);
+	}
+	vp->v.push_back(new ProcnodePairValue(pvp->pnp, vd.tail_prev));
+    }
+    delete one;
+    delete argvp;
+
+    return vp;
+}
+
+SvpVec * callback__67(FspTranslator& tr, SvpVec * one)
+{
+    assert(one->v.size() == tr.current_contexts().size());
+    SvpVec * vp = new SvpVec;
+    ConstValue * cvp;
+    ArgumentsValue * avp;
+
+    for (int c=0; c<one->v.size(); c++) {
+	cvp = err_if_not_const(one->v[c]);
+	avp = new ArgumentsValue;
+	avp->args.push_back(cvp->value);
+	vp->v.push_back(avp);
+    }
+    delete one;
+
+    return vp;
+}
+
+SvpVec * callback__68(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    assert(one->v.size() == tr.current_contexts().size() &&
+	    two->v.size() == one->v.size());
+    ConstValue * cvp;
+    ArgumentsValue * avp;
+
+    for (int c=0; c<two->v.size(); c++) {
+	cvp = err_if_not_const(two->v[c]);
+	avp = err_if_not_arguments(one->v[c]);
+	avp->args.push_back(cvp->value);
+    }
+    delete two;
+
+    return one;
+}
+
