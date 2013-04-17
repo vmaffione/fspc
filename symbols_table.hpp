@@ -39,6 +39,7 @@ struct SymbolValue {
     static const int Process = 4;
     static const int ParametricProcess = 5;
     static const int ProcnodePair = 6;
+    static const int Arguments = 7;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -91,16 +92,13 @@ struct SetValue: public SymbolValue {
     SetValue& operator +=(const string&);
 };
 
-/*
-struct LtsValue: public SymbolValue {
-    struct Lts * ltsp;
+struct ArgumentsValue: public SymbolValue {
+    vector<int> args;
 
-    LtsValue() : ltsp(NULL) { }
-    LtsValue(struct Lts * p) : ltsp(p) { }
-    void print(ActionsTable * atp) const { if (ltsp) ltsp->print(); }
-    int type() const { return SymbolValue::Lts; }
+    void print() const;
+    int type() const { return SymbolValue::Arguments; }
     SymbolValue * clone() const;
-};*/
+};
 
 struct ProcessBase {
     virtual bool unresolved() const = 0;

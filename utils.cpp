@@ -63,6 +63,18 @@ ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp)
     return (ProcnodePairValue *)svp;
 }
 
+ArgumentsValue* err_if_not_arguments(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Arguments) {
+	stringstream errstream;
+	errstream << "Arguments expected";
+	semantic_error(errstream);
+    }
+
+    return (ArgumentsValue *)svp;
+}
+
+
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {
     if (pbp->unresolved() || pbp->connected()) {

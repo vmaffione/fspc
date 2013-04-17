@@ -260,15 +260,22 @@ SymbolValue * ProcnodePairValue::clone() const
     return new ProcnodePairValue(*this);
 }
 
-/*
-SymbolValue * LtsValue::clone() const
-{
-    LtsValue * lv = new LtsValue;
-    if (ltsp)
-	lv->ltsp = new Lts(*ltsp);
 
-    return lv;
-}*/
+/* =========================== ArgumentsValue =============================*/
+void ArgumentsValue::print() const
+{
+    cout << "(";
+    for (int i=0; i<args.size(); i++)
+	cout << args[i] << ", ";
+    cout << ")\n";
+}
+
+SymbolValue * ArgumentsValue::clone() const
+{
+    ArgumentsValue * av = new ArgumentsValue(*this);
+
+    return av;
+}
 
 
 /* ============================= Pvec ============================ */
