@@ -24,7 +24,7 @@
 
 /* Replay a sequence of callbacks under a local translator and a local
    stack. */
-ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
+ProcessNode * ParametricProcess::replay(struct FspCompiler& c,
 					    const vector<int>& values)
 {
     vector<void *> stack;
@@ -61,7 +61,7 @@ ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
     for (int i=0; i<parameter_names.size(); i++)
 	c.identifiers.remove(parameter_names[i]);
 
-    return static_cast<ProcessValue *>(stack.back());
+    return static_cast<ProcessNode *>(stack.back());
 }
 
 void ParametricProcess::print() const
@@ -450,7 +450,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
+ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three) /* three currently unused */
 {
     PROP("process_def --> ... process_body ...");
@@ -499,7 +499,7 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
     delete one;
     // TODO implement everything is OPT
 
-    return pvp;
+    return pvp->pnp;
 }
 
 void * callback__16(FspTranslator& tr, string * one)
@@ -1411,7 +1411,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     SymbolValue * svp;
     Lts * lts;
     ParametricProcess * ppp;
-    ProcessValue * pvp;
+    ProcessNode * pnp;
     SvpVec * vp = new SvpVec;
     SvpVec * argvp = two;
     ArgumentsValue * avp;
@@ -1446,7 +1446,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
-	pvp = ppp->replay(tr.cr, avp->args);
+	pnp = ppp->replay(tr.cr, avp->args);
 	/* Compute the process name. TODO */
 
 	/* Check that the process is sequential. */
@@ -1454,13 +1454,13 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	vd.sequential = true;
 	vd.tail = vd.tail_prev = NULL;
 	f.opaque = &vd;
-	pvp->pnp->visit(f);
+	pnp->visit(f);
 	if (!vd.sequential) {
 	    stringstream errstream;
 	    errstream << "Process " << *one << " undeclared\n";
 	    semantic_error(errstream);
 	}
-	vp->v.push_back(new ProcnodePairValue(pvp->pnp, vd.tail_prev));
+	vp->v.push_back(new ProcnodePairValue(pnp, vd.tail_prev));
     }
     delete one;
     delete argvp;

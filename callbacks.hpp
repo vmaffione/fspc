@@ -18,7 +18,7 @@ SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
-ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three); /*7*/
+ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three); /*7*/
 void * callback__16(FspTranslator& tr, string * one); /*19*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
@@ -84,7 +84,7 @@ struct ParametricProcess: public SymbolValue {
     vector<int> parameter_defaults;
     vector<Callback *> record;
 
-    ProcessValue * replay(struct FspCompiler& c, const vector<int>& values);
+    ProcessNode * replay(struct FspCompiler& c, const vector<int>& values);
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }
@@ -184,7 +184,7 @@ struct Callback_P_SV : public Callback {
 
 /*7*/
 struct Callback_P_SPV : public Callback {
-    typedef ProcessValue * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *);
+    typedef ProcessNode * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *);
     FPT cbp;
     string one;
 

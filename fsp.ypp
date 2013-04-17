@@ -373,17 +373,17 @@ process_def:
 	AA($1,1,3); AA($5,2,3); AA($6,3,3);
 	string name = *$1;
 	Lts * lts;
-	ProcessValue * pvp;
+	ProcessNode * pnp;
 	SymbolValue * svp;
 	SetValue * setvp;
 
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				    new Callback_P_SPV(&callback__15, *$1));
-	pvp = callback__15(c.tr, $1, $5, $6);
+	pnp = callback__15(c.tr, $1, $5, $6);
 
 	/* Convert the collection of ProcessNodes in an Lts object. */
-	lts = new Lts(pvp->pnp, &c.actions);
+	lts = new Lts(pnp, &c.actions);
 
 	/* Extend the alphabet if is the case. */
 	if ($6) {
@@ -397,7 +397,7 @@ process_def:
 		lts->updateAlphabet(c.actions.insert(setvp->actions[i]));
 	}
 
-	/* Don't delete pvp, since this has been inserted in
+	/* Don't delete pnp, since this has been inserted in
 	   'local_processes', and will be thereafter deleted when the symbol
 	   table will be destroyed. */
 
@@ -847,7 +847,7 @@ process_ref:
 	SvpVec * vp = new SvpVec;
 	SvpVec * argvp = $2;
 	ArgumentsValue * avp;
-	ProcessValue * pvp;
+	ProcessNode * pnp;
 
 	/* Lookup 'process_id' in the 'parametric_process' table. */
 	if (!c.parametric_processes.lookup(*$1, svp)) {
@@ -877,11 +877,11 @@ process_ref:
 		errstream << "Parameters mismatch\n";
 		semantic_error(errstream);
 	    }
-	    pvp = ppp->replay(c, avp->args);
+	    pnp = ppp->replay(c, avp->args);
 	    /* Compute the process name. TODO */
 
-	    /* Convert pvp->pnp to an Lts. */
-	    lts = new Lts(pvp->pnp, &c.actions);
+	    /* Convert pnp to an Lts. */
+	    lts = new Lts(pnp, &c.actions);
 
 	    vp->v.push_back(lts);
 	}

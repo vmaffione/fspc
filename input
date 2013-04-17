@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P(K=99) = (a[K]->END). Q = P;P(23);P(197);Q.
+P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
