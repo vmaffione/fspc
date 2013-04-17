@@ -22,6 +22,8 @@
 #define PROX(x)
 #endif
 
+/* Replay a sequence of callbacks under a local translator and a local
+   stack. */
 ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
 					    const vector<int>& values)
 {
@@ -84,7 +86,7 @@ ParametricProcess* err_if_not_parametric(SymbolValue * svp)
     return (ParametricProcess *)svp;
 }
 
-
+/* Helper function used with T=string and T=int. */
 template <class T>
 static Context* extended_context(Context * ctx,
 				const string& var, const T& val)
@@ -234,11 +236,12 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	ProcessEdge& e = pnp->children[i];
 	SymbolValue * svp;
 	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": " << trp->gdp->actions.reverse[e.action]
+	    cout << "Unref " << pnp << ": "
+		<< trp->gdp->actions.reverse[e.action]
 		<< " -> " << e.unresolved_reference << "\n";				
 	    if (!trp->local_processes.lookup(e.unresolved_reference, svp)) {
 		stringstream errstream;
-errstream << "Local process " << pnp << ": "
+		errstream << "Local process " << pnp << ": "
 		    << e.unresolved_reference << " undeclared\n";
 		semantic_error(errstream);
 	    }
@@ -247,12 +250,17 @@ errstream << "Local process " << pnp << ": "
     }
 }
 
+/* Data structure associated to the visit function 'check_if_sequential'. */
 struct ChifseqData {
     bool sequential;
     ProcessNode * tail;
     ProcessNode * tail_prev;
 };
 
+/* Return true in opaque->sequential if the process is sequential. Before
+   invoking the visit, opaque->sequential must be initialized to true.
+   Also returns a pointer to the last node in opaque->tail and a pointer
+   to the one before the last node in opaque->tail_prev.*/
 static void check_if_sequential(ProcessNode * pnp, void * opaque)
 {
     ChifseqData * d = static_cast<ChifseqData *>(opaque);
@@ -264,7 +272,8 @@ static void check_if_sequential(ProcessNode * pnp, void * opaque)
 }
 
 
-/* action_labels: LowerCaseID */
+
+/* =========================== CALLBACKS =============================== */
 SvpVec * callback__1(FspTranslator& tr, string * one) 
 {
     SvpVec * vp;

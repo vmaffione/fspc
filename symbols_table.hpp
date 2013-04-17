@@ -161,6 +161,14 @@ struct ConnectedProcess: public ProcessBase {
     void print(ActionsTable * atp) { cout << "Connected\n"; }
 };
 
+class ProcessNodeAllocator {
+    vector<ProcessNode *> nodes;
+
+  public:
+    ProcessNode * allocate(int type);
+    void free();
+};
+
 struct ProcessValue: public SymbolValue {
     /* A pointer to the first ProcessNode. */
     struct ProcessNode * pnp;

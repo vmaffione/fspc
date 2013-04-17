@@ -1,6 +1,7 @@
 #include <cstring>
 #include <set>
 #include <sstream>
+#include <assert.h>
 #include "symbols_table.hpp"
 
 
@@ -417,5 +418,20 @@ SymbolValue * ProcessValue::clone() const
     pvp->pnp = this->pnp->clone();
 
     return pvp;
+}
+
+/* =========================== ProcessNodeAllocator ===================== */
+ProcessNode * ProcessNodeAllocator::allocate (int type)
+{
+    assert(type == ProcessNode::Normal || type == ProcessNode::End ||
+	    type == ProcessNode::Error);
+    nodes.push_back(new ProcessNode(type));
+    return nodes.back();
+}
+
+void ProcessNodeAllocator::free()
+{
+    for (int i=0; i<nodes.size(); i++)
+	delete nodes[i];
 }
 

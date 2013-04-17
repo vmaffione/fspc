@@ -99,6 +99,9 @@ struct FspCompiler {
     /* The main translator. */
     FspTranslator tr;
 
+    /* The ProcessNode allocator. */
+    ProcessNodeAllocator pna;
+
     FspCompiler() : actions("Global actions table"), record_mode_on(0), 
 			    parametric(new ParametricProcess), tr(this) { }
 
