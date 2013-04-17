@@ -375,6 +375,7 @@ process_def:
 	Lts * lts;
 	ProcessValue * pvp;
 	SymbolValue * svp;
+	SetValue * setvp;
 
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
@@ -385,10 +386,15 @@ process_def:
 	lts = new Lts(pvp->pnp, &c.actions);
 
 	/* Extend the alphabet if is the case. */
-	if (pvp->setvp) {
-	    for (int i=0; i<pvp->setvp->actions.size(); i++)
-		lts->updateAlphabet(c.actions.insert(pvp->setvp->actions[i]));
-	    delete pvp->setvp;
+	if ($6) {
+	    if ($6->v.size() != 1) {
+		stringstream errstream;
+		errstream << "Multiset alphabet extension";
+		semantic_error(errstream);
+	    }
+	    setvp = err_if_not_set($6->v[0]);
+	    for (int i=0; i<setvp->actions.size(); i++)
+		lts->updateAlphabet(c.actions.insert(setvp->actions[i]));
 	}
 
 	/* Don't delete pvp, since this has been inserted in
@@ -410,8 +416,7 @@ process_def:
 	    c.identifiers.remove(c.parametric->parameter_names[i]);
 
 	/* Insert lts into the global 'processes' table. */
-	svp = lts;
-	if (!c.processes.insert(name, svp)) {
+	if (!c.processes.insert(name, lts)) {
 	    stringstream errstream;
 	    errstream << "Process " << name << " already declared";
 	    semantic_error(errstream);
@@ -419,8 +424,7 @@ process_def:
 
 	if (c.record_mode_on) {
 	    /* Store c.parametric in parametric_processes. */
-	    svp = c.parametric;
-	    if (!c.parametric_processes.insert(name, svp)) {
+	    if (!c.parametric_processes.insert(name, c.parametric)) {
 		stringstream errstream;
 		errstream << "Parametric process " << name
 				<< " already declared";

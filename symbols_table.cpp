@@ -416,7 +416,6 @@ SymbolValue * ProcessValue::clone() const
     ProcessValue * pvp = new ProcessValue;
 
     pvp->pnp = this->pnp->clone();
-    pvp->setvp = static_cast<SetValue *>(this->setvp->clone());
 
     return pvp;
 }

@@ -175,10 +175,7 @@ struct ProcessValue: public SymbolValue {
     /* A pointer to the first ProcessNode. */
     struct ProcessNode * pnp;
 
-    /* A set that holds the extension. */
-    struct SetValue * setvp; 
-
-    ProcessValue() : pnp(NULL), setvp(NULL) { }
+    ProcessValue() : pnp(NULL) { }
     void print(ActionsTable * atp) const { if(pnp) pnp->print(atp); }
     int type() const { return SymbolValue::Process; }
     SymbolValue * clone() const;

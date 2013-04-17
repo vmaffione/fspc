@@ -30,7 +30,6 @@ ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
     vector<void *> stack;
     FspTranslator tr(c);
     ConstValue * cvp;
-    SymbolValue * svp;
 
     cout << "Replay!!\n";
     assert(values.size() == parameter_defaults.size());
@@ -40,8 +39,7 @@ ProcessValue * ParametricProcess::replay(struct FspCompiler& c,
     for (int i=0; i<parameter_names.size(); i++) {
 	cvp = new ConstValue;
 	cvp->value = values[i];
-	svp = cvp;
-	if (!c.identifiers.insert(parameter_names[i], svp)) {
+	if (!c.identifiers.insert(parameter_names[i], cvp)) {
 	    stringstream errstream;
 	    errstream << "identifier " << parameter_names[i]
 			    << " already declared";
@@ -453,7 +451,7 @@ void * callback__14(FspTranslator& tr, string * one)
 }
 
 ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
-			SvpVec * three)
+			SvpVec * three) /* three currently unused */
 {
     PROP("process_def --> ... process_body ...");
     PROX(cout<<*one<<" = "; two->v[0]->print(&tr.cr.actions));
@@ -497,18 +495,6 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
     pvp->pnp->visit(f);
 
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
-
-    if (three) {
-	if (three->v.size() != 1) {
-	    stringstream errstream;
-	    errstream << "Multiset alphabet extension";
-	    semantic_error(errstream);
-	}
-	pvp->setvp = err_if_not_set(three->v[0]);
-	three->detach(0);
-	delete three;
-    } else
-	pvp->setvp = NULL;
 
     delete one;
     // TODO implement everything is OPT
