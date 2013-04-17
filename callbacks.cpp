@@ -1344,3 +1344,49 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
 
     return vp;
 }
+
+Pvec * callback__64(FspTranslator& tr, SvpVec * one, Pvec * two)
+{
+    assert(one->v.size() == two->v.size() &&
+	    two->v.size() == tr.current_contexts().size());
+    Pvec * pvec = new Pvec;
+
+    for (int c=0; c<one->v.size(); c++) {
+	ProcnodePairValue * pair = err_if_not_procnodepair(one->v[0]);
+	ProcessBase * pbp = two->v[c];
+
+	assert(!pbp->connected());
+	assert(pair->second->children.size() == 1);
+	delete pair->second->children[0].dest;
+	if (pbp->unresolved()) {
+	    pair->second->children[0].dest = NULL;
+	    pair->second->children[0].unresolved_reference =
+		((UnresolvedProcess *)pbp)->reference;
+	} else {
+	    ProcessNode * pnp = err_if_not_procnode(pbp);
+	    pair->second->children[0].dest = pnp;
+	}
+	pvec->v.push_back(pair->first);
+    }
+    delete one;
+    delete two;
+
+    return pvec;
+}
+
+SvpVec * callback__65(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    for (int c=0; c<one->v.size(); c++) {
+	ProcnodePairValue * lpair = err_if_not_procnodepair(one->v[c]);
+	ProcnodePairValue * rpair = err_if_not_procnodepair(two->v[c]);
+
+	/* Concatenate the two processes. */
+	assert(lpair->second->children.size() == 1);
+	delete lpair->second->children[0].dest;
+	lpair->second->children[0].dest = rpair->first;
+	lpair->second = rpair->second;
+    }
+    delete two;
+
+    return one;
+}

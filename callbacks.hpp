@@ -66,6 +66,9 @@ SvpVec * callback__60(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__61(FspTranslator& tr, int one); /*18*/
 SvpVec * callback__62(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__63(FspTranslator& tr, string * one); /*1*/
+Pvec * callback__64(FspTranslator& tr, SvpVec * one, Pvec * two); /*10*/
+SvpVec * callback__65(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
+
 
 
 struct Callback {
