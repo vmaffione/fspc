@@ -70,4 +70,6 @@ class Lts: public SymbolValue {
     SymbolValue * clone() const;
 };
 
+Lts * err_if_not_lts(SymbolValue * svp);
+
 #endif

@@ -2,6 +2,7 @@
 #include <fstream>
 #include "lts.hpp"
 #include "symbols_table.hpp"
+#include "utils.hpp"
 
 using namespace std;
 
@@ -676,4 +677,16 @@ void Lts::graphvizOutput(const char * filename) const
 
     fout << "}\n";
     fout.close();
+}
+
+
+Lts * err_if_not_lts(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Lts) {
+	stringstream errstream;
+	errstream << "Lts expected";
+	semantic_error(errstream);
+    }
+
+    return (Lts *)svp;
 }
