@@ -315,8 +315,6 @@ range_def:
 	ConstValue * cvp2 = err_if_not_const($6->v[0]);
 	rvp->low = cvp1->value;
 	rvp->high = cvp2->value;
-	//delete cvp1; // done below
-	//delete cvp2;
 	delete $4;
 	delete $6;
 	if (!c.identifiers.insert(*$2, rvp)) {
@@ -393,6 +391,18 @@ process_def:
 		lts->updateAlphabet(c.actions.insert(pvp->setvp->actions[i]));
 	    delete pvp->setvp;
 	}
+
+	/* Don't delete pvp, since this has been inserted in
+	   'local_processes', and will be thereafter deleted when the symbol
+	   table will be destroyed. */
+
+	/* Clear and free 'local_processes'. */
+	c.tr.local_processes.clear();
+	/* Clear 'aliases'. */
+	c.tr.aliases.clear();
+	/* Free all the nodes allocated by c.pna, and remove the from
+	   the allocator itself. */
+	c.pna.clear();
 
 	lts->print();
 	lts->graphvizOutput((name + ".gv").c_str());

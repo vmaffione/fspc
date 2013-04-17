@@ -416,22 +416,46 @@ SymbolValue * ProcessValue::clone() const
     ProcessValue * pvp = new ProcessValue;
 
     pvp->pnp = this->pnp->clone();
+    pvp->setvp = static_cast<SetValue *>(this->setvp->clone());
 
     return pvp;
 }
 
 /* =========================== ProcessNodeAllocator ===================== */
-ProcessNode * ProcessNodeAllocator::allocate (int type)
+ProcessNode * ProcessNodeAllocator::allocate(int type)
 {
+    ProcessNode * pnp = new ProcessNode(type);
+
     assert(type == ProcessNode::Normal || type == ProcessNode::End ||
-	    type == ProcessNode::Error);
-    nodes.push_back(new ProcessNode(type));
-    return nodes.back();
+						type == ProcessNode::Error);
+    nodes.push_back(pnp);
+
+    return pnp;
 }
 
-void ProcessNodeAllocator::free()
+ConnectedProcess * ProcessNodeAllocator::allocate_connected()
+{
+    ConnectedProcess * cpp = new ConnectedProcess;
+
+    nodes.push_back(cpp);
+
+    return cpp;
+}
+
+UnresolvedProcess * ProcessNodeAllocator::allocate_unresolved(const string&
+								    name)
+{
+    UnresolvedProcess * upp = new UnresolvedProcess(name);
+
+    nodes.push_back(upp);
+
+    return upp;
+}
+
+void ProcessNodeAllocator::clear()
 {
     for (int i=0; i<nodes.size(); i++)
 	delete nodes[i];
+    nodes.clear();
 }
 

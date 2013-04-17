@@ -510,9 +510,6 @@ ProcessValue * callback__15(FspTranslator& tr, string * one, Pvec * two,
     } else
 	pvp->setvp = NULL;
 
-    /* Clear 'tr.local_processes' and 'tr.aliases'. */
-    tr.local_processes.clear();
-    tr.aliases.clear();
     delete one;
     // TODO implement everything is OPT
 
@@ -630,9 +627,11 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
 	else
 	    /* If $7 == NULL there is no else branch, and so we insert
 	       a STOP state. */
-	    pvec->v.push_back(new ProcessNode);
+	    pvec->v.push_back(tr.cr.pna.allocate(ProcessNode::Normal));
     }
     delete one;
+    delete two;
+    delete three;
 
     return pvec;
 }
@@ -648,7 +647,7 @@ void * callback__22(FspTranslator& tr)
 Pvec * callback__23(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = new ProcessNode(ProcessNode::End);
+    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::End);
 
     for (int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -659,7 +658,7 @@ Pvec * callback__23(FspTranslator& tr)
 Pvec * callback__24(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = new ProcessNode;
+    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Normal);
 
     for (int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -670,7 +669,7 @@ Pvec * callback__24(FspTranslator& tr)
 Pvec * callback__25(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = new ProcessNode(ProcessNode::Error);
+    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Error);
 
     for (int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -698,9 +697,11 @@ Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two)
 	if (tr.local_processes.lookup(name, svp))
 	    pbp = ((ProcessValue *)svp)->pnp;
 	else
-	    pbp = new UnresolvedProcess(name);
+	    pbp = tr.cr.pna.allocate_unresolved(name);
 	pvec->v.push_back(pbp);
     }
+    delete one;
+    delete two;
 
     return pvec;
 }
@@ -772,6 +773,8 @@ Pvec * callback__31(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
 	    pnp->children[child].unresolved_reference =
 		((UnresolvedProcess *)three->v[rank])->reference;
     }
+    delete one;
+    delete three;
 
     PROX(tr.current_contexts().print(); cout<<"$$ = "; tr.print_fakenode_forest());
     return two;
@@ -826,7 +829,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	   */
 	if (pnp->children[child].dest == NULL)
 	    pnp->children[child].dest = 
-		new ProcessNode(ProcessNode::Normal);
+		tr.cr.pna.allocate(ProcessNode::Normal);
 	npnp = pnp->children[child].dest;
 
 	/* Once we get the node pointed by the edge i (npnp), we
@@ -861,6 +864,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	    }
 	}
     }
+
     /* Update the frontier. */
     tr.current_contexts().frontier = new_frontier;
     if (zero) {
@@ -872,10 +876,12 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	/* Tell the upper level rule (action_prefix) that the beginning
 	   of this prefix_actions has already been connected, and so
 	   'local_process' results already connected (see above). */
-	ProcessBase * pbp = new ConnectedProcess();
+	ProcessBase * pbp = tr.cr.pna.allocate_connected();
 	for (int c=0; c<max_rank+1; c++)
 	    pvec->v.push_back(pbp);
     }
+    delete one;
+
     PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
 
     return pvec;
@@ -920,7 +926,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 	    if (pnp->children[child].dest == NULL &&
 		    pnp->children[child].unresolved_reference == "") {
 		pnp->children[child].dest = 
-		    new ProcessNode(ProcessNode::Normal);
+		    tr.cr.pna.allocate(ProcessNode::Normal);
 		npnp = pnp->children[child].dest;
 		rank = pnp->children[child].rank;
 		for (int c=0; c<two->v.size(); c++) {
@@ -949,6 +955,8 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 	   frontier stored in tr.current_contexts(). As a result, 'one' is
 	   the result of the previous action (and so a ProcessNode* or a
 	   ConnectedProcess*. */
+	delete two;
+
 	PROX(tr.current_contexts().print(); cout<<"$$ = \n"; tr.print_fakenode_forest());
 
 	return one;
@@ -975,8 +983,8 @@ SvpVec * callback__35(FspTranslator& tr, SvpVec * one)
 
     assert(one->v.size() == tr.current_contexts().size());
     for (int c=0; c<one->v.size(); c++) {
-	setvp = new SetValue;
 	cvp = err_if_not_const(one->v[c]);
+	setvp = new SetValue;
 	setvp->actions.push_back("[" + int2string(cvp->value) + "]");
 	vp->v.push_back(setvp);
     }
@@ -1222,7 +1230,6 @@ SvpVec * callback__54(FspTranslator& tr, SvpVec * one, SvpVec * two)
     for (int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = err_if_not_const(one->v[i]);
 	ConstValue * vpr = err_if_not_const(two->v[i]);
-	//cout << vpl->value << " + " << vpr->value << "\n";
 	vpl->value += vpr->value;
     }
     delete two;
@@ -1236,7 +1243,6 @@ SvpVec * callback__55(FspTranslator& tr, SvpVec * one, SvpVec * two)
     for (int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = err_if_not_const(one->v[i]);
 	ConstValue * vpr = err_if_not_const(two->v[i]);
-	//cout << vpl->value << " - " << vpr->value << "\n";
 	vpl->value -= vpr->value;
     }
     delete two;
@@ -1250,7 +1256,6 @@ SvpVec * callback__56(FspTranslator& tr, SvpVec * one, SvpVec * two)
     for (int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = err_if_not_const(one->v[i]);
 	ConstValue * vpr = err_if_not_const(two->v[i]);
-	//cout << vpl->value << " * " << vpr->value << "\n";
 	vpl->value *= vpr->value;
     }
     delete two;
@@ -1264,7 +1269,6 @@ SvpVec * callback__57(FspTranslator& tr, SvpVec * one, SvpVec * two)
     for (int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = err_if_not_const(one->v[i]);
 	ConstValue * vpr = err_if_not_const(two->v[i]);
-	//cout << vpl->value << " / " << vpr->value << "\n";
 	vpl->value /= vpr->value;
     }
     delete two;
@@ -1304,7 +1308,6 @@ SvpVec * callback__60(FspTranslator& tr, SvpVec * one)
     for (int i=0; i<one->v.size(); i++) {
 	cvp = err_if_not_const(one->v[i]);
 	cvp->value = !(cvp->value);
-	//cout << "UU ! " << cvp->value << "\n";
     }
 
     return one;
@@ -1383,7 +1386,7 @@ Pvec * callback__64(FspTranslator& tr, SvpVec * one, Pvec * two)
 
 	assert(!pbp->connected());
 	assert(pair->second->children.size() == 1);
-	delete pair->second->children[0].dest;
+	//delete pair->second->children[0].dest;
 	if (pbp->unresolved()) {
 	    pair->second->children[0].dest = NULL;
 	    pair->second->children[0].unresolved_reference =
@@ -1406,9 +1409,9 @@ SvpVec * callback__65(FspTranslator& tr, SvpVec * one, SvpVec * two)
 	ProcnodePairValue * lpair = err_if_not_procnodepair(one->v[c]);
 	ProcnodePairValue * rpair = err_if_not_procnodepair(two->v[c]);
 
-	/* Concatenate the two processes. */
+	/* Concatenate the two sequential processes. */
 	assert(lpair->second->children.size() == 1);
-	delete lpair->second->children[0].dest;
+	//delete lpair->second->children[0].dest;
 	lpair->second->children[0].dest = rpair->first;
 	lpair->second = rpair->second;
     }
@@ -1436,7 +1439,8 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     ppp = err_if_not_parametric(svp);
 
     if (!argvp) {
-
+	/* 'argvp' is going to specify the default parameters for every
+	   context. */
 	argvp = new SvpVec;
 	for (int k=0; k<tr.current_contexts().size(); k++) {
 	    avp = new ArgumentsValue;

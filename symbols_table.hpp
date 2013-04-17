@@ -162,11 +162,13 @@ struct ConnectedProcess: public ProcessBase {
 };
 
 class ProcessNodeAllocator {
-    vector<ProcessNode *> nodes;
+    vector<ProcessBase *> nodes;
 
   public:
     ProcessNode * allocate(int type);
-    void free();
+    ConnectedProcess * allocate_connected();
+    UnresolvedProcess * allocate_unresolved(const string& name);
+    void clear();
 };
 
 struct ProcessValue: public SymbolValue {
