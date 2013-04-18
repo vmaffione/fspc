@@ -48,7 +48,6 @@ Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     node.type = type;
     nodes.push_back(node);
     ntr = 0;
-    valid = true;
 }
 
 struct LtsConvertData {
@@ -119,7 +118,6 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     f.opaque = &lcd;
 
     ntr = 0;
-    valid = true;
     pnp->visit(f);
 }
 
@@ -131,13 +129,12 @@ Lts::Lts(const char * filename) : atp(NULL)
     string a;
     Edge e;
 
-    valid = true;
     /* Discover the number of nodes */
     n = -1;
     fin.open(filename, ios_base::in);
     if (fin.fail()) {
-	valid = false;
-	return;
+	cout << "No such file: " << filename << "\n";
+	throw int(-1);
     }
 
     for (;;) {
@@ -147,8 +144,7 @@ Lts::Lts(const char * filename) : atp(NULL)
 
 	if (s1 < 0 || s2 < 0) {
 	    cout << "Error: negative state number\n";
-	    valid = false;
-	    return;
+	    throw int(-1);
 	}
 	if (s1 > n)
 	    n = s1;
@@ -213,7 +209,6 @@ void Lts::compositionReduce(const vector<LtsNode>& product)
     map[0] = n++;
     for (int i=1; i<np; i++)
 	map[i] = -1;
-    ntr = 0;
 
     while (pop != push) {
 	Edge e;
@@ -252,7 +247,11 @@ void Lts::compose(const Lts& p, const Lts& q)
     if (p.atp != atp || q.atp != atp)
 	throw int(-1);
 
-    valid = true;
+    /* First of all we reset *this, like Lts(ActionsTable *) would do. */
+    nodes.clear();
+    ntr = 0;
+    alphabet.clear();
+
     /* We build the cartesian product of P states and Q states. For 
        convenience, we map the composite state (p,q) with the "linear" state
        p*nq+q (exactly how a matrix is mapped onto a vector. */
@@ -332,6 +331,15 @@ Lts::Lts(const Lts& p, const Lts& q)
 	throw int(-1);
     atp = p.atp;
     compose(p, q);
+}
+
+Lts& Lts::compose(const Lts& q)
+{
+    Lts copy(*this);
+
+    compose(copy, q);
+
+    return *this;
 }
 
 int Lts::deadlockAnalysis() const
@@ -638,13 +646,51 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
-void Lts::labeling(const SetValue& labels)
+Lts& Lts::labeling(const SetValue& labels)
 {
-    
+    if (!labels.actions.size())
+	return *this;
+
+    if (labels.actions.size() == 1)
+	this->labeling(labels.actions[0]);
+    else {
+	Lts copy(*this);
+
+	this->labeling(labels.actions[0]);
+	for (int i=1; i<labels.actions.size(); i++) {
+	    Lts right(copy);
+
+	    right.labeling(labels.actions[i]);
+	    this->compose(right);
+	}
+    }
+
+    return *this;
 }
 
-void Lts::labeling(const string& label)
+Lts& Lts::labeling(const string& label)
 {
+    set<int> new_alphabet;
+    map<int, int> mapping;
+    int old_index;
+    int new_index;
+
+    /* Update the actions table, calculate a mapping and update the
+       alphabet. */
+    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+	old_index = *it;
+	new_index = atp->insert(label + "." + atp->reverse[old_index]);
+	new_alphabet.insert(new_index);
+	mapping.insert(make_pair(old_index, new_index));
+    }
+    alphabet = new_alphabet;
+
+    /* Update the edges actions. */
+    for (int i=0; i<nodes.size(); i++)
+	for (int j=0; j<nodes[i].children.size(); j++)
+	    nodes[i].children[j].action = mapping[nodes[i].children[j].action];
+
+    return *this;
 }
 
 struct GraphvizVisitData {

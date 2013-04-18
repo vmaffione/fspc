@@ -37,28 +37,27 @@ class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     ActionsTable * atp;
     int ntr;	/* Number of transactions */
-    bool valid;  //XXX remove it ASAP
 
     set<int> alphabet;
 
+    void compose(const Lts& p, const Lts& q);
     void compositionReduce(const vector<LtsNode>& product);
 	
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
 
   public:
-    Lts(struct ActionsTable * p) : atp(p), ntr(0), valid(true) { }
+    Lts(struct ActionsTable * p) : atp(p), ntr(0) { }
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const char * filename);  // TODO remove or update it
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
-    bool isValid() const { return valid; };
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }
     int deadlockAnalysis() const;
     int terminalSets() const;
-    void compose(const Lts& p, const Lts& q);
-    void labeling(const SetValue& labels);
-    void labeling(const string& label);
+    Lts& compose(const Lts& q);
+    Lts& labeling(const SetValue& labels);
+    Lts& labeling(const string& label);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
 
