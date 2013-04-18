@@ -672,12 +672,13 @@ Lts& Lts::labeling(const string& label)
 {
     set<int> new_alphabet;
     map<int, int> mapping;
-    int old_index;
-    int new_index;
 
-    /* Update the actions table, calculate a mapping and update the
-       alphabet. */
+    /* Update the actions table, compute an old --> new mapping and update
+       the alphabet. */
     for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+	int old_index;
+	int new_index;
+
 	old_index = *it;
 	new_index = atp->insert(label + "." + atp->reverse[old_index]);
 	new_alphabet.insert(new_index);
@@ -692,6 +693,49 @@ Lts& Lts::labeling(const string& label)
 
     return *this;
 }
+
+Lts& Lts::sharing(const SetValue& labels)
+{
+    set<int> new_alphabet;
+    map<int, vector<int> > mapping;
+
+    /* Update the actions table, compute an old --> new mapping and update the
+       alphabet. */
+    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+	int old_index;
+	int new_index;
+	vector<int> new_indexes;
+
+	old_index = *it;
+	for (int i=0; i<labels.actions.size(); i++) {
+	    new_index = atp->insert(labels.actions[i] + "." + 
+						atp->reverse[old_index]);
+	    new_alphabet.insert(new_index);
+	    new_indexes.push_back(new_index);
+	}
+	mapping.insert(make_pair(old_index, new_indexes));
+    }
+    alphabet = new_alphabet;
+
+    /* Replace the children array of each node. */
+    for (int i=0; i<nodes.size(); i++) {
+	vector<Edge> new_children;
+
+	for (int j=0; j<nodes[i].children.size(); j++) {
+	    Edge e = nodes[i].children[j];
+	    vector<int> new_indexes = mapping[e.action];
+
+	    for (int k=0; k<new_indexes.size(); k++) {
+		e.action = new_indexes[k];
+		new_children.push_back(e);
+	    }
+	}
+	nodes[i].children = new_children;
+    }
+
+    return *this;
+}
+
 
 struct GraphvizVisitData {
     fstream * fsptr;
@@ -718,7 +762,7 @@ void Lts::graphvizOutput(const char * filename) const
     fout.open(filename, fstream::out);
     fout << "digraph G {\n";
     fout << "rankdir = LR;\n";
-    fout << "ratio = 1.0;\n";
+    //fout << "ratio = 1.0;\n";
     for (int i=0; i<nodes.size(); i++) {
 	fout << i << " [shape=circle,style=filled, fillcolor=green];\n";
     }

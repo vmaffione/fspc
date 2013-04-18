@@ -841,7 +841,9 @@ composite_body:
 		/* Apply process labeling. */
 		if (lsv->labeling)
 		    lts->labeling(*(lsv->labeling));
-		/* Apply process sharing. TODO */
+		/* Apply process sharing. */
+		if (lsv->sharing)
+		    lts->sharing(*(lsv->sharing));
 	    }
 	}
 	$$ = $2;
