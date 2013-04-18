@@ -74,6 +74,16 @@ ArgumentsValue* err_if_not_arguments(SymbolValue * svp)
     return (ArgumentsValue *)svp;
 }
 
+LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::LabelingSharing) {
+	stringstream errstream;
+	errstream << "LabelingSharing expected";
+	semantic_error(errstream);
+    }
+
+    return (LabelingSharingValue *)svp;
+}
 
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {

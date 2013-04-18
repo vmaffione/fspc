@@ -126,6 +126,7 @@ void yyerror(const char *s);
 
 %type <svpvec_ptr> seq_process_list process_ref_seq argument_list argument_OPT
 %type <svpvec_ptr> process_ref composite_body parallel_composition
+%type <svpvec_ptr> prefix_label_OPT prefix_label labeling_OPT labeling
 
 /* Generate a Generic LR parser, instead of a standard LR parser. We need
    this to resolve conflicts at runtime. */
@@ -798,12 +799,15 @@ argument_list:
 
 /* Composite processes */
 composite_def:
-    OR process_id param_OPT '=' composite_body priority_OPT hiding_OPT '.' {
+    OR process_id param_OPT {
+	c.tr.init_fakenode();
+    } '=' composite_body priority_OPT hiding_OPT '.' {
 	// TODO OPT
-	assert($5->v.size() == 1);
+	AA($2,1,2); AA($6,2,2);
+	assert($6->v.size() == 1);
 	Lts * lts;
 
-	lts = err_if_not_lts($5->v[0]);
+	lts = err_if_not_lts($6->v[0]);
 	if (!c.processes.insert(*$2, lts)) {
 	    stringstream errstream;
 	    errstream << "Process " << *$2 << " already declared";
@@ -814,17 +818,28 @@ composite_def:
 	lts->graphvizOutput((*$2 + ".gv").c_str());
 	
 	delete $2;
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
     }
     ;
 
 composite_body:
     prefix_label_OPT process_ref relabel_OPT {
 	//TODO relabel_OPT, prefix_lable_OPT
+	AA($1,1,2); AA($2,2,2);
 	$$ = $2;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     | prefix_label_OPT '(' parallel_composition ')' relabel_OPT {
+	AA($1,1,2); AA($3,2,2);
 	// TODO OPT
 	$$ = $3;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     | FORALL ranges composite_body {
 	$$ = $3;
@@ -922,17 +937,83 @@ parallel_composition:
 	delete $3;
 
 	$$ = vp;
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
 prefix_label_OPT:
-    | prefix_label
+    {
+	$$ = NULL;
+	ps.push_back($$);
+    }
+    | prefix_label {
+	AA($1,1,1);
+	$$ = $1;
+    }
     ;
 
-// TODO add the third option
 prefix_label:
-    action_labels ':' 
-    | action_labels SHARING
+    labeling {
+	AA($1,1,1);
+	$$ = $1;
+    } 
+    | action_labels SHARING labeling_OPT{
+	AA($1,1,2); AA($3,2,2);
+	assert($1->v.size() == c.tr.current_contexts().size());
+	SetValue * setvp;
+	LabelingSharingValue * lsv;
+
+	for (int c=0; c<$1->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
+	    lsv = new LabelingSharingValue;
+	    lsv->sharing = setvp;
+	    $1->v[c] = lsv;
+	}
+	if ($3) {
+	    LabelingSharingValue * rlsv;
+
+	    assert($1->v.size() == $3->v.size());
+	    for (int c=0; c<$3->v.size(); c++) {
+		rlsv = err_if_not_labelingsharing($3->v[c]);
+		assert(!rlsv->sharing);
+		lsv->labeling = rlsv->labeling;
+		rlsv->labeling = NULL; // detach
+	    }
+	    delete $3;
+	}
+	$$ = $1;
+	ps.pop_back();
+    }
+    ;
+
+labeling_OPT:
+    {
+	$$ = NULL;
+	ps.push_back($$);
+    }
+    | labeling {
+	AA($1,1,1);
+	$$ = $1;
+    }
+    ;
+
+labeling:
+    action_labels ':' {
+	AA($1,1,1);
+	assert($1->v.size() == c.tr.current_contexts().size());
+	SetValue * setvp;
+	LabelingSharingValue * lsv;
+
+	for (int c=0; c<$1->v.size(); c++) {
+	    setvp = err_if_not_set($1->v[c]);
+	    lsv = new LabelingSharingValue;
+	    lsv->labeling = setvp;
+	    $1->v[c] = lsv;
+	}
+	$$ = $1;
+    }
     ;
 
 priority_OPT:

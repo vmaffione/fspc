@@ -57,6 +57,8 @@ class Lts: public SymbolValue {
     int deadlockAnalysis() const;
     int terminalSets() const;
     void compose(const Lts& p, const Lts& q);
+    void labeling(const SetValue& labels);
+    void labeling(const string& label);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
 

@@ -638,6 +638,14 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
+void Lts::labeling(const SetValue& labels)
+{
+    
+}
+
+void Lts::labeling(const string& label)
+{
+}
 
 struct GraphvizVisitData {
     fstream * fsptr;
