@@ -70,6 +70,29 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
+SvpVec * prefix_and_relabel(SvpVec * prefixv, SvpVec * ltsv)
+{
+    assert(ltsv->v.size() == c.tr.current_contexts().size());
+
+    if (prefixv) {
+	Lts * lts;
+	LabelingSharingValue * lsv;
+
+	assert(prefixv->v.size() == ltsv->v.size());
+	for (int c=0; c<prefixv->v.size(); c++) {
+	    lsv = err_if_not_labelingsharing(prefixv->v[c]);
+	    lts = err_if_not_lts(ltsv->v[c]);
+	    /* Apply process labeling. */
+	    if (lsv->labeling)
+		lts->labeling(*(lsv->labeling));
+	    /* Apply process sharing. */
+	    if (lsv->sharing)
+		lts->sharing(*(lsv->sharing));
+	}
+    }
+
+    return ltsv;
+}
 
 #define DEBUG
 #ifdef DEBUG
@@ -828,33 +851,14 @@ composite_body:
     prefix_label_OPT process_ref relabel_OPT {
 	//TODO relabel_OPT
 	AA($1,1,2); AA($2,2,2);
-	assert($2->v.size() == c.tr.current_contexts().size());
-
-	if ($1) {
-	    Lts * lts;
-	    LabelingSharingValue * lsv;
-
-	    assert($1->v.size() == $2->v.size());
-	    for (int c=0; c<$1->v.size(); c++) {
-		lsv = err_if_not_labelingsharing($1->v[c]);
-		lts = err_if_not_lts($2->v[c]);
-		/* Apply process labeling. */
-		if (lsv->labeling)
-		    lts->labeling(*(lsv->labeling));
-		/* Apply process sharing. */
-		if (lsv->sharing)
-		    lts->sharing(*(lsv->sharing));
-	    }
-	}
-	$$ = $2;
+	$$ = prefix_and_relabel($1,$2);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | prefix_label_OPT '(' parallel_composition ')' relabel_OPT {
 	AA($1,1,2); AA($3,2,2);
-	// TODO OPT
-	$$ = $3;
+	$$ = prefix_and_relabel($1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
