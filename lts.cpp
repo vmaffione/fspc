@@ -1,5 +1,6 @@
 #include <map>
 #include <fstream>
+#include <algorithm>
 #include "lts.hpp"
 #include "symbols_table.hpp"
 #include "utils.hpp"
@@ -673,8 +674,8 @@ Lts& Lts::labeling(const string& label)
     set<int> new_alphabet;
     map<int, int> mapping;
 
-    /* Update the actions table, compute an old --> new mapping and update
-       the alphabet. */
+    /* Update the actions table, compute a one-to-one [old --> new] mapping
+       and update the alphabet. */
     for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
 	int old_index;
 	int new_index;
@@ -699,8 +700,8 @@ Lts& Lts::sharing(const SetValue& labels)
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
 
-    /* Update the actions table, compute an old --> new mapping and update the
-       alphabet. */
+    /* Update the actions table, compute a one-to-many [old --> new] mapping 
+       and update the alphabet. */
     for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
 	int old_index;
 	int new_index;
@@ -734,6 +735,68 @@ Lts& Lts::sharing(const SetValue& labels)
     }
 
     return *this;
+}
+
+Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
+{
+    map<int, vector<int> > mapping;
+
+    /* Update the actions table, compute a one to many [old --> new]
+       mapping and update the alphabet. */
+    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+	int old_index;
+	int new_index;
+	vector<int> new_indexes;
+	string action;
+	pair<string::const_iterator, string::iterator> mm;
+
+	old_index = *it;
+	action = atp->reverse[old_index];
+	/* Prefix match: check if 'oldlabel' is a prefix of 'action'. */
+	mm = mismatch(oldlabel.begin(), oldlabel.end(), action.begin());
+	if (mm.first == oldlabel.end()) {
+	    for (int i=0; i<newlabels.actions.size(); i++) {
+		string new_action = action;
+
+		new_action.replace(0, oldlabel.size(), newlabels.actions[i]);
+		new_index = atp->insert(new_action);
+		alphabet.insert(new_index);
+		new_indexes.push_back(new_index);
+	    }
+	    alphabet.erase(old_index);
+	    mapping.insert(make_pair(old_index, new_indexes));
+	}
+    }
+
+    /* Replace the children that are to be replaced. */
+    for (int i=0; i<nodes.size(); i++) {
+	int original_size = nodes[i].children.size();
+	/* We need 'original_size' since we are going to push_back() in 
+	   'nodes[i].children', e.g. the same vector we are cycling on. */
+
+	for (int j=0; j<original_size; j++) {
+	    Edge e = nodes[i].children[j];
+    
+	    if (mapping.count(e.action)) {
+		vector<int> new_indexes = mapping[e.action];
+
+		e.action = new_indexes[0];
+		nodes[i].children[j] = e;
+		for (int k=1; k<new_indexes.size(); k++) {
+		    e.action = new_indexes[k];
+		    nodes[i].children.push_back(e);
+		}
+	    }
+	}
+    }
+
+    return *this;
+}
+
+Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
+{
+    for (int i=0; i<oldlabels.actions.size(); i++)
+	this->relabeling(newlabels, oldlabels.actions[i]);
 }
 
 

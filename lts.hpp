@@ -59,6 +59,8 @@ class Lts: public SymbolValue {
     Lts& labeling(const SetValue& labels);
     Lts& labeling(const string& label);
     Lts& sharing(const SetValue& labels);
+    Lts& relabeling(const SetValue& newlabels, const SetValue& oldlabels);
+    Lts& relabeling(const SetValue& newlabels, const string& oldlabel);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
 

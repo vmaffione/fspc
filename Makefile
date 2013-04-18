@@ -37,3 +37,6 @@ clean:
 
 tags:
 	cscope -R
+
+lines:
+	wc -l callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.y lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh
