@@ -364,8 +364,37 @@ RelabelingValue::~RelabelingValue()
     }
 }
 
+/* ============================= HidingValue =============================*/
+void HidingValue::print() const
+{
+    cout << "Hiding: ";
+    if (interface)
+	cout << "@ ";
+    else
+	cout << "\\ ";
+    if (setvp)
+	setvp->print();
+}
 
-/* ============================= Pvec ============================ */
+SymbolValue * HidingValue::clone() const
+{
+    HidingValue * hv = new HidingValue;
+
+    hv->interface = interface;
+    if (setvp)
+	hv->setvp = static_cast<SetValue *>(setvp->clone());
+
+    return hv;
+}
+
+HidingValue::~HidingValue()
+{
+    if (setvp)
+	delete setvp;
+}
+
+
+/* ============================= Pvec =================================== */
 void Pvec::print(struct ActionsTable * atp)
 {
     cout << "Pvec:\n";

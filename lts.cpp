@@ -801,6 +801,36 @@ Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
 	this->relabeling(newlabels, oldlabels.actions[i]);
 }
 
+Lts& Lts::hiding(const SetValue& s, bool interface)
+{
+    set<int> new_alphabet;
+    int action;
+
+    /* Update the alphabet. */
+    if (interface) {
+	for (int i=0; i<s.actions.size(); i++) {
+	    action = atp->lookup(s.actions[i]);
+	    if (alphabet.count(action))
+		new_alphabet.insert(action);
+	}
+    } else {
+	new_alphabet = alphabet;
+	for (int i=0; i<s.actions.size(); i++) {
+	    action = atp->lookup(s.actions[i]);
+	    if (alphabet.count(action))
+		new_alphabet.erase(action);
+	}
+    }
+    alphabet = new_alphabet;
+
+    /* Update the edges actions. */
+    for (int i=0; i<nodes.size(); i++)
+	for (int j=0; j<nodes[i].children.size(); j++)
+	    if (!alphabet.count(nodes[i].children[j].action))
+		/* We are sure that atp->lookup("tau") == 0. */
+		nodes[i].children[j].action = 0;
+}
+
 
 struct GraphvizVisitData {
     fstream * fsptr;

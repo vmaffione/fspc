@@ -96,6 +96,17 @@ RelabelingValue* err_if_not_relabeling(SymbolValue * svp)
     return (RelabelingValue *)svp;
 }
 
+HidingValue* err_if_not_hiding(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Hiding) {
+	stringstream errstream;
+	errstream << "Hiding expected";
+	semantic_error(errstream);
+    }
+
+    return (HidingValue *)svp;
+}
+
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {
     if (pbp->unresolved() || pbp->connected()) {

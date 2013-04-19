@@ -19,7 +19,7 @@ struct ActionsTable {
     vector<string> reverse;
     int serial;
 
-    ActionsTable(const string& nm) : serial(0), name(nm) { }
+    ActionsTable(const string& nm) : serial(0), name(nm) { insert("tau"); }
     int insert(const string& s);
     int lookup(const string& s) const;
     void print() const;
@@ -42,6 +42,7 @@ struct SymbolValue {
     static const int Arguments = 7;
     static const int LabelingSharing = 8;
     static const int Relabeling = 9;
+    static const int Hiding = 10;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -126,6 +127,17 @@ struct RelabelingValue: public SymbolValue {
     int type() const { return SymbolValue::Relabeling; }
     SymbolValue * clone() const;
     ~RelabelingValue();
+};
+
+struct HidingValue: public SymbolValue {
+    SetValue * setvp;
+    bool interface;
+
+    HidingValue() : setvp(NULL), interface(false) { }
+    void print() const;
+    int type() const { return SymbolValue::Hiding; }
+    SymbolValue * clone() const;
+    ~HidingValue();
 };
 
 struct ProcessBase {

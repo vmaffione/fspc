@@ -19,6 +19,7 @@ ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp);
 ArgumentsValue* err_if_not_arguments(SymbolValue * svp);
 LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp);
 RelabelingValue* err_if_not_relabeling(SymbolValue * svp);
+HidingValue* err_if_not_hiding(SymbolValue * svp);
 ProcessNode * err_if_not_procnode(ProcessBase * pbp);
 
 #endif

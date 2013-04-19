@@ -451,7 +451,7 @@ void * callback__14(FspTranslator& tr, string * one)
 }
 
 ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
-			SvpVec * three, SvpVec * four)
+			SvpVec * three, SvpVec * four, SvpVec * five)
 {
     PROP("process_def --> ... process_body ...");
     PROX(cout<<*one<<" = "; two->v[0]->print(&tr.cr.actions));
@@ -1542,3 +1542,31 @@ SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two)
 
     return vp;
 }
+
+SvpVec * hiding_callback(FspTranslator& tr, SvpVec * one, bool interface)
+{
+    SetValue * setvp;
+    HidingValue * hvp;
+
+    assert(one->v.size() == tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	setvp = err_if_not_set(one->v[c]);
+	hvp = new HidingValue;
+	hvp->interface = interface;
+	hvp->setvp = setvp;
+	one->v[c] = hvp;    
+    }
+
+    return one;
+}
+
+SvpVec * callback__71(FspTranslator& tr, SvpVec * one)
+{
+    return hiding_callback(tr, one, false);
+}
+
+SvpVec * callback__72(FspTranslator& tr, SvpVec * one)
+{
+    return hiding_callback(tr, one, true);
+}
+

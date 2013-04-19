@@ -18,7 +18,7 @@ SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
-ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four); /*7*/
+ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
 void * callback__16(FspTranslator& tr, string * one); /*19*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
@@ -73,6 +73,8 @@ SvpVec * callback__67(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__68(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__69(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
+SvpVec * callback__71(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__72(FspTranslator& tr, SvpVec * one); /*17*/
 
 
 struct Callback {
@@ -186,21 +188,23 @@ struct Callback_P_SV : public Callback {
 };
 
 /*7*/
-struct Callback_P_SPVV : public Callback {
+struct Callback_P_SPVVV : public Callback {
     typedef ProcessNode * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *,
-								SvpVec *);
+							SvpVec *, SvpVec *);
     FPT cbp;
     string one;
 
-    Callback_P_SPVV(FPT fp, const string& s) : cbp(fp), one(s) { }
+    Callback_P_SPVVV(FPT fp, const string& s) : cbp(fp), one(s) { }
     void * execute(FspTranslator &tr, vector<void *>& stack) {
+	SvpVec * five = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
 	SvpVec * four = static_cast<SvpVec *>(stack.back());
 	stack.pop_back();
 	SvpVec * three = static_cast<SvpVec *>(stack.back());
 	stack.pop_back();
 	Pvec * two = static_cast<Pvec *>(stack.back());
 	stack.pop_back();
-	return (*cbp)(tr, new string(one), two, three, four);
+	return (*cbp)(tr, new string(one), two, three, four, five);
     }
     void print() const { cout << "P_SPVV" << "\n";}
 };
