@@ -119,6 +119,11 @@ SymbolValue * SvpVec::detach(int i) {
     return ret;
 }
 
+void SvpVec::detach_all() {
+    for (int i=0; i<v.size(); i++)
+	v[i] = NULL;
+}
+
 void SvpVec::print() {
     cout << "{";
     for (int i=0; i<v.size(); i++)
@@ -299,6 +304,64 @@ SymbolValue * LabelingSharingValue::clone() const
     lsv->sharing = static_cast<SetValue *>(this->sharing->clone());
 
     return lsv;
+}
+
+
+/* ============================ RelabelingValue ===========================*/
+void RelabelingValue::print() const
+{
+    for (int i=0; i<old_labels.size(); i++) {
+	new_labels[i]->print();
+	cout << " / ";
+	old_labels[i]->print();
+	cout << "\n";
+    }
+}
+
+SymbolValue * RelabelingValue::clone() const
+{
+    RelabelingValue * rlv = new RelabelingValue;
+
+    for (int i=0; i<old_labels.size(); i++) {
+	rlv->old_labels.push_back(
+			    static_cast<SetValue *>(old_labels[i]->clone()));
+	rlv->new_labels.push_back(
+			    static_cast<SetValue *>(new_labels[i]->clone()));
+    }
+
+    return rlv;
+}
+
+void RelabelingValue::add(SetValue * new_setvp, SetValue * old_setvp)
+{
+    assert(new_setvp && old_setvp);
+    old_labels.push_back(old_setvp);
+    new_labels.push_back(new_setvp);
+}
+
+void RelabelingValue::merge(RelabelingValue& rlv)
+{
+    for (int i=0; i<rlv.old_labels.size(); i++)
+	if (rlv.old_labels[i] && rlv.new_labels[i]) {
+	    add(rlv.new_labels[i], rlv.old_labels[i]);
+	}
+    rlv.detach_all();
+}
+
+void RelabelingValue::detach_all()
+{
+    for (int i=0; i<old_labels.size(); i++)
+	old_labels[i] = new_labels[i] = NULL;
+}
+
+RelabelingValue::~RelabelingValue()
+{
+    for (int i=0; i<old_labels.size(); i++) {
+	if (old_labels[i])
+	    delete old_labels[i];
+	if (new_labels[i])
+	    delete new_labels[i];
+    }
 }
 
 

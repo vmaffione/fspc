@@ -85,6 +85,17 @@ LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp)
     return (LabelingSharingValue *)svp;
 }
 
+RelabelingValue* err_if_not_relabeling(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Relabeling) {
+	stringstream errstream;
+	errstream << "Relabeling expected";
+	semantic_error(errstream);
+    }
+
+    return (RelabelingValue *)svp;
+}
+
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {
     if (pbp->unresolved() || pbp->connected()) {

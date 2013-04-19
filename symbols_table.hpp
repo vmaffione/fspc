@@ -41,6 +41,7 @@ struct SymbolValue {
     static const int ProcnodePair = 6;
     static const int Arguments = 7;
     static const int LabelingSharing = 8;
+    static const int Relabeling = 9;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -50,6 +51,7 @@ struct SvpVec {
 
     SvpVec();
     SymbolValue * detach(int i);
+    void detach_all();
     void print();
     ~SvpVec();
 };
@@ -110,6 +112,21 @@ struct LabelingSharingValue: public SymbolValue {
     int type() const { return SymbolValue::LabelingSharing; }
     SymbolValue * clone() const;
     ~LabelingSharingValue() { delete labeling; delete sharing; }
+};
+
+struct RelabelingValue: public SymbolValue {
+  private:
+    vector<SetValue *> old_labels;
+    vector<SetValue *> new_labels;
+
+  public:
+    void add(SetValue *, SetValue *);
+    void merge(RelabelingValue& rlv);
+    void detach_all();
+    void print() const;
+    int type() const { return SymbolValue::Relabeling; }
+    SymbolValue * clone() const;
+    ~RelabelingValue();
 };
 
 struct ProcessBase {

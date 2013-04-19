@@ -1131,6 +1131,17 @@ relabel_defs:
     }
     | relabel_defs ',' relabel_def {
 	AA($1,1,2); AA($3,2,2);
+	RelabelingValue * lrlv;
+	RelabelingValue * rrlv;
+
+	assert($1->v.size() == $3->v.size());
+	for (int c=0; c<$1->v.size(); c++) {
+	    lrlv = err_if_not_relabeling($1->v[c]);
+	    rrlv = err_if_not_relabeling($3->v[c]);
+	    lrlv->merge(*rrlv);
+	}
+	delete $3;
+
 	$$ = $1;
 	ps.pop_back();
     }
@@ -1138,7 +1149,25 @@ relabel_defs:
 
 relabel_def:
     action_labels '/' action_labels {
-	$$ = NULL;
+	SvpVec * vp = new SvpVec;
+	RelabelingValue * rlv;
+	SetValue * new_setvp;
+	SetValue * old_setvp;
+
+	assert($1->v.size() == $3->v.size() &&
+		$3->v.size() == c.tr.current_contexts().size());
+	for (int c=0; c<$1->v.size(); c++) {
+	    rlv = new RelabelingValue;
+	    new_setvp = err_if_not_set($1->v[c]);
+	    old_setvp = err_if_not_set($3->v[c]);
+	    rlv->add(new_setvp, old_setvp);
+	}
+	$1->detach_all();
+	$3->detach_all();
+	delete $1;
+	delete $3;
+
+	$$ = vp;
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
