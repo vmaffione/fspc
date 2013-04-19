@@ -115,14 +115,13 @@ struct LabelingSharingValue: public SymbolValue {
 };
 
 struct RelabelingValue: public SymbolValue {
-  private:
     vector<SetValue *> old_labels;
     vector<SetValue *> new_labels;
 
-  public:
     void add(SetValue *, SetValue *);
     void merge(RelabelingValue& rlv);
     void detach_all();
+    int size() const { return old_labels.size(); }
     void print() const;
     int type() const { return SymbolValue::Relabeling; }
     SymbolValue * clone() const;

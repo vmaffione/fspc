@@ -740,6 +740,7 @@ Lts& Lts::sharing(const SetValue& labels)
 Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
+    set<int> new_alphabet = alphabet;
 
     /* Update the actions table, compute a one to many [old --> new]
        mapping and update the alphabet. */
@@ -760,13 +761,14 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 
 		new_action.replace(0, oldlabel.size(), newlabels.actions[i]);
 		new_index = atp->insert(new_action);
-		alphabet.insert(new_index);
+		new_alphabet.insert(new_index);
 		new_indexes.push_back(new_index);
 	    }
-	    alphabet.erase(old_index);
+	    new_alphabet.erase(old_index);
 	    mapping.insert(make_pair(old_index, new_indexes));
 	}
     }
+    alphabet = new_alphabet;
 
     /* Replace the children that are to be replaced. */
     for (int i=0; i<nodes.size(); i++) {

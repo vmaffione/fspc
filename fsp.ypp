@@ -423,6 +423,18 @@ process_def:
 	    c.parametric->alphabet_extension = *setvp;
 	}
 
+	/* Apply relabeling. */
+	cout << "RELABELING\n";
+	if ($7) {
+	    RelabelingValue * rlv;
+
+	    $7->print();
+	    assert($7->v.size() == 1);
+	    rlv = err_if_not_relabeling($7->v[0]);
+	    for (int i=0; i<rlv->size(); i++)
+		lts->relabeling(*(rlv->new_labels[i]), *(rlv->old_labels[i]));
+	}
+
 	/* Don't delete pnp, since this has been inserted in
 	   'local_processes', and will be thereafter deleted when the symbol
 	   table will be destroyed. */
@@ -1163,6 +1175,7 @@ relabel_def:
 	    new_setvp = err_if_not_set($1->v[c]);
 	    old_setvp = err_if_not_set($3->v[c]);
 	    rlv->add(new_setvp, old_setvp);
+	    vp->v.push_back(rlv);
 	}
 	$1->detach_all();
 	$3->detach_all();
