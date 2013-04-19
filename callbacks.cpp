@@ -451,7 +451,7 @@ void * callback__14(FspTranslator& tr, string * one)
 }
 
 ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
-			SvpVec * three) /* three currently unused */
+			SvpVec * three, SvpVec * four)
 {
     PROP("process_def --> ... process_body ...");
     PROX(cout<<*one<<" = "; two->v[0]->print(&tr.cr.actions));
@@ -1503,3 +1503,42 @@ SvpVec * callback__68(FspTranslator& tr, SvpVec * one, SvpVec * two)
     return one;
 }
 
+SvpVec * callback__69(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    RelabelingValue * lrlv;
+    RelabelingValue * rrlv;
+
+    assert(one->v.size() == two->v.size());
+    for (int c=0; c<one->v.size(); c++) {
+	lrlv = err_if_not_relabeling(one->v[c]);
+	rrlv = err_if_not_relabeling(two->v[c]);
+	lrlv->merge(*rrlv);
+    }
+    delete two;
+
+    return one;
+}
+
+SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    SvpVec * vp = new SvpVec;
+    RelabelingValue * rlv;
+    SetValue * new_setvp;
+    SetValue * old_setvp;
+
+    assert(one->v.size() == two->v.size() &&
+	    two->v.size() == tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	rlv = new RelabelingValue;
+	new_setvp = err_if_not_set(one->v[c]);
+	old_setvp = err_if_not_set(two->v[c]);
+	rlv->add(new_setvp, old_setvp);
+	vp->v.push_back(rlv);
+    }
+    one->detach_all();
+    two->detach_all();
+    delete one;
+    delete two;
+
+    return vp;
+}
