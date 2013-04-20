@@ -650,7 +650,7 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
 /* Convert an Lts to a ProcessNode*. */
 ProcessNode * Lts::toProcessNode(ProcessNodeAllocator& pna) const
 {
-    vector<ProcessNode *> pnodes;
+    vector<ProcessNode *> pnodes(nodes.size());
 
     for (int i=0; i<nodes.size(); i++)
 	pnodes[i] = pna.allocate(nodes[i].type);

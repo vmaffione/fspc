@@ -417,56 +417,13 @@ process_def:
 	AA($1,1,5); AA($5,2,5); AA($6,3,5); AA($7,4,5); AA($8,5,5);
 	string name = *$1;
 	Lts * lts;
-	ProcessNode * pnp;
 	SymbolValue * svp;
 	SetValue * setvp;
 
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				    new Callback_P_SPVVV(&callback__15, *$1));
-	pnp = callback__15(c.tr, $1, $5, $6, $7, $8);
-
-	/* Convert the collection of ProcessNodes in an Lts object. */
-	lts = new Lts(pnp, &c.actions);
-
-	/* Extend the alphabet if is the case. */
-	if ($6) {
-	    if ($6->v.size() != 1) {
-		stringstream errstream;
-		errstream << "Multiset alphabet extension";
-		semantic_error(errstream);
-	    }
-	    setvp = err_if_not_set($6->v[0]);
-	    for (int i=0; i<setvp->actions.size(); i++)
-		lts->updateAlphabet(c.actions.insert(setvp->actions[i]));
-	    c.parametric->alphabet_extension = *setvp;
-	}
-
-	/* Apply relabeling. */
-	if ($7) {
-	    RelabelingValue * rlv;
-
-	    $7->print();
-	    assert($7->v.size() == 1);
-	    rlv = err_if_not_relabeling($7->v[0]);
-	    for (int i=0; i<rlv->size(); i++)
-		lts->relabeling(*(rlv->new_labels[i]), *(rlv->old_labels[i]));
-	}
-
-	/* Apply hiding. */
-	if ($8) {
-	    HidingValue * hvp = err_if_not_hiding($8->v[0]);
-
-	    assert($8->v.size() == 1);
-	    lts->hiding(*(hvp->setvp), hvp->interface);
-	}
-	delete $6;
-	delete $7;
-	delete $8;
-
-	/* Don't delete pnp, since this has been inserted in
-	   'local_processes', and will be thereafter deleted when the symbol
-	   table will be destroyed. */
+	lts = callback__15(c.tr, $1, $5, $6, $7, $8);
 
 	/* Clear and free 'local_processes'. */
 	c.tr.local_processes.clear();
@@ -933,7 +890,6 @@ process_ref:
 	SvpVec * vp = new SvpVec;
 	SvpVec * argvp = $2;
 	ArgumentsValue * avp;
-	ProcessNode * pnp;
 
 	/* Lookup 'process_id' in the 'parametric_process' table. */
 	if (!c.parametric_processes.lookup(*$1, svp)) {
@@ -963,16 +919,8 @@ process_ref:
 		errstream << "Parameters mismatch\n";
 		semantic_error(errstream);
 	    }
-	    pnp = ppp->replay(c, avp->args);
+	    lts = ppp->replay(c, avp->args);
 	    /* Compute the process name. TODO */
-
-	    /* Convert pnp to an Lts. */
-	    lts = new Lts(pnp, &c.actions);
-
-	    /* Extend the alphabet. */
-	    for (int i=0; i<ppp->alphabet_extension.actions.size(); i++)
-		lts->updateAlphabet(
-			c.actions.insert(ppp->alphabet_extension.actions[i]));
 
 	    vp->v.push_back(lts);
 	}

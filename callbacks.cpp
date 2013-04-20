@@ -24,7 +24,7 @@
 
 /* Replay a sequence of callbacks under a local translator and a local
    stack. */
-ProcessNode * ParametricProcess::replay(struct FspCompiler& c,
+Lts * ParametricProcess::replay(struct FspCompiler& c,
 					    const vector<int>& values)
 {
     vector<void *> stack;
@@ -61,7 +61,7 @@ ProcessNode * ParametricProcess::replay(struct FspCompiler& c,
     for (int i=0; i<parameter_names.size(); i++)
 	c.identifiers.remove(parameter_names[i]);
 
-    return static_cast<ProcessNode *>(stack.back());
+    return static_cast<class Lts *>(stack.back());
 }
 
 void ParametricProcess::print() const
@@ -475,7 +475,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
+class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three, SvpVec * four, SvpVec * five)
 {
     PROP("process_def --> ... process_body ...");
@@ -484,6 +484,7 @@ ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
     ProcessBase * pbp = two->v[0];
     SymbolValue * svp;
     ProcessValue * pvp = NULL;
+    Lts * lts;
 
     assert(two->v.size() == 1);
     if (pbp->unresolved()) {
@@ -512,7 +513,6 @@ ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
     }
 
     PROX(cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<< Process " << *one << " defined >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-    delete one;
 
     /* Try to resolve all the undefined references into this process. */
     struct ProcessVisitObject f;
@@ -530,9 +530,58 @@ ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
 
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
 
-    // TODO implement everything is OPT
 
-    return pvp->pnp;
+
+
+    /* Convert the collection of ProcessNodes in an Lts object. */
+    lts = new Lts(pvp->pnp, &tr.cr.actions);
+
+    /* Note: We don't delete pnp, since this has been inserted in
+       'local_processes', and will be thereafter deleted when the symbol
+       table will be destroyed. */
+
+    /* Extend the alphabet if it is the case. */
+    if (three) {
+	SetValue * setvp;
+
+	if (three->v.size() != 1) {
+	    stringstream errstream;
+	    errstream << "Multiset alphabet extension";
+	    semantic_error(errstream);
+	}
+	setvp = err_if_not_set(three->v[0]);
+	for (int i=0; i<setvp->actions.size(); i++)
+	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));
+	//c.parametric->alphabet_extension = *setvp; //TODO remove field
+    }
+
+    /* Apply relabeling. */
+    if (four) {
+	RelabelingValue * rlv;
+
+	four->print();
+	assert(four->v.size() == 1);
+	rlv = err_if_not_relabeling(four->v[0]);
+	for (int i=0; i<rlv->size(); i++)
+	    lts->relabeling(*(rlv->new_labels[i]), *(rlv->old_labels[i]));
+    }
+
+    /* Apply hiding. */
+    if (five) {
+	HidingValue * hvp = err_if_not_hiding(five->v[0]);
+
+	assert(five->v.size() == 1);
+	lts->hiding(*(hvp->setvp), hvp->interface);
+    }
+    delete one;
+    delete three;
+    delete four;
+    delete five;
+
+
+
+
+    return lts;
 }
 
 void * callback__16(FspTranslator& tr, string * one)
@@ -1461,7 +1510,6 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     SymbolValue * svp;
     Lts * lts;
     ParametricProcess * ppp;
-    ProcessNode * pnp;
     Pvec * vp = new Pvec;
     SvpVec * argvp = two;
     ArgumentsValue * avp;
@@ -1496,9 +1544,9 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
-	pnp = ppp->replay(tr.cr, avp->args);
+	lts = ppp->replay(tr.cr, avp->args);
 	/* Compute the process name. TODO */
-
+	ProcessNode * pnp = lts->toProcessNode(tr.cr.pna);
 	vp->v.push_back(pnp);
     }
     delete one;
