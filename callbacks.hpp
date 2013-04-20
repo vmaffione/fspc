@@ -206,7 +206,7 @@ struct Callback_P_SPVVV : public Callback {
 	stack.pop_back();
 	return (*cbp)(tr, new string(one), two, three, four, five);
     }
-    void print() const { cout << "P_SPVV" << "\n";}
+    void print() const { cout << "P_SPVVV" << "\n";}
 };
 
 /*8*/
@@ -467,4 +467,19 @@ struct Callback_null : public Callback {
     }
     void print() const { cout << "null" << "\n";}
 };
+
+/*26*/
+struct Callback_pop : public Callback {
+
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	void * ret;
+
+	stack.pop_back();
+	ret = stack.back();
+	stack.pop_back();
+	return ret;
+    }
+    void print() const { cout << "pop2" << "\n";}
+};
+
 #endif

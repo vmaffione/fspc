@@ -3,16 +3,12 @@ range R = 1..2
 set S = {x,y,z}
 
 
-/*P(K=99) = (a[K]->(b->END|c->END)).*/
-Q = Q[1],
-Q[1] = (q1->Q[2]),
-Q[2] = (r->Q|q2->END).
-C = Q;C.
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
 P=(l->cs->u->P). L=(l->u->L). ||C=({p[1..2]}:P || {p[1..2]}::L).
 P(K=99) = (a[K]->END). Q = P;P(23);P(197);Q.
+P(K=1) = (a[K]->(b->END|c->END)). Q = Q[1], Q[1] = (q1->Q[2]), Q[2] = (q2->END|r->Q). C = P(39);Q;P;C.
 P=(a->b->END)/{a[1..2]/a, b[1..3]/b}. Q=(x->y->END). ||C =(p:P || q:Q) / {q1/q}.
 P=(a->b->c->d->END) +{t,v} /{dd/d} \{b}.
 */

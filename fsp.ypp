@@ -519,6 +519,8 @@ process_body:
     | local_process ',' local_process_defs {
 	AA($1,1,2); AA($3,2,2);
 	$$ = $1;
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_pop);
 	ps.pop_back();
     }
     ;
@@ -530,6 +532,8 @@ local_process_defs:
     }
     | local_process_defs ',' local_process_def {
 	AA($1,1,2); AA($3,2,2);
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_pop);
 	$$ = $1;
 	ps.pop_back();
     }
