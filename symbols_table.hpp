@@ -178,7 +178,7 @@ struct ProcessNode: public ProcessBase {
     void print(ActionsTable * atp);
     ProcessNode * clone() const;
     bool unresolved() const { return false; }
-    void visit(struct ProcessVisitObject);
+    void visit(struct ProcessVisitObject, bool before);
 
     static const int Normal = 0;
     static const int End = 1;
@@ -223,11 +223,11 @@ struct ProcessValue: public SymbolValue {
 
 struct ProcnodePairValue: public SymbolValue {
     struct ProcessNode * first;
-    struct ProcessNode * second;
+    vector<ProcessNode *> to_end;
 
-    ProcnodePairValue() : first(NULL), second(NULL) { }
-    ProcnodePairValue(ProcessNode * h, ProcessNode * t) : first(h), second(t) { }
-    void print() const { cout << first << "," << second; }
+    ProcnodePairValue() : first(NULL) { }
+    ProcnodePairValue(ProcessNode * h, const vector<ProcessNode *>& t) : first(h), to_end(t) { }
+    void print() const { cout << first << ", vector"; }
     int type() const { return SymbolValue::ProcnodePair; }
     SymbolValue * clone() const;
 };

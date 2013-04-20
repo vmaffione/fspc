@@ -119,7 +119,7 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     f.opaque = &lcd;
 
     ntr = 0;
-    pnp->visit(f);
+    pnp->visit(f, true);
 }
 
 Lts::Lts(const char * filename) : atp(NULL)

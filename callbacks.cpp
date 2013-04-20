@@ -248,25 +248,50 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
     }
 }
 
-/* Data structure associated to the visit function 'check_if_sequential'. */
-struct ChifseqData {
-    bool sequential;
-    ProcessNode * tail;
-    ProcessNode * tail_prev;
+
+/* Data structure associated to the visit function 'aggregate_END_ERROR_states'. */
+struct AggrStatesData {
+    ProcessNode * end;
+    ProcessNode * error;
+    bool end_found;
+    bool end_init;
+    string reference;
 };
 
-/* Return true in opaque->sequential if the process is sequential. Before
-   invoking the visit, opaque->sequential must be initialized to true.
-   Also returns a pointer to the last node in opaque->tail and a pointer
-   to the one before the last node in opaque->tail_prev.*/
-static void check_if_sequential(ProcessNode * pnp, void * opaque)
+/* This visit function looks for END and ERROR states. If there are more
+   END states, the first END state found will be elected to be the END state,
+   and all the pointers to and END state are modified so that they point to
+   the elected state. The same applies to ERROR states. The filed 'end' and
+   'error' of the data structure must be initialized to NULL before the visit
+   starts. When the visit is completed, if 'end' is NULL we can conclude
+   that there are no END states (e.g. the process is sequential). */
+static void aggregate_end_error_states(ProcessNode * pnp, void *opaque)
 {
-    ChifseqData * d = static_cast<ChifseqData *>(opaque);
+    if (pnp->type == ProcessNode::Normal) {
+	ProcessNode * dest;
+	AggrStatesData * d = static_cast<AggrStatesData *>(opaque);
 
-    d->sequential = d->sequential && (pnp->children.size() == 1 || 
-	    (pnp->children.size() == 0 && pnp->type == ProcessNode::End));
-    d->tail_prev = d->tail;
-    d->tail = pnp;
+	for (int i=0; i<pnp->children.size(); i++) {
+	    dest = pnp->children[i].dest;
+	    assert(dest);
+	    if (dest->type == ProcessNode::End) {
+		d->end_found = true;
+		if (d->end_init)
+		    pnp->children[i].dest = d->end;
+		else {
+		    d->end = dest;
+		    d->end_init = true;
+		}
+		if (d->reference != "")
+		    pnp->children[i].unresolved_reference = d->reference;
+	    } else if (dest->type == ProcessNode::Error) {
+		if (d->error)
+		    pnp->children[i].dest = d->error;
+		else
+		    d->error = dest;
+	    }
+	}
+    }
 }
 
 
@@ -487,16 +512,24 @@ ProcessNode * callback__15(FspTranslator& tr, string * one, Pvec * two,
     }
 
     PROX(cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<< Process " << *one << " defined >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    delete one;
 
     /* Try to resolve all the undefined references into this process. */
     struct ProcessVisitObject f;
     f.vfp = &fix_unresolved_references;
     f.opaque = &tr;
-    pvp->pnp->visit(f);
+    pvp->pnp->visit(f, true);
+
+    /* Aggregate END and ERROR states. */
+    struct AggrStatesData d;
+    d.error = NULL;
+    d.end_init = d.end_found = false;
+    f.vfp = &aggregate_end_error_states;
+    f.opaque = &d;
+    pvp->pnp->visit(f, false);
 
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
 
-    delete one;
     // TODO implement everything is OPT
 
     return pvp->pnp;
@@ -1360,28 +1393,33 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     return vp;
 }
 
-Pvec * callback__64(FspTranslator& tr, SvpVec * one, Pvec * two)
+Pvec * callback__64(FspTranslator& tr, Pvec * one, Pvec * two)
 {
     assert(one->v.size() == two->v.size() &&
 	    two->v.size() == tr.current_contexts().size());
     Pvec * pvec = new Pvec;
+    struct AggrStatesData d;
+    struct ProcessVisitObject f;
 
     for (int c=0; c<one->v.size(); c++) {
-	ProcnodePairValue * pair = err_if_not_procnodepair(one->v[0]);
+	ProcessNode * left = err_if_not_procnode(one->v[c]);
 	ProcessBase * pbp = two->v[c];
 
 	assert(!pbp->connected());
-	assert(pair->second->children.size() == 1);
-	//delete pair->second->children[0].dest;
+
 	if (pbp->unresolved()) {
-	    pair->second->children[0].dest = NULL;
-	    pair->second->children[0].unresolved_reference =
-		((UnresolvedProcess *)pbp)->reference;
+	    d.end = NULL;
+	    d.reference = ((UnresolvedProcess *)pbp)->reference;
 	} else {
-	    ProcessNode * pnp = err_if_not_procnode(pbp);
-	    pair->second->children[0].dest = pnp;
+	    d.end = err_if_not_procnode(pbp);
 	}
-	pvec->v.push_back(pair->first);
+	d.end_init = true;
+	d.error = NULL;
+	f.vfp = &aggregate_end_error_states;
+	f.opaque = &d;
+	left->visit(f, false);
+
+	pvec->v.push_back(left);
     }
     delete one;
     delete two;
@@ -1389,30 +1427,42 @@ Pvec * callback__64(FspTranslator& tr, SvpVec * one, Pvec * two)
     return pvec;
 }
 
-SvpVec * callback__65(FspTranslator& tr, SvpVec * one, SvpVec * two)
+Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
 {
-    for (int c=0; c<one->v.size(); c++) {
-	ProcnodePairValue * lpair = err_if_not_procnodepair(one->v[c]);
-	ProcnodePairValue * rpair = err_if_not_procnodepair(two->v[c]);
+    struct AggrStatesData d;
+    struct ProcessVisitObject f;
 
-	/* Concatenate the two sequential processes. */
-	assert(lpair->second->children.size() == 1);
-	//delete lpair->second->children[0].dest;
-	lpair->second->children[0].dest = rpair->first;
-	lpair->second = rpair->second;
+    for (int c=0; c<one->v.size(); c++) {
+	ProcessNode * left = err_if_not_procnode(one->v[c]);
+	ProcessNode * right = err_if_not_procnode(two->v[c]);
+
+	/* Concatenate the two sequential processes and check that the
+	   process is sequential. */
+	d.end = right;
+	d.end_init = true;
+	d.end_found = false;
+	d.error = NULL;
+	f.vfp = &aggregate_end_error_states;
+	f.opaque = &d;
+	left->visit(f, false);
+	if (!d.end_found) {
+	    stringstream errstream;
+	    errstream << "Process is not sequential\n";
+	    semantic_error(errstream);
+	}
     }
     delete two;
 
     return one;
 }
 
-SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
+Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 {
     SymbolValue * svp;
     Lts * lts;
     ParametricProcess * ppp;
     ProcessNode * pnp;
-    SvpVec * vp = new SvpVec;
+    Pvec * vp = new Pvec;
     SvpVec * argvp = two;
     ArgumentsValue * avp;
 
@@ -1438,7 +1488,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     for (int k=0; k<argvp->v.size(); k++) {
 	string name = *one;
 	struct ProcessVisitObject f;
-	ChifseqData vd;
+	struct AggrStatesData d;
 
 	avp = err_if_not_arguments(argvp->v[k]);
 	if (avp->args.size() != ppp->parameter_names.size()) {
@@ -1449,18 +1499,7 @@ SvpVec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	pnp = ppp->replay(tr.cr, avp->args);
 	/* Compute the process name. TODO */
 
-	/* Check that the process is sequential. */
-	f.vfp = &check_if_sequential;
-	vd.sequential = true;
-	vd.tail = vd.tail_prev = NULL;
-	f.opaque = &vd;
-	pnp->visit(f);
-	if (!vd.sequential) {
-	    stringstream errstream;
-	    errstream << "Process " << *one << " undeclared\n";
-	    semantic_error(errstream);
-	}
-	vp->v.push_back(new ProcnodePairValue(pnp, vd.tail_prev));
+	vp->v.push_back(pnp);
     }
     delete one;
     delete argvp;

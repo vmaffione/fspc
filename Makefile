@@ -12,6 +12,8 @@ symbols_table.o: symbols_table.hpp symbols_table.cpp
 
 strings_set.o: strings_set.hpp strings_set.cpp
 
+lts.o: lts.hpp symbols_table.hpp
+
 context.o: context.hpp symbols_table.hpp
 
 parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o

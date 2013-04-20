@@ -434,10 +434,10 @@ void ProcessNode::print(ActionsTable * atp)
 
     f.vfp = &printVisitFunction;
     f.opaque = atp;
-    visit(f);
+    visit(f, true);
 }
 
-void ProcessNode::visit(ProcessVisitObject f)
+void ProcessNode::visit(ProcessVisitObject f, bool before)
 {
     set<ProcessNode*> visited;
     vector<ProcessNode*> frontier(1);
@@ -451,7 +451,9 @@ void ProcessNode::visit(ProcessVisitObject f)
 
     while (pop != push) {
 	current = frontier[pop++];
-	f.vfp(current, f.opaque);  /* Invoke the specific visit function. */
+	if (before)
+	    /* Invoke the specific visit function before. */
+	    f.vfp(current, f.opaque);  
 	for (int i=0; i<current->children.size(); i++) {
 	    ProcessEdge e = current->children[i];
 	    if (e.dest && visited.count(e.dest) == 0) {
@@ -460,6 +462,9 @@ void ProcessNode::visit(ProcessVisitObject f)
 		push++;
 	    }
 	}
+	if (!before)
+	    /* Invoke the specific visit function after. */
+	    f.vfp(current, f.opaque);  
     }
 }
 
@@ -518,7 +523,7 @@ void freeProcessNodeGraph(struct ProcessNode * pnp)
     /* Collect all the nodes reachable from 'pnp'. */
     f.vfp = &freeVisitFunction;
     f.opaque = &nodes;
-    pnp->visit(f);
+    pnp->visit(f, true);
 
     /* Free them. */
     for (int i=0; i<nodes.size(); i++)
