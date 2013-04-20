@@ -647,6 +647,27 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
+/* Convert an Lts to a ProcessNode*. */
+ProcessNode * Lts::toProcessNode(ProcessNodeAllocator& pna) const
+{
+    vector<ProcessNode *> pnodes;
+
+    for (int i=0; i<nodes.size(); i++)
+	pnodes[i] = pna.allocate(nodes[i].type);
+
+    for (int i=0; i<nodes.size(); i++)
+	for (int j=0; j<nodes[i].children.size(); j++) {
+	    ProcessEdge e;
+
+	    e.dest = pnodes[nodes[i].children[j].dest];
+	    e.action = nodes[i].children[j].action;
+	    e.rank = 0; //XXX ???
+	    pnodes[i]->children.push_back(e);
+	}
+
+    return pnodes[0];
+}
+
 Lts& Lts::labeling(const SetValue& labels)
 {
     if (!labels.actions.size())
