@@ -394,6 +394,36 @@ HidingValue::~HidingValue()
 }
 
 
+/* ============================ PriorityValue =========================== */
+void PriorityValue::print() const
+{
+    cout << "Priority: ";
+    if (low)
+	cout << ">> ";
+    else
+	cout << "<< ";
+    if (setvp)
+	setvp->print();
+}
+
+SymbolValue * PriorityValue::clone() const
+{
+    PriorityValue * pv = new PriorityValue;
+
+    pv->low = low;
+    if (setvp)
+	pv->setvp = static_cast<SetValue *>(setvp->clone());
+
+    return pv;
+}
+
+PriorityValue::~PriorityValue()
+{
+    if (setvp)
+	delete setvp;
+}
+
+
 /* ============================= Pvec =================================== */
 void Pvec::print(struct ActionsTable * atp)
 {

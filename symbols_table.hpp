@@ -43,6 +43,7 @@ struct SymbolValue {
     static const int LabelingSharing = 8;
     static const int Relabeling = 9;
     static const int Hiding = 10;
+    static const int Priority = 11;
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -140,6 +141,17 @@ struct HidingValue: public SymbolValue {
     ~HidingValue();
 };
 
+struct PriorityValue: public SymbolValue {
+    SetValue * setvp;
+    bool low;
+
+    PriorityValue() : setvp(NULL), low(false) { }
+    void print() const;
+    int type() const { return SymbolValue::Priority; }
+    SymbolValue * clone() const;
+    ~PriorityValue();
+};
+
 struct ProcessBase {
     virtual bool unresolved() const = 0;
     virtual bool connected() const { return false; }
@@ -221,13 +233,14 @@ struct ProcessValue: public SymbolValue {
     SymbolValue * clone() const;
 };
 
+// TODO obsolete??
 struct ProcnodePairValue: public SymbolValue {
     struct ProcessNode * first;
-    vector<ProcessNode *> to_end;
+    struct ProcessNode * second;
 
-    ProcnodePairValue() : first(NULL) { }
-    ProcnodePairValue(ProcessNode * h, const vector<ProcessNode *>& t) : first(h), to_end(t) { }
-    void print() const { cout << first << ", vector"; }
+    ProcnodePairValue() : first(NULL), second(NULL) { }
+    ProcnodePairValue(ProcessNode * h, ProcessNode * t) : first(h), second(t) { }
+    void print() const { cout << first << ", " << second; }
     int type() const { return SymbolValue::ProcnodePair; }
     SymbolValue * clone() const;
 };

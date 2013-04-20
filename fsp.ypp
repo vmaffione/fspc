@@ -111,6 +111,22 @@ SvpVec * prefix_and_relabel(SvpVec * prefixv, SvpVec * ltsv, SvpVec * relabv)
     return ltsv;
 }
 
+SvpVec * priority_callback(SvpVec * one, bool low)
+{
+    PriorityValue * prv;
+
+    assert(one->v.size() == c.tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	prv = new PriorityValue;
+	prv->setvp = err_if_not_set(one->v[c]);
+	prv->low = low;
+	one->v[c] = prv;
+    }
+
+    return one;
+}
+
+
 #define DEBUG
 #ifdef DEBUG
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
@@ -169,7 +185,7 @@ void yyerror(const char *s);
 %type <svpvec_ptr> process_ref composite_body parallel_composition
 %type <svpvec_ptr> prefix_label_OPT prefix_label labeling_OPT labeling
 %type <svpvec_ptr> relabel_OPT relabel relabel_def relabel_defs
-%type <svpvec_ptr> hiding_OPT hiding
+%type <svpvec_ptr> hiding_OPT hiding priority_OPT priority
 
 /* Generate a Generic LR parser, instead of a standard LR parser. We need
    this to resolve conflicts at runtime. */
@@ -828,12 +844,20 @@ composite_def:
     OR process_id param_OPT {
 	c.tr.init_fakenode();
     } '=' composite_body priority_OPT hiding_OPT '.' {
-	// TODO OPT
-	AA($2,1,3); AA($6,2,3); AA($8,3,3);
+	AA($2,1,4); AA($6,2,4); AA($7,3,4); AA($8,4,4);
 	assert($6->v.size() == 1);
 	Lts * lts;
 
 	lts = err_if_not_lts($6->v[0]);
+
+	/* Apply priority. */
+	if ($7) {
+	    PriorityValue * prv = err_if_not_priority($7->v[0]);
+
+	    assert($7->v.size() == 1);
+	    prv->print();
+	    lts->priority(*(prv->setvp), prv->low);
+	}
 
 	/* Apply hiding. */
 	if ($8) {
@@ -854,6 +878,7 @@ composite_def:
 	
 	delete $2;
 	delete $8;
+	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -1044,11 +1069,25 @@ labeling:
     ;
 
 priority_OPT:
-    | priority;
+    {
+	$$ = NULL;
+	ps.push_back($$);
+    }
+    | priority {
+	AA($1,1,1);
+	$$ = $1;
+    }
+    ;
 
 priority:
-    RSHIFT set
-    | LSHIFT set
+    RSHIFT set {
+	AA($2,1,1);
+	$$ = priority_callback($2, true);
+    }
+    | LSHIFT set {
+	AA($2,1,1);
+	$$ = priority_callback($2, false);
+    }
     ;
 
 ranges_OPT:

@@ -16,7 +16,7 @@ errstream << "Const expected";
 	semantic_error(errstream);
     }
 
-    return (ConstValue *)svp;
+    return static_cast<ConstValue *>(svp);
 }
 
 RangeValue* err_if_not_range(SymbolValue * svp)
@@ -27,7 +27,7 @@ errstream << "Range expected";
 	semantic_error(errstream);
     }
 
-    return (RangeValue *)svp;
+    return static_cast<RangeValue *>(svp);
 }
 
 SetValue* err_if_not_set(SymbolValue * svp)
@@ -38,7 +38,7 @@ errstream << "Set expected";
 	semantic_error(errstream);
     }
 
-    return (SetValue *)svp;
+    return static_cast<SetValue *>(svp);
 }
 
 ProcessValue* err_if_not_process(SymbolValue * svp)
@@ -49,7 +49,7 @@ errstream << "Process expected";
 	semantic_error(errstream);
     }
 
-    return (ProcessValue *)svp;
+    return static_cast<ProcessValue *>(svp);
 }
 
 ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp)
@@ -60,7 +60,7 @@ ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (ProcnodePairValue *)svp;
+    return static_cast<ProcnodePairValue *>(svp);
 }
 
 ArgumentsValue* err_if_not_arguments(SymbolValue * svp)
@@ -71,7 +71,7 @@ ArgumentsValue* err_if_not_arguments(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (ArgumentsValue *)svp;
+    return static_cast<ArgumentsValue *>(svp);
 }
 
 LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp)
@@ -82,7 +82,7 @@ LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (LabelingSharingValue *)svp;
+    return static_cast<LabelingSharingValue *>(svp);
 }
 
 RelabelingValue* err_if_not_relabeling(SymbolValue * svp)
@@ -93,7 +93,7 @@ RelabelingValue* err_if_not_relabeling(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (RelabelingValue *)svp;
+    return static_cast<RelabelingValue *>(svp);
 }
 
 HidingValue* err_if_not_hiding(SymbolValue * svp)
@@ -104,7 +104,18 @@ HidingValue* err_if_not_hiding(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (HidingValue *)svp;
+    return static_cast<HidingValue *>(svp);
+}
+
+PriorityValue* err_if_not_priority(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::Priority) {
+	stringstream errstream;
+	errstream << "Priority expected";
+	semantic_error(errstream);
+    }
+
+    return static_cast<PriorityValue *>(svp);
 }
 
 ProcessNode * err_if_not_procnode(ProcessBase * pbp)
@@ -114,5 +125,5 @@ ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 errstream << "ProcessNode expected";
 	semantic_error(errstream);
     }
-    return (ProcessNode *)pbp;
+    return static_cast<ProcessNode *>(pbp);
 }

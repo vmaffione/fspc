@@ -61,6 +61,7 @@ class Lts: public SymbolValue {
     Lts& relabeling(const SetValue& newlabels, const SetValue& oldlabels);
     Lts& relabeling(const SetValue& newlabels, const string& oldlabel);
     Lts& hiding(const SetValue& s, bool interface);
+    Lts& priority(const SetValue& s, bool low);
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;

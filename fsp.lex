@@ -129,13 +129,13 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
     return GOE;
 }
 
-"<<" {
-    IFD(cout << "<<\n"); 
+">>" {
+    IFD(cout << ">>\n"); 
     return RSHIFT;
 }
 
-">>" {
-    IFD(cout << ">>\n"); 
+"<<" {
+    IFD(cout << "aa\n"); 
     return LSHIFT;
 }
 
