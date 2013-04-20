@@ -530,9 +530,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
 
-
-
-
     /* Convert the collection of ProcessNodes in an Lts object. */
     lts = new Lts(pvp->pnp, &tr.cr.actions);
 
@@ -552,7 +549,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	setvp = err_if_not_set(three->v[0]);
 	for (int i=0; i<setvp->actions.size(); i++)
 	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));
-	//c.parametric->alphabet_extension = *setvp; //TODO remove field
     }
 
     /* Apply relabeling. */
@@ -577,9 +573,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     delete three;
     delete four;
     delete five;
-
-
-
 
     return lts;
 }

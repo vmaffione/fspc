@@ -505,7 +505,6 @@ local_process_def:
 	callback__16(c.tr, $1);
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
-	cout << "index_ranges_OPT:\n";
 	$3->print();
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
@@ -574,7 +573,6 @@ local_process:
 	PROX(c.tr.current_contexts().print());
     } choice ')' {
 	AA($3,1,1);
-	//$3->print();
 	$$ = $3;
     }
     ;
@@ -836,6 +834,15 @@ composite_def:
 	Lts * lts;
 
 	lts = err_if_not_lts($6->v[0]);
+
+	/* Apply hiding. */
+	if ($8) {
+	    HidingValue * hvp = err_if_not_hiding($8->v[0]);
+
+	    assert($8->v.size() == 1);
+	    lts->hiding(*(hvp->setvp), hvp->interface);
+	}
+
 	if (!c.processes.insert(*$2, lts)) {
 	    stringstream errstream;
 	    errstream << "Process " << *$2 << " already declared";
@@ -846,6 +853,7 @@ composite_def:
 	lts->graphvizOutput((*$2 + ".gv").c_str());
 	
 	delete $2;
+	delete $8;
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -854,7 +862,6 @@ composite_def:
 
 composite_body:
     prefix_label_OPT process_ref relabel_OPT {
-	//TODO relabel_OPT
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
 	$$ = prefix_and_relabel($1, $2, $3);
 	ps.pop_back();

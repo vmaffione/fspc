@@ -87,7 +87,6 @@ struct ParametricProcess: public SymbolValue {
     vector<string> parameter_names;
     vector<int> parameter_defaults;
     vector<Callback *> record;
-    SetValue alphabet_extension;
 
     class Lts * replay(struct FspCompiler& c, const vector<int>& values);
     void print() const;
