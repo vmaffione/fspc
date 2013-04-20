@@ -1539,8 +1539,10 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	}
 	lts = ppp->replay(tr.cr, avp->args);
 	/* Compute the process name. TODO */
-	ProcessNode * pnp = lts->toProcessNode(tr.cr.pna);
-	vp->v.push_back(pnp);
+
+	/* Note that here we don't  c.pna.clear(). */
+
+	vp->v.push_back(lts->toProcessNode(tr.cr.pna));
     }
     delete one;
     delete argvp;

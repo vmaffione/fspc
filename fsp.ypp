@@ -449,8 +449,6 @@ process_def:
 	   the allocator itself. */
 	c.pna.clear();
 
-	lts->print();
-	lts->graphvizOutput((name + ".gv").c_str());
 	/* Remove process parameters from c.identifiers. */
 	for (int i=0; i<c.parametric->parameter_names.size(); i++)
 	    c.identifiers.remove(c.parametric->parameter_names[i]);
@@ -476,6 +474,10 @@ process_def:
 	    c.parametric = new ParametricProcess;
 	    c.record_mode_on = 0;
 	}
+
+	lts->print();
+	lts->graphvizOutput((name + ".gv").c_str());
+
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -867,16 +869,23 @@ composite_def:
 	    lts->hiding(*(hvp->setvp), hvp->interface);
 	}
 
+	/* Remove process parameters from c.identifiers. */
+	for (int i=0; i<c.parametric->parameter_names.size(); i++)
+	    c.identifiers.remove(c.parametric->parameter_names[i]);
+
+	/* Insert lts into the global 'processes' table. */
 	if (!c.processes.insert(*$2, lts)) {
 	    stringstream errstream;
 	    errstream << "Process " << *$2 << " already declared";
 	    semantic_error(errstream);
 	}
+
 	cout << "#####################Composite process " << *$2 << " defined#############\n";
 	lts->print();
 	lts->graphvizOutput((*$2 + ".gv").c_str());
-	
+
 	delete $2;
+	delete $7;
 	delete $8;
 	ps.pop_back();
 	ps.pop_back();
@@ -953,6 +962,10 @@ process_ref:
 	    }
 	    lts = ppp->replay(c, avp->args);
 	    /* Compute the process name. TODO */
+
+	    /* Free all the nodes allocated by c.pna, and remove the from
+	       the allocator itself. */
+	    c.pna.clear();
 
 	    vp->v.push_back(lts);
 	}
