@@ -192,14 +192,18 @@ void Lts::print() const {
 }
 
 /* BFS on the LTS for useless states removal. */
-void Lts::compositionReduce(const vector<LtsNode>& product)
+void Lts::reduce(const vector<LtsNode>& unconnected)
 {
-    int np = product.size();
+    int np = unconnected.size();
     vector<int> frontier(np);
     vector<int> map(np);
     int pop, push;
     int state;
     int n = 0;
+
+    /* We make sure that 'nodes' si empty and 'ntr' is zero. */
+    nodes.clear();
+    ntr = 0;
 
     /* Overestimation */
     nodes.resize(np);
@@ -215,15 +219,15 @@ void Lts::compositionReduce(const vector<LtsNode>& product)
 	Edge e;
 
 	state = frontier[pop++];
-	for (int j=0; j<product[state].children.size(); j++) {
-	    int child = product[state].children[j].dest;
+	for (int j=0; j<unconnected[state].children.size(); j++) {
+	    int child = unconnected[state].children[j].dest;
 
 	    if (map[child] == -1) {
 		map[child] = n++;
 		frontier[push++] = child;
 	    }
 	    e.dest = map[child];
-	    e.action = product[state].children[j].action;
+	    e.action = unconnected[state].children[j].action;
 	    nodes[map[state]].children.push_back(e);
 	    ntr++;
 	}
@@ -231,7 +235,7 @@ void Lts::compositionReduce(const vector<LtsNode>& product)
 
     for (int i=0; i<np; i++)
 	if (map[i] != -1)
-	    nodes[map[i]].type = product[i].type;
+	    nodes[map[i]].type = unconnected[i].type;
 
     nodes.resize(n);
 }
@@ -323,7 +327,7 @@ void Lts::compose(const Lts& p, const Lts& q)
 		    (q.nodes[iq].type == LtsNode::End))
 		product[ip*nq+iq].type = LtsNode::End;
 
-    compositionReduce(product);
+    reduce(product);
 }
 
 Lts::Lts(const Lts& p, const Lts& q)
@@ -858,6 +862,37 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
 
 Lts& Lts::priority(const SetValue& s, bool low)
 {
+    int action;
+    int low_int = (low) ? 1 : 0;
+    set<int> priority_actions;
+    vector<LtsNode> new_nodes(nodes.size());
+
+    for (int i=0; i<s.actions.size(); i++) {
+	action = atp->lookup(s.actions[i]);
+	if (alphabet.count(action)) {
+	    priority_actions.insert(action);
+	}
+    }
+
+    for (int i=0; i<nodes.size(); i++) {
+	vector<Edge> new_children;
+	bool found = false;
+
+	for (int j=0; j<nodes[i].children.size(); j++) 
+	    if (priority_actions.count(nodes[i].children[j].action)
+							    ^ low_int) {
+		new_children.push_back(nodes[i].children[j]);
+		found = true;
+	    }
+	if (found) {
+	    new_nodes[i].children = new_children;
+	    new_nodes[i].type = nodes[i].type;
+	} else
+	    new_nodes[i] = nodes[i];
+    }
+
+    reduce(new_nodes);
+
     return *this;
 }
 

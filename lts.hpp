@@ -41,7 +41,7 @@ class Lts: public SymbolValue {
     set<int> alphabet;
 
     void compose(const Lts& p, const Lts& q);
-    void compositionReduce(const vector<LtsNode>& product);
+    void reduce(const vector<LtsNode>& unconnected);
 	
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
 
