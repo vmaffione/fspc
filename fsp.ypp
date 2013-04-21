@@ -885,6 +885,7 @@ composite_def:
 	    errstream << "Process " << *$2 << " already declared";
 	    semantic_error(errstream);
 	}
+	lts->name = *$2;
 
 	cout << "#####################Composite process " << *$2 << " defined#############\n";
 	lts->print();
@@ -1341,7 +1342,46 @@ property_def:
     ;
 
 progress_def:
-    PROGRESS progress_id index_ranges_OPT '=' set
+    PROGRESS progress_id {
+	c.tr.css.push_clone();
+    } index_ranges_OPT '=' set {
+	AA($2,1,3); AA($4,2,3); AA($6,3,3);
+	Lts * lts;
+	SetValue * setvp;
+	SetValue * irp;
+	string name;
+	map<string, SymbolValue*>::iterator it;
+
+	assert($4->v.size() == $6->v.size());
+	for (int k=0; k<$6->v.size(); k++) {
+	    irp = err_if_not_set($4->v[k]);
+	    setvp = err_if_not_set($6->v[k]);
+	    /* We discard irp->actions[i] for i>0. */
+	    name = *$2 + irp->actions[0]; 
+	    
+	    if (!c.progresses.insert(name, setvp)) {
+		stringstream errstream;
+		errstream << "const " << name << " declared twice";
+		semantic_error(errstream);
+	    }
+
+	    /* Do the progress check against all the global processes. */
+	    for (it=c.processes.table.begin();
+				it!=c.processes.table.end(); it++) {
+		lts = err_if_not_lts(it->second);
+		cout << "Progress check '" << name << "' for process '"
+			<< lts->name << "':\n";
+		lts->progress(*setvp);
+	    }
+	}
+	c.tr.css.pop();
+	delete $2;
+	delete $4;
+
+	ps.pop_back();
+	ps.pop_back();
+	ps.pop_back();
+    }
     ;
 
 menu_def:

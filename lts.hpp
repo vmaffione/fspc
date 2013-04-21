@@ -12,6 +12,12 @@
 using namespace std;
 
 
+struct TerminalSet {
+    vector<int> trace;
+    set<int> actions;
+};
+
+
 struct Edge {
     int dest;
     int action;
@@ -40,6 +46,9 @@ class Lts: public SymbolValue {
 
     set<int> alphabet;
 
+    vector<TerminalSet> terminal_sets;
+    bool terminal_sets_computed;
+
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
 	
@@ -55,7 +64,7 @@ class Lts: public SymbolValue {
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }
     int deadlockAnalysis() const;
-    int terminalSets() const;
+    int terminalSets();
     Lts& compose(const Lts& q);
     Lts& labeling(const SetValue& labels);
     Lts& labeling(const string& label);
@@ -65,6 +74,7 @@ class Lts: public SymbolValue {
     Lts& hiding(const SetValue& s, bool interface);
     Lts& priority(const SetValue& s, bool low);
     Lts& property();
+    int progress(const SetValue& s);
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
@@ -73,7 +83,7 @@ class Lts: public SymbolValue {
     int lookupAlphabet(int action) const;
     void printAlphabet() const;
 
-
+    /* Methods to implement because of the base class. */
     void print() const;
     int type() const { return SymbolValue::Lts; }
     SymbolValue * clone() const;

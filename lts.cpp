@@ -49,6 +49,7 @@ Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     node.type = type;
     nodes.push_back(node);
     ntr = 0;
+    terminal_sets_computed = false;
 }
 
 struct LtsConvertData {
@@ -103,6 +104,8 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     LtsConvertData lcd;
     map<ProcessNode *, int> index_map;
 
+    terminal_sets_computed = false;
+
     /* We use const_cast<> to remove 'const' from pnp: we are sure that the 
        visit function won't modify the graph. */
     pnp = const_cast<ProcessNode *>(cpnp);
@@ -129,6 +132,8 @@ Lts::Lts(const char * filename) : atp(NULL)
     int s1, s2;
     string a;
     Edge e;
+
+    terminal_sets_computed = false;
 
     /* Discover the number of nodes */
     n = -1;
@@ -204,6 +209,7 @@ void Lts::reduce(const vector<LtsNode>& unconnected)
     /* We make sure that 'nodes' si empty and 'ntr' is zero. */
     nodes.clear();
     ntr = 0;
+    terminal_sets_computed = false;
 
     /* Overestimation */
     nodes.resize(np);
@@ -255,6 +261,7 @@ void Lts::compose(const Lts& p, const Lts& q)
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
     nodes.clear();
     ntr = 0;
+    terminal_sets_computed = false;
     alphabet.clear();
 
     /* We build the cartesian product of P states and Q states. For 
@@ -411,11 +418,15 @@ int Lts::deadlockAnalysis() const
     return nd;
 }
 
-int Lts::terminalSets() const
+int Lts::terminalSets()
 {
     int n = nodes.size();
     int na = atp->reverse.size();
     int nts = 0;
+
+    if (terminal_sets_computed)
+	return terminal_sets.size();
+    terminal_sets_computed = true;
 
     /* Data structures for the iterative DFS implementation */
     vector<int> state_stack(n);  /* Emulated recursion stack */
@@ -560,12 +571,17 @@ int Lts::terminalSets() const
 		if (terminal) {
 		    int t;
 		    int j;
+		    TerminalSet& ts = (
+			terminal_sets.push_back(TerminalSet()),
+						    terminal_sets.back());
 		    /* If the component is terminal, we output the trace of
-		       action to get to the component. */
+		       actions to get to the component. */
+#ifdef DEBUG
 		    cout << "Terminal set of states: ";
 		    for (j=0; j<nc; j++)
 			cout << tarjan_component_states[j] << " ";
 		    cout << "\n";
+#endif
 
 		    /* We examine the action_stack (without popping anything) 
 		       and build the action_trace in reverse order. */
@@ -575,13 +591,17 @@ int Lts::terminalSets() const
 			action_trace[j++] = action_stack[t];
 			t = back[t];
 		    }
-		    cout << "Trace to the terminal set:\n";
-		    for (j--; j>=0; j--)
-			cout << "    " << ati(action_trace[j]) << "\n";
-		    cout << "Actions in the terminal set: {";
-		    for (j=0; j<nca; j++)
-			cout << ati(tarjan_component_actions[j]) << ", ";
-		    cout << "}\n";
+		    IFD(cout << "Trace to the terminal set:\n");
+		    for (j--; j>=0; j--) {
+			IFD(cout << "    " << ati(action_trace[j]) << "\n");
+			ts.trace.push_back(action_trace[j]);
+		    }
+		    IFD(cout << "Actions in the terminal set: {");
+		    for (j=0; j<nca; j++) {
+			IFD(cout << ati(tarjan_component_actions[j]) << ", ");
+			ts.actions.insert(tarjan_component_actions[j]);
+		    }
+		    IFD(cout << "}\n");
 		    nts++;
 		}
 clear_flags:
@@ -589,10 +609,10 @@ clear_flags:
 		   'tarjan_action_in_component'. */
 		for (int j=0; j<nc; j++)
 		    tarjan_state_in_component[tarjan_component_states[j]] =
-									false;
+								    false;
 		for (int j=0; j<nca; j++)
 		    tarjan_action_in_component[tarjan_component_actions[j]] =
-									false;
+								    false;
 	    }
 
 	    top--;  /* We pop the state, since we've completed the visit. */
@@ -699,6 +719,8 @@ Lts& Lts::labeling(const string& label)
     set<int> new_alphabet;
     map<int, int> mapping;
 
+    terminal_sets_computed = false;
+
     /* Update the actions table, compute a one-to-one [old --> new] mapping
        and update the alphabet. */
     for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
@@ -724,6 +746,8 @@ Lts& Lts::sharing(const SetValue& labels)
 {
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
+
+    terminal_sets_computed = false;
 
     /* Update the actions table, compute a one-to-many [old --> new] mapping 
        and update the alphabet. */
@@ -766,6 +790,8 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
+
+    terminal_sets_computed = false;
 
     /* Update the actions table, compute a one to many [old --> new]
        mapping and update the alphabet. */
@@ -833,6 +859,8 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
     set<int> new_alphabet;
     int action;
 
+    terminal_sets_computed = false;
+
     /* Update the alphabet. */
     if (interface) {
 	for (int i=0; i<s.actions.size(); i++) {
@@ -867,6 +895,8 @@ Lts& Lts::priority(const SetValue& s, bool low)
     set<int> priority_actions;
     vector<LtsNode> new_nodes(nodes.size());
 
+    terminal_sets_computed = false;
+
     for (int i=0; i<s.actions.size(); i++) {
 	action = atp->lookup(s.actions[i]);
 	if (alphabet.count(action)) {
@@ -900,6 +930,8 @@ Lts& Lts::property()
 {
     Edge e;
 
+    terminal_sets_computed = false;
+
     /* Look for the ERROR state. If there is no ERROR state, create one. */
     e.dest = -1;
     for (int i=0; i<nodes.size(); i++)
@@ -930,6 +962,40 @@ Lts& Lts::property()
 
     return *this;
 }
+
+int Lts::progress(const SetValue& s)
+{
+    terminalSets();
+
+    for (int i=0; i<terminal_sets.size(); i++) {
+	TerminalSet& ts = terminal_sets[i];
+	bool violation = true;
+	/* There is a progress violation for the set 's' if the terminal set
+	   'ts' does not contain any action in 's'. */
+	for (int j=0; j<s.actions.size(); j++)
+	    if(ts.actions.count(atp->lookup(s.actions[j]))) {
+		violation = false;
+		break;
+	    }
+
+	if (violation) {
+	    cout << "Progress violation detected:\n";
+	    cout << "	Trace to violation: ";
+	    for (int j=0; j<ts.trace.size(); j++)
+		cout << ati(ts.trace[j]) << "-> ";
+	    cout << "\n";
+	    cout << "	Actions in terminal set: {";
+	    for (set<int>::iterator it=ts.actions.begin();
+		    it!=ts.actions.end(); it++)
+		cout << ati(*it) << ", ";
+	    cout << "}\n";
+	    
+	}
+    }
+
+    return 0;
+}
+
 
 struct GraphvizVisitData {
     fstream * fsptr;

@@ -86,11 +86,14 @@ struct FspCompiler {
     /* Main actions table. */
     struct ActionsTable actions;
 
-    /* Const, Range, Set and Parameter names. */
+    /* Const, Range, Set and Parameter objects. */
     struct SymbolsTable identifiers;
 
-    /* Names of global processes. */
+    /* Global processes. */
     struct SymbolsTable processes;
+
+    /* Progress properties. */
+    struct SymbolsTable progresses;
     
     int record_mode_on;
     ParametricProcess * parametric;
