@@ -46,6 +46,8 @@ class Lts: public SymbolValue {
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
 
   public:
+    string name;
+
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const char * filename);  // TODO remove or update it
@@ -62,6 +64,7 @@ class Lts: public SymbolValue {
     Lts& relabeling(const SetValue& newlabels, const string& oldlabel);
     Lts& hiding(const SetValue& s, bool interface);
     Lts& priority(const SetValue& s, bool low);
+    Lts& property();
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;

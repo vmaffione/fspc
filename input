@@ -4,6 +4,7 @@ set S = {x,y,z}
 
 
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
+property PP = (a->b->c->END).
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).

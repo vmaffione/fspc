@@ -896,6 +896,41 @@ Lts& Lts::priority(const SetValue& s, bool low)
     return *this;
 }
 
+Lts& Lts::property()
+{
+    Edge e;
+
+    /* Look for the ERROR state. If there is no ERROR state, create one. */
+    e.dest = -1;
+    for (int i=0; i<nodes.size(); i++)
+	if (nodes[i].type == LtsNode::Error) {
+	    e.dest = i;
+	    break;
+	}
+    if (e.dest == -1) {
+	nodes.push_back(LtsNode());
+	nodes.back().type = LtsNode::Error;
+	e.dest = nodes.size() - 1;
+    }
+
+    /* For each node different from the ERROR node, consider all the actions
+       in the alphabet that don't label an edge outgoing from the node.
+       For such actions, create an outgoing edge to the ERROR state. */
+    for (int i=0; i<nodes.size(); i++)
+	if (i != e.dest) {
+	    set<int> to_error = alphabet;
+	    for (int j=0; j<nodes[i].children.size(); j++)
+		to_error.erase(nodes[i].children[j].action);
+	    for (set<int>::iterator it=to_error.begin();
+					it!=to_error.end(); it++) {
+		e.action = *it;
+		nodes[i].children.push_back(e);
+	    }
+	}
+
+    return *this;
+}
+
 struct GraphvizVisitData {
     fstream * fsptr;
     ActionsTable * atp;
@@ -923,7 +958,20 @@ void Lts::graphvizOutput(const char * filename) const
     fout << "rankdir = LR;\n";
     //fout << "ratio = 1.0;\n";
     for (int i=0; i<nodes.size(); i++) {
-	fout << i << " [shape=circle,style=filled, fillcolor=green];\n";
+	switch (nodes[i].type) {
+	    case LtsNode::Normal:
+		fout << i
+		    << " [shape=circle,style=filled, fillcolor=green];\n";
+		break;
+	    case LtsNode::End:
+		fout << i
+		    << " [shape=circle,style=filled, fillcolor=blue];\n";
+		break;
+	    case LtsNode::Error:
+		fout << i
+		    << " [shape=circle,style=filled, fillcolor=red];\n";
+		break;
+	}
     }
 
     lvo.vfp = &graphvizVisitFunction;

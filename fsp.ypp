@@ -32,6 +32,7 @@ using namespace std;
     class SymbolValue *sv_ptr;
     struct SvpVec * svpvec_ptr;
     struct Pvec * pvec_ptr;
+    class Lts * lts_ptr;
 }
 
 
@@ -179,6 +180,8 @@ void yyerror(const char *s);
 %type <pvec_ptr> process_body local_process local_process_defs 
 %type <pvec_ptr> local_process_def
 %type <pvec_ptr> sequential_composition base_local_process else_OPT
+
+%type <lts_ptr> process_def
 
 %type <pvec_ptr> seq_process_list process_ref_seq
 %type <svpvec_ptr> argument_list argument_OPT
@@ -460,6 +463,7 @@ process_def:
 	    errstream << "Process " << name << " already declared";
 	    semantic_error(errstream);
 	}
+	lts->name = name;
 
 	if (c.record_mode_on) {
 	    /* Store c.parametric in parametric_processes. */
@@ -478,6 +482,7 @@ process_def:
 
 	lts->print();
 	lts->graphvizOutput((name + ".gv").c_str());
+	$$ = lts;
 
 	ps.pop_back();
 	ps.pop_back();
@@ -1328,7 +1333,11 @@ hiding:
 /* Property, Progress and Menu */
 // TODO second form of progress (if S then C)
 property_def:
-    PROPERTY process_def
+    PROPERTY process_def {
+	$2->property();
+	$2->print();
+	$2->graphvizOutput(($2->name + ".gv").c_str());
+    }
     ;
 
 progress_def:
