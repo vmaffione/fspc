@@ -72,7 +72,6 @@ inline void AA(void * barg, int midx, int tot)
 
 SvpVec * prefix_and_relabel(SvpVec * prefixv, SvpVec * ltsv, SvpVec * relabv)
 {
-    cout << ltsv->v.size() << ", " << c.tr.current_contexts().size() << "\n";
     assert(ltsv->v.size() == c.tr.current_contexts().size());
 
     if (prefixv) {
@@ -916,7 +915,6 @@ composite_body:
     | FORALL {
 	c.tr.css.push_clone();
 	c.tr.current_contexts().print();
-	cout << "ZZ1 " << c.tr.current_contexts().size() << "\n";
     } index_ranges composite_body {
 	/* Here there is an extension to the original grammar, since
 	   we should have 'ranges' and not 'index_ranges'. */
@@ -927,7 +925,6 @@ composite_body:
 	Lts * rlts;
 	int rank = -1;
 
-	cout << "ZZ2 " << c.tr.current_contexts().size() << "\n";
 	assert($3->v.size() == $4->v.size() &&
 		$4->v.size() == c.tr.current_contexts().size());
 	$3->print();
@@ -948,8 +945,6 @@ composite_body:
 
 	$$ = vp;
 	c.tr.css.pop();
-	cout << "ZZ3 " << c.tr.current_contexts().size() << " "
-		    << $$->v.size() <<"\n";
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -972,11 +967,11 @@ composite_body:
 	    cvp = err_if_not_const($2->v[c]);
 	    if (!cvp->value) {
 		SymbolValue * tmp = $4->v[c];
-		$4->v[c] = $5->v[c];
-		$5->v[c] = tmp;
+		$4->v[c] = vp->v[c];
+		vp->v[c] = tmp;
 	    }
 	}
-	delete $5;
+	delete vp;
 
 	$$ = $4;
 	ps.pop_back();
@@ -1536,7 +1531,6 @@ base_expr:
 				new Callback_V_I(&callback__61, $1));
 	$$ = callback__61(c.tr, $1);
 	ps.push_back($$);
-	//cout << "UU " << $1 << "\n";
     }
     | variable {
 	AA($1,1,1);
