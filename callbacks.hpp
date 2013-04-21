@@ -76,7 +76,7 @@ SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__71(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__72(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
-
+void * callback__74(FspTranslator&tr, SvpVec * one); /*21*/
 
 struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;

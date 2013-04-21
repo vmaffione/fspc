@@ -1604,23 +1604,51 @@ SvpVec * callback__69(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     SvpVec * vp = new SvpVec;
+    vector<SetValue *> old_merged;
+    vector<SetValue *> new_merged;
+    SetValue * merged = NULL;
     RelabelingValue * rlv;
-    SetValue * new_setvp;
-    SetValue * old_setvp;
+    SetValue * setvp;
+    int rank;
 
-    assert(one->v.size() == two->v.size() &&
-	    two->v.size() == tr.current_contexts().size());
+    tr.css.pop();
+
+    rank = -1;
     for (int c=0; c<one->v.size(); c++) {
+	setvp = err_if_not_set(one->v[c]);
+	if (setvp->rank != rank) {
+	    rank = setvp->rank;
+	    merged = setvp;
+	    one->detach(c);
+	    new_merged.push_back(merged);
+	} else {
+	    for (int i=0; i<setvp->actions.size(); i++)
+		merged->actions.push_back(setvp->actions[i]);
+	}
+    }
+    delete one;
+    
+    rank = -1;
+    for (int c=0; c<two->v.size(); c++) {
+	setvp = err_if_not_set(two->v[c]);
+	if (setvp->rank != rank) {
+	    rank = setvp->rank;
+	    merged = setvp;
+	    two->detach(c);
+	    old_merged.push_back(merged);
+	} else {
+	    for (int i=0; i<setvp->actions.size(); i++)
+		merged->actions.push_back(setvp->actions[i]);
+	}
+    }
+    delete two;
+
+    assert(old_merged.size() == new_merged.size());
+    for (int i=0; i<old_merged.size(); i++) {
 	rlv = new RelabelingValue;
-	new_setvp = err_if_not_set(one->v[c]);
-	old_setvp = err_if_not_set(two->v[c]);
-	rlv->add(new_setvp, old_setvp);
+	rlv->add(new_merged[i], old_merged[i]);
 	vp->v.push_back(rlv);
     }
-    one->detach_all();
-    two->detach_all();
-    delete one;
-    delete two;
 
     return vp;
 }
@@ -1680,5 +1708,11 @@ SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
     delete two;
 
     return vp;
+}
+
+void * callback__74(FspTranslator&tr, SvpVec * one)
+{
+    tr.css.pop();
+    tr.css.push_clone();
 }
 
