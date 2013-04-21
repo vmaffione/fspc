@@ -1084,22 +1084,22 @@ SvpVec * callback__37(FspTranslator& tr)
 
 SvpVec * callback__38(FspTranslator& tr, SvpVec * one)
 {
-    SvpVec * vp;
+    SvpVec * vp = new SvpVec;
     SetValue * setvp;
-    ConstValue * cvp;
 
-    /* Here we are sure to have only the empty context. */
-    assert(tr.current_contexts().size() == 1 && one->v.size() == 1);
+    assert(tr.current_contexts().size() == one->v.size());
 
     if (one->v[0]->type() == SymbolValue::Set) {
 	stringstream errstream;
 	errstream << "Unexpected set";
 	semantic_error(errstream);
     }
-    setvp = new SetValue;
-    setvp->actions.push_back("");
-    vp = new SvpVec;
-    vp->v.push_back(setvp);
+    for (int c=0; c<one->v.size(); c++) {
+	setvp = new SetValue;
+	setvp->actions.push_back("");
+	setvp->rank = c;
+	vp->v.push_back(setvp);
+    }
 
     return indexize_svpvec(&tr, vp, one);
 }
