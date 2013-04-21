@@ -914,7 +914,6 @@ composite_body:
     }
     | FORALL {
 	c.tr.css.push_clone();
-	c.tr.current_contexts().print();
     } index_ranges composite_body {
 	/* Here there is an extension to the original grammar, since
 	   we should have 'ranges' and not 'index_ranges'. */
@@ -1265,9 +1264,19 @@ relabel_def:
 	ps.pop_back();
 	ps.push_back($$);
     }
-    | FORALL index_ranges '{' relabel_defs '}' {
-	// TODO
-	$$ = $4;
+    | FORALL {
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_N(&callback__22));
+	callback__22(c.tr);
+    } index_ranges '{' relabel_defs '}' {
+	AA($3,1,2); AA($5,2,2);
+	if (c.record_mode_on) {
+	    c.parametric->record.push_back(new Callback_V_VV(&callback__73));
+	}
+	$$ = callback__73(c.tr, $3, $5);
+	ps.pop_back();
+	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 

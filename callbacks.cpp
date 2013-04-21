@@ -1652,3 +1652,33 @@ SvpVec * callback__72(FspTranslator& tr, SvpVec * one)
     return hiding_callback(tr, one, true);
 }
 
+SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    SvpVec * vp = new SvpVec;
+    SetValue * setvp;
+    RelabelingValue * rlv = NULL;
+    RelabelingValue * rrlv;
+    int rank = -1;
+
+    assert(one->v.size() == two->v.size() &&
+	    two->v.size() == tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	setvp = err_if_not_set(one->v[c]);
+	rrlv = err_if_not_relabeling(two->v[c]);
+	if (setvp->rank != rank) {
+	    if (rlv)
+		vp->v.push_back(rlv);
+	    rank = setvp->rank;
+	    rlv = new RelabelingValue;
+	    rlv->merge(*rrlv);
+	} else
+	    rlv->merge(*rrlv);
+    }
+    vp->v.push_back(rlv);
+    tr.css.pop();
+    delete one;
+    delete two;
+
+    return vp;
+}
+
