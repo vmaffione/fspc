@@ -300,7 +300,6 @@ void Lts::compose(const Lts& p, const Lts& q)
 		    }
 		
 	    }
-	    updateAlphabet(ep.action);  // TODO controlla che va bene in entrambi i casi!
 	}
 
     /* Scan the Q graph and combine Q actions with P states */
@@ -317,7 +316,6 @@ void Lts::compose(const Lts& p, const Lts& q)
 		for (int ip=0; ip<np; ip++) {
 		    e.dest = ip * nq + eq.dest;
 		    product[ip*nq+iq].children.push_back(e);
-		    updateAlphabet(eq.action);
 		}
 	    } /* else case has already been covered by the previous scan. */
 	}
@@ -332,6 +330,13 @@ void Lts::compose(const Lts& p, const Lts& q)
 	    else if ((p.nodes[ip].type == LtsNode::End) &&
 		    (q.nodes[iq].type == LtsNode::End))
 		product[ip*nq+iq].type = LtsNode::End;
+
+    for (set<int>::iterator it=p.alphabet.begin();
+				it!=p.alphabet.end(); it++)
+	updateAlphabet(*it);
+    for (set<int>::iterator it=q.alphabet.begin();
+				it!=q.alphabet.end(); it++)
+	updateAlphabet(*it);
 
     reduce(product);
 }
