@@ -1638,51 +1638,27 @@ SvpVec * callback__69(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     SvpVec * vp = new SvpVec;
-    vector<SetValue *> old_merged;
-    vector<SetValue *> new_merged;
-    SetValue * merged = NULL;
+    SvpVec old_merged;
+    SvpVec new_merged;
     RelabelingValue * rlv;
-    SetValue * setvp;
-    int rank;
 
     tr.css.pop();
 
-    rank = -1;
-    for (int c=0; c<one->v.size(); c++) {
-	setvp = err_if_not_set(one->v[c]);
-	if (setvp->rank != rank) {
-	    rank = setvp->rank;
-	    merged = setvp;
-	    one->detach(c);
-	    new_merged.push_back(merged);
-	} else {
-	    for (int i=0; i<setvp->actions.size(); i++)
-		merged->actions.push_back(setvp->actions[i]);
-	}
-    }
+    merge_by_rank(one, new_merged);
     delete one;
-    
-    rank = -1;
-    for (int c=0; c<two->v.size(); c++) {
-	setvp = err_if_not_set(two->v[c]);
-	if (setvp->rank != rank) {
-	    rank = setvp->rank;
-	    merged = setvp;
-	    two->detach(c);
-	    old_merged.push_back(merged);
-	} else {
-	    for (int i=0; i<setvp->actions.size(); i++)
-		merged->actions.push_back(setvp->actions[i]);
-	}
-    }
-    delete two;
 
-    assert(old_merged.size() == new_merged.size());
-    for (int i=0; i<old_merged.size(); i++) {
+    merge_by_rank(two, old_merged);
+    delete two;
+    
+    assert(old_merged.v.size() == new_merged.v.size());
+    for (int i=0; i<old_merged.v.size(); i++) {
 	rlv = new RelabelingValue;
-	rlv->add(new_merged[i], old_merged[i]);
+	rlv->add(static_cast<SetValue * >(new_merged.v[i]),
+			static_cast<SetValue *>(old_merged.v[i]));
 	vp->v.push_back(rlv);
     }
+    new_merged.detach_all();
+    old_merged.detach_all();
 
     return vp;
 }
@@ -1718,25 +1694,23 @@ SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     SvpVec * vp = new SvpVec;
     SetValue * setvp;
-    RelabelingValue * rlv = NULL;
-    RelabelingValue * rrlv;
+    RelabelingValue * merged = NULL;
+    RelabelingValue * rlv;
     int rank = -1;
 
     assert(one->v.size() == two->v.size() &&
 	    two->v.size() == tr.current_contexts().size());
     for (int c=0; c<one->v.size(); c++) {
 	setvp = err_if_not_set(one->v[c]);
-	rrlv = err_if_not_relabeling(two->v[c]);
+	rlv = err_if_not_relabeling(two->v[c]);
 	if (setvp->rank != rank) {
-	    if (rlv)
-		vp->v.push_back(rlv);
 	    rank = setvp->rank;
-	    rlv = new RelabelingValue;
-	    rlv->merge(*rrlv);
+	    merged = rlv;
+	    two->detach(c);
+	    vp->v.push_back(merged);
 	} else
-	    rlv->merge(*rrlv);
+	    merged->merge(*rlv);
     }
-    vp->v.push_back(rlv);
     tr.css.pop();
     delete one;
     delete two;
