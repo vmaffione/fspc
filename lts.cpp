@@ -63,7 +63,7 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
     map<ProcessNode *, int> * mapp = ((LtsConvertData *)opaque)->mapp;
     int state = (mapp->find(pnp))->second;
 
-    cout << "Converting " << pnp << " into " << state << "\n";
+    IFD(cout << "Converting " << pnp << " into " << state << "\n");
     
     switch (pnp->type) {
 	case ProcessNode::Normal:
@@ -85,12 +85,11 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
 	ret = mapp->insert(make_pair(pnp->children[i].dest, next));
 	if (ret.second) {
 	    ltsp->nodes.push_back(LtsNode());
-	    cout << "(" << pnp->children[i].dest << "," <<
-		    next << ")\n";
+	    IFD(cout << "(" << pnp->children[i].dest << "," << next << ")\n");
 	}
 	e.dest = ret.first->second;
 	e.action = pnp->children[i].action;
-	cout << "Adding " << e.action << ", " << e.dest << "\n";
+	IFD(cout << "Adding " << e.action << ", " << e.dest << "\n");
 	ltsp->nodes[state].children.push_back(e);
 	ltsp->updateAlphabet(e.action);
 	ltsp->ntr++;
@@ -185,7 +184,7 @@ Lts::Lts(const char * filename) : atp(NULL)
 
 void Lts::print() const {
     atp->print();
-    cout << "LTS " << "\n";
+    cout << "LTS " << name << "\n";
     for (int i=0; i<nodes.size(); i++) {
 	cout << "State " << i << ":\n";
 	for (int j=0; j<nodes[i].children.size(); j++)
@@ -540,10 +539,9 @@ int Lts::terminalSets()
 		IFD(cout << "\n");
 
 
-		if (nc == 1 || nc == n) {
+		if (nc == n) {
 		    /* We are not interested in trivial terminal sets. A
-		       terminal set is trivial when it is a deadlock state
-		       (just one element) or when it is the whole LTS. */
+		       terminal set is trivial when it is the whole LTS. */
 		    terminal = false;
 		} else {
 		    /* Check if the component is a terminal one, e.g. with
@@ -963,7 +961,7 @@ Lts& Lts::property()
     return *this;
 }
 
-int Lts::progress(const SetValue& s)
+int Lts::progress(const string& progress_name, const SetValue& s)
 {
     terminalSets();
 
@@ -979,7 +977,8 @@ int Lts::progress(const SetValue& s)
 	    }
 
 	if (violation) {
-	    cout << "Progress violation detected:\n";
+	    cout << "Progress violation detected for process " << name
+		<< " and progress property " << progress_name << ":\n";
 	    cout << "	Trace to violation: ";
 	    for (int j=0; j<ts.trace.size(); j++)
 		cout << ati(ts.trace[j]) << "-> ";
@@ -988,7 +987,7 @@ int Lts::progress(const SetValue& s)
 	    for (set<int>::iterator it=ts.actions.begin();
 		    it!=ts.actions.end(); it++)
 		cout << ati(*it) << ", ";
-	    cout << "}\n";
+	    cout << "}\n\n";
 	    
 	}
     }

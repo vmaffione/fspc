@@ -74,7 +74,7 @@ class Lts: public SymbolValue {
     Lts& hiding(const SetValue& s, bool interface);
     Lts& priority(const SetValue& s, bool low);
     Lts& property();
-    int progress(const SetValue& s);
+    int progress(const string& progress_name, const SetValue& s);
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;

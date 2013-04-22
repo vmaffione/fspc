@@ -13,7 +13,7 @@
 #include "callbacks.hpp"
 
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
 #define PROP(x) cout<<"PROP:==============================================================\n      " << x << "\n"
@@ -31,7 +31,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
     FspTranslator tr(c);
     ConstValue * cvp;
 
-    cout << "Replay!!\n";
+    PROX(cout << "Replay!!\n");
     assert(values.size() == parameter_defaults.size());
     assert(parameter_defaults.size() == parameter_names.size());
 
@@ -49,8 +49,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
 
     /* Replay the callbacks. */
     for (int i=0; i<record.size(); i++) {
-	cout << record[i]->is_void() << ", " << stack.size() << " ";
-	record[i]->print();
+	PROX(cout << record[i]->is_void() << ", " << stack.size() << " ";record[i]->print());
 	void * ret = record[i]->execute(tr, stack);
 	if (!(record[i]->is_void()))
 	    stack.push_back(ret);
@@ -140,7 +139,6 @@ SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * righ
 			csp->append(cxp);
 		    }
 		}
-		cout << "Contexts ramification\n";
 		gp->css.update(csp);
 		delete left;
 		delete right;
@@ -199,7 +197,6 @@ SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * righ
 			csp->append(cxp);
 		    }
 		}
-		cout << "Contexts ramification\n";
 		gp->css.update(csp);
 		delete left;
 		delete right;
@@ -234,9 +231,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 	ProcessEdge& e = pnp->children[i];
 	SymbolValue * svp;
 	if (e.dest == NULL) {
-	    cout << "Unref " << pnp << ": "
-		<< trp->cr.actions.reverse[e.action]
-		<< " -> " << e.unresolved_reference << "\n";				
+	    PROX(cout << "Unref " << pnp << ": " << trp->cr.actions.reverse[e.action] << " -> " << e.unresolved_reference << "\n");
 	    if (!trp->local_processes.lookup(e.unresolved_reference, svp)) {
 		stringstream errstream;
 		errstream << "Local process " << pnp << ": "
@@ -543,7 +538,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	    errstream << "process " << *one << " declared twice";
 	    semantic_error(errstream);
 	}
-	cout << "Process " << *one << " defined (" << pvp->pnp << ")\n";
     }
 
     PROX(cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<< Process " << *one << " defined >>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
@@ -655,7 +649,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
 			<< " declared twice";
 		    semantic_error(errstream);
 		}
-		cout << "Process " << procname << " defined (" << pvp->pnp << ")\n";
+		PROX(cout << "Process " << procname << " defined (" << pvp->pnp << ")\n");
 	    }
 	}
     }
@@ -785,7 +779,7 @@ Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two)
 	setvp = err_if_not_set(two->v[c]);
 	assert(setvp->actions.size() == 1);
 	name = *one + setvp->actions[0];
-	cout << "looking for " << name << endl;
+	PROX(cout << "looking for " << name << endl);
 	/* If the process referenced is already defined, return it.
 	   Otherwise return a new UnresolvedProcess object, so that the
 	   upper level sees that 'name' is unresolved. */
@@ -836,7 +830,7 @@ void * callback__30(FspTranslator& tr, SvpVec * one)
 	    if (!cvp->value)
 		tr.current_contexts().rule_out(c);
 	}
-	cout << "filtered\n"; tr.current_contexts().print();
+	PROX(cout << "filtered\n"; tr.current_contexts().print());
     }
 
     return NULL;

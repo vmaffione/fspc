@@ -128,7 +128,7 @@ SvpVec * priority_callback(SvpVec * one, bool low)
 }
 
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
 #define PROP(x) cout<<"PROP:==============================================================\n      " << x << "\n"
@@ -296,7 +296,6 @@ set_expr:
 	    c.parametric->record.push_back(new Callback_V_V(&callback__75));
 	$$ = callback__75(c.tr, $3);
 	$$ = $3;
-	$$->print();
     }
     ;
 
@@ -492,15 +491,14 @@ process_def:
 				<< " already declared";
 		semantic_error(errstream);
 	    }
-	    c.parametric->print(); // XXX
+	    PROX(c.parametric->print());
 
 	    /* Prepare for the next parametric process. */
 	    c.parametric = new ParametricProcess;
 	    c.record_mode_on = 0;
 	}
 
-	lts->print();
-	lts->graphvizOutput((name + ".gv").c_str());
+	PROX(lts->print(); lts->graphvizOutput((name + ".gv").c_str()));
 	$$ = lts;
 
 	ps.pop_back();
@@ -548,7 +546,6 @@ local_process_def:
 	callback__16(c.tr, $1);
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
-	$3->print();
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				    new Callback_N_SV(&callback__17, *$1));
@@ -683,7 +680,7 @@ choice:
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(new Callback_P_PP(&callback__29));
 	$$ = callback__29(c.tr, $1, $4);
-	cout << "CSS height = (pop) " << c.tr.css.stack.size() << "\n";
+	PROX(cout << "CSS height = (pop) " << c.tr.css.stack.size() << "\n");
 	ps.pop_back();
     }
     ;
@@ -882,7 +879,6 @@ composite_def:
 	    PriorityValue * prv = err_if_not_priority($7->v[0]);
 
 	    assert($7->v.size() == 1);
-	    prv->print();
 	    lts->priority(*(prv->setvp), prv->low);
 	}
 
@@ -906,9 +902,8 @@ composite_def:
 	}
 	lts->name = *$2;
 
-	cout << "#####################Composite process " << *$2 << " defined#############\n";
-	lts->print();
-	lts->graphvizOutput((*$2 + ".gv").c_str());
+	PROX(cout << "#####################Composite process " << *$2 << " defined#############\n");
+	PROX(lts->print(); lts->graphvizOutput((*$2 + ".gv").c_str()));
 
 	delete $2;
 	delete $7;
@@ -951,7 +946,6 @@ composite_body:
 
 	assert($3->v.size() == $4->v.size() &&
 		$4->v.size() == c.tr.current_contexts().size());
-	$3->print();
 	for (int k=0; k<$3->v.size(); k++) {
 	    setvp = err_if_not_set($3->v[k]);
 	    rlts = err_if_not_lts($4->v[k]);
@@ -1355,8 +1349,7 @@ hiding:
 property_def:
     PROPERTY process_def {
 	$2->property();
-	$2->print();
-	$2->graphvizOutput(($2->name + ".gv").c_str());
+	PROX($2->print(); $2->graphvizOutput(($2->name + ".gv").c_str()));
     }
     ;
 
@@ -1388,9 +1381,7 @@ progress_def:
 	    for (it=c.processes.table.begin();
 				it!=c.processes.table.end(); it++) {
 		lts = err_if_not_lts(it->second);
-		cout << "Progress check '" << name << "' for process '"
-			<< lts->name << "':\n";
-		lts->progress(*setvp);
+		lts->progress(name, *setvp);
 	    }
 	}
 	c.tr.css.pop();
@@ -1680,6 +1671,14 @@ int parser()
     ibs.push(input_name);
     yyparse();
     ibs.pop();
+
+    /* Scan the symbols table 'processes'. */
+    map<string, SymbolValue *>::iterator it;
+    Lts * lts;
+    for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
+	lts = err_if_not_lts(it->second);
+	lts->graphvizOutput((lts->name + ".gv").c_str());
+    }
 
     return 0;
 }

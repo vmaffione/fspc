@@ -4,6 +4,7 @@ set S = {x,y,z}
 
 
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q) << {a} \{y}.
+progress PR = {a}
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
