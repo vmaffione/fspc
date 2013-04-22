@@ -59,7 +59,7 @@ class Lts: public SymbolValue {
 
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
-    Lts(const char * filename, struct ActionsTable *);
+    Lts(fstream& fin, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }

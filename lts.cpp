@@ -124,23 +124,19 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     pnp->visit(f, true);
 }
 
-Lts::Lts(const char * filename, struct ActionsTable * p) : atp(p)
+Lts::Lts(fstream& fin, struct ActionsTable * p) : atp(p)
 {
-    fstream fin;
     int n;
+    int na;
     int end;
     int error;
     int s1, s2;
     string a;
     Edge e;
 
-    fin.open(filename, ios_base::in);
-    if (fin.fail()) {
-	cout << "No such file: " << filename << "\n";
-	exit(-1);
-    }
-
-    fin >> n >> ntr >> end >> error;
+    fin >> name >> n >> ntr >> na >> end >> error;
+    if (fin.eof())
+	return;
     if (n < 1) {
 	cout << "Error: Corrupted input: n < 1\n";
 	exit(-1);
@@ -169,17 +165,12 @@ Lts::Lts(const char * filename, struct ActionsTable * p) : atp(p)
 	e.dest = s2;
 	e.action = atp->insert(a);
 	nodes[s1].children.push_back(e);
-	//updateAlphabet(e.action);
     }
 
-    for (;;) {
+    for (int j=0;j<na;j++) {
 	fin >> a;
-	if (fin.fail())
-	    break;
 	updateAlphabet(atp->insert(a));
     }
-
-    fin.close();
 }
 
 void Lts::print() const {
@@ -1081,8 +1072,9 @@ void Lts::output(const char * filename) const
     int end = -1;
     int error = -1;
 
-    fout.open(filename, fstream::out);
-    fout << nodes.size() << " " << ntr << " ";
+    fout.open(filename, fstream::app | fstream::out);
+    fout << name << " " << nodes.size() << " " << ntr << " " 
+		<< alphabet.size() << " ";
     for (int i=0; i<nodes.size(); i++) {
 	switch (nodes[i].type) {
 	    case LtsNode::End:
@@ -1103,6 +1095,7 @@ void Lts::output(const char * filename) const
 
     for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++)
 	fout << ati(*it) << " ";
+    fout << "\n";
 
     fout.close();
 }

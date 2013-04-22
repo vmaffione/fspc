@@ -1662,19 +1662,53 @@ int parser(const CompilerOptions& co)
 
     InputBuffersStack ibs;
 
-    ibs.push(co.input_file);
-    yyparse();
-    ibs.pop();
+    if (co.input_type == CompilerOptions::InputTypeFsp) {
+	/* Parse the FSP input file. */
+	ibs.push(co.input_file);
+	yyparse();
+	ibs.pop();
+    } else {
+	/* Load the processes table from an LTS file. */
+	fstream fin(co.input_file, fstream::in);
+	Lts * lts;
+
+	if (fin.fail()) {
+	    cerr << "No such file: '" << co.input_file << "'\n";
+	}
+	
+	while (!(fin.fail() || fin.eof())) {
+	    lts = new Lts(fin, &c.actions);
+
+	    if (fin.eof())
+		break;
+	    /* Insert lts into the global 'processes' table. */
+	    if (!c.processes.insert(lts->name, lts)) {
+		stringstream errstream;
+		errstream << "Process " << lts->name << " already declared";
+		semantic_error(errstream);
+	    }
+	}
+
+	fin.close();
+    }
+
+    /* Zero-truncate the output file. */
+    if (co.input_type != CompilerOptions::InputTypeLts)
+	fstream(co.output_file, fstream::out).close();
 
     /* Scan the 'processes' symbols table. For each process, output
        the associated LTS and do the deadlock analysis. */
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
     Lts * lts;
-    SetValue * setvp;
+    SetValue * setvp;    
+
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = err_if_not_lts(it->second);
-	lts->output((lts->name + ".lts").c_str());
+
+	/* We output an LTS file only if the input is not an LTS file. */
+	if (co.input_type != CompilerOptions::InputTypeLts)
+	    lts->output(co.output_file);
 
 	if (co.deadlock)
 	    lts->deadlockAnalysis();
