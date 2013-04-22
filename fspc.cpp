@@ -9,7 +9,6 @@ extern int parser();
 int main ()
 {
     int ret;
-    Lts p1();
 
     ret = parser();
 

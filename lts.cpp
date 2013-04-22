@@ -124,61 +124,61 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     pnp->visit(f, true);
 }
 
-Lts::Lts(const char * filename) : atp(NULL)
+Lts::Lts(const char * filename, struct ActionsTable * p) : atp(p)
 {
     fstream fin;
     int n;
+    int end;
+    int error;
     int s1, s2;
     string a;
     Edge e;
 
-    terminal_sets_computed = false;
-
-    /* Discover the number of nodes */
-    n = -1;
     fin.open(filename, ios_base::in);
     if (fin.fail()) {
 	cout << "No such file: " << filename << "\n";
-	throw int(-1);
+	exit(-1);
     }
 
-    for (;;) {
-	fin >> s1 >> a >> s2;
-	if (fin.fail())
-	    break;
-
-	if (s1 < 0 || s2 < 0) {
-	    cout << "Error: negative state number\n";
-	    throw int(-1);
-	}
-	if (s1 > n)
-	    n = s1;
-	if (s2 > n)
-	    n = s2;
-	IFD(cout << "Read (" << s1 << ", " << a << ", " << s2 << ")\n");
+    fin >> n >> ntr >> end >> error;
+    if (n < 1) {
+	cout << "Error: Corrupted input: n < 1\n";
+	exit(-1);
     }
-    n++;
-    fin.close();
+    terminal_sets_computed = false;
 
-    ntr = 0;
     nodes.resize(n);
     for (int i=0; i<n; i++)
 	nodes[i].type = LtsNode::Normal;
+    if (error != -1)
+	nodes[error].type = LtsNode::Error;
+    if (end != -1)
+	nodes[end].type = LtsNode::End;
 
-    /* Build the graph */
-    fin.open(filename, ios_base::in);
-    for (;;) {
+    for (int j=0; j<ntr; j++) {
 	fin >> s1 >> a >> s2;
-	if (fin.fail())
-	    break;
+
+	if (s1 < 0 || s2 < 0) {
+	    cout << "Error: Corrupted input: Negative state number\n";
+	    exit(-1);
+	}
+	if (s1 >= n || s2 >=n) {
+	    cout << "Error: Corruped input s1 >= n || s2 >= n\n";
+	}
+	IFD(cout << "Read (" << s1 << ", " << a << ", " << s2 << ")\n");
 	e.dest = s2;
 	e.action = atp->insert(a);
-	IFD(cout << "Adding (" << s1 << ", " << ati(e.action) 
-		<< ", " << e.dest << ")\n";)
-	nodes[s1].children.push_back(e);  /* Insert a new edge */
-	ntr++;
-	updateAlphabet(e.action);
+	nodes[s1].children.push_back(e);
+	//updateAlphabet(e.action);
     }
+
+    for (;;) {
+	fin >> a;
+	if (fin.fail())
+	    break;
+	updateAlphabet(atp->insert(a));
+    }
+
     fin.close();
 }
 
@@ -1004,7 +1004,7 @@ int Lts::progress(const string& progress_name, const SetValue& s)
 }
 
 
-struct GraphvizVisitData {
+struct OutputData {
     fstream * fsptr;
     ActionsTable * atp;
 };
@@ -1012,7 +1012,7 @@ struct GraphvizVisitData {
 void graphvizVisitFunction(int state, const struct LtsNode& node,
 				void * opaque)
 {
-    GraphvizVisitData * gvdp = (GraphvizVisitData *)opaque;
+    OutputData * gvdp = static_cast<OutputData *>(opaque);
     ActionsTable * atp = gvdp->atp;
 
     for (int i=0; i<node.children.size(); i++)
@@ -1023,7 +1023,7 @@ void graphvizVisitFunction(int state, const struct LtsNode& node,
 void Lts::graphvizOutput(const char * filename) const
 {
     LtsVisitObject lvo;
-    GraphvizVisitData gvd;
+    OutputData gvd;
     fstream fout;
 
     fout.open(filename, fstream::out);
@@ -1054,6 +1054,51 @@ void Lts::graphvizOutput(const char * filename) const
     visit(lvo);
 
     fout << "}\n";
+    fout.close();
+}
+
+void outputVisitFunction(int state, const struct LtsNode& node,
+				void * opaque)
+{
+    OutputData * gvdp = static_cast<OutputData *>(opaque);
+    ActionsTable * atp = gvdp->atp;
+
+    for (int i=0; i<node.children.size(); i++)
+	(*(gvdp->fsptr)) << state << " " << ati(node.children[i].action)
+	    << " " << node.children[i].dest << "\n";
+}
+
+void Lts::output(const char * filename) const
+{
+    LtsVisitObject lvo;
+    OutputData gvd;
+    fstream fout;
+    int end = -1;
+    int error = -1;
+
+    fout.open(filename, fstream::out);
+    fout << nodes.size() << " " << ntr << " ";
+    for (int i=0; i<nodes.size(); i++) {
+	switch (nodes[i].type) {
+	    case LtsNode::End:
+		end = i;
+		break;
+	    case LtsNode::Error:
+		error = i;
+		break;
+	}
+    }
+    fout << end << " " << error << "\n";
+
+    lvo.vfp = &outputVisitFunction;
+    gvd.fsptr = &fout;
+    gvd.atp = atp;
+    lvo.opaque = &gvd;
+    visit(lvo);
+
+    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++)
+	fout << ati(*it) << " ";
+
     fout.close();
 }
 

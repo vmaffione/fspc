@@ -1674,6 +1674,7 @@ int parser()
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = err_if_not_lts(it->second);
 	lts->graphvizOutput((lts->name + ".gv").c_str());
+	lts->output((lts->name + ".lts").c_str());
 	lts->deadlockAnalysis();
     }
 
@@ -1686,6 +1687,7 @@ int parser()
 	    lts->progress(it->first, *setvp);
 	}
     }
+
     return 0;
 }
 
