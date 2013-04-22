@@ -6,7 +6,7 @@ OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o util
 fspc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspc
 
-fspc.o: symbols_table.hpp lts.cpp
+fspc.o: symbols_table.hpp lts.cpp interface.hpp
 
 symbols_table.o: symbols_table.hpp symbols_table.cpp
 
@@ -16,7 +16,7 @@ lts.o: lts.hpp symbols_table.hpp
 
 context.o: context.hpp symbols_table.hpp
 
-parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o
+parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o interface.hpp
 
 translator.o: translator.hpp
 

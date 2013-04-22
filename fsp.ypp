@@ -56,6 +56,9 @@ using namespace std;
 /* Callbacks. */
 #include "callbacks.hpp"
 
+/* Compiler options. */
+#include "interface.hpp"
+
 
 
 /* A global data structure containing everything the compiler needs. */
@@ -1646,12 +1649,10 @@ menu_id: UpperCaseID { ps.push_back($1); };
 
 const char * ex = "P=(a->b->P).";
 
-int parser()
+int parser(const CompilerOptions& co)
 {
-    const char * input_name = "input";
-
     /*
-    ScannerFileBuffer sfb(input_name);
+    ScannerFileBuffer sfb(co.input_file);
     sfb.select();
     yyparse();
 
@@ -1661,7 +1662,7 @@ int parser()
 
     InputBuffersStack ibs;
 
-    ibs.push(input_name);
+    ibs.push(co.input_file);
     yyparse();
     ibs.pop();
 
@@ -1673,18 +1674,25 @@ int parser()
     SetValue * setvp;
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = err_if_not_lts(it->second);
-	lts->graphvizOutput((lts->name + ".gv").c_str());
 	lts->output((lts->name + ".lts").c_str());
-	lts->deadlockAnalysis();
+
+	if (co.deadlock)
+	    lts->deadlockAnalysis();
+
+	if (co.graphviz)
+	    lts->graphvizOutput((lts->name + ".gv").c_str());
     }
 
-    /* Do each progress check against all the global processes. */
-    for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
-	setvp = err_if_not_set(it->second);
-	for (jt=c.processes.table.begin();
-			jt!=c.processes.table.end(); jt++) {
-	    lts = err_if_not_lts(jt->second);
-	    lts->progress(it->first, *setvp);
+    if (co.progress) {
+	/* Do each progress check against all the global processes. */
+	for (it=c.progresses.table.begin(); it!=c.progresses.table.end();
+								    it++) {
+	    setvp = err_if_not_set(it->second);
+	    for (jt=c.processes.table.begin();
+		    jt!=c.processes.table.end(); jt++) {
+		lts = err_if_not_lts(jt->second);
+		lts->progress(it->first, *setvp);
+	    }
 	}
     }
 

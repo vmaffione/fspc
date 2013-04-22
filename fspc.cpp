@@ -5,19 +5,7 @@
 
 using namespace std;
 
-extern int parser();
-
-struct CompilerOptions {
-    const char * input_file;
-    int input_type;
-    const char * output_file;
-    bool deadlock;
-    bool progress;
-    bool graphviz;
-
-    static const int InputTypeFsp = 0;
-    static const int InputTypeLts = 1;
-};
+#include "interface.hpp"
 
 
 void process_args(CompilerOptions& co, int argc, char **argv)
@@ -109,7 +97,7 @@ int main (int argc, char ** argv)
     
     process_args(co, argc, argv);
 
-    ret = parser();
+    ret = parser(co);
 
     return ret;
 }
