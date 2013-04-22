@@ -451,15 +451,49 @@ SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two)
     return vp;
 }
 
+void merge_by_rank(SvpVec * sets, SvpVec& result) {
+    SetValue * merged;
+    SetValue * setvp;
+    int rank = -1;
+
+    assert(result.v.size() == 0);
+
+    for (int c=0; c<sets->v.size(); c++) {
+	setvp = err_if_not_set(sets->v[c]);
+	if (setvp->rank != rank) {
+	    rank = setvp->rank;
+	    merged = setvp;
+	    sets->detach(c);
+	    result.v.push_back(merged);
+	} else
+	    *merged += *setvp;
+    }
+    /* Note: Deleting 'sets' is up to the caller. */
+}
+
+SvpVec * callback__10(FspTranslator& tr, SvpVec * one)
+{
+    SvpVec * vp = new SvpVec;
+
+    merge_by_rank(one, *vp);
+    delete one;
+
+    return vp;
+}
+
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
-    assert(one->v.size() == two->v.size());
+    SvpVec two_merged;
+
+    merge_by_rank(two, two_merged);
+    delete two;
+
+    assert(one->v.size() == two_merged.v.size());
     for (int c=0; c<one->v.size(); c++) {
 	SetValue * setvp = err_if_not_set(one->v[c]);
-	SetValue * rsetvp = err_if_not_set(two->v[c]);
+	SetValue * rsetvp = err_if_not_set(two_merged.v[c]);
 	*setvp += *rsetvp;
     }
-    delete two;
 
     return one;
 }
@@ -1710,9 +1744,16 @@ SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
     return vp;
 }
 
-void * callback__74(FspTranslator&tr, SvpVec * one)
+void * callback__74(FspTranslator& tr, SvpVec * one)
 {
     tr.css.pop();
     tr.css.push_clone();
+}
+
+SvpVec * callback__75(FspTranslator& tr, SvpVec * one)
+{
+    tr.css.pop();
+
+    return one;
 }
 
