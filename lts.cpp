@@ -397,8 +397,14 @@ int Lts::deadlockAnalysis() const
 	if (i == 0 && nodes[state].type != LtsNode::End) { 
 	    int t;
 	    int j;
+	    string ed;
 
-	    cout << "Deadlock state: " << state << "\n";
+	    if (nodes[state].type == LtsNode::Normal)
+		ed = "Deadlock";
+	    else
+		ed = "Property violation";
+	    cout << ed << " found for process " << name << ": state "
+			<< state << "\n";
 	    /* Starting from 'state', we follow the backpointers to build the
 	       trace to deadlock (in reverse order). */
 	    t = pop;
@@ -407,8 +413,10 @@ int Lts::deadlockAnalysis() const
 		action_trace[j++] = actions[t];
 		t = back[t];
 	    }
+	    cout << "	Trace to " << ed << ": ";
 	    for (j--; j>=0; j--)
-		cout << "    " << ati(action_trace[j]) << "\n";
+		cout << ati(action_trace[j]) << "->";
+	    cout << "\n\n";
 	    nd++;
 	}
 	pop++; /* Pops 'state' from the queue */
