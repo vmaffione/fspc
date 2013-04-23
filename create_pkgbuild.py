@@ -1,11 +1,20 @@
 import subprocess
+import sys
 
 
+local = sys.argv[1] == 'local'
 # fields values
 pkgname = 'fspc'
 pkgver = '1.0'
-url = 'http://127.0.0.1/'
-targz = pkgname + '-' + pkgver + '.tar.gz'
+if local:
+    url = 'http://127.0.0.1/$pkgname-$pkgver.tar.gz'
+    archive = pkgname + '-' + pkgver + '.tar.gz'
+    src = ""
+else:
+    cod = sys.argv[1]
+    url = "https://bitbucket.org/lisztinf/fspc/get/%s.zip" % (cod, )
+    src = "/lisztinf-fspc-%s" % (cod, )
+    archive = "%s.zip" % (cod, )
 
 # output of the PKGBUILD
 f = open("PKGBUILD", "w")
@@ -31,19 +40,19 @@ f.write('backup=()\n');
 f.write('options=()\n');
 f.write('install=\n');
 f.write('changelog=\n');
-f.write('source=("%s$pkgname-$pkgver.tar.gz")\n' % (url, ));
+f.write('source=("%s")\n' % (url, ));
 f.write('noextract=()\n');
 
 #compute md5 checksum
-ret = subprocess.check_output(["md5sum", targz])
+ret = subprocess.check_output(["md5sum", archive])
 f.write('md5sums=(\'%s\')\n' % ( ret[0:32].decode('latin-1'), ))
 
 
-f.write('\nbuild() {\n\tcd "$srcdir"\n\tmake || return 1 \n}\n');
+f.write('\nbuild() {\n\tcd "$srcdir%s"\n\tmake || return 1 \n}\n' % (src, ));
 
 f.write('\ncheck() {\n\techo "nothing to check"\n}\n');
 
-f.write('\npackage() {\n\tcd "$srcdir"\n\tmkdir -p "$pkgdir/usr/bin"\n\tcp fspc "$pkgdir/usr/bin"\n}\n');
+f.write('\npackage() {\n\tcd "$srcdir%s"\n\tmkdir -p "$pkgdir/usr/bin"\n\tcp fspc "$pkgdir/usr/bin"\n}\n' % (src, ));
 
 f.write('# vim:set ts=2 sw=2 et:\n')
 f.close()

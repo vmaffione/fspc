@@ -1,6 +1,8 @@
 CC=g++
 CFLAGS=-g -Wall
 
+COD=f125a32166dc
+
 OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o
 
 WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
@@ -43,14 +45,19 @@ tags:
 lines:
 	wc -l $(WCIN)
 
-aur: targz
-	python create_pkgbuild.py
-
-targz:
+aurlocal:
 	tar -czf fspc-1.0.tar.gz $(SOURCES)
+	python create_pkgbuild.py local
+
+aur: $(COD).zip
+	python create_pkgbuild.py $(COD)
+
+$(COD).zip:
+	wget https://bitbucket.org/lisztinf/fspc/get/$(COD).zip 
+
 
 cleanaur:
-	-rm *.tar.gz PKGBUILD
+	-rm *.tar.gz PKGBUILD *.zip
 
 clean:
 	-rm *.o fspc scanner.cpp parser.cpp parser.hpp
