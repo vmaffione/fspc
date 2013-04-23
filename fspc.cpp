@@ -8,6 +8,21 @@ using namespace std;
 #include "interface.hpp"
 
 
+void help()
+{
+    cout << "fspc - A Finite State Process compiler and LTS analisys tool.\n";
+    cout << "USAGE: fspc [-d] [-p] [-g] [-a] [-h] [-i FILE | -l FILE] [-o FILE]\n";
+    cout << "	-i FILE : Specifies FILE as the input file containing FSP definitions.\n";
+    cout << "	-l FILE : Specifies FILE as the input file containing compiled LTSs.\n";
+    cout << "	-o FILE : Specifies the output FILE, e.g. the file that will contain the compiled LTSs.\n";
+    cout << "	-d : Runs deadlock/error analysis on every FSP.\n";
+    cout << "	-p : Runs all the specified progress verifications on every FSP.\n";
+    cout << "	-g : Outputs a graphviz representation file of every FSP.\n";
+    cout << "	-a : The same as '-d -p -g'\n";
+    cout << "	-h : Shows this help.\n";
+}
+
+
 void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int i = 1;
@@ -40,6 +55,9 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 		break;
 	    case 'g':
 		co.graphviz = true;
+		break;
+	    case 'h':
+		help();
 		break;
 	    case 'i':
 	    case 'l':
@@ -78,7 +96,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 	exit(-1);
     }
 
-#if 1
+#if 0
     cout << "PROGRAM OPTIONS\n";
     cout << "	input file:	    " << co.input_file << endl;
     cout << "	input type:	    " << ((co.input_type == CompilerOptions::InputTypeFsp) ? "fsp": "lts") << endl;
