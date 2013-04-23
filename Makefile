@@ -1,12 +1,13 @@
 CC=g++
 CFLAGS=-g -Wall
 
-COD=f125a32166dc
+VER=1.0
 
 OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o
 
 WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
 SOURCES=$(WCIN) fsp.y
+
 
 fspc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspc
@@ -42,23 +43,24 @@ scanner.cpp: fsp.lex parser.hpp
 tags:
 	cscope -R
 
+clean:
+	-rm *.o fspc scanner.cpp parser.cpp parser.hpp *.gv cscope.out
+
 lines:
 	wc -l $(WCIN)
 
 aurlocal:
-	tar -czf fspc-1.0.tar.gz $(SOURCES)
-	python create_pkgbuild.py local
+	tar -czf fspc-$(VER).tar.gz $(SOURCES)
+	python create_pkgbuild.py local $(VER)
 
-aur: $(COD).zip
-	python create_pkgbuild.py $(COD)
+aur:
+	wget "https://bitbucket.org/lisztinf/fspc/downloads/fspc-$(VER).tar.gz"
+	python create_pkgbuild.py remote $(VER)
 
-$(COD).zip:
-	wget https://bitbucket.org/lisztinf/fspc/get/$(COD).zip 
-
+targz:
+	tar -czf fspc-$(VER).tar.gz $(SOURCES)
 
 cleanaur:
-	-rm *.tar.gz PKGBUILD *.zip
+	-rm *.tar.gz PKGBUILD
 
-clean:
-	-rm *.o fspc scanner.cpp parser.cpp parser.hpp
 

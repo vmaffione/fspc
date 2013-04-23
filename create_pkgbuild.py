@@ -3,18 +3,17 @@ import sys
 
 
 local = sys.argv[1] == 'local'
+ver = sys.argv[2]
+
 # fields values
 pkgname = 'fspc'
-pkgver = '1.0'
+pkgver = ver
+src = ""
+archive = pkgname + '-' + pkgver + '.tar.gz'
 if local:
     url = 'http://127.0.0.1/$pkgname-$pkgver.tar.gz'
-    archive = pkgname + '-' + pkgver + '.tar.gz'
-    src = ""
 else:
-    cod = sys.argv[1]
-    url = "https://bitbucket.org/lisztinf/fspc/get/%s.zip" % (cod, )
-    src = "/lisztinf-fspc-%s" % (cod, )
-    archive = "%s.zip" % (cod, )
+    url = "https://bitbucket.org/lisztinf/fspc/downloads/fspc-%s.tar.gz" % (ver, )
 
 # output of the PKGBUILD
 f = open("PKGBUILD", "w")
