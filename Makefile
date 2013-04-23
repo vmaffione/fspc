@@ -3,6 +3,9 @@ CFLAGS=-g -Wall
 
 OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o
 
+WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
+SOURCES=$(WCIN) fsp.y
+
 fspc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspc
 
@@ -34,11 +37,21 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
-clean:
-	-rm *.o fspc scanner.cpp parser.cpp parser.hpp
-
 tags:
 	cscope -R
 
 lines:
-	wc -l callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.y lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
+	wc -l $(WCIN)
+
+aur: targz
+	python create_pkgbuild.py
+
+targz:
+	tar -czf fspc-1.0.tar.gz $(SOURCES)
+
+cleanaur:
+	-rm *.tar.gz PKGBUILD
+
+clean:
+	-rm *.o fspc scanner.cpp parser.cpp parser.hpp
+
