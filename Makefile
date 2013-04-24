@@ -46,6 +46,9 @@ tags:
 clean:
 	-rm *.o fspc scanner.cpp parser.cpp parser.hpp *.gv cscope.out
 
+testing:
+	tests/test.sh
+
 lines:
 	wc -l $(WCIN)
 

@@ -1,0 +1,1 @@
+P=(a->b->END). ||C= forall[i:1..2][j:1..2] p[i+j]:P.

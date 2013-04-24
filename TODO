@@ -1,0 +1,4 @@
+[O] css.push_clone/css.pop with composite_body
+[O] prefix matching also for hiding sets and priority sets
+[O] relabeling before parallel composition
+[O] use cached LTS instead of replay() when possible

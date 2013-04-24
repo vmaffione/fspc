@@ -1,0 +1,1 @@
+P=(a->END). ||C = forall[i:1..2] if (i<=1)then (forall[j:1..2] a[i][j]:P) else (forall[j:1..2] b[i][j]:P).

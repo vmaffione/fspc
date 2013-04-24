@@ -600,7 +600,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     if (four) {
 	RelabelingValue * rlv;
 
-	four->print();
 	assert(four->v.size() == 1);
 	rlv = err_if_not_relabeling(four->v[0]);
 	for (int i=0; i<rlv->size(); i++)

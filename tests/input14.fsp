@@ -1,0 +1,1 @@
+P=(a[i:1..4][j:1..3]->b[i+j]->END) / { forall[i:2..3]{ forall[j:2..3]{ x[i+j]/b[i+j] } } }.
