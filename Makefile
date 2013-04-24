@@ -49,15 +49,15 @@ clean:
 lines:
 	wc -l $(WCIN)
 
-aurlocal:
-	tar -czf fspc-$(VER).tar.gz $(SOURCES)
+aurlocal: fspc-$(VER).tar.gz
 	python create_pkgbuild.py local $(VER)
 
 aur:
+	-rm fspc-$(VER).tar.gz
 	wget "https://bitbucket.org/lisztinf/fspc/downloads/fspc-$(VER).tar.gz"
 	python create_pkgbuild.py remote $(VER)
 
-targz:
+fspc-$(VER).tar.gz:
 	tar -czf fspc-$(VER).tar.gz $(SOURCES)
 
 cleanaur:
