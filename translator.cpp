@@ -1,5 +1,12 @@
 #include "translator.hpp"
 
+//#define DEBUG
+#ifdef DEBUG
+#define IFD(x) x
+#else
+#define IFD(x)
+#endif
+
 
 void Aliases::insert(const string& left, const string& right) {
     int left_index = -1;
@@ -106,7 +113,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 		    errstream << "Impossible duplicate (BUG)\n";
 		    semantic_error(errstream);
 		}
-		cout << "Process " << groups[i][j].name << " defined (" << npvp->pnp << ")\n";
+		IFD(cout << "Process " << groups[i][j].name << " defined (" << npvp->pnp << ")\n");
 	    }
     }
 }
@@ -118,11 +125,10 @@ void Aliases::clear()
 
 void Aliases::print()
 {
-    cout << "Aliases:\n";
+    IFD(cout << "Aliases:\n");
     for (int i=0; i<groups.size(); i++)
 	for (int j=0; j<groups[i].size(); j++)
-	    cout << i << ": " << groups[i][j].name << ", "
-		<< groups[i][j].assigned << "\n";
+	    IFD(cout << i << ": " << groups[i][j].name << ", " << groups[i][j].assigned << "\n");
 }
 
 void FspTranslator::init_fakenode() {
