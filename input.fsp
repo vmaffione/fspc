@@ -5,7 +5,7 @@ set K = {x,y}
 
 
 
-P=(a->b->END). Q=(x->y->END). T=(k->T). ||C=(P||Q||T) / {j/k}. 
+P=(a->x->END). Q=(y->b->END). ||C=p:(P||Q) /{x/y}.
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).

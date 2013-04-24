@@ -74,52 +74,53 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
+void prefix_one(SymbolValue * p, SymbolValue * l)
+{
+    LabelingSharingValue * lsv = err_if_not_labelingsharing(p);
+    Lts * lts = err_if_not_lts(l);
+
+    /* Apply process labeling. */
+    if (lsv->labeling)
+	lts->labeling(*(lsv->labeling));
+    /* Apply process sharing. */
+    if (lsv->sharing)
+	lts->sharing(*(lsv->sharing));
+}
+
 void prefix(SvpVec * prefixv, SvpVec * ltsv)
 {
     assert(ltsv->v.size() == c.tr.current_contexts().size());
 
     if (prefixv) {
-	Lts * lts;
-	LabelingSharingValue * lsv;
-
 	assert(prefixv->v.size() == ltsv->v.size());
-	for (int c=0; c<prefixv->v.size(); c++) {
-	    lsv = err_if_not_labelingsharing(prefixv->v[c]);
-	    lts = err_if_not_lts(ltsv->v[c]);
-	    /* Apply process labeling. */
-	    if (lsv->labeling)
-		lts->labeling(*(lsv->labeling));
-	    /* Apply process sharing. */
-	    if (lsv->sharing)
-		lts->sharing(*(lsv->sharing));
-	}
+	for (int c=0; c<prefixv->v.size(); c++)
+	    prefix_one(prefixv->v[c], ltsv->v[c]);
 	delete prefixv;
     }
 }
 
-SvpVec * relabel(SvpVec *relabv, SvpVec * ltsv)
+void relabel_one(SymbolValue * r, SymbolValue * l)
+{
+    Lts * lts = err_if_not_lts(l);
+    RelabelingValue * rlv = err_if_not_relabeling(r);
+    /* Apply relabeling. */
+    if (rlv) {
+	for (int i=0; i<rlv->size(); i++)
+	    lts->relabeling(*(rlv->new_labels[i]),
+		    *(rlv->old_labels[i]));
+    }
+}
+
+void relabel(SvpVec *relabv, SvpVec * ltsv)
 {
     assert(ltsv->v.size() == c.tr.current_contexts().size());
 
     if (relabv) {
-	Lts * lts;
-	RelabelingValue * rlv;
-
 	assert(ltsv->v.size() == relabv->v.size());
-	for (int c=0; c<relabv->v.size(); c++) {
-	    lts = err_if_not_lts(ltsv->v[c]);
-	    rlv = err_if_not_relabeling(relabv->v[c]);
-	    /* Apply relabeling. */
-	    if (rlv) {
-		for (int i=0; i<rlv->size(); i++)
-		    lts->relabeling(*(rlv->new_labels[i]),
-						*(rlv->old_labels[i]));
-	    }
-	}
+	for (int c=0; c<relabv->v.size(); c++)
+	    relabel_one(relabv->v[c], ltsv->v[c]);
 	delete relabv;
     }
-
-    return ltsv;
 }
 
 SvpVec * priority_callback(SvpVec * one, bool low)
@@ -966,9 +967,7 @@ composite_body:
 		   performing the composition. */
 		rlv = err_if_not_relabeling($5->v[c]);
 		for (int i=0; i<lcp->lts.size(); i++)
-		    for (int j=0; j<rlv->size(); j++)
-			lcp->lts[i]->relabeling(*(rlv->new_labels[j]),
-						    *(rlv->old_labels[j]));
+		    relabel_one($5->v[c], lcp->lts[i]);
 	    }
 	    /* Compose all the processes contained in 'lcp'. */
 	    lts = lcp->lts[0];
