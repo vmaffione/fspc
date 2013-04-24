@@ -14,4 +14,5 @@ do
     rm tests/new-output${i}.lts
 done
 
+echo ""
 echo "Test OK"

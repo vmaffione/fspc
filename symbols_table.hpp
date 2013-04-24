@@ -44,6 +44,7 @@ struct SymbolValue {
     static const int Relabeling = 9;
     static const int Hiding = 10;
     static const int Priority = 11;
+    static const int LtsComposition = 12;
 };
 
 /* Class that supports a list of SymbolValue*. */

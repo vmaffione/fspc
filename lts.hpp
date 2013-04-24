@@ -17,7 +17,7 @@ struct TerminalSet {
     set<int> actions;
 };
 
-
+/* An LTS edge. */
 struct Edge {
     int dest;
     int action;
@@ -91,5 +91,16 @@ class Lts: public SymbolValue {
 };
 
 Lts * err_if_not_lts(SymbolValue * svp);
+
+/* A list of Lts. */
+struct LtsComposition: public SymbolValue {
+    vector<class Lts *> lts;
+
+    void print() const;
+    int type() const { return SymbolValue::LtsComposition; }
+    SymbolValue * clone() const;
+};
+
+LtsComposition * err_if_not_ltscomposition(SymbolValue * svp);
 
 #endif

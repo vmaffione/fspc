@@ -1111,3 +1111,40 @@ Lts * err_if_not_lts(SymbolValue * svp)
 
     return (Lts *)svp;
 }
+
+
+/* =========================  LtsComposition ============================= */
+void LtsComposition::print() const
+{
+    cout << "LtsComposition {\n";
+    for (int i=0; i<lts.size(); i++)
+	if (lts[i])
+	    lts[i]->print();
+    cout << "}\n";
+}
+
+SymbolValue * LtsComposition::clone() const
+{
+    LtsComposition * lc = new LtsComposition;
+
+    lc->lts.resize(lts.size());
+    for (int i=0; i<lts.size(); i++)
+	if (lts[i])
+	    lc->lts[i] = static_cast<class Lts *>(lts[i]->clone());
+	else
+	    lc->lts[i] = NULL;
+
+    return lc;
+}
+
+
+LtsComposition * err_if_not_ltscomposition(SymbolValue * svp)
+{
+    if (svp->type() != SymbolValue::LtsComposition) {
+	stringstream errstream;
+	errstream << "LtsComposition expected";
+	semantic_error(errstream);
+    }
+
+    return static_cast<LtsComposition *>(svp);
+}
