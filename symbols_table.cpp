@@ -78,7 +78,15 @@ bool SymbolsTable::lookup(const string& name, SymbolValue*& value) const
 
 bool SymbolsTable::remove(const string& name)
 {
-    return table.erase(name);
+    map<string, SymbolValue*>::iterator it = table.find(name);
+
+    if (it == table.end())
+	return false;
+
+    delete it->second;
+    table.erase(it);
+
+    return true;
 }
 
 void SymbolsTable::clear()
@@ -89,6 +97,11 @@ void SymbolsTable::clear()
 	delete it->second;
     }
     table.clear();
+}
+
+SymbolsTable::~SymbolsTable()
+{
+    clear();
 }
 
 void SymbolsTable::print() const

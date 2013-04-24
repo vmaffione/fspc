@@ -1,9 +1,15 @@
 const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
+set K = {x,y}
 
-P=(a->b->END)+{c}. Q=(x->y->Q). ||C=(P||Q). ||D=(P||Q) << {a}.
-progress PR = {a}
+P(K=1)=(a[K]->b[K]->END).
+Q(K=3)=P(K);P(K+1);END.
+T=Q(8);Q;END.
+H=(h[K]->STOP).
+
+
+
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).

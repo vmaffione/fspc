@@ -254,6 +254,7 @@ struct SymbolsTable {
     int size() const { return table.size(); }
     void clear();
     void print() const;
+    ~SymbolsTable();
 };
 
 #endif

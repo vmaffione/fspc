@@ -1,0 +1,18 @@
+(1)
+*********************
+P = P[0],
+P[0] = P[1],
+P[1] = P.
+*********************
+- LTSA esplode.
+- fspc compila STOP.
+
+(2)
+*************************
+set K={x,y,z}
+P(K=1)=(a[K]->b[K]->END).
+*************************
+- LTSA ignora completamente il valore del parametro, oscurato dall'insieme K.
+- fspc si comporta in modo corretto: il parametro K nasconde l'insieme K
+  durante la definizione del processo P.
+

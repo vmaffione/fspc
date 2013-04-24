@@ -22,6 +22,7 @@
 #define PROX(x)
 #endif
 
+
 /* Replay a sequence of callbacks under a local translator and a local
    stack. */
 Lts * ParametricProcess::replay(struct FspCompiler& c,
@@ -30,6 +31,9 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
     vector<void *> stack;
     FspTranslator tr(c);
     ConstValue * cvp;
+    SymbolValue * svp;
+    vector<string> overridden_names;
+    vector<SymbolValue *> overridden_values;
 
     PROX(cout << "Replay!!\n");
     assert(values.size() == parameter_defaults.size());
@@ -37,13 +41,18 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
 
     /* Load the parameters into c.identifiers. */
     for (int i=0; i<parameter_names.size(); i++) {
+	/* Save the overridden identifiers, if any. */
+	if (c.identifiers.lookup(parameter_names[i], svp)) {
+	    overridden_names.push_back(parameter_names[i]);
+	    overridden_values.push_back(svp->clone());
+	    c.identifiers.remove(parameter_names[i]);
+	}
+
 	cvp = new ConstValue;
 	cvp->value = values[i];
 	if (!c.identifiers.insert(parameter_names[i], cvp)) {
-	    stringstream errstream;
-	    errstream << "identifier " << parameter_names[i]
-			    << " already declared";
-	    semantic_error(errstream);
+	    /* This should never happen. */
+	    assert(0);
 	}
     }
 
@@ -59,6 +68,14 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
     /* Remove the parameters from c.identifiers. */
     for (int i=0; i<parameter_names.size(); i++)
 	c.identifiers.remove(parameter_names[i]);
+
+    /* Restore overridden parameters, if any. */
+    for (int i=0; i<overridden_names.size(); i++)
+	if(!c.identifiers.insert(overridden_names[i],
+					    overridden_values[i])) {
+	    /* This should never happen. */
+	    assert(0);
+	}
 
     return static_cast<class Lts *>(stack.back());
 }

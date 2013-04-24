@@ -64,6 +64,9 @@ struct FspTranslator {
 
     struct Aliases aliases;
 
+    vector<string> overridden_names;
+    vector<struct SymbolValue *> overridden_values;
+
 
     FspTranslator(struct FspCompiler&  r) : cr(r) {
 	/* Initialize shared data structures: A stack containing a single
