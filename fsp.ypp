@@ -95,7 +95,6 @@ void prefix(SvpVec * prefixv, SvpVec * ltsv)
 	assert(prefixv->v.size() == ltsv->v.size());
 	for (int c=0; c<prefixv->v.size(); c++)
 	    prefix_one(prefixv->v[c], ltsv->v[c]);
-	delete prefixv;
     }
 }
 
@@ -119,7 +118,6 @@ void relabel(SvpVec *relabv, SvpVec * ltsv)
 	assert(ltsv->v.size() == relabv->v.size());
 	for (int c=0; c<relabv->v.size(); c++)
 	    relabel_one(relabv->v[c], ltsv->v[c]);
-	delete relabv;
     }
 }
 
@@ -944,6 +942,9 @@ composite_body:
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
 	prefix($1, $2);
 	relabel($3, $2);
+	delete $1;
+	delete $3;
+
 	$$ = $2;
 	ps.pop_back();
 	ps.pop_back();
@@ -955,20 +956,26 @@ composite_body:
 	SvpVec * vp = new SvpVec;
 	LtsComposition * lcp;
 	Lts * lts;
-	RelabelingValue * rlv;
 
 	assert((!$1 || $1->v.size() == $3->v.size()) &&
 				(!$5 || $3->v.size() == $5->v.size()));
 	for (int c=0; c<$3->v.size(); c++) {
 	    lcp = err_if_not_ltscomposition($3->v[c]);
 
+	    if ($1) {
+		/* Apply prefix to each component process, before
+		   performing the composition. */
+		for (int i=0; i<lcp->lts.size(); i++)
+		    prefix_one($1->v[c], lcp->lts[i]);
+	    }
+
 	    if ($5) {
 		/* Apply relabeling to each component process, before
 		   performing the composition. */
-		rlv = err_if_not_relabeling($5->v[c]);
 		for (int i=0; i<lcp->lts.size(); i++)
 		    relabel_one($5->v[c], lcp->lts[i]);
 	    }
+
 	    /* Compose all the processes contained in 'lcp'. */
 	    lts = lcp->lts[0];
 	    for (int i=1; i<lcp->lts.size(); i++) {
@@ -977,8 +984,9 @@ composite_body:
 	    }
 	    vp->v.push_back(lts);
 	}
-	prefix($1, vp);
 	delete $3;
+	if ($1)
+	    delete $1;
 	if ($5)
 	    delete $5;
 

@@ -1030,7 +1030,7 @@ void Lts::graphvizOutput(const char * filename) const
 	switch (nodes[i].type) {
 	    case LtsNode::Normal:
 		fout << i
-		    << " [shape=circle,style=filled, fillcolor=green];\n";
+		    << " [shape=circle,style=filled, fillcolor=pink];\n";
 		break;
 	    case LtsNode::End:
 		fout << i
