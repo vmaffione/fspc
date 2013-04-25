@@ -56,6 +56,7 @@ class Lts: public SymbolValue {
 
   public:
     string name;
+    int rank;
 
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
