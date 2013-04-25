@@ -932,7 +932,7 @@ composite_def:
 	/* Restore overridden identifiers. */
 	for (int i=0; i<c.tr.overridden_names.size(); i++)
 	    c.identifiers.insert(c.tr.overridden_names[i],
-						    c.tr.overridden_values[i]);
+						c.tr.overridden_values[i]);
 	c.tr.overridden_names.clear();
 	c.tr.overridden_values.clear();
 
@@ -966,7 +966,6 @@ composite_body:
 
 	assert($3->v.size() == c.tr.current_contexts().size());
 	if ($2) {
-	    //prefix($1, $2);
 	    SetValue * setvp;
 
 	    assert($2->v.size() == $3->v.size());
@@ -1078,15 +1077,22 @@ composite_body:
 	Lts * lts;
 
 	if ($8) {
+	    /* Apply relabeling. */
 	    assert($<svpvec_ptr>7->v.size() == $8->v.size());
-	for (int c=0; c<$8->v.size(); c++) {
+	    for (int c=0; c<$8->v.size(); c++) {
+		lcp = err_if_not_ltscomposition($<svpvec_ptr>7->v[c]);
+
+		/* Apply relabeling to each component process, before
+		   performing the composition. */
+		for (int i=0; i<lcp->lts.size(); i++)
+		    relabel_one($8->v[c], lcp->lts[i]);
+
+	    }
+	}
+
+	/* Perform parallel composition. */
+	for (int c=0; c<$<svpvec_ptr>7->v.size(); c++) {
 	    lcp = err_if_not_ltscomposition($<svpvec_ptr>7->v[c]);
-
-	    /* Apply relabeling to each component process, before
-	       performing the composition. */
-	    for (int i=0; i<lcp->lts.size(); i++)
-		relabel_one($8->v[c], lcp->lts[i]);
-
 	    /* Compose all the processes contained in 'lcp'. */
 	    lts = lcp->lts[0];
 	    for (int i=1; i<lcp->lts.size(); i++) {
@@ -1094,7 +1100,6 @@ composite_body:
 		delete lcp->lts[i];
 	    }
 	    vp->v.push_back(lts);
-	}
 	}
 	delete $<svpvec_ptr>7;
 	if ($1) delete $1;
