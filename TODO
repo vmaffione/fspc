@@ -1,5 +1,3 @@
-[O] css.push_clone/css.pop with composite_body
-[O] prefix matching also for hiding sets and priority sets
 [O] use cached LTS instead of replay() when possible
 [O] in sequential composition, increase efficiency by starting the visit from the first node of the right side process, instead of the first node of the left side process
 [O] syntax error localization

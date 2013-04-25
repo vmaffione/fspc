@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-for i in {1..20}
+for i in {1..22}
 do
     ./fspc -i tests/input${i}.fsp -o tests/new-output${i}.lts
     diff tests/output${i}.lts tests/new-output${i}.lts > /dev/null

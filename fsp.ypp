@@ -1115,7 +1115,6 @@ composite_body:
 	ps.push_back($$);
     }
     | FORALL {
-	// TODO REDO
 	c.tr.css.push_clone();
     } index_ranges {
 	c.tr.css.push_clone();

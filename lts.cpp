@@ -866,16 +866,35 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
     /* Update the alphabet. */
     if (interface) {
 	for (int i=0; i<s.actions.size(); i++) {
-	    action = atp->lookup(s.actions[i]);
-	    if (alphabet.count(action))
-		new_alphabet.insert(action);
+	    /* The action s.actions[i] can select multiple alphabet
+	       elements. */
+	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+								it++) {
+		string action = ati(*it);
+		pair<string::const_iterator, string::iterator> mm;
+		/* Prefix match: check if 's.actions[i]' is a prefix of
+		   'action'. */
+		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
+							    action.begin());
+		if (mm.first == s.actions[i].end())
+		    new_alphabet.insert(*it);
+	    }
 	}
     } else {
 	new_alphabet = alphabet;
 	for (int i=0; i<s.actions.size(); i++) {
-	    action = atp->lookup(s.actions[i]);
-	    if (alphabet.count(action))
-		new_alphabet.erase(action);
+	    /* The action s.actions[i] can hide multiple alphabet elements. */
+	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+								it++) {
+		string action = ati(*it);
+		pair<string::const_iterator, string::iterator> mm;
+		/* Prefix match: check if 's.actions[i]' is a prefix of
+		   'action'. */
+		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
+							    action.begin());
+		if (mm.first == s.actions[i].end())
+		    new_alphabet.erase(*it);
+	    }
 	}
     }
     alphabet = new_alphabet;
@@ -900,10 +919,19 @@ Lts& Lts::priority(const SetValue& s, bool low)
     terminal_sets_computed = false;
 
     for (int i=0; i<s.actions.size(); i++) {
-	action = atp->lookup(s.actions[i]);
-	if (alphabet.count(action)) {
-	    priority_actions.insert(action);
-	}
+	    /* The action s.actions[i] can select multiple alphabet
+	       elements. */
+	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+								it++) {
+		string action = ati(*it);
+		pair<string::const_iterator, string::iterator> mm;
+		/* Prefix match: check if 's.actions[i]' is a prefix of
+		   'action'. */
+		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
+							    action.begin());
+		if (mm.first == s.actions[i].end())
+		    priority_actions.insert(*it);
+	    }
     }
 
     for (int i=0; i<nodes.size(); i++) {
