@@ -40,7 +40,6 @@ struct SymbolValue {
     static const int ParametricProcess = 5;
     static const int ProcnodePair = 6;
     static const int Arguments = 7;
-    static const int LabelingSharing = 8;
     static const int Relabeling = 9;
     static const int Hiding = 10;
     static const int Priority = 11;
@@ -104,17 +103,6 @@ struct ArgumentsValue: public SymbolValue {
     void print() const;
     int type() const { return SymbolValue::Arguments; }
     SymbolValue * clone() const;
-};
-
-struct LabelingSharingValue: public SymbolValue {
-    SetValue * labeling;
-    SetValue * sharing;
-
-    LabelingSharingValue() : labeling(NULL), sharing(NULL) { }
-    void print() const;
-    int type() const { return SymbolValue::LabelingSharing; }
-    SymbolValue * clone() const;
-    ~LabelingSharingValue() { delete labeling; delete sharing; }
 };
 
 struct RelabelingValue: public SymbolValue {

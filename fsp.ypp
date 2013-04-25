@@ -74,30 +74,6 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
-void prefix_one(SymbolValue * p, SymbolValue * l)
-{
-    LabelingSharingValue * lsv = err_if_not_labelingsharing(p);
-    Lts * lts = err_if_not_lts(l);
-
-    /* Apply process labeling. */
-    if (lsv->labeling)
-	lts->labeling(*(lsv->labeling));
-    /* Apply process sharing. */
-    if (lsv->sharing)
-	lts->sharing(*(lsv->sharing));
-}
-
-void prefix(SvpVec * prefixv, SvpVec * ltsv)
-{
-    assert(ltsv->v.size() == c.tr.current_contexts().size());
-
-    if (prefixv) {
-	assert(prefixv->v.size() == ltsv->v.size());
-	for (int c=0; c<prefixv->v.size(); c++)
-	    prefix_one(prefixv->v[c], ltsv->v[c]);
-    }
-}
-
 void relabel_one(SymbolValue * r, SymbolValue * l)
 {
     Lts * lts = err_if_not_lts(l);
@@ -153,6 +129,29 @@ void merge_lts_by_rank(SvpVec * ltsv, SvpVec& result)
 	    result.v.push_back(merged);
 	} else
 	    merged->compose(*lts);
+    }
+}
+
+void merge_ltscomp_by_rank(SvpVec * ltscompv, SvpVec& result)
+{
+    int rank = -1;
+    LtsComposition * merged = NULL;
+    LtsComposition * lcp;
+    Lts * lts;
+
+    assert(result.v.size() == 0);
+    assert(ltscompv->v.size() == c.tr.current_contexts().size());
+    for (int k=0; k<ltscompv->v.size(); k++) {
+	lcp = err_if_not_ltscomposition(ltscompv->v[k]);
+	if (lcp->rank != rank) {
+	    rank = lcp->rank;
+	    merged = lcp;
+	    ltscompv->detach(k);
+	    result.v.push_back(merged);
+	} else {
+	    for (int i=0; i<merged->lts.size(); i++)
+		merged->lts[i]->compose(*(lcp->lts[i]));
+	}
     }
 }
 
@@ -216,7 +215,7 @@ void yyerror(const char *s);
 %type <svpvec_ptr> argument_list argument_OPT
 %type <svpvec_ptr> process_ref composite_body parallel_composition
 %type <svpvec_ptr> composite_else_OPT
-%type <svpvec_ptr> prefix_label_OPT prefix_label labeling_OPT labeling
+%type <svpvec_ptr> labeling_OPT sharing_OPT
 %type <svpvec_ptr> relabel_OPT relabel_def relabel_defs braces_relabel_defs
 %type <svpvec_ptr> hiding_OPT hiding priority_OPT priority
 
@@ -960,79 +959,133 @@ composite_def:
     ;
 
 composite_body:
-    prefix_label_OPT process_ref {
-	AA($1,1,2); AA($2,2,2);
+    sharing_OPT labeling_OPT process_ref {
+	AA($1,1,3); AA($2,2,3); AA($3,3,3);
 	SvpVec * vp;
+	Lts * lts;
 
-	/* Apply prefix, for each (prefix-labeling) context separately. */
-	prefix($1, $2);
+	assert($3->v.size() == c.tr.current_contexts().size());
+	if ($2) {
+	    //prefix($1, $2);
+	    SetValue * setvp;
 
-	/* Merge LTSs by prefix-labeling rank. */
-	if ($1) {
-	    LabelingSharingValue * lsv;
-	    Lts * lts;
-
-	    assert($1->v.size() == $2->v.size());
-	    vp = new SvpVec;
-	    lsv = err_if_not_labelingsharing($1->v[0]);
-	    if (lsv->labeling) {
-		for (int k=0; k<$1->v.size(); k++) {
-		    lsv = err_if_not_labelingsharing($1->v[k]);
-		    lts = err_if_not_lts($2->v[k]);
-		    lts->rank = lsv->labeling->rank;
-		}
-		merge_lts_by_rank($2, *vp);
+	    assert($2->v.size() == $3->v.size());
+	    /* Apply process labeling, for each context separately. */
+	    for (int k=0; k<$2->v.size(); k++) {
+		setvp = err_if_not_set($2->v[k]);
+		lts = err_if_not_lts($3->v[k]);
+		lts->labeling(*setvp);
+		lts->rank = setvp->rank;
 	    }
-	} else
-	    vp = $2;
 
+	    /* Merge LTSs by prefix-labeling rank. */
+	    vp = new SvpVec;
+	    merge_lts_by_rank($3, *vp);
+	} else
+	    vp = $3;
+
+	if ($1) {
+	    SetValue * setvp;
+
+	    assert($1->v.size() == vp->v.size());
+	    /* Apply process sharing. */
+	    for (int k=0; k<$1->v.size(); k++) {
+		lts = err_if_not_lts(vp->v[k]);
+		setvp = err_if_not_set($1->v[k]);
+		lts->sharing(*setvp);
+	    }
+	    
+	}
+
+	/* Clean up the dirty contexts caused by labeling_OPT. */
 	c.tr.css.pop();
 	c.tr.css.push_clone();
 	$<svpvec_ptr>$ = vp;
 	ps.push_back(vp);
     } relabel_OPT {
-	AA($1,1,4); AA($2,2,4); AA($<svpvec_ptr>3,3,4); AA($4,4,4);
-	relabel($4, $<svpvec_ptr>3);
+	AA($1,1,5); AA($2,2,5); AA($3,3,5); 
+	AA($<svpvec_ptr>4,4,5); AA($5,5,5);
+	relabel($5, $<svpvec_ptr>4);
 	if ($1) delete $1;
-	if ($4) delete $4;
+	if ($2) delete $2;
+	if ($5) delete $5;
 
-	$$ = $<svpvec_ptr>3;
+	$$ = $<svpvec_ptr>4;
+	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
-    | prefix_label_OPT '(' {
+    | sharing_OPT labeling_OPT '(' {
+	/* Save the contexts modified by labeling_OPT. */
 	c.tr.css.push_clone();
     }  parallel_composition ')' {
+	SvpVec * vp;
+	LtsComposition * lcp;
+
+	/* Restore the contexts modified by labeling_OPT. */
 	c.tr.css.pop();
+
+	assert($5->v.size() == c.tr.current_contexts().size());
+	if ($2) {
+	    SetValue * setvp;
+
+	    assert($2->v.size() == $5->v.size());
+	    /* Apply process labeling, for each context separately. */
+	    for (int k=0; k<$2->v.size(); k++) {
+		setvp = err_if_not_set($2->v[k]);
+		lcp = err_if_not_ltscomposition($5->v[k]);
+
+		/* Apply process labeling to each component process, before
+		   performing the composition. */
+		for (int i=0; i<lcp->lts.size(); i++)
+		    lcp->lts[i]->labeling(*setvp);
+		lcp->rank = setvp->rank;
+	    }
+
+	    /* Merge LTS compositions by labeling rank. */
+	    vp = new SvpVec;
+	    merge_ltscomp_by_rank($5, *vp);
+	} else
+	    vp = $5;
+
+	if ($1) {
+	    SetValue * setvp;
+
+	    assert($1->v.size() == vp->v.size());
+	    /* Apply process sharing, before performing the composition. */
+	    for (int k=0; k<$1->v.size(); k++) {
+		lcp = err_if_not_ltscomposition(vp->v[k]);
+		setvp = err_if_not_set($1->v[k]);
+		for (int i=0; i<lcp->lts.size(); i++)
+		    lcp->lts[i]->sharing(*setvp);
+	    }
+	    
+	}
+
+	/* Restore the contexts to the state previous to labeling_OPT. */
 	c.tr.css.pop();
 	c.tr.css.push_clone();
+	$<svpvec_ptr>$ = vp;
+	ps.push_back(vp);
     } relabel_OPT {
-	AA($1,1,3); AA($4,2,3); AA($7,3,3);
+	AA($1,1,5); AA($2,2,5); AA($5,3,5);
+	AA($<svpvec_ptr>7,4,5); AA($8,5,5);
 	SvpVec * vp = new SvpVec;
 	LtsComposition * lcp;
 	Lts * lts;
 
-	assert((!$1 || $1->v.size() == $4->v.size()) &&
-				(!$7 || $4->v.size() == $7->v.size()));
-	for (int c=0; c<$4->v.size(); c++) {
-	    lcp = err_if_not_ltscomposition($4->v[c]);
+	if ($8) {
+	    assert($<svpvec_ptr>7->v.size() == $8->v.size());
+	for (int c=0; c<$8->v.size(); c++) {
+	    lcp = err_if_not_ltscomposition($<svpvec_ptr>7->v[c]);
 
-	    if ($1) {
-		/* Apply prefix to each component process, before
-		   performing the composition. */
-		for (int i=0; i<lcp->lts.size(); i++)
-		    prefix_one($1->v[c], lcp->lts[i]);
-	    }
-
-	    if ($7) {
-		/* Apply relabeling to each component process, before
-		   performing the composition. */
-		for (int i=0; i<lcp->lts.size(); i++)
-		    relabel_one($7->v[c], lcp->lts[i]);
-	    }
+	    /* Apply relabeling to each component process, before
+	       performing the composition. */
+	    for (int i=0; i<lcp->lts.size(); i++)
+		relabel_one($8->v[c], lcp->lts[i]);
 
 	    /* Compose all the processes contained in 'lcp'. */
 	    lts = lcp->lts[0];
@@ -1042,17 +1095,22 @@ composite_body:
 	    }
 	    vp->v.push_back(lts);
 	}
-	delete $4;
+	}
+	delete $<svpvec_ptr>7;
 	if ($1) delete $1;
-	if ($7) delete $7;
+	if ($2) delete $2;
+	if ($8) delete $8;
 
 	$$ = vp;
+	ps.pop_back();
+	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | FORALL {
+	// TODO REDO
 	c.tr.css.push_clone();
     } index_ranges {
 	c.tr.css.push_clone();
@@ -1082,6 +1140,7 @@ composite_body:
 	ps.push_back($$);
     }
     | IF expression THEN composite_body composite_else_OPT {
+	// TODO REDO
 	/* TODO optimize: useless calculation of both branches. */
 	AA($2,1,3); AA($4,2,3); AA($5,3,3);
 	ConstValue * cvp;
@@ -1223,54 +1282,24 @@ process_ref:
     }
     ;
 
-prefix_label_OPT:
+sharing_OPT:
     {
 	$$ = NULL;
 	ps.push_back($$);
     }
-    | prefix_label {
-	AA($1,1,1);
-	$$ = $1;
-    }
-    ;
-
-prefix_label:
-    labeling {
-	AA($1,1,1);
-	$$ = $1;
-    } 
     | action_labels SHARING {
 	AA($1,1,1);
+	SvpVec * vp = new SvpVec;
+
+	merge_by_rank($1, *vp);
+	delete $1;
 	/* We have to clean up the contexts, since process sharing does not
 	   extend the contexts. */
 	c.tr.css.pop();
 	c.tr.css.push_clone();
-    } labeling_OPT {
-	AA($1,1,2); AA($4,2,2);
-	assert($1->v.size() == c.tr.current_contexts().size());
-	SetValue * setvp;
-	LabelingSharingValue * lsv;
-
-	for (int c=0; c<$1->v.size(); c++) {
-	    setvp = err_if_not_set($1->v[c]);
-	    lsv = new LabelingSharingValue;
-	    lsv->sharing = setvp;
-	    $1->v[c] = lsv;
-	}
-	if ($4) {
-	    LabelingSharingValue * rlsv;
-
-	    assert($1->v.size() == $4->v.size());
-	    for (int c=0; c<$4->v.size(); c++) {
-		rlsv = err_if_not_labelingsharing($4->v[c]);
-		assert(!rlsv->sharing);
-		lsv->labeling = rlsv->labeling;
-		rlsv->labeling = NULL; // detach
-	    }
-	    delete $4;
-	}
-	$$ = $1;
+	$$ = vp;
 	ps.pop_back();
+	ps.push_back($$);
     }
     ;
 
@@ -1279,25 +1308,9 @@ labeling_OPT:
 	$$ = NULL;
 	ps.push_back($$);
     }
-    | labeling {
-	AA($1,1,1);
-	$$ = $1;
-    }
-    ;
-
-labeling:
-    action_labels ':' {
+    | action_labels ':' {
 	AA($1,1,1);
 	assert($1->v.size() == c.tr.current_contexts().size());
-	SetValue * setvp;
-	LabelingSharingValue * lsv;
-
-	for (int c=0; c<$1->v.size(); c++) {
-	    setvp = err_if_not_set($1->v[c]);
-	    lsv = new LabelingSharingValue;
-	    lsv->labeling = setvp;
-	    $1->v[c] = lsv;
-	}
 	$$ = $1;
     }
     ;

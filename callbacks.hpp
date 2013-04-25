@@ -6,6 +6,7 @@
 
 /* Left contains a SetValue*, while right is the result of 'action_range'. */
 SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * right);
+void merge_by_rank(SvpVec * sets, SvpVec& result);
 
 SvpVec * callback__1(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/

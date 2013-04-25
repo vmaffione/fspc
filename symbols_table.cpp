@@ -297,29 +297,6 @@ SymbolValue * ArgumentsValue::clone() const
 }
 
 
-/* ====================== LabelingSharingValue ===========================*/
-void LabelingSharingValue::print() const {
-    if (labeling) {
-	cout << "labeling: ";
-	labeling->print();
-    }
-    if (sharing) {
-	cout << "sharing: ";
-	sharing->print();
-    }
-};
-
-SymbolValue * LabelingSharingValue::clone() const
-{
-    LabelingSharingValue * lsv = new LabelingSharingValue;
-
-    lsv->labeling = static_cast<SetValue *>(this->labeling->clone());
-    lsv->sharing = static_cast<SetValue *>(this->sharing->clone());
-
-    return lsv;
-}
-
-
 /* ============================ RelabelingValue ===========================*/
 void RelabelingValue::print() const
 {

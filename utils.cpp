@@ -74,17 +74,6 @@ ArgumentsValue* err_if_not_arguments(SymbolValue * svp)
     return static_cast<ArgumentsValue *>(svp);
 }
 
-LabelingSharingValue* err_if_not_labelingsharing(SymbolValue * svp)
-{
-    if (svp->type() != SymbolValue::LabelingSharing) {
-	stringstream errstream;
-	errstream << "LabelingSharing expected";
-	semantic_error(errstream);
-    }
-
-    return static_cast<LabelingSharingValue *>(svp);
-}
-
 RelabelingValue* err_if_not_relabeling(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Relabeling) {

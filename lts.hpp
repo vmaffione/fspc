@@ -96,6 +96,7 @@ Lts * err_if_not_lts(SymbolValue * svp);
 /* A list of Lts. */
 struct LtsComposition: public SymbolValue {
     vector<class Lts *> lts;
+    int rank;
 
     void print() const;
     int type() const { return SymbolValue::LtsComposition; }
