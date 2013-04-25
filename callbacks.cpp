@@ -306,6 +306,14 @@ static void aggregate_end_error_states(ProcessNode * pnp, void *opaque)
     }
 }
 
+void * Callback_pop_push::exe(FspTranslator& tr, int pp, int psh) {
+    for (int i=0; i<pp; i++)
+	tr.css.pop();
+    if (psh)
+	tr.css.push_clone();
+
+    return NULL;
+}
 
 
 /* =========================== CALLBACKS =============================== */
@@ -621,17 +629,6 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     return lts;
 }
 
-void * callback__16(FspTranslator& tr, string * one)
-{
-    /* The following nonterminal 'index_ranges_OPT' may result
-       in contexts ramifications, and so tr.css.update() must be called. We
-       therefore push a clone of the current ContextsSet, which is the
-       initial empty one, so that the initial one is not modified. */
-    tr.css.push_clone();
-
-    return NULL;
-}
-
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two)
 {
     tr.init_fakenode();
@@ -741,14 +738,6 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
     return pvec;
 }
 
-void * callback__22(FspTranslator& tr)
-{
-    /* Replicate the CSS stack top so that it can be used by 'choice'. */
-    tr.css.push_clone();
-
-    return NULL;
-}
-
 Pvec * callback__23(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
@@ -817,15 +806,6 @@ Pvec * callback__27(FspTranslator& tr, Pvec * one)
     tr.css.pop();
     
     return one;
-}
-
-void * callback__28(FspTranslator& tr, Pvec * one)
-{
-    /* Replicate the CSS stack top so that it can be used by
-       'action_prefix'. */
-    tr.css.push_clone();
-
-    return NULL;
 }
 
 Pvec * callback__29(FspTranslator& tr, Pvec * one, Pvec * two)
@@ -1726,12 +1706,6 @@ SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
     delete two;
 
     return vp;
-}
-
-void * callback__74(FspTranslator& tr, SvpVec * one)
-{
-    tr.css.pop();
-    tr.css.push_clone();
 }
 
 SvpVec * callback__75(FspTranslator& tr, SvpVec * one)

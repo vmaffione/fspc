@@ -21,19 +21,16 @@ SvpVec * callback__10(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
 class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
-void * callback__16(FspTranslator& tr, string * one); /*19*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
 void * callback__19(FspTranslator& tr, SvpVec * one); /*21*/
 void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two); /*22*/
 Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three); /*11*/
-void * callback__22(FspTranslator& tr); /*24*/
 Pvec * callback__23(FspTranslator& tr); /*12*/
 Pvec * callback__24(FspTranslator& tr); /*12*/
 Pvec * callback__25(FspTranslator& tr); /*12*/
 Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two); /*6*/
 Pvec * callback__27(FspTranslator& tr, Pvec * one); /*13*/
-void * callback__28(FspTranslator& tr, Pvec * one); /*23*/
 Pvec * callback__29(FspTranslator& tr, Pvec * one, Pvec * two); /*14*/
 void * callback__30(FspTranslator& tr, SvpVec * one); /*21*/
 Pvec * callback__31(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three); /*11*/
@@ -78,7 +75,6 @@ SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__71(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__72(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
-void * callback__74(FspTranslator&tr, SvpVec * one); /*21*/
 SvpVec * callback__75(FspTranslator& tr, SvpVec * one); /*17*/
 
 struct Callback {
@@ -100,6 +96,19 @@ struct ParametricProcess: public SymbolValue {
 
 ParametricProcess* err_if_not_parametric(SymbolValue * svp);
 
+
+struct Callback_pop_push: public Callback {
+    int pop;
+    int push;
+
+    Callback_pop_push(int pp, int ps) : pop(pp), push(ps) { }
+    void * execute(FspTranslator& tr, vector<void *>& stack) {
+	return exe(tr, pop, push);
+    }
+    static void * exe(FspTranslator& tr, int pp, int psh);
+    void print() const { cout << "pop_push\n"; }
+    bool is_void() const { return true; }
+};
 
 /*1*/
 struct Callback_V_S : public Callback {
@@ -435,7 +444,7 @@ struct Callback_N_VP : public Callback {
     bool is_void() const { return true; }
 };
 
-/*23*/
+/*23 XXX UNUSED*/
 struct Callback_N_P : public Callback {
     typedef void * (*FPT)(FspTranslator&, Pvec *);
     FPT cbp;
@@ -449,7 +458,7 @@ struct Callback_N_P : public Callback {
     bool is_void() const { return true; }
 };
 
-/*24*/
+/*24 XXX UNUSED*/
 struct Callback_N : public Callback {
     typedef void * (*FPT)(FspTranslator&);
     FPT cbp;
