@@ -5,15 +5,10 @@ set S = {x,y,z}
 
 P=(a->END).
 Q=(b->END).
-||C=if 1 then p[i:1..2]:P else q[i:1..2]:Q.
-
-
-/*
-P=(a->END).
-Q=(b->END).
-||C=(p[i:1..2]:P || q:Q).
-||C1=s[j:1..2][j*j+1]::p[i:1..2][i+3]:P.
-*/
+||C1=forall[j:1..2] if j==1 then p[i:1..2][j*18]:P else q[i:1..2][j*18]:Q.
+||C2=forall[j:1..2] if j==1 then t[j]:(P||Q) else e[j]:(P||Q).
+||C3=(p[i:1..2]:P || q:Q).
+||C4=s[j:1..2][j*j+1]::p[i:1..2][i+3]:P.
 
 
 /*
