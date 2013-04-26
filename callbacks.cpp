@@ -239,6 +239,51 @@ SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * righ
     }
 }
 
+void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result)
+{
+    int rank = -1;
+    Lts * merged = NULL;
+    Lts * lts;
+
+    assert(result.v.size() == 0);
+    assert(ltsv->v.size() == tr.current_contexts().size());
+    for (int k=0; k<ltsv->v.size(); k++) {
+	lts = err_if_not_lts(ltsv->v[k]);
+	if (lts->rank != rank) {
+	    rank = lts->rank;
+	    merged = lts;
+	    ltsv->detach(k);
+	    result.v.push_back(merged);
+	} else
+	    merged->compose(*lts);
+    }
+}
+
+
+void relabel_one(SymbolValue * r, SymbolValue * l)
+{
+    Lts * lts = err_if_not_lts(l);
+    RelabelingValue * rlv = err_if_not_relabeling(r);
+    /* Apply relabeling. */
+    if (rlv) {
+	for (int i=0; i<rlv->size(); i++)
+	    lts->relabeling(*(rlv->new_labels[i]),
+		    *(rlv->old_labels[i]));
+    }
+}
+
+void relabel(FspTranslator& tr, SvpVec *relabv, SvpVec * ltsv)
+{
+    assert(ltsv->v.size() == tr.current_contexts().size());
+
+    if (relabv) {
+	assert(ltsv->v.size() == relabv->v.size());
+	for (int c=0; c<relabv->v.size(); c++)
+	    relabel_one(relabv->v[c], ltsv->v[c]);
+    }
+}
+
+
 /* Fix unresolved ProcessNode references due to cyclic processes. */
 static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 {
@@ -1713,5 +1758,61 @@ SvpVec * callback__75(FspTranslator& tr, SvpVec * one)
     tr.css.pop();
 
     return one;
+}
+
+SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
+					    SvpVec * three)
+{
+    SvpVec * vp;
+    Lts * lts;
+
+    assert(three->v.size() == tr.current_contexts().size());
+    if (two) {
+	SetValue * setvp;
+
+	assert(two->v.size() == three->v.size());
+	/* Apply process labeling, for each context separately. */
+	for (int k=0; k<two->v.size(); k++) {
+	    setvp = err_if_not_set(two->v[k]);
+	    lts = err_if_not_lts(three->v[k]);
+	    lts->labeling(*setvp);
+	    lts->rank = setvp->rank;
+	}
+
+	/* Merge LTSs by prefix-labeling rank. */
+	vp = new SvpVec;
+	merge_lts_by_rank(tr, three, *vp);
+    } else
+	vp = three;
+
+    if (one) {
+	SetValue * setvp;
+
+	assert(one->v.size() == vp->v.size());
+	/* Apply process sharing. */
+	for (int k=0; k<one->v.size(); k++) {
+	    lts = err_if_not_lts(vp->v[k]);
+	    setvp = err_if_not_set(one->v[k]);
+	    lts->sharing(*setvp);
+	}
+
+    }
+
+    /* Clean up the dirty contexts caused by labeling_OPT. */
+    tr.css.pop();
+    tr.css.push_clone();
+
+    return vp;
+}
+
+SvpVec * callback__77(FspTranslator& tr, SvpVec * one, SvpVec * two,
+				SvpVec * three, SvpVec * four, SvpVec * five)
+{
+    relabel(tr, five, four);
+    if (one) delete one;
+    if (two) delete two;
+    if (five) delete five;
+
+    return four;
 }
 

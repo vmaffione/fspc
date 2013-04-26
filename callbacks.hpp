@@ -7,6 +7,8 @@
 /* Left contains a SetValue*, while right is the result of 'action_range'. */
 SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * right);
 void merge_by_rank(SvpVec * sets, SvpVec& result);
+void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result);
+void relabel_one(SymbolValue * r, SymbolValue * l);
 
 SvpVec * callback__1(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/
@@ -76,6 +78,10 @@ SvpVec * callback__71(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__72(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__75(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
+					    SvpVec * three); /*27*/
+SvpVec * callback__77(FspTranslator& tr, SvpVec * one, SvpVec * two,
+			SvpVec * three, SvpVec * four, SvpVec * five); /*28*/
 
 struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;
@@ -492,6 +498,45 @@ struct Callback_pop : public Callback {
 	return ret;
     }
     void print() const { cout << "pop2" << "\n";}
+};
+
+/*27*/
+struct Callback_np_V_VVV : public Callback {
+    typedef SvpVec * (*FPT)(FspTranslator&, SvpVec *, SvpVec *, SvpVec *);
+    FPT cbp;
+
+    Callback_np_V_VVV(FPT fp) : cbp(fp) { }
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	int top = stack.size() - 1;
+	SvpVec * three = static_cast<SvpVec *>(stack[top]);
+	SvpVec * two = static_cast<SvpVec *>(stack[top-1]);
+	SvpVec * one = static_cast<SvpVec *>(stack[top-2]);
+	return (*cbp)(tr, one, two, three);
+    }
+    void print() const { cout << "np_V_VVV" << "\n";}
+};
+
+/*28*/
+struct Callback_V_VVVVV : public Callback {
+    typedef SvpVec * (*FPT)(FspTranslator&, SvpVec *, SvpVec *, SvpVec *,
+							SvpVec *, SvpVec *);
+    FPT cbp;
+
+    Callback_V_VVVVV(FPT fp) : cbp(fp) { }
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	SvpVec * five = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * four = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * three = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * two = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * one = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	return (*cbp)(tr, one, two, three, four, five);
+    }
+    void print() const { cout << "V_VVVVV" << "\n";}
 };
 
 #endif

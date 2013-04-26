@@ -74,29 +74,6 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
-void relabel_one(SymbolValue * r, SymbolValue * l)
-{
-    Lts * lts = err_if_not_lts(l);
-    RelabelingValue * rlv = err_if_not_relabeling(r);
-    /* Apply relabeling. */
-    if (rlv) {
-	for (int i=0; i<rlv->size(); i++)
-	    lts->relabeling(*(rlv->new_labels[i]),
-		    *(rlv->old_labels[i]));
-    }
-}
-
-void relabel(SvpVec *relabv, SvpVec * ltsv)
-{
-    assert(ltsv->v.size() == c.tr.current_contexts().size());
-
-    if (relabv) {
-	assert(ltsv->v.size() == relabv->v.size());
-	for (int c=0; c<relabv->v.size(); c++)
-	    relabel_one(relabv->v[c], ltsv->v[c]);
-    }
-}
-
 SvpVec * priority_callback(SvpVec * one, bool low)
 {
     PriorityValue * prv;
@@ -110,26 +87,6 @@ SvpVec * priority_callback(SvpVec * one, bool low)
     }
 
     return one;
-}
-
-void merge_lts_by_rank(SvpVec * ltsv, SvpVec& result)
-{
-    int rank = -1;
-    Lts * merged = NULL;
-    Lts * lts;
-
-    assert(result.v.size() == 0);
-    assert(ltsv->v.size() == c.tr.current_contexts().size());
-    for (int k=0; k<ltsv->v.size(); k++) {
-	lts = err_if_not_lts(ltsv->v[k]);
-	if (lts->rank != rank) {
-	    rank = lts->rank;
-	    merged = lts;
-	    ltsv->detach(k);
-	    result.v.push_back(merged);
-	} else
-	    merged->compose(*lts);
-    }
 }
 
 void merge_ltscomp_by_rank(SvpVec * ltscompv, SvpVec& result)
@@ -966,55 +923,12 @@ composite_def:
 composite_body:
     sharing_OPT labeling_OPT process_ref {
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
-	SvpVec * vp;
-	Lts * lts;
-
-	assert($3->v.size() == c.tr.current_contexts().size());
-	if ($2) {
-	    SetValue * setvp;
-
-	    assert($2->v.size() == $3->v.size());
-	    /* Apply process labeling, for each context separately. */
-	    for (int k=0; k<$2->v.size(); k++) {
-		setvp = err_if_not_set($2->v[k]);
-		lts = err_if_not_lts($3->v[k]);
-		lts->labeling(*setvp);
-		lts->rank = setvp->rank;
-	    }
-
-	    /* Merge LTSs by prefix-labeling rank. */
-	    vp = new SvpVec;
-	    merge_lts_by_rank($3, *vp);
-	} else
-	    vp = $3;
-
-	if ($1) {
-	    SetValue * setvp;
-
-	    assert($1->v.size() == vp->v.size());
-	    /* Apply process sharing. */
-	    for (int k=0; k<$1->v.size(); k++) {
-		lts = err_if_not_lts(vp->v[k]);
-		setvp = err_if_not_set($1->v[k]);
-		lts->sharing(*setvp);
-	    }
-	    
-	}
-
-	/* Clean up the dirty contexts caused by labeling_OPT. */
-	c.tr.css.pop();
-	c.tr.css.push_clone();
-	$<svpvec_ptr>$ = vp;
-	ps.push_back(vp);
+	$<svpvec_ptr>$ = callback__76(c.tr, $1, $2, $3);
+	ps.push_back($<svpvec_ptr>$);
     } relabel_OPT {
 	AA($1,1,5); AA($2,2,5); AA($3,3,5); 
 	AA($<svpvec_ptr>4,4,5); AA($5,5,5);
-	relabel($5, $<svpvec_ptr>4);
-	if ($1) delete $1;
-	if ($2) delete $2;
-	if ($5) delete $5;
-
-	$$ = $<svpvec_ptr>4;
+	$$ = callback__77(c.tr, $1, $2, $3, $<svpvec_ptr>4, $5);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -1138,7 +1052,7 @@ composite_body:
 	    lts = err_if_not_lts($5->v[k]);
 	    lts->rank = setvp->rank;
 	}
-	merge_lts_by_rank($5, *vp);
+	merge_lts_by_rank(c.tr, $5, *vp);
 	delete $3;
 	delete $5;
 
