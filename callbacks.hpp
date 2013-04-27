@@ -4,11 +4,9 @@
 #include "translator.hpp"
 #include "symbols_table.hpp"
 
+struct FspTranslator;
+
 /* Left contains a SetValue*, while right is the result of 'action_range'. */
-SvpVec * indexize_svpvec(struct FspTranslator * gp, SvpVec * left, SvpVec * right);
-void merge_by_rank(SvpVec * sets, SvpVec& result);
-void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result);
-void relabel_one(SymbolValue * r, SymbolValue * l);
 
 SvpVec * callback__1(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/
@@ -82,6 +80,21 @@ SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
 					    SvpVec * three); /*27*/
 SvpVec * callback__77(FspTranslator& tr, SvpVec * one, SvpVec * two,
 			SvpVec * three, SvpVec * four, SvpVec * five); /*28*/
+SvpVec * callback__78(FspTranslator& tr, SvpVec * one, SvpVec * two,
+						    SvpVec * three); /*27*/
+SvpVec * callback__79(FspTranslator& tr, SvpVec * one, SvpVec * two,
+			SvpVec * three, SvpVec * four, SvpVec * five); /*28*/
+SvpVec * callback__80(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
+SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
+							SvpVec * three); /*29*/
+SvpVec * callback__82(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__83(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
+SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two); /*5*/
+SvpVec * callback__85(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__86(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__87(FspTranslator& tr, SvpVec * one); /*17*/
+Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
+					SvpVec * three, SvpVec * four); /*30*/
 
 struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;
@@ -539,4 +552,44 @@ struct Callback_V_VVVVV : public Callback {
     void print() const { cout << "V_VVVVV" << "\n";}
 };
 
+/*29*/
+struct Callback_V_VVV : public Callback {
+    typedef SvpVec * (*FPT)(FspTranslator&, SvpVec *, SvpVec *, SvpVec *);
+    FPT cbp;
+
+    Callback_V_VVV(FPT fp) : cbp(fp) { }
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	SvpVec * three = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * two = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * one = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	return (*cbp)(tr, one, two, three);
+    }
+    void print() const { cout << "V_VVV" << "\n";}
+};
+
+
+
+/*30*/
+struct Callback_V_VVVV : public Callback {
+    typedef Lts * (*FPT)(FspTranslator&, SvpVec *, SvpVec *, SvpVec *,
+							    SvpVec *);
+    FPT cbp;
+
+    Callback_V_VVVV(FPT fp) : cbp(fp) { }
+    void * execute(FspTranslator &tr, vector<void *>& stack) {
+	SvpVec * four = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * three = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * two = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	SvpVec * one = static_cast<SvpVec *>(stack.back());
+	stack.pop_back();
+	return (*cbp)(tr, one, two, three, four);
+    }
+    void print() const { cout << "V_VVVV" << "\n";}
+};
 #endif

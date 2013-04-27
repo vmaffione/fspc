@@ -283,6 +283,45 @@ void relabel(FspTranslator& tr, SvpVec *relabv, SvpVec * ltsv)
     }
 }
 
+void merge_ltscomp_by_rank(FspTranslator& tr, SvpVec * ltscompv,
+							    SvpVec& result)
+{
+    int rank = -1;
+    LtsComposition * merged = NULL;
+    LtsComposition * lcp;
+    Lts * lts;
+
+    assert(result.v.size() == 0);
+    assert(ltscompv->v.size() == tr.current_contexts().size());
+    for (int k=0; k<ltscompv->v.size(); k++) {
+	lcp = err_if_not_ltscomposition(ltscompv->v[k]);
+	if (lcp->rank != rank) {
+	    rank = lcp->rank;
+	    merged = lcp;
+	    ltscompv->detach(k);
+	    result.v.push_back(merged);
+	} else {
+	    for (int i=0; i<merged->lts.size(); i++)
+		merged->lts[i]->compose(*(lcp->lts[i]));
+	}
+    }
+}
+
+SvpVec * priority_callback(FspTranslator& tr, SvpVec * one, bool low)
+{
+    PriorityValue * prv;
+
+    assert(one->v.size() == tr.current_contexts().size());
+    for (int c=0; c<one->v.size(); c++) {
+	prv = new PriorityValue;
+	prv->setvp = err_if_not_set(one->v[c]);
+	prv->low = low;
+	one->v[c] = prv;
+    }
+
+    return one;
+}
+
 
 /* Fix unresolved ProcessNode references due to cyclic processes. */
 static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
@@ -1816,3 +1855,289 @@ SvpVec * callback__77(FspTranslator& tr, SvpVec * one, SvpVec * two,
     return four;
 }
 
+SvpVec * callback__78(FspTranslator& tr, SvpVec * one, SvpVec * two,
+						    SvpVec * three)
+{
+    SvpVec * vp;
+    LtsComposition * lcp;
+
+    /* Restore the contexts modified by labeling_OPT. */
+    tr.css.pop();
+
+    assert(three->v.size() == tr.current_contexts().size());
+    if (two) {
+	SetValue * setvp;
+
+	assert(two->v.size() == three->v.size());
+	/* Apply process labeling, for each context separately. */
+	for (int k=0; k<two->v.size(); k++) {
+	    setvp = err_if_not_set(two->v[k]);
+	    lcp = err_if_not_ltscomposition(three->v[k]);
+
+	    /* Apply process labeling to each component process, before
+	       performing the composition. */
+	    for (int i=0; i<lcp->lts.size(); i++)
+		lcp->lts[i]->labeling(*setvp);
+	    lcp->rank = setvp->rank;
+	}
+
+	/* Merge LTS compositions by labeling rank. */
+	vp = new SvpVec;
+	merge_ltscomp_by_rank(tr, three, *vp);
+    } else
+	vp = three;
+
+    if (one) {
+	SetValue * setvp;
+
+	assert(one->v.size() == vp->v.size());
+	/* Apply process sharing, before performing the composition. */
+	for (int k=0; k<one->v.size(); k++) {
+	    lcp = err_if_not_ltscomposition(vp->v[k]);
+	    setvp = err_if_not_set(one->v[k]);
+	    for (int i=0; i<lcp->lts.size(); i++)
+		lcp->lts[i]->sharing(*setvp);
+	}
+
+    }
+
+    /* Restore the contexts to the state previous to labeling_OPT. */
+    tr.css.pop();
+    tr.css.push_clone();
+
+    return vp;
+}
+
+SvpVec * callback__79(FspTranslator& tr, SvpVec * one, SvpVec * two,
+				SvpVec * three, SvpVec * four, SvpVec * five)
+{
+    SvpVec * vp = new SvpVec;
+    LtsComposition * lcp;
+    Lts * lts;
+
+    if (five) {
+	/* Apply relabeling. */
+	assert(four->v.size() == five->v.size());
+	for (int c=0; c<five->v.size(); c++) {
+	    lcp = err_if_not_ltscomposition(four->v[c]);
+
+	    /* Apply relabeling to each component process, before
+	       performing the composition. */
+	    for (int i=0; i<lcp->lts.size(); i++)
+		relabel_one(five->v[c], lcp->lts[i]);
+
+	}
+    }
+
+    /* Perform parallel composition. */
+    for (int c=0; c<four->v.size(); c++) {
+	lcp = err_if_not_ltscomposition(four->v[c]);
+	/* Compose all the processes contained in 'lcp'. */
+	lts = lcp->lts[0];
+	for (int i=1; i<lcp->lts.size(); i++) {
+	    lts->compose(*(lcp->lts[i]));
+	    delete lcp->lts[i];
+	}
+	vp->v.push_back(lts);
+    }
+    delete four;
+    if (one) delete one;
+    if (two) delete two;
+    if (five) delete five;
+
+    return vp;
+}
+
+SvpVec * callback__80(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    SvpVec * vp = new SvpVec;
+    SetValue * setvp;
+    Lts * lts;
+
+    tr.css.pop();
+    assert(one->v.size() == two->v.size());
+    for (int k=0; k<one->v.size(); k++) {
+	setvp = err_if_not_set(one->v[k]);
+	lts = err_if_not_lts(two->v[k]);
+	lts->rank = setvp->rank;
+    }
+    merge_lts_by_rank(tr, two, *vp);
+    delete one;
+    delete two;
+
+    return vp;
+}
+
+SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
+							    SvpVec * three)
+{
+    /* TODO optimize: useless calculation of both branches. */
+    ConstValue * cvp;
+    SvpVec * vp = three;
+
+    assert(one->v.size() == two->v.size() &&
+	    one->v.size() == tr.current_contexts().size());
+    assert(!three || one->v.size() == three->v.size());
+    if (!vp) {
+	vp = new SvpVec;
+	for (int k=0; k<one->v.size(); k++)
+	    vp->v.push_back(new Lts(LtsNode::Normal, &tr.cr.actions));
+    }
+    for (int c=0; c<one->v.size(); c++) {
+	cvp = err_if_not_const(one->v[c]);
+	if (!cvp->value) {
+	    SymbolValue * tmp = two->v[c];
+	    two->v[c] = vp->v[c];
+	    vp->v[c] = tmp;
+	}
+    }
+    delete vp;
+
+    return two;
+}
+
+SvpVec * callback__82(FspTranslator& tr, SvpVec * one)
+{
+    SvpVec * vp = new SvpVec;
+    LtsComposition * lcp;
+    Lts * lts;
+
+    for (int c=0; c<one->v.size(); c++) {
+	lts = err_if_not_lts(one->v[c]);
+	lcp = new LtsComposition;
+	lcp->lts.push_back(lts);
+	vp->v.push_back(lcp);
+    }
+    one->detach_all();
+    delete one;
+
+    return vp;
+}
+
+SvpVec * callback__83(FspTranslator& tr, SvpVec * one, SvpVec * two)
+{
+    LtsComposition * lcp;
+    Lts * lts;
+
+    assert(one->v.size() == two->v.size());
+    for (int c=0; c<one->v.size(); c++) {
+	lcp = err_if_not_ltscomposition(one->v[c]);
+	lts = err_if_not_lts(two->v[c]);
+	lcp->lts.push_back(lts);
+    }
+    two->detach_all();
+    delete two;
+
+    return one;
+}
+
+SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
+{
+    SymbolValue * svp;
+    Lts * lts;
+    ParametricProcess * ppp;
+    SvpVec * vp = new SvpVec;
+    SvpVec * argvp = two;
+    ArgumentsValue * avp;
+
+    /* Lookup 'process_id' in the 'parametric_process' table. */
+    if (!tr.cr.parametric_processes.lookup(*one, svp)) {
+	stringstream errstream;
+	errstream << "Process " << *one << " undeclared\n";
+	semantic_error(errstream);
+    }
+    ppp = err_if_not_parametric(svp);
+
+    if (!argvp) {
+	/* 'argvp' is going to specify the default parameters for every
+	   context. */
+	argvp = new SvpVec;
+	for (int k=0; k<tr.current_contexts().size(); k++) {
+	    avp = new ArgumentsValue;
+	    avp->args = ppp->parameter_defaults;
+	    argvp->v.push_back(avp);
+	}
+    }
+
+    for (int k=0; k<argvp->v.size(); k++) {
+	string name = *one;
+
+	avp = err_if_not_arguments(argvp->v[k]);
+	if (avp->args.size() != ppp->parameter_names.size()) {
+	    stringstream errstream;
+	    errstream << "Parameters mismatch\n";
+	    semantic_error(errstream);
+	}
+	lts = ppp->replay(tr.cr, avp->args);
+	/* Compute the process name. TODO */
+
+	/* Free all the nodes allocated by c.pna, and remove the from
+	   the allocator itself. */
+	tr.cr.pna.clear();
+
+	vp->v.push_back(lts);
+    }
+    delete one;
+    delete argvp;
+
+    return vp;
+}
+
+SvpVec * callback__85(FspTranslator& tr, SvpVec * one)
+{
+    SvpVec * vp = new SvpVec;
+
+    merge_by_rank(one, *vp);
+    delete one;
+
+    /* We have to clean up the contexts, since process sharing does not
+       extend the contexts. */
+    tr.css.pop();
+    tr.css.push_clone();
+
+    return vp;
+}
+
+SvpVec * callback__86(FspTranslator& tr, SvpVec * one)
+{
+    return priority_callback(tr, one, true);
+}
+
+SvpVec * callback__87(FspTranslator& tr, SvpVec * one)
+{
+    return priority_callback(tr, one, false);
+}
+
+Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
+					    SvpVec * three, SvpVec * four)
+{
+    Lts * lts;
+
+    tr.css.pop();
+    assert(two->v.size() == 1);
+    lts = err_if_not_lts(two->v[0]);
+    two->detach(0);
+
+    /* Apply priority. */
+    if (three) {
+	PriorityValue * prv = err_if_not_priority(three->v[0]);
+
+	assert(three->v.size() == 1);
+	lts->priority(*(prv->setvp), prv->low);
+    }
+
+    /* Apply hiding. */
+    if (four) {
+	HidingValue * hvp = err_if_not_hiding(four->v[0]);
+
+	assert(four->v.size() == 1);
+	lts->hiding(*(hvp->setvp), hvp->interface);
+    }
+    lts->name = *one;
+    delete one;
+    delete two;
+    delete three;
+    delete four;
+
+    return lts;
+}
