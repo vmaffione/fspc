@@ -1662,6 +1662,8 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 
     for (int k=0; k<argvp->v.size(); k++) {
 	string name = *one;
+	string extension;
+	SymbolValue * svp;
 	struct ProcessVisitObject f;
 	struct AggrStatesData d;
 
@@ -1671,10 +1673,28 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
-	lts = ppp->replay(tr.cr, avp->args);
-	/* Compute the process name. TODO */
 
-	/* Note that here we don't  c.pna.clear(). */
+	lts_name_extension(avp->args, extension);
+
+	/* We first lookup the global processes table in order to see if
+	   we already have the requested LTS. */
+	if (tr.cr.processes.lookup(name + extension, svp)) {
+	    /* If there is a cache hit, clone the LTS. */
+	    svp = svp->clone();
+	    lts = err_if_not_lts(svp);
+	} else {
+	    /* If there is a cache miss, we have to compute the requested LTS
+	       by replay and save it in the global processes table. */
+	    lts = ppp->replay(tr.cr, avp->args);
+	    
+	    /* Note that here we don't  c.pna.clear(). */
+
+	    lts->name += extension; /* Here lts->name is complete. */
+	    if (!tr.cr.processes.insert(name + extension, lts)) {
+		assert(0);
+	    }
+	    lts = static_cast<Lts *>(lts->clone());
+	}
 
 	vp->v.push_back(lts->toProcessNode(tr.cr.pna));
     }
@@ -2119,7 +2139,6 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 		assert(0);
 	    }
 	    lts = static_cast<Lts *>(lts->clone());
-
 	}
 
 	vp->v.push_back(lts);
