@@ -573,12 +573,13 @@ struct Callback_V_VVV : public Callback {
 
 
 /*30*/
-struct Callback_V_VVVV : public Callback {
-    typedef Lts * (*FPT)(FspTranslator&, SvpVec *, SvpVec *, SvpVec *,
+struct Callback_V_SVVV : public Callback {
+    typedef Lts * (*FPT)(FspTranslator&, string *, SvpVec *, SvpVec *,
 							    SvpVec *);
     FPT cbp;
+    string one;
 
-    Callback_V_VVVV(FPT fp) : cbp(fp) { }
+    Callback_V_SVVV(FPT fp, const string& s) : cbp(fp), one(s) { }
     void * execute(FspTranslator &tr, vector<void *>& stack) {
 	SvpVec * four = static_cast<SvpVec *>(stack.back());
 	stack.pop_back();
@@ -586,10 +587,8 @@ struct Callback_V_VVVV : public Callback {
 	stack.pop_back();
 	SvpVec * two = static_cast<SvpVec *>(stack.back());
 	stack.pop_back();
-	SvpVec * one = static_cast<SvpVec *>(stack.back());
-	stack.pop_back();
-	return (*cbp)(tr, one, two, three, four);
+	return (*cbp)(tr, new string(one), two, three, four);
     }
-    void print() const { cout << "V_VVVV" << "\n";}
+    void print() const { cout << "V_SVVV" << "\n";}
 };
 #endif
