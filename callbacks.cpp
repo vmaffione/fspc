@@ -101,6 +101,22 @@ ParametricProcess* err_if_not_parametric(SymbolValue * svp)
     return (ParametricProcess *)svp;
 }
 
+
+void lts_name_extension(const vector<int>& values, string& extension)
+{
+    extension = "";
+
+    if (values.size()) {
+	int i = 0;
+
+	extension = "(";
+	for (; i<values.size() - 1; i++) {
+	   extension += int2string(values[i]) + ",";
+	}
+	extension += int2string(values[i]) + ")";
+    }
+}
+
 /* Helper function used with T=string and T=int. */
 template <class T>
 static Context* extended_context(Context * ctx,
@@ -2071,6 +2087,8 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 
     for (int k=0; k<argvp->v.size(); k++) {
 	string name = *one;
+	string extension;
+	SymbolValue * svp;
 
 	avp = err_if_not_arguments(argvp->v[k]);
 	if (avp->args.size() != ppp->parameter_names.size()) {
@@ -2078,12 +2096,31 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 	    errstream << "Parameters mismatch\n";
 	    semantic_error(errstream);
 	}
-	lts = ppp->replay(tr.cr, avp->args);
-	/* Compute the process name. TODO */
 
-	/* Free all the nodes allocated by c.pna, and remove the from
-	   the allocator itself. */
-	tr.cr.pna.clear();
+	lts_name_extension(avp->args, extension);
+
+	/* We first lookup the global processes table in order to see if
+	   we already have the requested LTS. */
+	if (tr.cr.processes.lookup(name + extension, svp)) {
+	    /* If there is a cache hit, clone the LTS. */
+	    svp = svp->clone();
+	    lts = err_if_not_lts(svp);
+	} else {
+	    /* If there is a cache miss, we have to compute the requested LTS
+	       by replay and save it in the global processes table. */
+	    lts = ppp->replay(tr.cr, avp->args);
+	    
+	    /* Free all the nodes allocated by c.pna, and remove the from
+	       the allocator itself. */
+	    tr.cr.pna.clear();
+
+	    lts->name += extension; /* Here lts->name is complete. */
+	    if (!tr.cr.processes.insert(name + extension, lts)) {
+		assert(0);
+	    }
+	    lts = static_cast<Lts *>(lts->clone());
+
+	}
 
 	vp->v.push_back(lts);
     }

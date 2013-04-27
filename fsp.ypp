@@ -84,9 +84,12 @@ inline void AA(void * barg, int midx, int tot)
 #endif
 
 
+
 /* Called after callback__15() and callback__88() to do common registration
    work. */
 void post_process_definition(Lts * lts) {
+    string extension;
+
     /* Remove process parameters from c.identifiers. */
     for (int i=0; i<c.parametric->parameter_names.size(); i++)
 	c.identifiers.remove(c.parametric->parameter_names[i]);
@@ -98,13 +101,6 @@ void post_process_definition(Lts * lts) {
     c.tr.overridden_names.clear();
     c.tr.overridden_values.clear();
 
-    /* Insert lts into the global 'processes' table. */
-    if (!c.processes.insert(lts->name, lts)) {
-	stringstream errstream;
-	errstream << "Process " << lts->name << " already declared";
-	semantic_error(errstream);
-    }
-
     /* Store c.parametric in parametric_processes. */
     if (!c.parametric_processes.insert(lts->name, c.parametric)) {
 	stringstream errstream;
@@ -113,6 +109,17 @@ void post_process_definition(Lts * lts) {
 	semantic_error(errstream);
     }
     PROX(c.parametric->print());
+
+    /* Compute the LTS name extension, but don't extend lts->name (pretty
+       output). */
+    lts_name_extension(c.parametric->parameter_defaults, extension);
+
+    /* Insert lts into the global 'processes' table. */
+    if (!c.processes.insert(lts->name + extension, lts)) {
+	stringstream errstream;
+	errstream << "Process " << lts->name << " already declared";
+	semantic_error(errstream);
+    }
 
     /* Prepare for the next parametric process. */
     c.parametric = new ParametricProcess;

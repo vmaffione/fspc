@@ -6,7 +6,7 @@
 
 struct FspTranslator;
 
-/* Left contains a SetValue*, while right is the result of 'action_range'. */
+void lts_name_extension(const vector<int>& values, string& extension);
 
 SvpVec * callback__1(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/
