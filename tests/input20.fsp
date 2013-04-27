@@ -1,0 +1,6 @@
+P=(a->END).
+Q=(b->END).
+||C1=forall[j:1..2] if j==1 then p[i:1..2][j*18]:P else q[i:1..2][j*18]:Q.
+||C2=forall[j:1..2] if j==1 then t[j]:(P||Q) else e[j]:(P||Q).
+||C3=(p[i:1..2]:P || q:Q).
+||C4=s[j:1..2][j*j+1]::p[i:1..2][i+3]:P.

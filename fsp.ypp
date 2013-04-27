@@ -962,6 +962,8 @@ composite_body:
 composite_else_OPT:
     {
 	$$ = NULL;
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | ELSE composite_body {
@@ -1011,6 +1013,8 @@ process_ref:
 sharing_OPT:
     {
 	$$ = NULL;
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | action_labels SHARING {
@@ -1027,6 +1031,8 @@ sharing_OPT:
 labeling_OPT:
     {
 	$$ = NULL;
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | action_labels ':' {
@@ -1039,6 +1045,8 @@ labeling_OPT:
 priority_OPT:
     {
 	$$ = NULL;
+	if (c.record_mode_on)
+	    c.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | priority {

@@ -3,13 +3,9 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P=(d[i:R]->e->f->END|a[i:R]->a->b->c[i]->END).
-||C1=P << {a}.
-||C2=P >> {a}.
-||C3=P << {a,d[2]}.
-||C4=P >> {a,d[2]}.
-||C5=P << {a,d}.
-||C6=P >> {a,d}.
+P(K=0)=(a[K]->END).
+||C(K=1) = p[i:1..K]:P(i).
+||CC = c:C(3).
 
 
 /*

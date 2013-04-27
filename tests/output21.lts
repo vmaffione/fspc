@@ -1,0 +1,70 @@
+C1 8 8 3 7 -1
+0 a[1] 1
+0 a[2] 2
+1 a 3
+2 a 4
+3 tau 5
+4 tau 6
+5 tau 7
+6 tau 7
+a[1] a[2] a 
+C2 8 8 0 7 -1
+0 tau 1
+0 tau 2
+1 tau 3
+2 tau 4
+3 tau 5
+4 tau 6
+5 tau 7
+6 tau 7
+
+C3 8 8 6 7 -1
+0 x[1] 1
+0 x[2] 2
+1 x 3
+2 x 4
+3 b 5
+4 b 6
+5 c[1] 7
+6 c[2] 7
+b c[1] c[2] x[1] x[2] x 
+C4 8 8 3 7 -1
+0 a[1] 1
+0 tau 2
+1 a 3
+2 a 4
+3 b 5
+4 b 6
+5 tau 7
+6 tau 7
+a[1] a b 
+C5 8 8 2 7 -1
+0 tau 1
+0 tau 2
+1 tau 3
+2 tau 4
+3 tau 5
+4 tau 6
+5 p.c[1] 7
+6 p.c[2] 7
+p.c[1] p.c[2] 
+C6 8 8 0 7 -1
+0 tau 1
+0 tau 2
+1 tau 3
+2 tau 4
+3 tau 5
+4 tau 6
+5 tau 7
+6 tau 7
+
+P 8 8 6 7 -1
+0 a[1] 1
+0 a[2] 2
+1 a 3
+2 a 4
+3 b 5
+4 b 6
+5 c[1] 7
+6 c[2] 7
+a[1] a[2] a b c[1] c[2] 

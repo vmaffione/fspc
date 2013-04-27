@@ -1,0 +1,7 @@
+/* This test shows how prefix labeling/sharing and relabeling takes precedence over parallel composition. */
+
+P=(a->x->END).
+Q=(y->b->END).
+||C1=(P||Q) /{x/y}.
+||C2=p:(P||Q) /{x/y}.
+||C3=p:(P||Q) /{p.x/p.y}.

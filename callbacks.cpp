@@ -35,7 +35,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
     vector<string> overridden_names;
     vector<SymbolValue *> overridden_values;
 
-    PROX(cout << "Replay!!\n");
+    PROX(cout << "START Replay!!\n");
     assert(values.size() == parameter_defaults.size());
     assert(parameter_defaults.size() == parameter_names.size());
 
@@ -76,6 +76,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
 	    /* This should never happen. */
 	    assert(0);
 	}
+    PROX(cout << "END Replay!!\n");
 
     return static_cast<class Lts *>(stack.back());
 }
@@ -494,6 +495,12 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     if (!tr.cr.identifiers.lookup(*two, svp)) {
 	stringstream errstream;
 	errstream << "range/set " << *two << " undeclared";
+	semantic_error(errstream);
+    }
+    if (!(svp->type() == SymbolValue::Range ||
+		svp->type() == SymbolValue::Set)) {
+	stringstream errstream;
+	errstream << "range/set expected";
 	semantic_error(errstream);
     }
     svp = svp->clone();

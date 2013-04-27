@@ -44,7 +44,7 @@ tags:
 	cscope -R
 
 clean:
-	-rm *.o fspc scanner.cpp parser.cpp parser.hpp *.gv cscope.out
+	-rm *.o fspc scanner.cpp parser.cpp parser.hpp *.gv
 
 testing:
 	tests/test.sh

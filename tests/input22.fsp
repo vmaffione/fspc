@@ -1,0 +1,12 @@
+const N = 3 * 4
+range R = 1..2
+set S = {x,y,z}
+
+
+P=(d[i:R]->e->f->END|a[i:R]->a->b->c[i]->END).
+||C1=P << {a}.
+||C2=P >> {a}.
+||C3=P << {a,d[2]}.
+||C4=P >> {a,d[2]}.
+||C5=P << {a,d}.
+||C6=P >> {a,d}.
