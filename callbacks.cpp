@@ -712,6 +712,9 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	assert(five->v.size() == 1);
 	lts->hiding(*(hvp->setvp), hvp->interface);
     }
+
+    lts->name = *one;
+
     delete one;
     delete three;
     delete four;

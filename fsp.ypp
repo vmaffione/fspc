@@ -74,7 +74,6 @@ inline void AA(void * barg, int midx, int tot)
 }
 
 
-
 //#define DEBUG
 #ifdef DEBUG
 #define PROX(x) cout<<"PROX: ";x;cout<<"\n"
@@ -83,6 +82,42 @@ inline void AA(void * barg, int midx, int tot)
 #define PROP(x)
 #define PROX(x)
 #endif
+
+
+/* Called after callback__15() and callback__88() to do common registration
+   work. */
+void post_process_definition(Lts * lts) {
+    /* Remove process parameters from c.identifiers. */
+    for (int i=0; i<c.parametric->parameter_names.size(); i++)
+	c.identifiers.remove(c.parametric->parameter_names[i]);
+
+    /* Restore overridden identifiers. */
+    for (int i=0; i<c.tr.overridden_names.size(); i++)
+	c.identifiers.insert(c.tr.overridden_names[i],
+		c.tr.overridden_values[i]);
+    c.tr.overridden_names.clear();
+    c.tr.overridden_values.clear();
+
+    /* Insert lts into the global 'processes' table. */
+    if (!c.processes.insert(lts->name, lts)) {
+	stringstream errstream;
+	errstream << "Process " << lts->name << " already declared";
+	semantic_error(errstream);
+    }
+
+    /* Store c.parametric in parametric_processes. */
+    if (!c.parametric_processes.insert(lts->name, c.parametric)) {
+	stringstream errstream;
+	errstream << "Parametric process " << lts->name
+	    << " already declared";
+	semantic_error(errstream);
+    }
+    PROX(c.parametric->print());
+
+    /* Prepare for the next parametric process. */
+    c.parametric = new ParametricProcess;
+    c.record_mode_on = 0;
+}
 
 
 void yyerror(const char *s);
@@ -418,37 +453,7 @@ process_def:
 	   the allocator itself. */
 	c.pna.clear();
 
-	/* Remove process parameters from c.identifiers. */
-	for (int i=0; i<c.parametric->parameter_names.size(); i++)
-	    c.identifiers.remove(c.parametric->parameter_names[i]);
-
-	/* Restore overridden identifiers. */
-	for (int i=0; i<c.tr.overridden_names.size(); i++)
-	    c.identifiers.insert(c.tr.overridden_names[i],
-					    c.tr.overridden_values[i]);
-	c.tr.overridden_names.clear();
-	c.tr.overridden_values.clear();
-
-	/* Insert lts into the global 'processes' table. */
-	if (!c.processes.insert(name, lts)) {
-	    stringstream errstream;
-	    errstream << "Process " << name << " already declared";
-	    semantic_error(errstream);
-	}
-	lts->name = name;
-
-	/* Store c.parametric in parametric_processes. */
-	if (!c.parametric_processes.insert(name, c.parametric)) {
-	    stringstream errstream;
-	    errstream << "Parametric process " << name
-		<< " already declared";
-	    semantic_error(errstream);
-	}
-	PROX(c.parametric->print());
-
-	/* Prepare for the next parametric process. */
-	c.parametric = new ParametricProcess;
-	c.record_mode_on = 0;
+	post_process_definition(lts);
 
 	PROX(lts->print(); lts->graphvizOutput((name + ".gv").c_str()));
 	$$ = lts;
@@ -836,36 +841,7 @@ composite_def:
 			new Callback_V_SVVV(&callback__88, *$2));
 	lts = callback__88(c.tr, $2, $6, $7, $8);
 
-	/* Remove process parameters from c.identifiers. */
-	for (int i=0; i<c.parametric->parameter_names.size(); i++)
-	    c.identifiers.remove(c.parametric->parameter_names[i]);
-
-	/* Restore overridden identifiers. */
-	for (int i=0; i<c.tr.overridden_names.size(); i++)
-	    c.identifiers.insert(c.tr.overridden_names[i],
-						c.tr.overridden_values[i]);
-	c.tr.overridden_names.clear();
-	c.tr.overridden_values.clear();
-
-	/* Insert lts into the global 'processes' table. */
-	if (!c.processes.insert(lts->name, lts)) {
-	    stringstream errstream;
-	    errstream << "Process " << lts->name << " already declared";
-	    semantic_error(errstream);
-	}
-
-	/* Store c.parametric in parametric_processes. */
-	if (!c.parametric_processes.insert(lts->name, c.parametric)) {
-	    stringstream errstream;
-	    errstream << "Parametric process " << lts->name
-			    << " already declared";
-	    semantic_error(errstream);
-	}
-	PROX(c.parametric->print());
-
-	/* Prepare for the next parametric process. */
-	c.parametric = new ParametricProcess;
-	c.record_mode_on = 0;
+	post_process_definition(lts);
 
 	PROX(cout << "#####################Composite process " << lts->name << " defined#############\n");
 	PROX(lts->print(); lts->graphvizOutput((lts->name + ".gv").c_str()));
