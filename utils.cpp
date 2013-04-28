@@ -12,7 +12,7 @@ ConstValue* err_if_not_const(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Const) {
 	stringstream errstream;
-errstream << "Const expected";
+	errstream << "Const expected";
 	semantic_error(errstream);
     }
 
@@ -23,7 +23,7 @@ RangeValue* err_if_not_range(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Range) {
 	stringstream errstream;
-errstream << "Range expected";
+	errstream << "Range expected";
 	semantic_error(errstream);
     }
 
@@ -34,7 +34,7 @@ SetValue* err_if_not_set(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Set) {
 	stringstream errstream;
-errstream << "Set expected";
+	errstream << "Set expected";
 	semantic_error(errstream);
     }
 
@@ -45,7 +45,7 @@ ProcessValue* err_if_not_process(SymbolValue * svp)
 {
     if (svp->type() != SymbolValue::Process) {
 	stringstream errstream;
-errstream << "Process expected";
+	errstream << "Process expected";
 	semantic_error(errstream);
     }
 
@@ -111,7 +111,7 @@ ProcessNode * err_if_not_procnode(ProcessBase * pbp)
 {
     if (pbp->unresolved() || pbp->connected()) {
 	stringstream errstream;
-errstream << "ProcessNode expected";
+	errstream << "ProcessNode expected";
 	semantic_error(errstream);
     }
     return static_cast<ProcessNode *>(pbp);

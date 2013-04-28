@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <assert.h>
 
 #include "symbols_table.hpp"
 
@@ -93,6 +94,13 @@ class Lts: public SymbolValue {
 
 Lts * err_if_not_lts(SymbolValue * svp);
 
+inline Lts * is_lts(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::Lts);
+
+    return static_cast<Lts *>(svp);
+}
+
 /* A list of Lts. */
 struct LtsComposition: public SymbolValue {
     vector<class Lts *> lts;
@@ -104,5 +112,12 @@ struct LtsComposition: public SymbolValue {
 };
 
 LtsComposition * err_if_not_ltscomposition(SymbolValue * svp);
+
+inline LtsComposition * is_ltscomposition(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::LtsComposition);
+
+    return static_cast<LtsComposition *>(svp);
+}
 
 #endif

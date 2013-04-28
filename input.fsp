@@ -2,8 +2,7 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-
-P(K=0)=(a[K]->END).
+P(K=0)=(a[i:K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
 

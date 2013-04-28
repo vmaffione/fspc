@@ -115,6 +115,13 @@ struct ParametricProcess: public SymbolValue {
 
 ParametricProcess* err_if_not_parametric(SymbolValue * svp);
 
+inline ParametricProcess* is_parametric(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::ParametricProcess);
+
+    return static_cast<ParametricProcess *>(svp);
+}
+
 
 struct Callback_pop_push: public Callback {
     int pop;

@@ -1,6 +1,7 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include <assert.h>
 #include "lts.hpp"
 #include "symbols_table.hpp"
 #include "utils.hpp"
@@ -1137,9 +1138,8 @@ Lts * err_if_not_lts(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (Lts *)svp;
+    return static_cast<Lts *>(svp);
 }
-
 
 /* =========================  LtsComposition ============================= */
 void LtsComposition::print() const
@@ -1164,7 +1164,6 @@ SymbolValue * LtsComposition::clone() const
 
     return lc;
 }
-
 
 LtsComposition * err_if_not_ltscomposition(SymbolValue * svp)
 {

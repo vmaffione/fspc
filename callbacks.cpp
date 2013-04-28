@@ -98,7 +98,7 @@ ParametricProcess* err_if_not_parametric(SymbolValue * svp)
 	semantic_error(errstream);
     }
 
-    return (ParametricProcess *)svp;
+    return static_cast<ParametricProcess *>(svp);
 }
 
 
@@ -417,7 +417,7 @@ void * Callback_pop_push::exe(FspTranslator& tr, int pp, int psh) {
 }
 
 
-/* =========================== CALLBACKS =============================== */
+/* ============================= CALLBACKS =============================== */
 SvpVec * callback__1(FspTranslator& tr, string * one) 
 {
     SvpVec * vp;
@@ -701,11 +701,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     if (three) {
 	SetValue * setvp;
 
-	if (three->v.size() != 1) {
-	    stringstream errstream;
-	    errstream << "Multiset alphabet extension";
-	    semantic_error(errstream);
-	}
+	assert(three->v.size() == 1);
 	setvp = err_if_not_set(three->v[0]);
 	for (int i=0; i<setvp->actions.size(); i++)
 	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));

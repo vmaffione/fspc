@@ -306,6 +306,7 @@ action_range:
 	if (c.record_mode_on)
 	    c.parametric->record.push_back(
 				new Callback_V_SS(&callback__6, *$1, *$3));
+	@3.first_line;
 	$$ = callback__6(c.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
@@ -1604,6 +1605,8 @@ int parser(const CompilerOptions& co)
 void yyerror(const char *s) {
     cout << "Syntax error:" << s << endl;
     // might as well halt now:
+    cout << yylloc.first_line << " " << yylloc.first_column << " "
+	<< yylloc.last_line << " " << yylloc.last_column << "\n";
     exit(-1);
 }
 
