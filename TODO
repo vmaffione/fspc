@@ -1,2 +1,3 @@
 [O] in sequential composition, increase efficiency by starting the visit from the first node of the right side process, instead of the first node of the left side process
 [O] syntax error localization
+[O] save 'progresses' in the compiled file

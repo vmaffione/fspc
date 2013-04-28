@@ -392,9 +392,11 @@ range_def:
 set_def:
     SET set_id '=' set_expr {
 	AA($2,1,2); AA($4,2,2);
+	SetValue * setvp;
 
 	assert($4->v.size() == 1);
-	if (!c.identifiers.insert(*$2, $4->v[0])) {
+	setvp = is_set($4->v[0]);
+	if (!c.identifiers.insert(*$2, setvp)) {
 	    stringstream errstream;
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error(errstream);
@@ -1233,12 +1235,11 @@ progress_def:
 	SetValue * setvp;
 	SetValue * irp;
 	string name;
-	map<string, SymbolValue*>::iterator it;
 
 	assert($4->v.size() == $6->v.size());
 	for (int k=0; k<$6->v.size(); k++) {
-	    irp = err_if_not_set($4->v[k]);
-	    setvp = err_if_not_set($6->v[k]);
+	    irp = is_set($4->v[k]);
+	    setvp = is_set($6->v[k]);
 	    /* We discard irp->actions[i] for i>0. */
 	    name = *$2 + irp->actions[0]; 
 	    
@@ -1572,7 +1573,7 @@ int parser(const CompilerOptions& co)
     SetValue * setvp;    
 
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	lts = err_if_not_lts(it->second);
+	lts = is_lts(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
 	if (co.input_type != CompilerOptions::InputTypeLts)
@@ -1589,10 +1590,10 @@ int parser(const CompilerOptions& co)
 	/* Do each progress check against all the global processes. */
 	for (it=c.progresses.table.begin(); it!=c.progresses.table.end();
 								    it++) {
-	    setvp = err_if_not_set(it->second);
+	    setvp = is_set(it->second);
 	    for (jt=c.processes.table.begin();
 		    jt!=c.processes.table.end(); jt++) {
-		lts = err_if_not_lts(jt->second);
+		lts = is_lts(jt->second);
 		lts->progress(it->first, *setvp);
 	    }
 	}
