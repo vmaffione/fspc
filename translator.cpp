@@ -30,7 +30,7 @@ void Aliases::insert(const string& left, const string& right) {
     if (left_index != -1 && left_was_assigned) {
 	stringstream errstream;
 	errstream << "$$Process " << left << " defined twice";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
 
     if (left_index == -1 && right_index == -1) {
@@ -85,7 +85,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 		stringstream errstream;
 		errstream << "$* Process " << groups[i][j].name
 		    << " undefined";
-		semantic_error(errstream, *(tr.loc_ptr));
+		semantic_error(errstream, tr.locations[0]);
 	    }
 	}
 	assert(found <= 1);
@@ -101,7 +101,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 	    pt.insert(groups[i][0].name, svp);
 	    index = 0;
 	}
-	pvp = err_if_not_process(svp, *(tr.loc_ptr));
+	pvp = err_if_not_process(svp, tr.locations[0]);
 	for (int j=0; j<groups[i].size(); j++)
 	    if (j != index) {
 		ProcessValue * npvp = new ProcessValue;
@@ -111,7 +111,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 		    /* This really can't happen. */
 		    stringstream errstream;
 		    errstream << "Impossible duplicate (BUG)\n";
-		    semantic_error(errstream, *(tr.loc_ptr));
+		    semantic_error(errstream, tr.locations[0]);
 		}
 		IFD(cout << "Process " << groups[i][j].name << " defined (" << npvp->pnp << ")\n");
 	    }

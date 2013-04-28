@@ -127,7 +127,7 @@ static Context* extended_context(struct FspTranslator& tr, Context * ctx,
     if (!ctx->insert(var, val)) {
 	stringstream errstream;
 	errstream << "Variable " << var << " declared twice\n";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
 
     return ctx;
@@ -358,7 +358,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 		stringstream errstream;
 		errstream << "Local process " << pnp << ": "
 		    << e.unresolved_reference << " undeclared\n";
-		semantic_error(errstream, *(trp->loc_ptr));
+		semantic_error(errstream, trp->locations[0]);
 	    }
 	    e.dest = ((ProcessValue *)svp)->pnp;
 	}
@@ -495,10 +495,10 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
     if (!tr.cr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "set " << *one << " undeclared";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     delete one;
-    setvp = err_if_not_set(svp, *(tr.loc_ptr));
+    setvp = err_if_not_set(svp, tr.locations[0]);
     svp = svp->clone();
     vp->shared = true;
     for (int c=0; c<tr.current_contexts().size(); c++)
@@ -515,13 +515,13 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     if (!tr.cr.identifiers.lookup(*two, svp)) {
 	stringstream errstream;
 	errstream << "range/set " << *two << " undeclared";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     if (!(svp->type() == SymbolValue::Range ||
 		svp->type() == SymbolValue::Set)) {
 	stringstream errstream;
 	errstream << "range/set expected";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     svp = svp->clone();
 
@@ -661,7 +661,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	if(!tr.local_processes.lookup(*one, svp)) {
 	    stringstream errstream;
 	    errstream << "process " << *one << " undeclared";
-	    semantic_error(errstream, *(tr.loc_ptr));
+	    semantic_error(errstream, tr.locations[0]);
 	}
 	pvp = is_process(svp);
     } else {
@@ -672,7 +672,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	if (!tr.local_processes.insert(*one, pvp)) {
 	    stringstream errstream;
 	    errstream << "process " << *one << " declared twice";
-	    semantic_error(errstream, *(tr.loc_ptr));
+	    semantic_error(errstream, tr.locations[0]);
 	}
     }
 
@@ -770,7 +770,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
 		    stringstream errstream;
 		    errstream << "process " << procname
 			<< " declared twice";
-		    semantic_error(errstream, *(tr.loc_ptr));
+		    semantic_error(errstream, tr.locations[0]);
 		}
 		PROX(cout << "Process " << procname << " defined (" << pvp->pnp << ")\n");
 	    }
@@ -1225,7 +1225,7 @@ SvpVec * callback__38(FspTranslator& tr, SvpVec * one)
     if (one->v[0]->type() == SymbolValue::Set) {
 	stringstream errstream;
 	errstream << "Unexpected set";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     for (int c=0; c<one->v.size(); c++) {
 	setvp = new SetValue;
@@ -1243,7 +1243,7 @@ SvpVec * callback__39(FspTranslator& tr, SvpVec * one, SvpVec * two)
     if (two->v[0]->type() == SymbolValue::Set) {
 	stringstream errstream;
 	errstream << "Unexpected set";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
 
     return indexize_svpvec(tr, one, two);
@@ -1536,7 +1536,7 @@ SvpVec * callback__62(FspTranslator& tr, string * one)
 	if (!(tr.current_contexts()[c]->lookup(*one, svp))) {
 	    stringstream errstream;
 	    errstream << "variable " << *one << " undeclared\n";
-	    semantic_error(errstream, *(tr.loc_ptr));
+	    semantic_error(errstream, tr.locations[0]);
 	}
 	svp = svp->clone();
 	vp->v.push_back(svp);
@@ -1555,7 +1555,7 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     if (!tr.cr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "const/range/set/parameter " << *one << " undeclared";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     delete one;
 
@@ -1623,7 +1623,7 @@ Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
 	if (!d.end_found) {
 	    stringstream errstream;
 	    errstream << "Process is not sequential\n";
-	    semantic_error(errstream, *(tr.loc_ptr));
+	    semantic_error(errstream, tr.locations[0]);
 	}
     }
     delete two;
@@ -1642,7 +1642,7 @@ Lts * get_parametric_lts(FspTranslator& tr, const string& name,
     if (avp->args.size() != ppp->parameter_names.size()) {
 	stringstream errstream;
 	errstream << "Parameters mismatch\n";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
 
     lts_name_extension(avp->args, extension);
@@ -1682,7 +1682,7 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     if (!tr.cr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "Process " << *one << " undeclared\n";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
 
@@ -2100,7 +2100,7 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
     if (!tr.cr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "Process " << *one << " undeclared\n";
-	semantic_error(errstream, *(tr.loc_ptr));
+	semantic_error(errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
 

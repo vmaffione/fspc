@@ -70,7 +70,7 @@ struct FspTranslator {
     vector<string> overridden_names;
     vector<struct SymbolValue *> overridden_values;
 
-    const struct YYLTYPE * loc_ptr;
+    struct YYLTYPE locations[8];  // XXX two should be enough
 
 
     FspTranslator(struct FspCompiler& r) : cr(r), aliases(*this) {
