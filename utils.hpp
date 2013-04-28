@@ -7,23 +7,26 @@
 using namespace std;
 
 #include "symbols_table.hpp"
+#include "parser.hpp"
 
-void semantic_error(const stringstream& ss);
+void semantic_error(const stringstream& ss, const struct YYLTYPE& loc);
 
 /* Helper function used to get a ConstValue* from a SymbolValue*. If the
    object pointed is not a constant, a semantic error is issued. */
-ConstValue* err_if_not_const(SymbolValue * svp);
-RangeValue* err_if_not_range(SymbolValue * svp);
-SetValue* err_if_not_set(SymbolValue * svp);
-ProcessValue* err_if_not_process(SymbolValue * svp);
-ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp);
-ArgumentsValue* err_if_not_arguments(SymbolValue * svp);
-RelabelingValue* err_if_not_relabeling(SymbolValue * svp);
-HidingValue* err_if_not_hiding(SymbolValue * svp);
-PriorityValue* err_if_not_priority(SymbolValue * svp);
-ProcessNode * err_if_not_procnode(ProcessBase * pbp);
+ConstValue* err_if_not_const(SymbolValue * svp, const struct YYLTYPE& loc);
+RangeValue* err_if_not_range(SymbolValue * svp, const struct YYLTYPE& loc);
+SetValue* err_if_not_set(SymbolValue * svp, const struct YYLTYPE& loc);
+ProcessValue* err_if_not_process(SymbolValue * svp, const struct YYLTYPE& loc);
+ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const struct YYLTYPE& loc);
+ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const struct YYLTYPE& loc);
+RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const struct YYLTYPE& loc);
+HidingValue* err_if_not_hiding(SymbolValue * svp, const struct YYLTYPE& loc);
+PriorityValue* err_if_not_priority(SymbolValue * svp, const struct YYLTYPE& loc);
+ProcessNode * err_if_not_procnode(ProcessBase * pbp, const struct YYLTYPE& loc);
 
-void err_if_not_const_svpvec(SvpVec * vp);
+void err_if_not_const_svpvec(SvpVec * vp, const struct YYLTYPE& loc);
+
+
 
 inline ConstValue* is_const(SymbolValue * svp)
 {

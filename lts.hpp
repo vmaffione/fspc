@@ -92,7 +92,7 @@ class Lts: public SymbolValue {
     SymbolValue * clone() const;
 };
 
-Lts * err_if_not_lts(SymbolValue * svp);
+Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc);
 
 inline Lts * is_lts(SymbolValue * svp)
 {
@@ -111,7 +111,8 @@ struct LtsComposition: public SymbolValue {
     SymbolValue * clone() const;
 };
 
-LtsComposition * err_if_not_ltscomposition(SymbolValue * svp);
+LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
+					    const struct YYLTYPE& loc);
 
 inline LtsComposition * is_ltscomposition(SymbolValue * svp)
 {

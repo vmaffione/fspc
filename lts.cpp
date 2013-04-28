@@ -1130,12 +1130,12 @@ void Lts::output(const char * filename) const
 }
 
 
-Lts * err_if_not_lts(SymbolValue * svp)
+Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)
 {
     if (svp->type() != SymbolValue::Lts) {
 	stringstream errstream;
 	errstream << "Lts expected";
-	semantic_error(errstream);
+	semantic_error(errstream, loc);
     }
 
     return static_cast<Lts *>(svp);
@@ -1165,12 +1165,13 @@ SymbolValue * LtsComposition::clone() const
     return lc;
 }
 
-LtsComposition * err_if_not_ltscomposition(SymbolValue * svp)
+LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
+						const struct YYLTYPE& loc)
 {
     if (svp->type() != SymbolValue::LtsComposition) {
 	stringstream errstream;
 	errstream << "LtsComposition expected";
-	semantic_error(errstream);
+	semantic_error(errstream, loc);
     }
 
     return static_cast<LtsComposition *>(svp);

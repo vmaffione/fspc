@@ -33,6 +33,9 @@ struct AliasElement {
    other. */
 struct Aliases {
     vector< vector<AliasElement> > groups;
+    FspTranslator& tr;
+
+    Aliases(FspTranslator& r) : tr(r) { }
 
     /* When calling insert(left, right), the translator wants to say: Ehy,
        I've found something like 'left = right', where both left and right
@@ -67,8 +70,10 @@ struct FspTranslator {
     vector<string> overridden_names;
     vector<struct SymbolValue *> overridden_values;
 
+    const struct YYLTYPE * loc_ptr;
 
-    FspTranslator(struct FspCompiler&  r) : cr(r) {
+
+    FspTranslator(struct FspCompiler& r) : cr(r), aliases(*this) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
