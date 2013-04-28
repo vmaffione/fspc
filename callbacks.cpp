@@ -568,9 +568,9 @@ SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two)
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
 	rvp = new RangeValue;
-	cvp = err_if_not_const(one->v[i]);
+	cvp = is_const(one->v[i]);
 	rvp->low = cvp->value;
-	cvp = err_if_not_const(two->v[i]);
+	cvp = is_const(two->v[i]);
 	rvp->high = cvp->value;
 	vp->v.push_back(rvp);
     }
@@ -794,7 +794,7 @@ void * callback__19(FspTranslator& tr, SvpVec * one)
        translated (e.tr. are filtered out). */
     tr.css.push_clone();
     for (int c=0; c<tr.current_contexts().size(); c++) {
-	cvp = err_if_not_const(one->v[c]);
+	cvp = is_const(one->v[c]);
 	if (!cvp->value) {
 	    tr.current_contexts().rule_out(c);
 	}
@@ -930,7 +930,7 @@ void * callback__30(FspTranslator& tr, SvpVec * one)
     ConstValue * cvp;
     if (one) {
 	for (int c=0; c<tr.current_contexts().size(); c++) {
-	    cvp = err_if_not_const(one->v[c]);
+	    cvp = is_const(one->v[c]);
 	    if (!cvp->value)
 		tr.current_contexts().rule_out(c);
 	}
@@ -1175,7 +1175,7 @@ SvpVec * callback__35(FspTranslator& tr, SvpVec * one)
 
     assert(one->v.size() == tr.current_contexts().size());
     for (int c=0; c<one->v.size(); c++) {
-	cvp = err_if_not_const(one->v[c]);
+	cvp = is_const(one->v[c]);
 	setvp = new SetValue;
 	setvp->actions.push_back("[" + int2string(cvp->value) + "]");
 	vp->v.push_back(setvp);
@@ -1193,7 +1193,7 @@ SvpVec * callback__36(FspTranslator& tr, SvpVec * one, SvpVec * two)
     assert(one->v.size() == two->v.size());
     for (int c=0; c<two->v.size(); c++) {
 	setvp = is_set(one->v[c]);
-	cvp = err_if_not_const(two->v[c]);
+	cvp = is_const(two->v[c]);
 	setvp->indexize(cvp->value);
     }
     delete two;
@@ -1699,7 +1699,7 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	struct ProcessVisitObject f;
 	struct AggrStatesData d;
 
-	avp = err_if_not_arguments(argvp->v[k]);
+	avp = is_arguments(argvp->v[k]);
 	lts = get_parametric_lts(tr, *one, ppp, avp);
 
 	/* Note that here we don't c.pna.clear(). */
@@ -1720,7 +1720,7 @@ SvpVec * callback__67(FspTranslator& tr, SvpVec * one)
     ArgumentsValue * avp;
 
     for (int c=0; c<one->v.size(); c++) {
-	cvp = err_if_not_const(one->v[c]);
+	cvp = is_const(one->v[c]);
 	avp = new ArgumentsValue;
 	avp->args.push_back(cvp->value);
 	vp->v.push_back(avp);
@@ -1738,8 +1738,8 @@ SvpVec * callback__68(FspTranslator& tr, SvpVec * one, SvpVec * two)
     ArgumentsValue * avp;
 
     for (int c=0; c<two->v.size(); c++) {
-	cvp = err_if_not_const(two->v[c]);
-	avp = err_if_not_arguments(one->v[c]);
+	cvp = is_const(two->v[c]);
+	avp = is_arguments(one->v[c]);
 	avp->args.push_back(cvp->value);
     }
     delete two;
@@ -2038,7 +2038,7 @@ SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
 	    vp->v.push_back(new Lts(LtsNode::Normal, &tr.cr.actions));
     }
     for (int c=0; c<one->v.size(); c++) {
-	cvp = err_if_not_const(one->v[c]);
+	cvp = is_const(one->v[c]);
 	if (!cvp->value) {
 	    SymbolValue * tmp = two->v[c];
 	    two->v[c] = vp->v[c];
@@ -2118,7 +2118,7 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 	string extension;
 	SymbolValue * svp;
 
-	avp = err_if_not_arguments(argvp->v[k]);
+	avp = is_arguments(argvp->v[k]);
 	lts = get_parametric_lts(tr, *one, ppp, avp);
 
 	/* Free all the nodes allocated by c.pna, and remove the from
