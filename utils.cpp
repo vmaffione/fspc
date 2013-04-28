@@ -4,6 +4,8 @@
 
 void semantic_error(const stringstream& ss, const struct YYLTYPE& loc)
 {
+    cout << "@line[" << loc.first_line << "]:col[" << loc.first_column
+	    << "] ";
     cout << "Semantic error: " << ss.str() << "\n";
     exit(-1);
 }

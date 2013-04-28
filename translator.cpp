@@ -29,7 +29,7 @@ void Aliases::insert(const string& left, const string& right) {
 
     if (left_index != -1 && left_was_assigned) {
 	stringstream errstream;
-	errstream << "$$Process " << left << " defined twice";
+	errstream << "Process " << left << " defined twice";
 	semantic_error(errstream, tr.locations[0]);
     }
 
@@ -83,8 +83,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 		/* We make sure that every non-properly-defined process
 		   has been assigned somewhere as an alias.*/
 		stringstream errstream;
-		errstream << "$* Process " << groups[i][j].name
-		    << " undefined";
+		errstream << "Process " << groups[i][j].name << " undefined";
 		semantic_error(errstream, tr.locations[0]);
 	    }
 	}

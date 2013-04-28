@@ -2,6 +2,11 @@ const N = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
+/*
+Q = L,
+L = END,
+Q = END.
+*/
 P(K=0)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).

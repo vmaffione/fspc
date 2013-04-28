@@ -126,7 +126,7 @@ static Context* extended_context(struct FspTranslator& tr, Context * ctx,
     ctx = new Context(*ctx);
     if (!ctx->insert(var, val)) {
 	stringstream errstream;
-	errstream << "Variable " << var << " declared twice\n";
+	errstream << "Variable " << var << " declared twice";
 	semantic_error(errstream, tr.locations[0]);
     }
 
@@ -253,7 +253,7 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 	    break;
 
 	default:
-	    cerr << "I should not reach this point.\n";
+	    /* We should not reach this point. */
 	    assert(0);
 	    exit(1);
     }
@@ -348,19 +348,24 @@ SvpVec * priority_callback(FspTranslator& tr, SvpVec * one, bool low)
 static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 {
     FspTranslator * trp = (FspTranslator *)opaque;
+    SymbolValue * svp;
+    ProcessValue * pvp;
 
     for (int i=0; i<pnp->children.size(); i++) {
 	ProcessEdge& e = pnp->children[i];
-	SymbolValue * svp;
+
 	if (e.dest == NULL) {
 	    PROX(cout << "Unref " << pnp << ": " << trp->cr.actions.reverse[e.action] << " -> " << e.unresolved_reference << "\n");
 	    if (!trp->local_processes.lookup(e.unresolved_reference, svp)) {
 		stringstream errstream;
-		errstream << "Local process " << pnp << ": "
-		    << e.unresolved_reference << " undeclared\n";
+		errstream << "Local process " << e.unresolved_reference
+			    << " undeclared";
 		semantic_error(errstream, trp->locations[0]);
+		/* TODO improve localization by saving the location of the
+		   reference in the ProcessEdge e. */
 	    }
-	    e.dest = ((ProcessValue *)svp)->pnp;
+	    pvp = is_process(svp);
+	    e.dest = pvp->pnp;
 	}
     }
 }
@@ -659,6 +664,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     tr.aliases.fill_process_table(tr.local_processes);
     if (pbp->unresolved()) {
 	if(!tr.local_processes.lookup(*one, svp)) {
+	    // XXX can we reach here??
 	    stringstream errstream;
 	    errstream << "process " << *one << " undeclared";
 	    semantic_error(errstream, tr.locations[0]);
@@ -1535,7 +1541,7 @@ SvpVec * callback__62(FspTranslator& tr, string * one)
 	SymbolValue * svp;
 	if (!(tr.current_contexts()[c]->lookup(*one, svp))) {
 	    stringstream errstream;
-	    errstream << "variable " << *one << " undeclared\n";
+	    errstream << "variable " << *one << " undeclared";
 	    semantic_error(errstream, tr.locations[0]);
 	}
 	svp = svp->clone();
@@ -1622,7 +1628,7 @@ Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
 	left->visit(f, false);
 	if (!d.end_found) {
 	    stringstream errstream;
-	    errstream << "Process is not sequential\n";
+	    errstream << "Process is not sequential";
 	    semantic_error(errstream, tr.locations[0]);
 	}
     }
@@ -1641,8 +1647,8 @@ Lts * get_parametric_lts(FspTranslator& tr, const string& name,
 
     if (avp->args.size() != ppp->parameter_names.size()) {
 	stringstream errstream;
-	errstream << "Parameters mismatch\n";
-	semantic_error(errstream, tr.locations[0]);
+	errstream << "Parameters mismatch";
+	semantic_error(errstream, tr.locations[1]);
     }
 
     lts_name_extension(avp->args, extension);
@@ -1681,7 +1687,7 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     /* Lookup 'process_id' in the 'parametric_process' table. */
     if (!tr.cr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
-	errstream << "Process " << *one << " undeclared\n";
+	errstream << "Process " << *one << " undeclared";
 	semantic_error(errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
@@ -2099,7 +2105,7 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
     /* Lookup 'process_id' in the 'parametric_process' table. */
     if (!tr.cr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
-	errstream << "Process " << *one << " undeclared\n";
+	errstream << "Process " << *one << " undeclared";
 	semantic_error(errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
