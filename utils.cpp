@@ -116,3 +116,10 @@ ProcessNode * err_if_not_procnode(ProcessBase * pbp)
     }
     return static_cast<ProcessNode *>(pbp);
 }
+
+
+void err_if_not_const_svpvec(SvpVec * vp)
+{
+    for (int c=0; c<vp->v.size(); c++)
+	err_if_not_const(vp->v[c]);
+}

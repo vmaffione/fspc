@@ -1251,8 +1251,8 @@ SvpVec * callback__41(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value && vpr->value;
     }
     delete two;
@@ -1264,8 +1264,8 @@ SvpVec * callback__42(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value && vpr->value;
     }
     delete two;
@@ -1277,8 +1277,8 @@ SvpVec * callback__43(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value |= vpr->value;
     }
     delete two;
@@ -1290,8 +1290,8 @@ SvpVec * callback__44(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value ^= vpr->value;
     }
     delete two;
@@ -1303,8 +1303,8 @@ SvpVec * callback__45(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value &= vpr->value;
     }
     delete two;
@@ -1316,8 +1316,8 @@ SvpVec * callback__46(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value == vpr->value);
     }
     delete two;
@@ -1329,8 +1329,8 @@ SvpVec * callback__47(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value != vpr->value);
     }
     delete two;
@@ -1342,8 +1342,8 @@ SvpVec * callback__48(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value < vpr->value);
     }
     delete two;
@@ -1355,8 +1355,8 @@ SvpVec * callback__49(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value > vpr->value);
     }
     delete two;
@@ -1368,8 +1368,8 @@ SvpVec * callback__50(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value <= vpr->value);
     }
     delete two;
@@ -1381,8 +1381,8 @@ SvpVec * callback__51(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value >= vpr->value);
     }
     delete two;
@@ -1394,8 +1394,8 @@ SvpVec * callback__52(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value <<= vpr->value;
     }
     delete two;
@@ -1407,8 +1407,8 @@ SvpVec * callback__53(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value >>= vpr->value;
     }
     delete two;
@@ -1420,8 +1420,8 @@ SvpVec * callback__54(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value += vpr->value;
     }
     delete two;
@@ -1433,8 +1433,8 @@ SvpVec * callback__55(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value -= vpr->value;
     }
     delete two;
@@ -1446,8 +1446,8 @@ SvpVec * callback__56(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value *= vpr->value;
     }
     delete two;
@@ -1459,8 +1459,8 @@ SvpVec * callback__57(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value /= vpr->value;
     }
     delete two;
@@ -1472,8 +1472,8 @@ SvpVec * callback__58(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
     for (int i=0; i<one->v.size(); i++) {
-	ConstValue * vpl = err_if_not_const(one->v[i]);
-	ConstValue * vpr = err_if_not_const(two->v[i]);
+	ConstValue * vpl = is_const(one->v[i]);
+	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value % vpr->value;
     }
     delete two;
@@ -1486,7 +1486,7 @@ SvpVec * callback__59(FspTranslator& tr, SvpVec * one)
     ConstValue * cvp;
 
     for (int i=0; i<one->v.size(); i++) {
-	cvp = err_if_not_const(one->v[i]);
+	cvp = is_const(one->v[i]);
 	cvp->value *= -1;
     }
 
@@ -1498,7 +1498,7 @@ SvpVec * callback__60(FspTranslator& tr, SvpVec * one)
     ConstValue * cvp;
 
     for (int i=0; i<one->v.size(); i++) {
-	cvp = err_if_not_const(one->v[i]);
+	cvp = is_const(one->v[i]);
 	cvp->value = !(cvp->value);
     }
 

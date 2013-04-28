@@ -23,6 +23,8 @@ HidingValue* err_if_not_hiding(SymbolValue * svp);
 PriorityValue* err_if_not_priority(SymbolValue * svp);
 ProcessNode * err_if_not_procnode(ProcessBase * pbp);
 
+void err_if_not_const_svpvec(SvpVec * vp);
+
 inline ConstValue* is_const(SymbolValue * svp)
 {
     assert(svp->type() == SymbolValue::Const);
