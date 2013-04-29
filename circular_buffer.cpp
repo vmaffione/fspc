@@ -45,6 +45,7 @@ void CircularBuffer::insert(const char * token, int len)
 	head += len - avail;
 	if (head >= Size)
 	    head -= Size;
+	line_aligned = false;
     }
 
     copy = min(len, Size - tail);
@@ -63,18 +64,26 @@ void CircularBuffer::insert(const char * token, int len)
 void CircularBuffer::flush()
 {
     head = tail = 0;
+    line_aligned = true;
 }
 
 void CircularBuffer::print() const
 {
     int i = head;
+    int spaces = used();
 
-    cout << "...'";
+    if (!line_aligned) {
+	cout << "... ";
+	spaces += 4;
+    }
+    cout << "`";
     while (i != tail) {
 	cout << buffer[i];
 	i++;
 	if (i == Size)
 	    i = 0;
     }
-    cout << "'...\n";
+    cout << "` ...\n";
+
+    for (i=0; i<spaces; i++) cout << " "; cout << "^\n";
 }

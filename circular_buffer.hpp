@@ -6,9 +6,10 @@ class CircularBuffer {
 
     char buffer[CircularBuffer::Size];
     int head, tail;
+    bool line_aligned;
 
   public:
-    CircularBuffer() : head(0), tail(0) { }
+    CircularBuffer() : head(0), tail(0), line_aligned(true) { }
     int used() const;
     int available() const;
     void insert(const char * token, int len);

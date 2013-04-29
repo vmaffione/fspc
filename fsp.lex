@@ -83,6 +83,9 @@ UpperCaseID	[A-Z][A-Z0-9]*
     /* When in comment state, throw away anything but keep
        tracking locations. */
     LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+
+    /* When reporting an error we want to see the last line only. */
+    last_tokens.flush();
 }
 
 <COMMENTS>. {
@@ -200,6 +203,9 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 [\n]+ {
     /* Update the line counter and step forward. */
     LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+
+    /* When reporting an error we want to see the last line only. */
+    last_tokens.flush();
 }
 
 . {

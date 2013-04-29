@@ -1718,8 +1718,9 @@ int parser(const CompilerOptions& co)
 
 void yyerror(const char *s) {
     cout << "@line[" << yylloc.first_line << "]:col[" << yylloc.first_column
-	    << "] ";
-    cout <<  s << endl;
+	    << "]\n";
+    last_tokens.print();
+    cout << s << endl;
     exit(-1);
 }
 
