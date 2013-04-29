@@ -17,6 +17,9 @@ using namespace std;
 
 
 %code requires {
+/* This code will be added to the bison-generated header, included
+   (among the others) by the FLEX scanner. */
+
 /* Symbols tables. */
 #include "symbols_table.hpp"
 }
