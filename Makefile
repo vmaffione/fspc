@@ -3,9 +3,9 @@ CFLAGS=-g -Wall
 
 VER=1.0
 
-OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o
+OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o
 
-WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
+WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp see.sh csee.sh
 SOURCES=$(WCIN) fsp.y
 
 #REPORT=--report=all
@@ -24,13 +24,15 @@ lts.o: lts.hpp symbols_table.hpp
 
 context.o: context.hpp symbols_table.hpp
 
-parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o interface.hpp
+parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o interface.hpp circular_buffer.hpp
 
 translator.o: translator.hpp
 
 utils.o: utils.hpp
 
 callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp
+
+circular_buffer.o: circular_buffer.hpp
 
 parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp

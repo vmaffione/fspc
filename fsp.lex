@@ -5,8 +5,9 @@
 
 using namespace std;
 
-
-#include "parser.hpp"  // to get the token types definition that we return
+/* Include the bison-generated parser header, in order to get the token
+   types definition that we return, and the CircularBuffer. */
+#include "parser.hpp" 
 
 
 //#define DEBUG
@@ -16,22 +17,6 @@ using namespace std;
 #define IFD(x) 
 #endif
 
-class CircularBuffer {
-    static const int Size = 30;
-
-    char buffer[CircularBuffer::Size];
-    int head, tail;
-
-  public:
-    CircularBuffer() : head(0), tail(0) { }
-    int used() const;
-    int available() const;
-    void insert(const char * token, int len);
-    void flush();
-    void print() const;
-};
-
-CircularBuffer last_tokens;
 
 
 /* The following is executed before each rule's action. */
@@ -39,7 +24,6 @@ CircularBuffer last_tokens;
     do { \
 	yylloc.last_column += yyleng; \
 	last_tokens.insert(yytext, yyleng); \
-	last_tokens.print(); \
     } while (0);
 
 
@@ -227,81 +211,6 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 /* User code: Functions that can be exported. */
 
 #include "scanner.hpp"
-
-
-/* ========================== CircularBuffer ============================ */
-int CircularBuffer::used() const
-{
-    int used = tail - head;
-
-    if (used < 0)
-	used += Size;
-
-    return used;
-}
-
-int CircularBuffer::available() const
-{
-    int avail = head - tail - 1;
-
-    if (avail < 0)
-	avail += Size;
-
-    return avail;
-}
-
-void CircularBuffer::insert(const char * token, int len)
-{
-    int avail = available();
-    int copy;
-
-    /* If the input token is longer that CircularBuffer::Size,
-       truncate its beginning so that the resulting length is
-       Size - 1. */
-    if (len > Size - 1) {
-	token += len - (Size - 1);
-	len = Size - 1;
-    }
-
-    /* Make room for 'token'. */
-    if (len > avail) {
-	head += len - avail;
-	if (head >= Size)
-	    head -= Size;
-    }
-
-    copy = min(len, Size - tail);
-    len -= copy;
-    memcpy(buffer + tail, token, copy);
-    tail += copy;
-    if (tail == Size)
-	tail = 0;
-
-    if (len) {
-	memcpy(buffer, token + copy, len);
-	tail = len;
-    }
-}
-
-void CircularBuffer::flush()
-{
-    head = tail = 0;
-}
-
-void CircularBuffer::print() const
-{
-    int i = head;
-
-    cout << "...'";
-    while (i != tail) {
-	cout << buffer[i];
-	i++;
-	if (i == Size)
-	    i = 0;
-    }
-    cout << "'...\n";
-}
-
 
 /* ======================= ScannerBuffer & co. ========================== */
 void ScannerBuffer::select()

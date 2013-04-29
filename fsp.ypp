@@ -22,6 +22,10 @@ using namespace std;
 
 /* Symbols tables. */
 #include "symbols_table.hpp"
+
+/* Circular tokens buffer for good error reporting. */
+#include "circular_buffer.hpp"
+extern class CircularBuffer last_tokens;
 }
 
 
@@ -65,9 +69,10 @@ using namespace std;
 #include "interface.hpp"
 
 
-
 /* A global data structure containing everything the compiler needs. */
 struct FspCompiler c;
+
+CircularBuffer last_tokens;
 
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
