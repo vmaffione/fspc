@@ -11,6 +11,8 @@ using namespace std;
 //#define NDEBUG
 #include <assert.h>
 
+#define YYERROR_VERBOSE
+
 }
 
 
@@ -1692,10 +1694,9 @@ int parser(const CompilerOptions& co)
 
 
 void yyerror(const char *s) {
-    cout << "Syntax error:" << s << endl;
-    // might as well halt now:
-    cout << yylloc.first_line << " " << yylloc.first_column << " "
-	<< yylloc.last_line << " " << yylloc.last_column << "\n";
+    cout << "@line[" << yylloc.first_line << "]:col[" << yylloc.first_column
+	    << "] ";
+    cout <<  s << endl;
     exit(-1);
 }
 

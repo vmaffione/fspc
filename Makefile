@@ -31,7 +31,7 @@ utils.o: utils.hpp
 callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp
 
 parser.cpp parser.hpp: fsp.ypp fsp.y
-	bison fsp.ypp
+	bison --report=all fsp.ypp
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp
