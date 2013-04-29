@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-A = ([3]->END).
+A=([3]->END).
 P=(a[2]-END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).

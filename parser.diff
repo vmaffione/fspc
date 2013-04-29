@@ -1,0 +1,21 @@
+--- parser.cpp	2013-04-29 13:05:14.065048602 +0200
++++ parser-mod.cpp	2013-04-29 13:08:46.375050682 +0200
+@@ -4546,12 +4546,12 @@ yyreportSyntaxError (yyGLRStack* yystack
+       case N:                           \
+         yyformat = S;                   \
+       break
+-      YYCASE_(0, YY_("syntax error"));
+-      YYCASE_(1, YY_("syntax error, unexpected %s"));
+-      YYCASE_(2, YY_("syntax error, unexpected %s, expecting %s"));
+-      YYCASE_(3, YY_("syntax error, unexpected %s, expecting %s or %s"));
+-      YYCASE_(4, YY_("syntax error, unexpected %s, expecting %s or %s or %s"));
+-      YYCASE_(5, YY_("syntax error, unexpected %s, expecting %s or %s or %s or %s"));
++      YYCASE_(0, YY_("Unknown syntax error"));
++      YYCASE_(1, YY_("Syntax error: unexpected %s"));
++      YYCASE_(2, YY_("Syntax error: unexpected %s\n	expecting %s"));
++      YYCASE_(3, YY_("Syntax error: unexpected %s\n	expecting %s or %s"));
++      YYCASE_(4, YY_("Syntax error: unexpected %s\n	expecting %s, %s or %s"));
++      YYCASE_(5, YY_("Syntax error: unexpected %s\n	expecting %s, %s, %s or %s"));
+ #undef YYCASE_
+     }
+ 

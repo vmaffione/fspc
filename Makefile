@@ -8,6 +8,8 @@ OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o util
 WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp see.sh csee.sh
 SOURCES=$(WCIN) fsp.y
 
+#REPORT=--report=all
+REPORT=
 
 fspc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspc
@@ -30,8 +32,9 @@ utils.o: utils.hpp
 
 callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp
 
-parser.cpp parser.hpp: fsp.ypp fsp.y
-	bison --report=all fsp.ypp
+parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
+	bison $(REPORT) fsp.ypp
+	patch parser.cpp < parser.diff
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp

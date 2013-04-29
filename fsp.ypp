@@ -133,23 +133,38 @@ void yyerror(const char *s);
 %}
 
 
-// define the "terminal symbol" token types I'm going to use (in CAPS
-// by convention), and associate each with a field of the union:
+/* define the "terminal symbol", token types we're going to use (in CAPS
+/ by convention), and associate each with a field of the union: */
 
-%token IF THEN ELSE
-%token WHEN
-%token CONST RANGE SET
-%token ARROW
-%token DOTDOT
-%token END STOP ERROR
-%token PROPERTY PROGRESS MENU
-%token FORALL
-%token SHARING
-%token OR AND EQUAL NOTEQUAL LOE GOE LSHIFT RSHIFT
-%token <int_value> INTEGER
-%token <float_value> FLOAT
-%token <string_ptr> UpperCaseID
-%token <string_ptr> LowerCaseID
+%token IF "if"
+%token ELSE "else"
+%token THEN "then"
+%token WHEN "when"
+%token CONST "const"
+%token RANGE "range"
+%token SET "set"
+%token ARROW "->"
+%token DOTDOT ".."
+%token END "END"
+%token STOP "STOP"
+%token ERROR "ERROR"
+%token PROPERTY "property"
+%token PROGRESS "progress"
+%token MENU "menu"
+%token FORALL "forall"
+%token SHARING "::"
+%token OR "||"
+%token AND "&&"
+%token EQUAL "=="
+%token NOTEQUAL "!="
+%token LOE "<="
+%token GOE ">="
+%token LSHIFT "<<"
+%token RSHIFT ">>"
+%token <int_value> INTEGER "integer"
+%token <string_ptr> UpperCaseID "upper case identifier"
+%token <string_ptr> LowerCaseID "lower case identifer"
+%token <float_value> FLOAT "float"
 
 %type <svpvec_ptr> simple_expression const_expression
 %type <svpvec_ptr> base_expr expression unary_expr multiplicative_expr
