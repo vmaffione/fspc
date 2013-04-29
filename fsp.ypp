@@ -72,8 +72,6 @@ extern class CircularBuffer last_tokens;
 /* A global data structure containing everything the compiler needs. */
 struct FspCompiler c;
 
-CircularBuffer last_tokens;
-
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
    order to check that the callback playback systems can work properly. */
@@ -852,6 +850,7 @@ argument_OPT:
 	ps.push_back($$);
     }
     |'(' argument_list ')' {
+	@$ = @2;
 	AA($2,1,1);
 	$$ = $2;
     }
@@ -1717,10 +1716,6 @@ int parser(const CompilerOptions& co)
 
 
 void yyerror(const char *s) {
-    cout << "@line[" << yylloc.first_line << "]:col[" << yylloc.first_column
-	    << "]\n";
-    last_tokens.print();
-    cout << s << endl;
-    exit(-1);
+    syntax_error(s, yylloc);
 }
 

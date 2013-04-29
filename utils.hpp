@@ -9,6 +9,7 @@ using namespace std;
 #include "symbols_table.hpp"
 #include "parser.hpp"
 
+void syntax_error(const char * s, const struct YYLTYPE& loc);
 void semantic_error(const stringstream& ss, const struct YYLTYPE& loc);
 
 /* Helper function used to get a ConstValue* from a SymbolValue*. If the

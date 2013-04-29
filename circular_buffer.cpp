@@ -32,6 +32,8 @@ void CircularBuffer::insert(const char * token, int len)
     int avail = available();
     int copy;
 
+    column += len;
+
     /* If the input token is longer that CircularBuffer::Size,
        truncate its beginning so that the resulting length is
        Size - 1. */
@@ -65,9 +67,15 @@ void CircularBuffer::flush()
 {
     head = tail = 0;
     line_aligned = true;
+    column = 0;
 }
 
 void CircularBuffer::print() const
+{
+    print(column);
+}
+
+void CircularBuffer::print(int col) const
 {
     int i = head;
     int spaces = used();
@@ -85,5 +93,10 @@ void CircularBuffer::print() const
     }
     cout << "` ...\n";
 
+    /* Apply a correction, using the hint 'col', which is the same as column,
+       by default. */
+    spaces -= column - col;
+
     for (i=0; i<spaces; i++) cout << " "; cout << "^\n";
+    cout << "COLUMN=" << column << endl;
 }

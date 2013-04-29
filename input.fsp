@@ -5,7 +5,7 @@ set S = {x,y,z}
 P=(a[3]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
-
+K=(a->b[i]->END).
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
