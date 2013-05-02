@@ -2,6 +2,7 @@
  *  fspc - A Finite State Process compiler and LTS analyzer
  *
  *  Copyright (C) 2013  Vincenzo Maffione
+ *  Email contact: <v.maffione@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -78,6 +79,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 		break;
 	    case 'h':
 		help();
+		exit(0);
 		break;
 	    case 'i':
 	    case 'l':

@@ -253,13 +253,15 @@ ScannerFileBuffer::ScannerFileBuffer(const char * input_name)
 {
     fin = fopen(input_name, "r");
     if (!fin) {
-	cerr << "I can't open " << input_name << " !\n";
-	throw int();
+	cerr << "Input error: Can't open " << input_name << "\n";
+	cerr << "see 'fspc -h'\n";
+	exit(1);
     }
     yybs = yy_create_buffer(fin, YY_BUF_SIZE);
     if (yybs == NULL) {
 	cerr << "yy_create_buffer() returned NULL\n";
-	throw int();
+	cerr << "Please report this bug to <v.maffione@gmail.com>\n";
+	exit(1);
     }
 }
 
@@ -277,7 +279,8 @@ ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
     yybs = yy_scan_bytes(buf, size);
     if (yybs == NULL) {
 	cerr << "yy_scan_bytes() returned NULL\n";
-	throw int();
+	cerr << "Please report this bug to <v.maffione@gmail.com>\n";
+	exit(1);
     }
     /* The yy_scan_bytes() function has a side effect: it calls
        yy_switch_to_buffer() on the new buffer. Since we don't want this side
@@ -294,13 +297,15 @@ void InputBuffersStack::push(const char * input_name)
 
     bi.fin = fopen(input_name, "r");
     if (!bi.fin) {
-	cerr << "I can't open " << input_name << " !\n";
-	throw int();
+	cerr << "Input error: Can't open " << input_name << "\n";
+	cerr << "see 'fspc -h'\n";
+	exit(1);
     }
     bi.yybs = yy_create_buffer(bi.fin, YY_BUF_SIZE);
     if (bi.yybs == NULL) {
 	cerr << "yy_create_buffer() returned NULL\n";
-	throw int();
+	cerr << "Please report this bug to <v.maffione@gmail.com>\n";
+	exit(1);
     }
     bi.type = BufferInfo::File;
     buffers.push_back(bi);
@@ -316,7 +321,8 @@ void InputBuffersStack::push(const char * buffer, int size)
     bi.yybs = yy_scan_bytes(buffer, size);
     if (bi.yybs == NULL) {
 	cerr << "yy_scan_bytes() returned NULL\n";
-	throw int();
+	cerr << "Please report this bug to <v.maffione@gmail.com>\n";
+	exit(1);
     }
     bi.type = BufferInfo::String;
     buffers.push_back(bi);
@@ -344,7 +350,8 @@ int scanner_setup(const char * input_name)
 {
     FILE *fin = fopen(input_name, "r");
     if (!fin) {
-	cout << "I can't open " << input_name << " !\n";
+	cerr << "Input error: Can't open " << input_name << "\n";
+	cerr << "see 'fspc -h'\n";
 	return -1;
     }
 

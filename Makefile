@@ -3,18 +3,18 @@ CFLAGS=-g -Wall
 
 VER=1.0
 
-OBJS=fspc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o
+OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o
 
-WCIN=callbacks.?pp context.?pp fspc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp see.sh csee.sh
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp see.sh csee.sh parser.diff
 SOURCES=$(WCIN) fsp.y
 
 #REPORT=--report=all
 REPORT=
 
-fspc: $(OBJS)
-	$(CC) -g $(OBJS) -o fspc
+fspcc: $(OBJS)
+	$(CC) -g $(OBJS) -o fspcc
 
-fspc.o: symbols_table.hpp lts.cpp interface.hpp
+fspcc.o: symbols_table.hpp lts.cpp interface.hpp
 
 symbols_table.o: symbols_table.hpp symbols_table.cpp
 
@@ -49,24 +49,24 @@ tags:
 	cscope -R
 
 clean:
-	-rm *.o fspc scanner.cpp parser.cpp parser.hpp *.gv
+	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.gv
 
-testing:
+testing: fspcc
 	tests/test.sh
 
 lines:
 	wc -l $(WCIN)
 
-aurlocal: fspc-$(VER).tar.gz
+aurlocal: fspcc-$(VER).tar.gz
 	python create_pkgbuild.py local $(VER)
 
 aur:
-	-rm fspc-$(VER).tar.gz
-	wget "https://bitbucket.org/lisztinf/fspc/downloads/fspc-$(VER).tar.gz"
+	-rm fspcc-$(VER).tar.gz
+	wget "https://bitbucket.org/lisztinf/fspc/downloads/fspcc-$(VER).tar.gz"
 	python create_pkgbuild.py remote $(VER)
 
-fspc-$(VER).tar.gz:
-	tar -czf fspc-$(VER).tar.gz $(SOURCES)
+fspcc-$(VER).tar.gz:
+	tar -czf fspcc-$(VER).tar.gz $(SOURCES)
 
 cleanaur:
 	-rm *.tar.gz PKGBUILD

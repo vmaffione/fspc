@@ -266,8 +266,7 @@ void Lts::compose(const Lts& p, const Lts& q)
     Edge e;
     vector<LtsNode> product;
 
-    if (p.atp != atp || q.atp != atp)
-	throw int(-1);
+    assert(p.atp == atp && q.atp == atp);
 
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
     nodes.clear();
@@ -355,8 +354,7 @@ void Lts::compose(const Lts& p, const Lts& q)
 
 Lts::Lts(const Lts& p, const Lts& q)
 {
-    if (!p.atp || p.atp != q.atp)
-	throw int(-1);
+    assert(p.atp && q.atp == p.atp);
     atp = p.atp;
     compose(p, q);
 }
