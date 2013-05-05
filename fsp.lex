@@ -68,8 +68,8 @@ using namespace std;
 
 
 DIGIT		[0-9]
-LowerCaseID	[_a-z][_a-z0-9]*
-UpperCaseID	[A-Z][A-Z0-9]*
+LowerCaseID	[_a-z][_a-zA-Z0-9]*
+UpperCaseID	[A-Z][_a-zA-Z0-9]*
 
 %x COMMENTS
 

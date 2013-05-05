@@ -1,4 +1,4 @@
-const N = 3 * 4
+const Number = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
