@@ -677,6 +677,15 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     Lts * lts;
 
     assert(two->v.size() == 1);
+
+    if (tr.local_processes.lookup(*one, svp)) {
+	/* This happens if "*one" is defined both as a local processes
+	   and a global process in the same process_def statement. */
+	stringstream errstream;
+	errstream << "process " << *one << " declared twice";
+	semantic_error(errstream, tr.locations[0]);
+    }
+
     if (pbp->unresolved()) {
 	tr.aliases.insert(*one, ((UnresolvedProcess* )pbp)->reference);
 	tr.aliases.print();
