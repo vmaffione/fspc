@@ -21,6 +21,7 @@
 #include <cstring>
 #include <set>
 #include <sstream>
+#include <fstream>
 #include <assert.h>
 #include "symbols_table.hpp"
 
@@ -282,6 +283,17 @@ SymbolValue * SetValue::clone() const
     SetValue * sv = new SetValue(*this);
 
     return sv;
+}
+
+void SetValue::output(const string& name, const char * filename) const
+{
+    fstream fout(filename, fstream::out | fstream::app);
+
+    fout << name << " ";
+    for (int i=0; i<actions.size(); i++) {
+	fout << actions[i] << " ";
+    }
+    fout << "\n";
 }
 
 void SetValue::print() const

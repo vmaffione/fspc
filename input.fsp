@@ -2,17 +2,14 @@ const Number = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-Q=L,
-L=END,
-Q=END.
 
-
-/*
 P(K=1)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
 K=(a->b[i:R]->END).
 
+
+/*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
 P=(l->cs->u->P). L=(l->u->L). ||C=({p[1..2]}:P || {p[1..2]}::L).
 P(K=99) = (a[K]->END). C = P;P(23);P(197);C.

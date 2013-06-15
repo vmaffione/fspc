@@ -115,6 +115,8 @@ struct SetValue: public SymbolValue {
     SetValue& indexize(int low, int high);
     SetValue& operator +=(const SetValue&);
     SetValue& operator +=(const string&);
+
+    void output(const string& name, const char * filename) const;
 };
 
 struct ArgumentsValue: public SymbolValue {

@@ -1654,6 +1654,8 @@ const char * ex = "P=(a->b->P).";
 
 int parser(const CompilerOptions& co)
 {
+    /* XXX For now there are three input selection methods, with two of
+       them commented out. We still have to choose "the one". */
     /*
     ScannerFileBuffer sfb(co.input_file);
     sfb.select();
@@ -1728,6 +1730,11 @@ int parser(const CompilerOptions& co)
 		lts = is_lts(jt->second);
 		lts->progress(it->first, *setvp);
 	    }
+
+	    /* Output the propery if the input is not an LTS file. */
+	    // TODO
+	    /*if (co.input_type != CompilerOptions::InputTypeLts)
+		setvp->output(it->first, co.output_file); */
 	}
     }
 
