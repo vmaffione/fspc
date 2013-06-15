@@ -11,6 +11,8 @@ SOURCES=$(WCIN) fsp.y
 #REPORT=--report=all
 REPORT=
 
+all: fspcc serializer
+
 fspcc: $(OBJS)
 	$(CC) -g $(OBJS) -o fspcc
 
@@ -45,11 +47,13 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
+serializer: serializer.o
+
 tags:
 	cscope -R
 
-clean:
-	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.gv
+clean: cleanaur
+	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.gv *.png *.out *.lts
 
 testing: fspcc
 	tests/test.sh
