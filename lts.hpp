@@ -86,7 +86,6 @@ class Lts: public SymbolValue {
 
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
-    Lts(fstream& fin, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }
@@ -105,7 +104,6 @@ class Lts: public SymbolValue {
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
-    void output(const char * filename) const;
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;

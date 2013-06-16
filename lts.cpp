@@ -145,55 +145,6 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     pnp->visit(f, true);
 }
 
-Lts::Lts(fstream& fin, struct ActionsTable * p) : atp(p)
-{
-    int n;
-    int na;
-    int end;
-    int error;
-    int s1, s2;
-    string a;
-    Edge e;
-
-    fin >> name >> n >> ntr >> na >> end >> error;
-    if (fin.eof())
-	return;
-    if (n < 1) {
-	cout << "Error: Corrupted input: n < 1\n";
-	exit(-1);
-    }
-    terminal_sets_computed = false;
-
-    nodes.resize(n);
-    for (int i=0; i<n; i++)
-	nodes[i].type = LtsNode::Normal;
-    if (error != -1)
-	nodes[error].type = LtsNode::Error;
-    if (end != -1)
-	nodes[end].type = LtsNode::End;
-
-    for (int j=0; j<ntr; j++) {
-	fin >> s1 >> a >> s2;
-
-	if (s1 < 0 || s2 < 0) {
-	    cout << "Error: Corrupted input: Negative state number\n";
-	    exit(-1);
-	}
-	if (s1 >= n || s2 >=n) {
-	    cout << "Error: Corruped input s1 >= n || s2 >= n\n";
-	}
-	IFD(cout << "Read (" << s1 << ", " << a << ", " << s2 << ")\n");
-	e.dest = s2;
-	e.action = atp->insert(a);
-	nodes[s1].children.push_back(e);
-    }
-
-    for (int j=0;j<na;j++) {
-	fin >> a;
-	updateAlphabet(atp->insert(a));
-    }
-}
-
 void Lts::print() const {
     atp->print();
     cout << "LTS " << name << "\n";
@@ -1110,43 +1061,6 @@ void outputVisitFunction(int state, const struct LtsNode& node,
 	(*(gvdp->fsptr)) << state << " " << ati(node.children[i].action)
 	    << " " << node.children[i].dest << "\n";
 }
-
-void Lts::output(const char * filename) const
-{
-    LtsVisitObject lvo;
-    OutputData gvd;
-    fstream fout;
-    int end = -1;
-    int error = -1;
-
-    fout.open(filename, fstream::app | fstream::out);
-    fout << name << " " << nodes.size() << " " << ntr << " " 
-		<< alphabet.size() << " ";
-    for (int i=0; i<nodes.size(); i++) {
-	switch (nodes[i].type) {
-	    case LtsNode::End:
-		end = i;
-		break;
-	    case LtsNode::Error:
-		error = i;
-		break;
-	}
-    }
-    fout << end << " " << error << "\n";
-
-    lvo.vfp = &outputVisitFunction;
-    gvd.fsptr = &fout;
-    gvd.atp = atp;
-    lvo.opaque = &gvd;
-    visit(lvo);
-
-    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++)
-	fout << ati(*it) << " ";
-    fout << "\n";
-
-    fout.close();
-}
-
 
 Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)
 {
