@@ -10,6 +10,7 @@ const char Serializer::String = 'S';
 const char Serializer::Byte = 'B';
 const char Serializer::ActionsTable = 'T';
 const char Serializer::Lts = 'L';
+const char Serializer::SetValue = 'U';
 
 Serializer::Serializer(const char * filename)
 {
@@ -248,6 +249,39 @@ void Deserializer::lts(class Lts &lts, bool raw)
     for (int i=0; i<x; i++) {
 	this->integer(y, 1);
 	lts.updateAlphabet(y);
+    }
+}
+
+void Serializer::set_value(const struct SetValue& setv, bool raw)
+{
+    if (!raw) {
+	fout.write(static_cast<const char *>(&Serializer::SetValue),
+						sizeof(char));
+    }
+
+    this->integer(setv.actions.size(), 1);
+    for (int i=0; i<setv.actions.size(); i++) {
+	this->stl_string(setv.actions[i], 1);
+    }
+}
+
+void Deserializer::set_value(struct SetValue& setv, bool raw)
+{
+    char type;
+    uint32_t x;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::SetValue) {
+	    cout << "Error: expected SetValue\n";
+	    exit(-1);
+	}
+    }
+
+    this->integer(x, 1);
+    setv.actions.resize(x);
+    for (int i=0; i<setv.actions.size(); i++) {
+	this->stl_string(setv.actions[i], 1);
     }
 }
 

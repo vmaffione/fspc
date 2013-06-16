@@ -23,6 +23,7 @@ class Serializer {
 	void stl_string(const string& s, bool raw);
 	void actions_table(const struct ActionsTable& at, bool raw);
 	void lts(const class Lts& lts, bool raw);
+	void set_value(const struct SetValue& setv, bool raw);
 	~Serializer();
 
 	static const char Integer;
@@ -30,6 +31,7 @@ class Serializer {
 	static const char Byte;
 	static const char ActionsTable;
 	static const char Lts;
+	static const char SetValue;
 };
 
 class Deserializer {
@@ -43,6 +45,7 @@ class Deserializer {
 	void stl_string(string& s, bool raw);
 	void actions_table(struct ActionsTable& at, bool raw);
 	void lts(class Lts& lts, bool raw);
+	void set_value(struct SetValue& setv, bool raw);
 	~Deserializer();
 };
 

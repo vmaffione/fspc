@@ -1680,7 +1680,7 @@ int parser(const CompilerOptions& co)
 	ibs.pop();
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */
-	uint32_t nlts;
+	uint32_t nlts, nprogr;
 
 	desp = new Deserializer(co.input_file);
 
@@ -1693,6 +1693,18 @@ int parser(const CompilerOptions& co)
 	    /* Insert lts into the global 'processes' table. */
 	    if (!c.processes.insert(lts->name, lts)) {
 		assert(0);  //XXX Should be an invalid LTS file
+	    }
+	}
+
+	desp->integer(nprogr, 0);
+	for (int i=0; i<nprogr; i++) {
+	    SetValue * setvp = new SetValue;
+	    string name;
+
+	    desp->stl_string(name, 0);
+	    desp->set_value(*setvp, 0);
+	    if (!c.progresses.insert(name, setvp)) {
+		assert(0);
 	    }
 	}
     }
@@ -1725,21 +1737,25 @@ int parser(const CompilerOptions& co)
 	}
     }
 
-    if (co.progress) {
-	/* Do each progress check against all the global processes. */
-	for (it=c.progresses.table.begin(); it!=c.progresses.table.end();
-								    it++) {
-	    setvp = is_set(it->second);
+    if (co.input_type != CompilerOptions::InputTypeLts) {
+	serp->integer(c.progresses.table.size(), 0);
+    }
+    /* Do each progress check against all the global processes. */
+    for (it=c.progresses.table.begin(); it!=c.progresses.table.end();
+	    it++) {
+	setvp = is_set(it->second);
+	if (co.progress) {
 	    for (jt=c.processes.table.begin();
 		    jt!=c.processes.table.end(); jt++) {
 		lts = is_lts(jt->second);
 		lts->progress(it->first, *setvp);
 	    }
+	}
 
-	    /* Output the propery if the input is not an LTS file. */
-	    // TODO
-	    /*if (co.input_type != CompilerOptions::InputTypeLts)
-		setvp->output(it->first, co.output_file); */
+	/* Output the property if the input is not an LTS file. */
+	if (co.input_type != CompilerOptions::InputTypeLts) {
+	    serp->stl_string(it->first, 0);
+	    serp->set_value(*setvp, 0);
 	}
     }
 
