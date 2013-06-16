@@ -60,6 +60,9 @@ struct LtsVisitObject {
     void * opaque;
 };
 
+class Serializer;
+class Deserializer;
+
 class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     ActionsTable * atp;
@@ -72,8 +75,10 @@ class Lts: public SymbolValue {
 
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
-	
+
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
+    friend class Serializer;
+    friend class Deserializer;
 
   public:
     string name;

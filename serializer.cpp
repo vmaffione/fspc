@@ -1,45 +1,15 @@
 #include <iostream>
-#include <fstream>
-#include <cstdlib>
-#include <string>
-#include <stdint.h>
-#include <endian.h>
+#include "serializer.hpp"
 
 using namespace std;
-
-
-class Serializer {
-	ofstream fout;
-
-    public:
-	Serializer(const char * filename);
-	void byte(uint8_t i, bool raw);
-	void integer(uint32_t i, bool raw);
-	void stl_string(const string& s, bool raw);
-	~Serializer();
-
-	static const char Integer;
-	static const char String;
-	static const char Byte;
-};
-
-class Deserializer {
-
-        ifstream fin;
-
-    public:
-	Deserializer(const char * filename);
-	void byte(uint8_t &v, bool raw);
-	void integer(uint32_t &v, bool raw);
-	void stl_string(string& s, bool raw);
-	~Deserializer();
-};
 
 
 /* ============================= Serializer ============================== */
 const char Serializer::Integer = 'I';
 const char Serializer::String = 'S';
 const char Serializer::Byte = 'B';
+const char Serializer::ActionsTable = 'T';
+const char Serializer::Lts = 'L';
 
 Serializer::Serializer(const char * filename)
 {
@@ -61,6 +31,21 @@ void Serializer::byte(uint8_t v, bool raw)
     fout.write(reinterpret_cast<const char *>(&v), sizeof(v));
 }
 
+void Deserializer::byte(uint8_t &v, bool raw)
+{
+    char type;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::Byte) {
+	    cout << "Error: expected byte\n";
+	    exit(-1);
+	}
+    }
+
+    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
+}
+
 void Serializer::integer(uint32_t v, bool raw)
 {
     if (!raw) {
@@ -70,6 +55,22 @@ void Serializer::integer(uint32_t v, bool raw)
 
     v = htole32(v);
     fout.write(reinterpret_cast<const char *>(&v), sizeof(v));
+}
+
+void Deserializer::integer(uint32_t &v, bool raw)
+{
+    char type;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::Integer) {
+	    cout << "Error: expected integer\n";
+	    exit(-1);
+	}
+    }
+
+    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
+    v = le32toh(v);
 }
 
 void Serializer::stl_string(const string &s, bool raw)
@@ -89,49 +90,6 @@ void Serializer::stl_string(const string &s, bool raw)
 
     this->byte(len, 1);
     fout.write(cs, len);
-}
-
-
-/* ============================ Deserializer ============================= */
-Deserializer::Deserializer(const char * filename)
-{
-    fin.open(filename, ios::binary);
-}
-
-Deserializer::~Deserializer()
-{
-    fin.close();
-}
-
-void Deserializer::byte(uint8_t &v, bool raw)
-{
-    char type;
-
-    if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::Byte) {
-	    cout << "Error: expected byte\n";
-	    exit(-1);
-	}
-    }
-
-    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
-}
-
-void Deserializer::integer(uint32_t &v, bool raw)
-{
-    char type;
-
-    if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::Integer) {
-	    cout << "Error: expected integer\n";
-	    exit(-1);
-	}
-    }
-
-    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
-    v = le32toh(v);
 }
 
 void Deserializer::stl_string(string &s, bool raw)
@@ -154,12 +112,158 @@ void Deserializer::stl_string(string &s, bool raw)
     s = string(buf);
 }
 
+void Serializer::actions_table(const struct ActionsTable& at, bool raw)
+{
+    map<string, int>::const_iterator it;
+
+    if (!raw) {
+	fout.write(static_cast<const char *>(&Serializer::ActionsTable),
+						sizeof(char));
+    }
+
+    this->stl_string(at.name, 1);
+    this->integer(at.table.size(), 1);
+    for (it=at.table.begin(); it!=at.table.end(); it++) {
+	this->stl_string(it->first, 1);
+	this->integer(it->second, 1);
+    }
+    this->integer(at.serial, 1);
+}
+
+void Deserializer::actions_table(ActionsTable &at, bool raw)
+{
+    char type;
+    uint32_t size, x;
+    string s;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::ActionsTable) {
+	    cout << "Error: expected actions table\n";
+	    exit(-1);
+	}
+    }
+
+    this->stl_string(at.name, 1);
+    this->integer(size, 1);
+    at.reverse.resize(size);
+    for (int i=0; i<size; i++) {
+	this->stl_string(s, 1);
+	this->integer(x, 1);
+	at.table.insert(pair<string, int>(s, x));
+	at.reverse[x] = s;
+    }
+    this->integer(x, 1);
+    at.serial = x;
+    
+}
+
+void serializeLtsVisitFunction(int state, const struct LtsNode& node, void * opaque)
+{
+    Serializer * serp = static_cast<Serializer *>(opaque);
+
+    for (int i=0; i<node.children.size(); i++) {
+	serp->integer(state, 1);
+	serp->integer(node.children[i].action, 1);
+	serp->integer(node.children[i].dest, 1);
+    }
+}
+
+void Serializer::lts(const class Lts &lts, bool raw)
+{
+    LtsVisitObject lvo;
+    uint32_t end = ~0;
+    uint32_t error = ~0;
+
+    if (!raw) {
+	fout.write(static_cast<const char *>(&Serializer::Lts),
+						sizeof(char));
+    }
+
+    this->stl_string(lts.name, 1);
+    this->integer(lts.ntr, 1);
+    this->integer(lts.nodes.size(), 1);
+    for (int i=0; i<lts.nodes.size(); i++) {
+	switch (lts.nodes[i].type) {
+	    case LtsNode::End:
+		end = i;
+		break;
+	    case LtsNode::Error:
+		error = i;
+		break;
+	}
+    }
+    this->integer(end, 1);
+    this->integer(error, 1);
+
+    lvo.vfp = serializeLtsVisitFunction;
+    lvo.opaque = this;
+    lts.visit(lvo);
+
+    this->integer(lts.alphabet.size(), 1);
+    for (set<int>::iterator it=lts.alphabet.begin();
+			it!=lts.alphabet.end(); it++) {
+	this->integer(*it, 1);
+    }
+}
+
+void Deserializer::lts(class Lts &lts, bool raw)
+{
+    char type;
+    uint32_t x, y, z, end, error;
+    Edge e;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::Lts) {
+	    cout << "Error: expected LTS\n";
+	    exit(-1);
+	}
+    }
+
+    lts.terminal_sets_computed = false;
+
+    this->stl_string(lts.name, 1);
+    this->integer(x, 1); lts.ntr = x;
+    this->integer(x, 1); lts.nodes.resize(x);
+    this->integer(end, 1);
+    this->integer(error, 1);
+    for (int i=0; i<lts.nodes.size(); i++)
+	lts.nodes[i].type = LtsNode::Normal;
+    if (end != ~0)
+	lts.nodes[end].type = LtsNode::End;
+    if (error != ~0) // XXX if (~error)
+	lts.nodes[error].type = LtsNode::Error;
+
+    for (int i=0; i<lts.ntr; i++) {
+	this->integer(x, 1);
+	this->integer(y, 1);
+	this->integer(z, 1);
+	e.dest = z;
+	e.action = y;
+	lts.nodes[x].children.push_back(e);
+    }
+
+    this->integer(x, 1);
+    for (int i=0; i<x; i++) {
+	this->integer(y, 1);
+	lts.updateAlphabet(y);
+    }
+}
 
 
+/* ============================ Deserializer ============================= */
+Deserializer::Deserializer(const char * filename)
+{
+    fin.open(filename, ios::binary);
+}
 
+Deserializer::~Deserializer()
+{
+    fin.close();
+}
 
-
-
+/* XXX old test code
 void serialize()
 {
     Serializer ser("ser");
@@ -193,8 +297,8 @@ void deserialize()
     cout << a << " " << b << " " << s1 << " " << s2 << " " << c << " " << h << " " << d << "\n";
 }
 
-
 int main() {
     serialize();
     deserialize();
 }
+*/

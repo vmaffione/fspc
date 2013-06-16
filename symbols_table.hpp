@@ -39,6 +39,7 @@ struct ActionsTable {
     vector<string> reverse;
     int serial;
 
+    ActionsTable() { }
     ActionsTable(const string& nm) : serial(0), name(nm) { insert("tau"); }
     int insert(const string& s);
     int lookup(const string& s) const;
