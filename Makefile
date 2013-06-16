@@ -75,4 +75,5 @@ fspcc-$(VER).tar.gz:
 cleanaur:
 	-rm *.tar.gz PKGBUILD
 
-
+clc:
+	-rm *.gv *.lts *.png

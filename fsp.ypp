@@ -46,6 +46,9 @@ using namespace std;
 /* Circular tokens buffer for good error reporting. */
 #include "circular_buffer.hpp"
 extern class CircularBuffer last_tokens;
+
+/* Serialization and deserialization support. */
+#include "serializer.hpp"
 }
 
 
@@ -1654,6 +1657,9 @@ const char * ex = "P=(a->b->P).";
 
 int parser(const CompilerOptions& co)
 {
+    Serializer * serp = NULL;
+    Deserializer * desp = NULL;
+
     /* XXX For now there are three input selection methods, with two of
        them commented out. We still have to choose "the one". */
     /*
@@ -1672,32 +1678,24 @@ int parser(const CompilerOptions& co)
 	ibs.push(co.input_file);
 	yyparse();
 	ibs.pop();
-    } else {
-	/* Load the processes table from an LTS file. */
-	fstream fin(co.input_file, fstream::in);
-	Lts * lts;
+	serp = new Serializer(co.output_file);
+    } else { /* Load the processes table from an LTS file. */
+	uint32_t nlts;
 
-	if (fin.fail()) {
-	    cerr << "No such file: '" << co.input_file << "'\n";
-	}
-	
-	while (!(fin.fail() || fin.eof())) {
-	    lts = new Lts(fin, &c.actions);
+	desp = new Deserializer(co.input_file);
 
-	    if (fin.eof())
-		break;
+	desp->actions_table(c.actions, 0);
+	desp->integer(nlts, 0);
+	for (int i=0; i<nlts; i++) {
+	    Lts * lts = new Lts(LtsNode::End, &c.actions);
+
+	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
 	    if (!c.processes.insert(lts->name, lts)) {
-		assert(0);
+		assert(0);  //XXX Should be an invalid LTS file
 	    }
 	}
-
-	fin.close();
     }
-
-    /* Zero-truncate the output file. */
-    if (co.input_type != CompilerOptions::InputTypeLts)
-	fstream(co.output_file, fstream::out).close();
 
     /* Scan the 'processes' symbols table. For each process, output
        the associated LTS and do the deadlock analysis. */
@@ -1706,18 +1704,25 @@ int parser(const CompilerOptions& co)
     Lts * lts;
     SetValue * setvp;    
 
+    if (co.input_type != CompilerOptions::InputTypeLts) {
+	serp->actions_table(c.actions, 0);
+	serp->integer(c.processes.table.size(), 0);
+    }
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = is_lts(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
-	if (co.input_type != CompilerOptions::InputTypeLts)
-	    lts->output(co.output_file);
+	if (co.input_type != CompilerOptions::InputTypeLts) {
+	    serp->lts(*lts, 0);
+	}
 
-	if (co.deadlock)
+	if (co.deadlock) {
 	    lts->deadlockAnalysis();
+	}
 
-	if (co.graphviz)
+	if (co.graphviz) {
 	    lts->graphvizOutput((lts->name + ".gv").c_str());
+	}
     }
 
     if (co.progress) {
@@ -1737,6 +1742,11 @@ int parser(const CompilerOptions& co)
 		setvp->output(it->first, co.output_file); */
 	}
     }
+
+    if (serp)
+	delete serp;
+    if (desp)
+	delete desp;
 
     return 0;
 }
