@@ -21,6 +21,7 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include <cstdlib>
 #include <assert.h>
 #include "lts.hpp"
 #include "symbols_table.hpp"
@@ -1051,15 +1052,84 @@ void Lts::graphvizOutput(const char * filename) const
     fout.close();
 }
 
-void outputVisitFunction(int state, const struct LtsNode& node,
-				void * opaque)
+void Lts::print_trace(const vector<int>& trace) const
 {
-    OutputData * gvdp = static_cast<OutputData *>(opaque);
-    ActionsTable * atp = gvdp->atp;
+    int size = trace.size();
 
-    for (int i=0; i<node.children.size(); i++)
-	(*(gvdp->fsptr)) << state << " " << ati(node.children[i].action)
-	    << " " << node.children[i].dest << "\n";
+    if (!size)
+	return;
+
+    cout << "    Current trace:\n";
+    cout << "        ";
+    for (int i=0; i<size-1; i++) {
+	cout << ati(trace[i]) << " -> ";
+    }
+    cout << ati(trace[size-1]) << "\n";
+}
+
+void Lts::simulate() const
+{
+    int state = 0;
+    vector<int> trace;
+
+    for (;;) {
+	int i;
+	string choice;
+	set<int> elegible_actions_set;
+	vector<int> elegible_actions;
+	char * dummy;
+	long idx;
+	vector<int> dest;
+
+	/* Build the elegible actions as a set in order to remove 
+	   duplicates. */
+	for (i=0; i<nodes[state].children.size(); i++) {
+	    elegible_actions_set.insert(nodes[state].children[i].action);
+	}
+
+	/* Build a vector<int> from the set<int>. */
+	for (set<int>::iterator it = elegible_actions_set.begin();
+		it != elegible_actions_set.end(); it++) {
+	    elegible_actions.push_back(*it);
+	}
+
+	print_trace(trace);
+
+	if (elegible_actions.size() == 0) {
+	    cout << "    Simulation done.\n";
+	    break;
+	}
+
+	cout << "    Elegible actions: \n";
+	for (i=0; i<elegible_actions.size(); i++) {
+	    cout << "	    (" << i+1 << ") "
+		    << ati(elegible_actions[i]) << "\n";
+	}
+	cout << "    Your choice ('q' to quit): ";
+	cout.flush();
+	cin >> choice;
+	if (choice.size() && choice[0] == 'q')
+	    return;
+
+	idx = strtol(choice.c_str(), &dummy, 10);
+	if (idx < 1 || idx > elegible_actions.size() || *dummy != '\0') {
+	    cout << "    Invalid choice\n";
+	    return;
+	}
+	idx--;
+
+	for (i=0; i<nodes[state].children.size(); i++) {
+	    if (nodes[state].children[i].action == elegible_actions[idx])
+		dest.push_back(nodes[state].children[i].dest);
+	}
+	trace.push_back(elegible_actions[idx]);
+
+	/* TODO make a random choice here. */
+	assert(dest.size() > 0);
+	state = dest[0];
+
+	cout << "\n";
+    }
 }
 
 Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)

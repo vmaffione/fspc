@@ -75,6 +75,7 @@ class Lts: public SymbolValue {
 
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
+    void print_trace(const vector<int>& trace) const;
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
     friend class Serializer;
@@ -104,6 +105,7 @@ class Lts: public SymbolValue {
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
+    void simulate() const;
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;

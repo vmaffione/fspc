@@ -40,6 +40,7 @@ void help()
     cout << "	-p : Runs all the specified progress verifications on every FSP.\n";
     cout << "	-g : Outputs a graphviz representation file of every FSP.\n";
     cout << "	-a : The same as '-d -p -g'\n";
+    cout << "	-s : Run a LTS analysis interactive shell\n";
     cout << "	-h : Shows this help.\n";
 }
 
@@ -56,6 +57,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     co.deadlock = false;
     co.progress = false;
     co.graphviz = false;
+    co.shell = false;
 
     /* Scan input arguments. */
     while (i < argc) {
@@ -104,6 +106,9 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 			co.output_file = argv[i];
 			break;
 		}
+		break;
+	    case 's':
+		co.shell = true;
 		break;
 
 	    default:

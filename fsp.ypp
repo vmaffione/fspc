@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <set>
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -46,9 +47,6 @@ using namespace std;
 /* Circular tokens buffer for good error reporting. */
 #include "circular_buffer.hpp"
 extern class CircularBuffer last_tokens;
-
-/* Serialization and deserialization support. */
-#include "serializer.hpp"
 }
 
 
@@ -90,6 +88,12 @@ extern class CircularBuffer last_tokens;
 
 /* Compiler options. */
 #include "interface.hpp"
+
+/* Serialization and deserialization support. */
+#include "serializer.hpp"
+
+/* Interactive shell */
+#include "shell.hpp"
 
 
 /* A global data structure containing everything the compiler needs. */
@@ -1652,13 +1656,13 @@ menu_id: UpperCaseID { ps.push_back($1); };
 
 %%
 
-
-const char * ex = "P=(a->b->P).";
+/* const char * ex = "P=(a->b->P)."; */
 
 int parser(const CompilerOptions& co)
 {
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
+    int produceLts = (co.input_type != CompilerOptions::InputTypeLts);
 
     /* XXX For now there are three input selection methods, with two of
        them commented out. We still have to choose "the one". */
@@ -1716,7 +1720,7 @@ int parser(const CompilerOptions& co)
     Lts * lts;
     SetValue * setvp;    
 
-    if (co.input_type != CompilerOptions::InputTypeLts) {
+    if (produceLts) {
 	serp->actions_table(c.actions, 0);
 	serp->integer(c.processes.table.size(), 0);
     }
@@ -1724,7 +1728,7 @@ int parser(const CompilerOptions& co)
 	lts = is_lts(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
-	if (co.input_type != CompilerOptions::InputTypeLts) {
+	if (produceLts) {
 	    serp->lts(*lts, 0);
 	}
 
@@ -1737,7 +1741,7 @@ int parser(const CompilerOptions& co)
 	}
     }
 
-    if (co.input_type != CompilerOptions::InputTypeLts) {
+    if (produceLts) {
 	serp->integer(c.progresses.table.size(), 0);
     }
     /* Do each progress check against all the global processes. */
@@ -1753,7 +1757,7 @@ int parser(const CompilerOptions& co)
 	}
 
 	/* Output the property if the input is not an LTS file. */
-	if (co.input_type != CompilerOptions::InputTypeLts) {
+	if (produceLts) {
 	    serp->stl_string(it->first, 0);
 	    serp->set_value(*setvp, 0);
 	}
@@ -1763,6 +1767,11 @@ int parser(const CompilerOptions& co)
 	delete serp;
     if (desp)
 	delete desp;
+
+    /* Run the interactive shell if the user asked for that. */
+    if (co.shell) {
+	return Shell(c).run();
+    }
 
     return 0;
 }

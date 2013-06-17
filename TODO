@@ -1,5 +1,4 @@
 [O] in sequential composition, increase efficiency by starting the visit from the first node of the right side process, instead of the first node of the left side process
-[O] save 'progresses' in the compiled file
 [O] fix memory leaks
 [O] put the functionality LOCATION_* into CircularBuffer
 [O] when building a property, we must check that the process is deterministic
@@ -10,3 +9,4 @@
 [O] aggregate labels and edges when printing with graphviz
 [O] implement LTS animation
 [O] fix alphabet propagation!! currently works only the final one..
+[O] switch to the C-style option parsing method (man 3 getopt)

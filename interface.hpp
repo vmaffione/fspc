@@ -29,6 +29,7 @@ struct CompilerOptions {
     bool deadlock;
     bool progress;
     bool graphviz;
+    bool shell;
 
     static const int InputTypeFsp = 0;
     static const int InputTypeLts = 1;
