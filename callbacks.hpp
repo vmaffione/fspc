@@ -127,7 +127,7 @@ struct ParametricProcess: public SymbolValue {
     vector<int> parameter_defaults;
     vector<Callback *> record;
 
-    class Lts * replay(struct FspCompiler& c, const vector<int>& values);
+    class Lts * replay(struct FspTranslator& tr, const vector<int>& values);
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }

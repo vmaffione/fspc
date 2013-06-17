@@ -3,10 +3,10 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P=(p1->p2->p3->P).
-Q=(q1->q2->Q).
-||C=(P||Q).
-||D=(a:C||z:Q).
+P=(p1->p2->END) + {p3}.
+Q=P;END + {p4}.
+T=Q;END.
+U=T;P;U.
 
 
 /*

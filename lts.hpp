@@ -110,6 +110,8 @@ class Lts: public SymbolValue {
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;
+    void mergeAlphabetInto(set<int>& actions) const;
+    void mergeAlphabetFrom(const set<int>& actions);
     void printAlphabet() const;
 
     /* Methods to implement because of the base class. */

@@ -54,6 +54,22 @@ void Lts::updateAlphabet(int action)
     alphabet.insert(action);
 }
 
+void Lts::mergeAlphabetInto(set<int>& actions) const
+{
+    for (set<int>::iterator it = alphabet.begin();
+			it != alphabet.end(); it++) {
+	actions.insert(*it);
+    }
+}
+
+void Lts::mergeAlphabetFrom(const set<int>& actions)
+{
+    for (set<int>::iterator it = actions.begin();
+			it != actions.end(); it++) {
+	alphabet.insert(*it);
+    }
+}
+
 void Lts::printAlphabet() const
 {
     set<int>::iterator it;

@@ -45,11 +45,12 @@
 
 /* Replay a sequence of callbacks under a local translator and a local
    stack. */
-Lts * ParametricProcess::replay(struct FspCompiler& c,
+Lts * ParametricProcess::replay(struct FspTranslator& tr,
 					    const vector<int>& values)
 {
     vector<void *> stack;
-    FspTranslator tr(c);
+    FspCompiler& c = tr.cr;
+    FspTranslator ltr(c);
     ConstValue * cvp;
     SymbolValue * svp;
     vector<string> overridden_names;
@@ -79,7 +80,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
     /* Replay the callbacks. */
     for (int i=0; i<record.size(); i++) {
 	PROX(cout << record[i]->is_void() << ", " << stack.size() << " ";record[i]->print());
-	void * ret = record[i]->execute(tr, stack);
+	void * ret = record[i]->execute(ltr, stack);
 	if (!(record[i]->is_void()))
 	    stack.push_back(ret);
     }
@@ -96,6 +97,7 @@ Lts * ParametricProcess::replay(struct FspCompiler& c,
 	    /* This should never happen. */
 	    assert(0);
 	}
+
     PROX(cout << "END Replay!!\n");
 
     return static_cast<class Lts *>(stack.back());
@@ -745,6 +747,10 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	for (int i=0; i<setvp->actions.size(); i++)
 	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));
     }
+
+    /* Extend the alphabet with actions collected by sequential processes
+       referenced in this process definition. */
+    lts->mergeAlphabetFrom(tr.alphabet_extension);
 
     /* Apply relabeling. */
     if (four) {
@@ -1691,7 +1697,7 @@ Lts * get_parametric_lts(FspTranslator& tr, const string& name,
     } else {
 	/* If there is a cache miss, we have to compute the requested LTS
 	   by replay and save it in the global processes table. */
-	lts = ppp->replay(tr.cr, avp->args);
+	lts = ppp->replay(tr, avp->args);
 
 	lts->name += extension; /* Here lts->name is complete. */
 	if (!tr.cr.processes.insert(name + extension, lts)) {
@@ -1733,15 +1739,19 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     }
 
     for (int k=0; k<argvp->v.size(); k++) {
-	struct ProcessVisitObject f;
-	struct AggrStatesData d;
-
 	avp = is_arguments(argvp->v[k]);
 	lts = get_parametric_lts(tr, *one, ppp, avp);
 
 	/* Note that here we don't c.pna.clear(). */
 
 	vp->v.push_back(lts->toProcessNode(tr.cr.pna));
+
+	/* Merge the alphabet into tr.alphabet_extension, so that we don't
+	   loose the alphabet extension information switching the
+	   ProcessNode representation (toProcessNode()). The alphabet
+	   extension will be merged into the final LTS in callback__15. */
+	lts->mergeAlphabetInto(tr.alphabet_extension);
+	delete lts;
     }
     delete one;
     delete argvp;

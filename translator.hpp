@@ -90,6 +90,10 @@ struct FspTranslator {
     vector<string> overridden_names;
     vector<struct SymbolValue *> overridden_values;
 
+    /* We keep track of alphabet extension when using sequential
+       process (see toProcessNode in callback__66. */
+    set<int> alphabet_extension;
+
     struct YYLTYPE locations[8];  // XXX two should be enough
 
 

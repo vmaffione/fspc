@@ -125,6 +125,10 @@ inline void AA(void * barg, int midx, int tot)
 void post_process_definition(Lts * lts, const struct YYLTYPE& loc) {
     string extension;
 
+    /* Clear tr.alphabet_extension, so that the same translator can
+       be used for other processes. */
+    c.tr.alphabet_extension.clear();
+
     /* Remove process parameters from c.identifiers. */
     for (int i=0; i<c.parametric->parameter_names.size(); i++)
 	c.identifiers.remove(c.parametric->parameter_names[i]);
