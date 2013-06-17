@@ -975,11 +975,17 @@ Lts& Lts::property()
 
     /* Look for the ERROR state. If there is no ERROR state, create one. */
     e.dest = -1;
-    for (int i=0; i<nodes.size(); i++)
-	if (nodes[i].type == LtsNode::Error) {
-	    e.dest = i;
-	    break;
+    for (int i=0; i<nodes.size(); i++) {
+	switch (nodes[i].type) {
+	    case LtsNode::Error:
+		e.dest = i;
+		break;
+	    case LtsNode::End:
+		/* Convert an END node into a normal node. */
+		nodes[i].type = LtsNode::Normal;
+		break;
 	}
+    }
     if (e.dest == -1) {
 	nodes.push_back(LtsNode());
 	nodes.back().type = LtsNode::Error;
@@ -998,6 +1004,7 @@ Lts& Lts::property()
 					it!=to_error.end(); it++) {
 		e.action = *it;
 		nodes[i].children.push_back(e);
+		ntr++;
 	    }
 	}
 
@@ -1199,10 +1206,10 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
 
 	for (int i=0; i<size-1; i++) {
 	    *fsptr << ati(node.children[i].action)
-		<< " -> S" << state << "\n  | ";
+		<< " -> S" << node.children[i].dest << "\n  | ";
 	}
 	*fsptr << ati(node.children[size-1].action)
-	    << " -> S" << state << ")";
+	    << " -> S" << node.children[size-1].dest << ")";
     }
 }
 

@@ -62,7 +62,8 @@ void Shell::ls(const vector<string> &args)
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = is_lts(it->second);
 	cout << "   " << it->first << ": " << lts->numStates()
-	    << " states, " << lts->numTransitions() << " transitions\n";
+	    << " states, " << lts->numTransitions() << " transitions, "
+	    << lts->alphabetSize() << " actions in alphabet\n";
     }
 }
 
@@ -277,7 +278,7 @@ int Shell::run()
 	    return 0;
 	it = cmd_map.find(token);
 	if (it == cmd_map.end()) {
-	    cout << "unrecognized command\n";
+	    cout << "	Unrecognized command\n";
 	} else {
 	    ShellCmdFunc fp = it->second;
 
