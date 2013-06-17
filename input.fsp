@@ -3,11 +3,17 @@ range R = 1..2
 set S = {x,y,z}
 
 
+P=(p1->p2->p3->P).
+Q=(q1->q2->Q).
+||C=(P||Q).
+
+
+/*
 P(K=1)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
 K=(a->b[i:R]->END).
-
+*/
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).

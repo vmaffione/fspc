@@ -1,7 +1,45 @@
+/*
+ *  fspc shell support
+ *
+ *  Copyright (C) 2013  Vincenzo Maffione
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
 #include <sstream>
 #include "shell.hpp"
 #include "lts.hpp"
 
+
+Shell::Shell(FspCompiler& cr) : c(cr)
+{
+    /* Initialize the help map. */
+    help_map["ls"] = "ls: show a list of compiled FSPs";
+    help_map["safety"] = "safety [FSP_NAME]: run deadlock/error analysis on \
+the specified FSP or on every FSP";
+    help_map["progress"] = "progress [FSP_NAME]: run progress analysis on \
+the specified FSP or on every FSP";
+    help_map["simulate"] = "simulate FSP_NAME: run an interactive simulation of \
+the specified FSP";
+    help_map["basic"] = "basic FSP_NAME FILE_NAME: writes a basic process \
+description of the specified FSP into the specified output file";
+    help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
+FSP";
+    help_map["help"] = "help: show this help";
+    help_map["quit"] = "quit: exit the shell";
+}
 
 void Shell::ls(const vector<string> &args)
 {
@@ -114,21 +152,43 @@ void Shell::basic(const vector<string> &args)
     lts->basic(outfile);
 }
 
-void Shell::help(const vector<string> &args)
+void Shell::alpha(const vector<string> &args)
 {
-    cout << "	ls: show a list of compiled FSPs\n";
-    cout << "	safety [FSP_NAME]: run deadlock/error analysis on \
-the specified FSP or on every FSP\n";
-    cout << "	progress [FSP_NAME]: run progress analysis on \
-the specified FSP or on every FSP\n";
-    cout << "	simulate FSP_NAME: run an interactive simulation of \
-the specified FSP\n";
-    cout << "	basic FSP_NAME FILE_NAME: writes a basic process \
-description of the specified FSP into the specified output file\n";
-    cout << "	help: show this help\n";
-    cout << "	quit: exit the shell\n";
+    SymbolValue * svp;
+    Lts * lts;
+
+    if (!args.size()) {
+	cout << "Invalid command: try 'help'\n";
+	return;
+    }
+
+    if (!c.processes.lookup(args[0], svp)) {
+	cout << "Process " << args[0] << " not found\n";
+	return;
+    }
+
+    lts = is_lts(svp);
+    lts->printAlphabet();
 }
 
+void Shell::help(const vector<string> &args)
+{
+    map<string, const char *>::iterator it;
+
+    if (args.size()) {
+	it = help_map.find(args[0]);
+	if (it == help_map.end()) {
+	    cout << "	No command named like that\n";
+	    return;
+	}
+	cout << "   " << it->second << "\n";
+    } else {
+	/* Show the help for every command. */
+	for (it=help_map.begin(); it!=help_map.end(); it++) {
+	    cout << "   " << it->second << "\n";
+	}
+    }
+}
 
 int Shell::run()
 {
@@ -167,6 +227,8 @@ int Shell::run()
 	    simulate(tokens);
 	else if (token == "basic")
 	    basic(tokens);
+	else if (token == "alpha")
+	    alpha(tokens);
 	else if (token == "help")
 	    help(tokens);
 	else if (token == "quit" || token == "exit")
