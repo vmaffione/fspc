@@ -5,7 +5,7 @@ VER=1.0
 
 OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o serializer.o shell.o
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp see.sh csee.sh parser.diff
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp ltsee csee.sh parser.diff
 SOURCES=$(WCIN) fsp.y
 
 #REPORT=--report=all
@@ -78,4 +78,4 @@ cleanaur:
 	-rm *.tar.gz PKGBUILD
 
 clc:
-	-rm *.gv *.lts *.png *.bfsp
+	-rm *.gv *.lts *.png .*.png *.bfsp

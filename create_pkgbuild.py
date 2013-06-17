@@ -41,7 +41,7 @@ f.write('\nbuild() {\n\tcd "$srcdir%s"\n\tmake || return 1 \n}\n' % (src, ));
 
 f.write('\ncheck() {\n\techo "nothing to check"\n}\n');
 
-f.write('\npackage() {\n\tcd "$srcdir%s"\n\tmkdir -p "$pkgdir/usr/bin"\n\tcp fspcc "$pkgdir/usr/bin"\n}\n' % (src, ));
+f.write('\npackage() {\n\tcd "$srcdir%s"\n\tmkdir -p "$pkgdir/usr/bin"\n\tcp fspcc "$pkgdir/usr/bin"\n\tcp ltsee "$pkgdir/usr/bin"\n}\n' % (src, ));
 
 f.write('# vim:set ts=2 sw=2 et:\n')
 f.close()
