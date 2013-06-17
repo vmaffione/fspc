@@ -19,6 +19,9 @@
 
 
 #include <sstream>
+#include <cstdio>
+#include <unistd.h>	/* fork() */
+#include <sys/wait.h>	/* waitpid() */
 #include "shell.hpp"
 #include "lts.hpp"
 
@@ -46,6 +49,7 @@ FSP";
     cmd_map["simulate"] = &Shell::simulate;
     cmd_map["basic"] = &Shell::basic;
     cmd_map["alpha"] = &Shell::alpha;
+    cmd_map["see"] = &Shell::see;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -180,6 +184,45 @@ void Shell::alpha(const vector<string> &args)
 
     lts = is_lts(svp);
     lts->printAlphabet();
+}
+
+void Shell::see(const vector<string> &args)
+{
+    SymbolValue * svp;
+    Lts * lts;
+
+    if (!args.size()) {
+	cout << "Invalid command: try 'help'\n";
+	return;
+    }
+
+    if (!c.processes.lookup(args[0], svp)) {
+	cout << "Process " << args[0] << " not found\n";
+	return;
+    }
+
+    lts = is_lts(svp);
+    lts->graphvizOutput(".tmp.gv");
+
+    /* XXX UNIX-specific section. */
+    pid_t drawer = fork();
+
+    switch (drawer) {
+	case -1:
+	    cout << "fork() error\n";
+	    return;
+	    break;
+	case 0:
+	    execl("ltsee", "ltsee", ".tmp.gv", NULL);
+	    exit(1);
+	    break;
+	default:
+	    int status;
+
+	    waitpid(-1, &status, 0);
+    }
+
+    remove(".tmp.gv");
 }
 
 void Shell::help(const vector<string> &args)

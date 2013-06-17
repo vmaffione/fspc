@@ -42,6 +42,7 @@ class Shell {
 	void simulate(const vector<string> &args);
 	void basic(const vector<string> &args);
 	void alpha(const vector<string> &args);
+	void see(const vector<string> &args);
 	void help(const vector<string> &args);
 
     public:
