@@ -52,10 +52,13 @@ FSP";
 void Shell::ls(const vector<string> &args)
 {
     map<string, SymbolValue *>::iterator it;
+    Lts * lts;
 
     cout << "Compiled FSPs:\n";
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	cout << "   " << it->first << "\n";
+	lts = is_lts(it->second);
+	cout << "   " << it->first << ": " << lts->numStates()
+	    << " states, " << lts->numTransitions() << " transitions\n";
     }
 }
 
