@@ -30,11 +30,11 @@
 using namespace std;
 
 
-typedef void (*ShellCommand)(const vector<string>& args);
-
 class Shell {
 	FspCompiler& c;
 	map<string, const char*> help_map;
+	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args);
+	map<string, ShellCmdFunc> cmd_map;
 
 	void ls(const vector<string> &args);
 	void safety(const vector<string> &args);
@@ -48,6 +48,7 @@ class Shell {
 	Shell(FspCompiler &cr);
 	int run();
 };
+
 
 #endif
 

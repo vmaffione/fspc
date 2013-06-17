@@ -1004,7 +1004,7 @@ struct OutputData {
     ActionsTable * atp;
 };
 
-void graphvizVisitFunction(int state, const struct LtsNode& node,
+static void graphvizVisitFunction(int state, const struct LtsNode& node,
 				void * opaque)
 {
     OutputData * gvdp = static_cast<OutputData *>(opaque);

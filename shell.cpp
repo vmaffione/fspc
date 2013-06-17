@@ -39,6 +39,14 @@ description of the specified FSP into the specified output file";
 FSP";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
+
+    cmd_map["ls"] = &Shell::ls;
+    cmd_map["safety"] = &Shell::safety;
+    cmd_map["progress"] = &Shell::progress;
+    cmd_map["simulate"] = &Shell::simulate;
+    cmd_map["basic"] = &Shell::basic;
+    cmd_map["alpha"] = &Shell::alpha;
+    cmd_map["help"] = &Shell::help;
 }
 
 void Shell::ls(const vector<string> &args)
@@ -196,6 +204,7 @@ int Shell::run()
 	string line;
 	string token;
 	vector<string> tokens;
+	map<string, ShellCmdFunc>::iterator it;
 
 	cout << "fspcc >> ";
 	cout.flush();
@@ -217,24 +226,16 @@ int Shell::run()
 
 	token = tokens[0];
 	tokens.erase(tokens.begin());
-	if (token == "ls")
-	    ls(tokens);
-	else if (token == "safety")
-	    safety(tokens);
-	else if (token == "progress")
-	    progress(tokens);
-	else if (token == "simulate")
-	    simulate(tokens);
-	else if (token == "basic")
-	    basic(tokens);
-	else if (token == "alpha")
-	    alpha(tokens);
-	else if (token == "help")
-	    help(tokens);
-	else if (token == "quit" || token == "exit")
+
+	if (token == "quit" || token == "exit")
 	    return 0;
-	else {
+	it = cmd_map.find(token);
+	if (it == cmd_map.end()) {
 	    cout << "unrecognized command\n";
+	} else {
+	    ShellCmdFunc fp = it->second;
+
+	    (this->*fp)(tokens);
 	}
     }
     
