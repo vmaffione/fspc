@@ -1100,6 +1100,7 @@ void Lts::simulate() const
 	    break;
 	}
 
+choose:
 	cout << "    Elegible actions: \n";
 	for (i=0; i<elegible_actions.size(); i++) {
 	    cout << "	    (" << i+1 << ") "
@@ -1113,8 +1114,8 @@ void Lts::simulate() const
 
 	idx = strtol(choice.c_str(), &dummy, 10);
 	if (idx < 1 || idx > elegible_actions.size() || *dummy != '\0') {
-	    cout << "    Invalid choice\n";
-	    return;
+	    cout << "        Invalid choice\n\n";
+	    goto choose;
 	}
 	idx--;
 
@@ -1130,6 +1131,58 @@ void Lts::simulate() const
 
 	cout << "\n";
     }
+}
+
+static void basicVisitFunction(int state, const struct LtsNode& node,
+				void * opaque)
+{
+    OutputData * bvd = static_cast<OutputData *>(opaque);
+    ActionsTable * atp = bvd->atp;
+    fstream * fsptr = bvd->fsptr;
+    int size = node.children.size();
+
+    *fsptr << ",\nS" << state << " = ";
+    if (!size) {
+	assert(node.type != LtsNode::Normal);
+	switch (node.type) {
+	    case LtsNode::Error:
+		*fsptr << "ERROR";
+		break;
+	    case LtsNode::End:
+		*fsptr << "END";
+		break;
+	    default:
+		assert(0);
+	}
+    } else {
+	*fsptr << "(";
+
+	for (int i=0; i<size-1; i++) {
+	    *fsptr << ati(node.children[i].action)
+		<< " -> S" << state << "\n  | ";
+	}
+	*fsptr << ati(node.children[size-1].action)
+	    << " -> S" << state << ")";
+    }
+}
+
+void Lts::basic(const string& outfile) const
+{
+    fstream fout(outfile.c_str(), fstream::out);
+    LtsVisitObject lvo;
+    OutputData bvd;
+
+    fout << name << " = S0";
+
+    lvo.vfp = basicVisitFunction;
+    bvd.atp = atp;
+    bvd.fsptr = &fout;
+    lvo.opaque = &bvd;
+    visit(lvo);
+
+    fout << ".\n";
+
+    fout.close();
 }
 
 Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)

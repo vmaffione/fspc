@@ -88,6 +88,32 @@ void Shell::simulate(const vector<string> &args)
     }
 }
 
+void Shell::basic(const vector<string> &args)
+{
+    string outfile;
+    SymbolValue * svp;
+    Lts * lts;
+
+    if (!args.size()) {
+	cout << "Invalid command: try 'help'\n";
+	return;
+    }
+
+    if (!c.processes.lookup(args[0], svp)) {
+	cout << "Process " << args[0] << " not found\n";
+	return;
+    }
+
+    if (args.size() >= 2) {
+	outfile = args[1];
+    } else {
+	outfile = args[0] + ".bfsp";
+    }
+
+    lts = is_lts(svp);
+    lts->basic(outfile);
+}
+
 void Shell::help(const vector<string> &args)
 {
     cout << "	ls: show a list of compiled FSPs\n";
@@ -97,6 +123,8 @@ the specified FSP or on every FSP\n";
 the specified FSP or on every FSP\n";
     cout << "	simulate FSP_NAME: run an interactive simulation of \
 the specified FSP\n";
+    cout << "	basic FSP_NAME FILE_NAME: writes a basic process \
+description of the specified FSP into the specified output file\n";
     cout << "	help: show this help\n";
     cout << "	quit: exit the shell\n";
 }
@@ -124,7 +152,6 @@ int Shell::run()
 	}
 
 	if (!tokens.size()) {
-	    cout << "\n";
 	    continue;
 	}
 
@@ -138,6 +165,8 @@ int Shell::run()
 	    progress(tokens);
 	else if (token == "simulate")
 	    simulate(tokens);
+	else if (token == "basic")
+	    basic(tokens);
 	else if (token == "help")
 	    help(tokens);
 	else if (token == "quit" || token == "exit")

@@ -16,6 +16,7 @@ class Shell {
 	void safety(const vector<string> &args);
 	void progress(const vector<string> &args);
 	void simulate(const vector<string> &args);
+	void basic(const vector<string> &args);
 	void help(const vector<string> &args);
 
     public:

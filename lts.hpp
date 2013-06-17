@@ -106,6 +106,7 @@ class Lts: public SymbolValue {
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
     void simulate() const;
+    void basic(const string& outfile) const;
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;

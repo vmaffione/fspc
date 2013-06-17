@@ -54,8 +54,8 @@ scanner.cpp: fsp.lex parser.hpp
 tags:
 	cscope -R
 
-clean: cleanaur
-	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.gv *.png *.out *.lts
+clean: cleanaur clc
+	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out
 
 testing: fspcc
 	tests/test.sh
@@ -78,4 +78,4 @@ cleanaur:
 	-rm *.tar.gz PKGBUILD
 
 clc:
-	-rm *.gv *.lts *.png
+	-rm *.gv *.lts *.png *.bfsp
