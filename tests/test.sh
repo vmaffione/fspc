@@ -21,7 +21,7 @@ done
 
 
 ##################### tests on invalid input ##################
-for i in {1..1}
+for i in {1..2}
 do
     if [ ! -f "tests/err-input${i}.fsp" ]; then
 	echo "error: tests/err-input${i}.fsp not found"

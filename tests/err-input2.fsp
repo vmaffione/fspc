@@ -1,0 +1,2 @@
+property P = (a->b->P|a->c->P).
+

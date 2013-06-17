@@ -92,6 +92,7 @@ class Lts: public SymbolValue {
     int numTransitions() const { return ntr; }
     int deadlockAnalysis() const;
     int terminalSets();
+    bool isDeterministic() const;
     Lts& compose(const Lts& q);
     Lts& labeling(const SetValue& labels);
     Lts& labeling(const string& label);

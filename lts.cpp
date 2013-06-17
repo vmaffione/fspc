@@ -624,6 +624,25 @@ clear_flags:
     return nts;
 }
 
+bool Lts::isDeterministic() const
+{
+    for (int i=0; i<nodes.size(); i++) {
+	map<int, int> links;
+	pair<map<int, int>::iterator, bool> ret;
+
+	/* For each node, we have to check that the mapping
+	   action --> destination_node is injective (one-to-one).*/
+	for (int j=0; j<nodes[i].children.size(); j++) {
+	    ret = links.insert(pair<int, int>(nodes[i].children[j].action,
+				    nodes[i].children[j].dest));
+	    if (!ret.second)
+		return false;
+	}
+    }
+
+    return true;
+}
+
 SymbolValue * Lts::clone() const
 {
     Lts * lv = new Lts(*this);
@@ -946,6 +965,11 @@ Lts& Lts::priority(const SetValue& s, bool low)
 Lts& Lts::property()
 {
     Edge e;
+
+    /* First of all we have to make sure that the process is deterministic.
+       If not, don't do anything. */
+    if (!isDeterministic())
+	return *this;
 
     terminal_sets_computed = false;
 

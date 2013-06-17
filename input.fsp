@@ -3,11 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 
-P=(p1->p2->END) + {p3}.
-Q=P;END + {p4}.
-T=Q;END.
-U=T;P;U.
-
+property P = (a->b->P|a->c->P).
 
 /*
 P(K=1)=(a[K]->END).

@@ -1294,7 +1294,14 @@ hiding:
 // TODO second form of progress (if S then C)
 property_def:
     PROPERTY process_def {
-	$2->property();
+	if ($2->isDeterministic()) {
+	    $2->property();
+	} else {
+	    stringstream errstream;
+	    errstream << "cannot apply the property keyword since "
+		<< $2->name << " is a non-deterministic process";
+	    semantic_error(errstream, @2);
+	}
 	PROX($2->print(); $2->graphvizOutput(($2->name + ".gv").c_str()));
     }
     ;
