@@ -40,6 +40,8 @@ the specified FSP";
 description of the specified FSP into the specified output file";
     help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
 FSP";
+    help_map["see"] = "see FSP_NAME: show a graphical representation of the \
+specified FSP using GraphViz";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 

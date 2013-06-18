@@ -22,6 +22,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 #include "lts.hpp"
 
 using namespace std;
@@ -44,7 +45,79 @@ void help()
     cout << "	-h : Shows this help.\n";
 }
 
+#define GETOPT
+#ifdef GETOPT
+void process_args(CompilerOptions& co, int argc, char **argv)
+{
+    int ch;
+    int il_options = 0;
 
+    /* Set default values. */
+    co.input_file = "input.fsp";
+    co.input_type = CompilerOptions::InputTypeFsp;
+    co.output_file = "output.lts";
+    co.deadlock = false;
+    co.progress = false;
+    co.graphviz = false;
+    co.shell = false;
+
+    while ((ch = getopt(argc, argv, "i:l:o:adpghs")) != -1) {
+	switch (ch) {
+	    default:
+		cout << "\n";
+		help();
+		exit(1);
+		break;
+
+	    case 'i':
+		il_options++;
+		co.input_file = optarg;
+		co.input_type = CompilerOptions::InputTypeFsp;
+		break;
+
+	    case 'l':
+		il_options++;
+		co.input_file = optarg;
+		co.input_type = CompilerOptions::InputTypeLts;
+		break;
+
+	    case 'o':
+		co.output_file = optarg;
+		break;
+
+	    case 'a':
+		co.deadlock = co.progress = co.graphviz = true;
+		break;
+
+	    case 'd':
+		co.deadlock = true;
+		break;
+
+	    case 'p':
+		co.progress = true;
+		break;
+
+	    case 'g':
+		co.graphviz = true;
+		break;
+
+	    case 'h':
+		help();
+		exit(0);
+		break;
+
+	    case 's':
+		co.shell = true;
+		break;
+	}
+    }
+
+    if (il_options > 1) {
+	cerr << "Error: Cannot specify more than one input file\n";
+	exit(-1);
+    }
+}
+#else	/* !GET_OPT */
 void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int i = 1;
@@ -70,6 +143,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 	switch (arg[1]) {
 	    case 'a':
 		co.deadlock = co.progress = co.graphviz = true;
+		break;
 	    case 'd':
 		co.deadlock = true;
 		break;
@@ -122,18 +196,9 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 	cerr << "Error: Cannot specify both 'i' and 'l' options\n";
 	exit(-1);
     }
-
-#if 0
-    cout << "PROGRAM OPTIONS\n";
-    cout << "	input file:	    " << co.input_file << endl;
-    cout << "	input type:	    " << ((co.input_type == CompilerOptions::InputTypeFsp) ? "fsp": "lts") << endl;
-    cout << "	output file:	    " << co.output_file << endl;
-    cout << "	deadlock check:	    " << co.deadlock << endl;
-    cout << "	progress check:	    " << co.progress << endl;
-    cout << "	graphviz output:    " << co.graphviz << endl;
-    cout << "\n";
-#endif
 }
+#endif	/* !GET_OPT */
+
 
 int main (int argc, char ** argv)
 {
