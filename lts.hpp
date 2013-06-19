@@ -40,8 +40,8 @@ struct TerminalSet {
 
 /* An LTS edge. */
 struct Edge {
-    int dest;
-    int action;
+    unsigned int dest;
+    unsigned int action;
 };
 
 struct LtsNode {

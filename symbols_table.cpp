@@ -141,7 +141,7 @@ void SymbolsTable::print() const
 SvpVec::SvpVec(): shared(false) {
 }
 
-SymbolValue * SvpVec::detach(int i) {
+SymbolValue * SvpVec::detach(unsigned int i) {
     SymbolValue* ret;
     if (i < v.size()) {
 	ret = v[i];
@@ -154,13 +154,13 @@ SymbolValue * SvpVec::detach(int i) {
 }
 
 void SvpVec::detach_all() {
-    for (int i=0; i<v.size(); i++)
+    for (unsigned int i=0; i<v.size(); i++)
 	v[i] = NULL;
 }
 
 void SvpVec::print() {
     cout << "{";
-    for (int i=0; i<v.size(); i++)
+    for (unsigned int i=0; i<v.size(); i++)
 	if (v[i]) {
 	    v[i]->print();
 	    cout << ", ";
@@ -170,14 +170,14 @@ void SvpVec::print() {
 
 SvpVec::~SvpVec() {
     if (shared) {
-	for (int i=0; i<v.size(); i++) {
+	for (unsigned int i=0; i<v.size(); i++) {
 	    if (v[i]) {
 		delete v[i];
 		break;
 	    }
 	}
     } else {
-	for (int i=0; i<v.size(); i++)
+	for (unsigned int i=0; i<v.size(); i++)
 	    if (v[i])
 		delete v[i];
     }
@@ -205,7 +205,7 @@ SymbolValue * RangeValue::clone() const
 /*============================= SetValue ================================ */
 SetValue& SetValue::dotcat(const string& s)
 {
-    for (int i=0; i<actions.size(); i++)
+    for (unsigned int i=0; i<actions.size(); i++)
 	actions[i] += "." + s;
 
     return *this;
@@ -234,7 +234,7 @@ SetValue& SetValue::indexize(int index)
     sstr << index;
     string suffix = "[" + sstr.str() + "]";
 
-    for (int i=0; i<actions.size(); i++)
+    for (unsigned int i=0; i<actions.size(); i++)
 	actions[i] += suffix;
 
     return *this;
@@ -265,7 +265,7 @@ SetValue& SetValue::indexize(int low, int high)
 
 SetValue& SetValue::operator +=(const SetValue& ss)
 {
-    for (int i=0; i<ss.actions.size(); i++)
+    for (unsigned int i=0; i<ss.actions.size(); i++)
 	actions.push_back(ss.actions[i]);
 
     return *this;
@@ -290,7 +290,7 @@ void SetValue::output(const string& name, const char * filename) const
     fstream fout(filename, fstream::out | fstream::app);
 
     fout << name << " ";
-    for (int i=0; i<actions.size(); i++) {
+    for (unsigned int i=0; i<actions.size(); i++) {
 	fout << actions[i] << " ";
     }
     fout << "\n";
@@ -299,7 +299,7 @@ void SetValue::output(const string& name, const char * filename) const
 void SetValue::print() const
 {
     cout << "r=" << rank << " {";
-    for (int i=0; i<actions.size(); i++) {
+    for (unsigned int i=0; i<actions.size(); i++) {
 	cout << actions[i] << ", ";
     }
     cout << "}\n";
@@ -316,7 +316,7 @@ SymbolValue * ProcnodePairValue::clone() const
 void ArgumentsValue::print() const
 {
     cout << "(";
-    for (int i=0; i<args.size(); i++)
+    for (unsigned int i=0; i<args.size(); i++)
 	cout << args[i] << ", ";
     cout << ")\n";
 }
@@ -332,7 +332,7 @@ SymbolValue * ArgumentsValue::clone() const
 /* ============================ RelabelingValue ===========================*/
 void RelabelingValue::print() const
 {
-    for (int i=0; i<old_labels.size(); i++) {
+    for (unsigned int i=0; i<old_labels.size(); i++) {
 	new_labels[i]->print();
 	cout << " / ";
 	old_labels[i]->print();
@@ -344,7 +344,7 @@ SymbolValue * RelabelingValue::clone() const
 {
     RelabelingValue * rlv = new RelabelingValue;
 
-    for (int i=0; i<old_labels.size(); i++) {
+    for (unsigned int i=0; i<old_labels.size(); i++) {
 	rlv->old_labels.push_back(
 			    static_cast<SetValue *>(old_labels[i]->clone()));
 	rlv->new_labels.push_back(
@@ -363,7 +363,7 @@ void RelabelingValue::add(SetValue * new_setvp, SetValue * old_setvp)
 
 void RelabelingValue::merge(RelabelingValue& rlv)
 {
-    for (int i=0; i<rlv.old_labels.size(); i++)
+    for (unsigned int i=0; i<rlv.old_labels.size(); i++)
 	if (rlv.old_labels[i] && rlv.new_labels[i]) {
 	    add(rlv.new_labels[i], rlv.old_labels[i]);
 	}
@@ -372,13 +372,13 @@ void RelabelingValue::merge(RelabelingValue& rlv)
 
 void RelabelingValue::detach_all()
 {
-    for (int i=0; i<old_labels.size(); i++)
+    for (unsigned int i=0; i<old_labels.size(); i++)
 	old_labels[i] = new_labels[i] = NULL;
 }
 
 RelabelingValue::~RelabelingValue()
 {
-    for (int i=0; i<old_labels.size(); i++) {
+    for (unsigned int i=0; i<old_labels.size(); i++) {
 	if (old_labels[i])
 	    delete old_labels[i];
 	if (new_labels[i])
@@ -450,7 +450,7 @@ PriorityValue::~PriorityValue()
 void Pvec::print(struct ActionsTable * atp)
 {
     cout << "Pvec:\n";
-    for (int i=0; i<v.size(); i++)
+    for (unsigned int i=0; i<v.size(); i++)
 	v[i]->print(atp);
 }
 
@@ -466,6 +466,8 @@ string processNodeTypeString(int type)
 	    return "END";
 	case ProcessNode::Error:
 	    return "ERROR";
+	default:
+	    return "";
     }
 }
 
@@ -474,7 +476,7 @@ void printVisitFunction(ProcessNode * pnp, void * opaque)
     ActionsTable * atp = (ActionsTable *)opaque;
 
     cout << pnp << "(" << processNodeTypeString(pnp->type) << "):\n";
-    for (int i=0; i<pnp->children.size(); i++) {
+    for (unsigned int i=0; i<pnp->children.size(); i++) {
 	ProcessEdge e = pnp->children[i];
 	cout << atp->reverse[e.action] << " -> " << e.dest << "\n";
     }
@@ -506,7 +508,7 @@ void ProcessNode::visit(ProcessVisitObject f, bool before)
 	if (before)
 	    /* Invoke the specific visit function before. */
 	    f.vfp(current, f.opaque);  
-	for (int i=0; i<current->children.size(); i++) {
+	for (unsigned int i=0; i<current->children.size(); i++) {
 	    ProcessEdge e = current->children[i];
 	    if (e.dest && visited.count(e.dest) == 0) {
 		visited.insert(e.dest);
@@ -578,7 +580,7 @@ void freeProcessNodeGraph(struct ProcessNode * pnp)
     pnp->visit(f, true);
 
     /* Free them. */
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
 	delete nodes[i];
 }
 
@@ -625,7 +627,7 @@ UnresolvedProcess * ProcessNodeAllocator::allocate_unresolved(const string&
 
 void ProcessNodeAllocator::clear()
 {
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
 	delete nodes[i];
     nodes.clear();
 }

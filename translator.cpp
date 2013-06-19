@@ -36,8 +36,8 @@ void Aliases::insert(const string& left, const string& right) {
 
     /* Firstly we look up both process names to discover what sets they
        are contained in (if any). */
-    for (int i=0; i<groups.size(); i++)
-	for (int j=0; j<groups[i].size(); j++) {
+    for (unsigned int i=0; i<groups.size(); i++)
+	for (unsigned int j=0; j<groups[i].size(); j++) {
 	    if (groups[i][j].name == left) {
 		left_index = i;
 		left_was_assigned = groups[i][j].assigned;
@@ -70,7 +70,7 @@ void Aliases::insert(const string& left, const string& right) {
 	   set we merge the two sets. */
 	if (left_index != right_index) {
 	    /* Merge the two sets. */
-	    for (int j=0; j<groups[right_index].size(); j++)
+	    for (unsigned int j=0; j<groups[right_index].size(); j++)
 		groups[left_index].push_back(groups[right_index][j]);
 	    groups.erase(groups.begin() + right_index);
 	}
@@ -85,9 +85,9 @@ void Aliases::insert(const string& left, const string& right) {
 
 void Aliases::fill_process_table(SymbolsTable& pt)
 {
-    for (int i=0; i<groups.size(); i++) {
+    for (unsigned int i=0; i<groups.size(); i++) {
 	int found = 0;
-	int index = -1;
+	unsigned int index = ~0U;
 	SymbolValue * svp;
 	ProcessValue * pvp;
 
@@ -95,7 +95,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 	   is already in 'pt', e.g. a process that has been defined as a
 	   proper process (with a non-NULL ProcessNode*) and not just as
 	   an alias. */
-	for (int j=0; j<groups[i].size(); j++) {
+	for (unsigned int j=0; j<groups[i].size(); j++) {
 	    if (pt.lookup(groups[i][j].name, svp)) {
 		found++;
 		index = j;
@@ -110,7 +110,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 	assert(found <= 1);
 	if (found == 0) {
 	    cerr << "Warning, aliases cycle found: {";
-	    for (int j=0; j<groups[i].size(); j++)
+	    for (unsigned int j=0; j<groups[i].size(); j++)
 		cerr << groups[i][j].name << ", ";
 	    cerr << "}\n";
 	    cerr << "    A new STOP process will be associated to these aliases\n";
@@ -121,7 +121,7 @@ void Aliases::fill_process_table(SymbolsTable& pt)
 	    index = 0;
 	}
 	pvp = err_if_not_process(svp, tr.locations[0]);
-	for (int j=0; j<groups[i].size(); j++)
+	for (unsigned int j=0; j<groups[i].size(); j++)
 	    if (j != index) {
 		ProcessValue * npvp = new ProcessValue;
 
@@ -145,8 +145,8 @@ void Aliases::clear()
 void Aliases::print()
 {
     IFD(cout << "Aliases:\n");
-    for (int i=0; i<groups.size(); i++)
-	for (int j=0; j<groups[i].size(); j++)
+    for (unsigned int i=0; i<groups.size(); i++)
+	for (unsigned int j=0; j<groups[i].size(); j++)
 	    IFD(cout << i << ": " << groups[i][j].name << ", " << groups[i][j].assigned << "\n");
 }
 
@@ -161,7 +161,7 @@ void FspTranslator::init_fakenode() {
        correctly expand each context and return a ProcessNode* for each
        child. */
     fe.pnp = &fakenode;
-    for (int c=0; c<current_contexts().size(); c++) {
+    for (unsigned int c=0; c<current_contexts().size(); c++) {
 	e.dest = NULL;
 	e.rank = c;	/* The child will combine with the c-th context. */
 	e.action = 0;	/* Not significant. */
@@ -176,7 +176,7 @@ void FspTranslator::init_fakenode() {
 
 void FspTranslator::print_fakenode_forest() {
     cout << "Current ProcessNode fakenode forest:\n";
-    for (int i=0; i<fakenode.children.size(); i++)
+    for (unsigned int i=0; i<fakenode.children.size(); i++)
 	if (fakenode.children[i].dest)
 	    fakenode.children[i].dest->print(&cr.actions);
 }

@@ -48,6 +48,7 @@
 Lts * ParametricProcess::replay(struct FspTranslator& tr,
 					    const vector<int>& values)
 {
+    unsigned int i;
     vector<void *> stack;
     FspCompiler& c = tr.cr;
     FspTranslator ltr(c);
@@ -61,7 +62,7 @@ Lts * ParametricProcess::replay(struct FspTranslator& tr,
     assert(parameter_defaults.size() == parameter_names.size());
 
     /* Load the parameters into c.identifiers. */
-    for (int i=0; i<parameter_names.size(); i++) {
+    for (i=0; i<parameter_names.size(); i++) {
 	/* Save the overridden identifiers, if any. */
 	if (c.identifiers.lookup(parameter_names[i], svp)) {
 	    overridden_names.push_back(parameter_names[i]);
@@ -78,7 +79,7 @@ Lts * ParametricProcess::replay(struct FspTranslator& tr,
     }
 
     /* Replay the callbacks. */
-    for (int i=0; i<record.size(); i++) {
+    for (i=0; i<record.size(); i++) {
 	PROX(cout << record[i]->is_void() << ", " << stack.size() << " ";record[i]->print());
 	void * ret = record[i]->execute(ltr, stack);
 	if (!(record[i]->is_void()))
@@ -87,11 +88,11 @@ Lts * ParametricProcess::replay(struct FspTranslator& tr,
     assert(stack.size() == 1);
 
     /* Remove the parameters from c.identifiers. */
-    for (int i=0; i<parameter_names.size(); i++)
+    for (i=0; i<parameter_names.size(); i++)
 	c.identifiers.remove(parameter_names[i]);
 
     /* Restore overridden parameters, if any. */
-    for (int i=0; i<overridden_names.size(); i++)
+    for (i=0; i<overridden_names.size(); i++)
 	if(!c.identifiers.insert(overridden_names[i],
 					    overridden_values[i])) {
 	    /* This should never happen. */
@@ -106,7 +107,7 @@ Lts * ParametricProcess::replay(struct FspTranslator& tr,
 void ParametricProcess::print() const
 {
     cout << "Parameters (defaults):\n";
-    for (int i=0; i<parameter_names.size(); i++)
+    for (unsigned int i=0; i<parameter_names.size(); i++)
 	cout << parameter_names[i] << " (" << parameter_defaults[i] << ")\n";
     cout << "   List of " << record.size() << " callbacks\n";
 }
@@ -130,7 +131,7 @@ void lts_name_extension(const vector<int>& values, string& extension)
     extension = "";
 
     if (values.size()) {
-	int i = 0;
+	unsigned int i = 0;
 
 	extension = "(";
 	for (; i<values.size() - 1; i++) {
@@ -179,7 +180,7 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 		csp = new ContextsSet;
 		csp->frontier = tr.current_contexts().frontier;
 		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
+		for (unsigned int c=0; c<left->v.size(); c++) {
 		    setvp = is_set(left->v[c]);
 		    rvp = is_range(right->v[c]);
 		    for (int j=rvp->low; j<=rvp->high; j++) {
@@ -205,7 +206,7 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 	    } else {
 		/* In this case each element in action_range is in the
 		   form "R", where R is a range_id or a range_expr. */
-		for (int c=0; c<left->v.size(); c++) {
+		for (unsigned int c=0; c<left->v.size(); c++) {
 		    setvp = is_set(left->v[c]);
 		    rvp = is_range(right->v[c]);
 		    setvp->indexize(rvp->low, rvp->high);
@@ -217,7 +218,7 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 	    break;
 
 	case SymbolValue::Const:
-	    for (int c=0; c<left->v.size(); c++) {
+	    for (unsigned int c=0; c<left->v.size(); c++) {
 		setvp = is_set(left->v[c]);
 		cvp = is_const(right->v[c]);
 		setvp->indexize(cvp->value);
@@ -235,10 +236,10 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 		csp->frontier = tr.current_contexts().frontier;
 		/* We need a new SvpVec for a new ContextSet. */
 		vp = new SvpVec;
-		for (int c=0; c<left->v.size(); c++) {
+		for (unsigned int c=0; c<left->v.size(); c++) {
 		    setvp = is_set(left->v[c]);
 		    rsetvp = is_set(right->v[c]);
-		    for (int j=0; j<rsetvp->actions.size(); j++) {
+		    for (unsigned int j=0; j<rsetvp->actions.size(); j++) {
 			SetValue * new_setvp = new SetValue(*setvp);
 			new_setvp->dotcat(rsetvp->actions[j]);
 			/* When a context spread happens, each new_setvp
@@ -261,7 +262,7 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 		delete right;
 		return vp;
 	    } else {
-		for (int c=0; c<left->v.size(); c++) {
+		for (unsigned int c=0; c<left->v.size(); c++) {
 		    setvp = is_set(left->v[c]);
 		    rsetvp = is_set(right->v[c]);
 		    /* Create a new SetValue that combines setvp and
@@ -289,7 +290,7 @@ void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result)
 
     assert(result.v.size() == 0);
     assert(ltsv->v.size() == tr.current_contexts().size());
-    for (int k=0; k<ltsv->v.size(); k++) {
+    for (unsigned int k=0; k<ltsv->v.size(); k++) {
 	lts = is_lts(ltsv->v[k]);
 	if (lts->rank != rank) {
 	    rank = lts->rank;
@@ -309,7 +310,7 @@ void relabel_one(SymbolValue * r, SymbolValue * l)
 
     /* Apply relabeling. */
     if (rlv) {
-	for (int i=0; i<rlv->size(); i++)
+	for (unsigned int i=0; i<rlv->size(); i++)
 	    lts->relabeling(*(rlv->new_labels[i]),
 		    *(rlv->old_labels[i]));
     }
@@ -321,7 +322,7 @@ void relabel(FspTranslator& tr, SvpVec *relabv, SvpVec * ltsv)
 
     if (relabv) {
 	assert(ltsv->v.size() == relabv->v.size());
-	for (int c=0; c<relabv->v.size(); c++)
+	for (unsigned int c=0; c<relabv->v.size(); c++)
 	    relabel_one(relabv->v[c], ltsv->v[c]);
     }
 }
@@ -332,11 +333,10 @@ void merge_ltscomp_by_rank(FspTranslator& tr, SvpVec * ltscompv,
     int rank = -1;
     LtsComposition * merged = NULL;
     LtsComposition * lcp;
-    Lts * lts;
 
     assert(result.v.size() == 0);
     assert(ltscompv->v.size() == tr.current_contexts().size());
-    for (int k=0; k<ltscompv->v.size(); k++) {
+    for (unsigned int k=0; k<ltscompv->v.size(); k++) {
 	lcp = is_ltscomposition(ltscompv->v[k]);
 	if (lcp->rank != rank) {
 	    rank = lcp->rank;
@@ -344,7 +344,7 @@ void merge_ltscomp_by_rank(FspTranslator& tr, SvpVec * ltscompv,
 	    ltscompv->detach(k);
 	    result.v.push_back(merged);
 	} else {
-	    for (int i=0; i<merged->lts.size(); i++)
+	    for (unsigned int i=0; i<merged->lts.size(); i++)
 		merged->lts[i]->compose(*(lcp->lts[i]));
 	}
     }
@@ -355,7 +355,7 @@ SvpVec * priority_callback(FspTranslator& tr, SvpVec * one, bool low)
     PriorityValue * prv;
 
     assert(one->v.size() == tr.current_contexts().size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	prv = new PriorityValue;
 	prv->setvp = is_set(one->v[c]);
 	prv->low = low;
@@ -373,7 +373,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
     SymbolValue * svp;
     ProcessValue * pvp;
 
-    for (int i=0; i<pnp->children.size(); i++) {
+    for (unsigned int i=0; i<pnp->children.size(); i++) {
 	ProcessEdge& e = pnp->children[i];
 
 	if (e.dest == NULL) {
@@ -415,7 +415,7 @@ static void aggregate_end_error_states(ProcessNode * pnp, void *opaque)
 	ProcessNode * dest;
 	AggrStatesData * d = static_cast<AggrStatesData *>(opaque);
 
-	for (int i=0; i<pnp->children.size(); i++) {
+	for (unsigned int i=0; i<pnp->children.size(); i++) {
 	    dest = pnp->children[i].dest;
 	    assert(dest);
 	    if (dest->type == ProcessNode::End) {
@@ -456,7 +456,7 @@ SvpVec * callback__1(FspTranslator& tr, string * one)
 
     vp = new SvpVec;
     vp->shared = false;
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	setvp = new SetValue;
 	*setvp += *one;
 	/* We assign a different rank to each setvp in vp (and so one
@@ -478,7 +478,7 @@ SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two)
     SetValue * setvp;
 
     assert(one->v.size() == tr.current_contexts().size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = is_set(one->v[c]);
 	setvp->dotcat(*two);
 	/* Rank is inherited. */
@@ -494,7 +494,7 @@ SvpVec * callback__3(FspTranslator& tr, SvpVec * one, SvpVec * two)
 	    one->v.size() == tr.current_contexts().size());
     SetValue * setvp;
     SetValue * rsetvp;
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = is_set(one->v[c]);
 	rsetvp = is_set(two->v[c]);
 	/* Combine setvp with rsetvp. No context ramification
@@ -518,17 +518,17 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
 {
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
-    SetValue * setvp;
+
     if (!tr.cr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "set " << *one << " undeclared";
 	semantic_error(errstream, tr.locations[0]);
     }
     delete one;
-    setvp = err_if_not_set(svp, tr.locations[0]);
+    err_if_not_set(svp, tr.locations[0]);
     svp = svp->clone();
     vp->shared = true;
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	vp->v.push_back(svp);
 
     return vp;
@@ -556,7 +556,7 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     svp->setVariable(*one);
     delete one;
     vp->shared = true;
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	vp->v.push_back(svp);
 
     return vp;
@@ -565,7 +565,7 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
 SvpVec * callback__7(FspTranslator& tr, string * one, SvpVec * two)
 {
     RangeValue * rvp;
-    for (int i=0; i<two->v.size(); i++) {
+    for (unsigned int i=0; i<two->v.size(); i++) {
 	rvp = is_range(two->v[i]);
 	/* Pass the variable to the upper levels.*/
 	rvp->setVariable(*one);
@@ -578,7 +578,7 @@ SvpVec * callback__7(FspTranslator& tr, string * one, SvpVec * two)
 SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two)
 {
     SetValue * setvp;
-    for (int i=0; i<two->v.size(); i++) {
+    for (unsigned int i=0; i<two->v.size(); i++) {
 	setvp = is_set(two->v[i]);
 	/* Pass the variable to the upper levels.*/
 	setvp->setVariable(*one);
@@ -595,7 +595,7 @@ SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two)
     SvpVec * vp = new SvpVec;
 
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	rvp = new RangeValue;
 	cvp = is_const(one->v[i]);
 	rvp->low = cvp->value;
@@ -616,7 +616,7 @@ void merge_by_rank(SvpVec * sets, SvpVec& result) {
 
     assert(result.v.size() == 0);
 
-    for (int c=0; c<sets->v.size(); c++) {
+    for (unsigned int c=0; c<sets->v.size(); c++) {
 	setvp = is_set(sets->v[c]);
 	if (setvp->rank != rank) {
 	    rank = setvp->rank;
@@ -647,7 +647,7 @@ SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two)
     delete two;
 
     assert(one->v.size() == two_merged.v.size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	SetValue * setvp = is_set(one->v[c]);
 	SetValue * rsetvp = is_set(two_merged.v[c]);
 	*setvp += *rsetvp;
@@ -744,7 +744,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 
 	assert(three->v.size() == 1);
 	setvp = is_set(three->v[0]);
-	for (int i=0; i<setvp->actions.size(); i++)
+	for (unsigned int i=0; i<setvp->actions.size(); i++)
 	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));
     }
 
@@ -758,7 +758,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 
 	assert(four->v.size() == 1);
 	rlv = is_relabeling(four->v[0]);
-	for (int i=0; i<rlv->size(); i++)
+	for (unsigned int i=0; i<rlv->size(); i++)
 	    lts->relabeling(*(rlv->new_labels[i]), *(rlv->old_labels[i]));
     }
 
@@ -794,9 +794,9 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
     SetValue * setvp;
     string procname;
 
-    for (int c=0; c<two->v.size(); c++) {
+    for (unsigned int c=0; c<two->v.size(); c++) {
 	setvp = is_set(two->v[c]);
-	for (int j=0; j<setvp->actions.size(); j++) {
+	for (unsigned int j=0; j<setvp->actions.size(); j++) {
 	    procname = *one + setvp->actions[j];
 	    if (three->v[c]->unresolved()) {
 		tr.aliases.insert(procname,
@@ -836,7 +836,7 @@ void * callback__19(FspTranslator& tr, SvpVec * one)
        selected contexts are expanded, while the others are not
        translated (e.tr. are filtered out). */
     tr.css.push_clone();
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	cvp = is_const(one->v[c]);
 	if (!cvp->value) {
 	    tr.current_contexts().rule_out(c);
@@ -854,7 +854,7 @@ void * callback__20(FspTranslator& tr, SvpVec * one, Pvec * two)
     tr.css.push_clone();
     /* Clean the previous clone and prepare another one for the else
        branch, in the same way descripted above. */
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	cvp = is_const(one->v[c]);
 	if (cvp->value)
 	    tr.current_contexts().rule_out(c);
@@ -871,7 +871,7 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
     tr.css.pop();
     /* Clean the previous cloned ContextsSet and fill the return vector
      *pvec, depending on the truth values contained in $2. */
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	cvp = is_const(one->v[c]);
 	if (cvp->value)
 	    pvec->v.push_back(two->v[c]);
@@ -894,7 +894,7 @@ Pvec * callback__23(FspTranslator& tr)
     Pvec * pvec = new Pvec;
     ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::End);
 
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
 
     return pvec;
@@ -905,7 +905,7 @@ Pvec * callback__24(FspTranslator& tr)
     Pvec * pvec = new Pvec;
     ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Normal);
 
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
 
     return pvec;
@@ -916,7 +916,7 @@ Pvec * callback__25(FspTranslator& tr)
     Pvec * pvec = new Pvec;
     ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Error);
 
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
 
     return pvec;
@@ -931,7 +931,7 @@ Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two)
     string name;
 
     assert(two->v.size() == tr.current_contexts().size());
-    for (int c=0; c<two->v.size(); c++) {
+    for (unsigned int c=0; c<two->v.size(); c++) {
 	setvp = is_set(two->v[c]);
 	assert(setvp->actions.size() == 1);
 	name = *one + setvp->actions[0];
@@ -972,7 +972,7 @@ void * callback__30(FspTranslator& tr, SvpVec * one)
     PROP("action_prefix --> guard_OPT (cont)");
     ConstValue * cvp;
     if (one) {
-	for (int c=0; c<tr.current_contexts().size(); c++) {
+	for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	    cvp = is_const(one->v[c]);
 	    if (!cvp->value)
 		tr.current_contexts().rule_out(c);
@@ -991,7 +991,7 @@ Pvec * callback__31(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
        lower level rule 'prefix_actions'. Therefore there is nothing to
        be done here. */
 
-    for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+    for (unsigned int i=0; i<tr.current_contexts().frontier.size(); i++) {
 	ProcessNode * pnp = tr.current_contexts().frontier[i].pnp;
 	int child = tr.current_contexts().frontier[i].child;
 	int rank = pnp->children[child].rank;
@@ -1043,13 +1043,13 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
     int max_rank = 0;
 
     zero = true;
-    for (int i=0; i<tr.current_contexts().frontier.size(); i++)
+    for (unsigned int i=0; i<tr.current_contexts().frontier.size(); i++)
 	if (tr.current_contexts().frontier[i].pnp != &tr.fakenode) {
 	    zero = false;
 	    break;
 	}
 
-    for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+    for (unsigned int i=0; i<tr.current_contexts().frontier.size(); i++) {
 	pnp = tr.current_contexts().frontier[i].pnp;
 	child = tr.current_contexts().frontier[i].child;
 	/* If the edge i is NULL-pointing, it means that we are
@@ -1076,11 +1076,11 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	   */
 	rank = pnp->children[child].rank;
 	if (rank > max_rank) max_rank = rank;
-	for (int c=0; c<one->v.size(); c++) {
+	for (unsigned int c=0; c<one->v.size(); c++) {
 	    if (tr.current_contexts().is_ruled_out(c)) continue;
 	    setvp = is_set(one->v[c]);
 	    if (setvp->rank == rank) {
-		for (int k=0; k<setvp->actions.size(); k++) {
+		for (unsigned int k=0; k<setvp->actions.size(); k++) {
 		    e.action = tr.cr.actions.insert(setvp->actions[k]);
 		    e.dest = NULL;
 		    /* We set e.rank to the index in the SvpVec
@@ -1103,7 +1103,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
     /* Update the frontier. */
     tr.current_contexts().frontier = new_frontier;
     if (zero) {
-	assert(max_rank+1 == tr.fakenode.children.size());
+	assert(static_cast<unsigned int>(max_rank+1) == tr.fakenode.children.size());
 	for (int c=0; c<max_rank+1; c++)
 	    pvec->v.push_back(tr.fakenode.children[c].dest);
     }
@@ -1140,7 +1140,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 	   the frontier with the action sets in 'two' (e.tr. we have a frontier
 	   that contains a NULL-pointing edge "c" and 'two'={{d}}).
 	*/
-	for (int i=0; i<tr.current_contexts().frontier.size(); i++) {
+	for (unsigned int i=0; i<tr.current_contexts().frontier.size(); i++) {
 	    pnp = tr.current_contexts().frontier[i].pnp;
 	    child = tr.current_contexts().frontier[i].child;
 	    /* Here we have to do the same combination descripted above,
@@ -1164,11 +1164,11 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 		    tr.cr.pna.allocate(ProcessNode::Normal);
 		npnp = pnp->children[child].dest;
 		rank = pnp->children[child].rank;
-		for (int c=0; c<two->v.size(); c++) {
+		for (unsigned int c=0; c<two->v.size(); c++) {
 		    if (tr.current_contexts().is_ruled_out(c)) continue;
 		    setvp = is_set(two->v[c]);
 		    if (setvp->rank == rank) {
-			for (int k=0; k<setvp->actions.size(); k++) {
+			for (unsigned int k=0; k<setvp->actions.size(); k++) {
 			    e.action = tr.cr.actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
 			    /* We set e.rank to the index in the SvpVec
@@ -1202,7 +1202,7 @@ SvpVec * callback__34(FspTranslator& tr)
     SvpVec * vp = new SvpVec;
     SetValue * setvp;
 
-    for (int c=0; c<tr.current_contexts().size(); c++) {    
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {    
 	setvp = new SetValue;
 	setvp->actions.push_back("");
 	vp->v.push_back(setvp);
@@ -1217,7 +1217,7 @@ SvpVec * callback__35(FspTranslator& tr, SvpVec * one)
     ConstValue * cvp;
 
     assert(one->v.size() == tr.current_contexts().size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	cvp = is_const(one->v[c]);
 	setvp = new SetValue;
 	setvp->actions.push_back("[" + int2string(cvp->value) + "]");
@@ -1234,7 +1234,7 @@ SvpVec * callback__36(FspTranslator& tr, SvpVec * one, SvpVec * two)
     ConstValue * cvp;
 
     assert(one->v.size() == two->v.size());
-    for (int c=0; c<two->v.size(); c++) {
+    for (unsigned int c=0; c<two->v.size(); c++) {
 	setvp = is_set(one->v[c]);
 	cvp = is_const(two->v[c]);
 	setvp->indexize(cvp->value);
@@ -1268,7 +1268,7 @@ SvpVec * callback__38(FspTranslator& tr, SvpVec * one)
 	errstream << "Unexpected set";
 	semantic_error(errstream, tr.locations[0]);
     }
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = new SetValue;
 	setvp->actions.push_back("");
 	setvp->rank = c;
@@ -1293,7 +1293,7 @@ SvpVec * callback__39(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__41(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value && vpr->value;
@@ -1306,7 +1306,7 @@ SvpVec * callback__41(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__42(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value && vpr->value;
@@ -1319,7 +1319,7 @@ SvpVec * callback__42(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__43(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value |= vpr->value;
@@ -1332,7 +1332,7 @@ SvpVec * callback__43(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__44(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value ^= vpr->value;
@@ -1345,7 +1345,7 @@ SvpVec * callback__44(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__45(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value &= vpr->value;
@@ -1358,7 +1358,7 @@ SvpVec * callback__45(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__46(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value == vpr->value);
@@ -1371,7 +1371,7 @@ SvpVec * callback__46(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__47(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value != vpr->value);
@@ -1384,7 +1384,7 @@ SvpVec * callback__47(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__48(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value < vpr->value);
@@ -1397,7 +1397,7 @@ SvpVec * callback__48(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__49(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value > vpr->value);
@@ -1410,7 +1410,7 @@ SvpVec * callback__49(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__50(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value <= vpr->value);
@@ -1423,7 +1423,7 @@ SvpVec * callback__50(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__51(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = (vpl->value >= vpr->value);
@@ -1436,7 +1436,7 @@ SvpVec * callback__51(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__52(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value <<= vpr->value;
@@ -1449,7 +1449,7 @@ SvpVec * callback__52(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__53(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value >>= vpr->value;
@@ -1462,7 +1462,7 @@ SvpVec * callback__53(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__54(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value += vpr->value;
@@ -1475,7 +1475,7 @@ SvpVec * callback__54(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__55(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value -= vpr->value;
@@ -1488,7 +1488,7 @@ SvpVec * callback__55(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__56(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value *= vpr->value;
@@ -1501,7 +1501,7 @@ SvpVec * callback__56(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__57(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value /= vpr->value;
@@ -1514,7 +1514,7 @@ SvpVec * callback__57(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__58(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     assert(one->v.size() == two->v.size());
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	ConstValue * vpl = is_const(one->v[i]);
 	ConstValue * vpr = is_const(two->v[i]);
 	vpl->value = vpl->value % vpr->value;
@@ -1528,7 +1528,7 @@ SvpVec * callback__59(FspTranslator& tr, SvpVec * one)
 {
     ConstValue * cvp;
 
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	cvp = is_const(one->v[i]);
 	cvp->value *= -1;
     }
@@ -1540,7 +1540,7 @@ SvpVec * callback__60(FspTranslator& tr, SvpVec * one)
 {
     ConstValue * cvp;
 
-    for (int i=0; i<one->v.size(); i++) {
+    for (unsigned int i=0; i<one->v.size(); i++) {
 	cvp = is_const(one->v[i]);
 	cvp->value = !(cvp->value);
     }
@@ -1556,7 +1556,7 @@ SvpVec * callback__61(FspTranslator& tr, int one)
     /* Return a ConstValue* for each context (in non shared mode). */
     vp = new SvpVec;
     vp->shared = false;
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	cvp = new ConstValue;
 	cvp->value = one;
 	vp->v.push_back(cvp);
@@ -1572,7 +1572,7 @@ SvpVec * callback__62(FspTranslator& tr, string * one)
 
     vp = new SvpVec;
     vp->shared = false;
-    for (int c=0; c<tr.current_contexts().size(); c++) {
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++) {
 	SymbolValue * svp;
 	if (!(tr.current_contexts()[c]->lookup(*one, svp))) {
 	    stringstream errstream;
@@ -1603,7 +1603,7 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     /* Return a ConstValue* for each context (in non shared mode). */
     vp = new SvpVec;
     vp->shared = false;
-    for (int c=0; c<tr.current_contexts().size(); c++)
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	vp->v.push_back(svp->clone());
 
     return vp;
@@ -1617,7 +1617,7 @@ Pvec * callback__64(FspTranslator& tr, Pvec * one, Pvec * two)
     struct AggrStatesData d;
     struct ProcessVisitObject f;
 
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	ProcessNode * left = is_procnode(one->v[c]);
 	ProcessBase * pbp = two->v[c];
 
@@ -1648,7 +1648,7 @@ Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
     struct AggrStatesData d;
     struct ProcessVisitObject f;
 
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	ProcessNode * left = is_procnode(one->v[c]);
 	ProcessNode * right = is_procnode(two->v[c]);
 
@@ -1731,14 +1731,14 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 	/* 'argvp' is going to specify the default parameters for every
 	   context. */
 	argvp = new SvpVec;
-	for (int k=0; k<tr.current_contexts().size(); k++) {
+	for (unsigned int k=0; k<tr.current_contexts().size(); k++) {
 	    avp = new ArgumentsValue;
 	    avp->args = ppp->parameter_defaults;
 	    argvp->v.push_back(avp);
 	}
     }
 
-    for (int k=0; k<argvp->v.size(); k++) {
+    for (unsigned int k=0; k<argvp->v.size(); k++) {
 	avp = is_arguments(argvp->v[k]);
 	lts = get_parametric_lts(tr, *one, ppp, avp);
 
@@ -1766,7 +1766,7 @@ SvpVec * callback__67(FspTranslator& tr, SvpVec * one)
     ConstValue * cvp;
     ArgumentsValue * avp;
 
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	cvp = is_const(one->v[c]);
 	avp = new ArgumentsValue;
 	avp->args.push_back(cvp->value);
@@ -1784,7 +1784,7 @@ SvpVec * callback__68(FspTranslator& tr, SvpVec * one, SvpVec * two)
     ConstValue * cvp;
     ArgumentsValue * avp;
 
-    for (int c=0; c<two->v.size(); c++) {
+    for (unsigned int c=0; c<two->v.size(); c++) {
 	cvp = is_const(two->v[c]);
 	avp = is_arguments(one->v[c]);
 	avp->args.push_back(cvp->value);
@@ -1800,7 +1800,7 @@ SvpVec * callback__69(FspTranslator& tr, SvpVec * one, SvpVec * two)
     RelabelingValue * rrlv;
 
     assert(one->v.size() == two->v.size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	lrlv = is_relabeling(one->v[c]);
 	rrlv = is_relabeling(two->v[c]);
 	lrlv->merge(*rrlv);
@@ -1826,7 +1826,7 @@ SvpVec * callback__70(FspTranslator& tr, SvpVec * one, SvpVec * two)
     delete two;
     
     assert(old_merged.v.size() == new_merged.v.size());
-    for (int i=0; i<old_merged.v.size(); i++) {
+    for (unsigned int i=0; i<old_merged.v.size(); i++) {
 	rlv = new RelabelingValue;
 	rlv->add(static_cast<SetValue * >(new_merged.v[i]),
 			static_cast<SetValue *>(old_merged.v[i]));
@@ -1844,7 +1844,7 @@ SvpVec * hiding_callback(FspTranslator& tr, SvpVec * one, bool interface)
     HidingValue * hvp;
 
     assert(one->v.size() == tr.current_contexts().size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = is_set(one->v[c]);
 	hvp = new HidingValue;
 	hvp->interface = interface;
@@ -1875,7 +1875,7 @@ SvpVec * callback__73(FspTranslator& tr, SvpVec * one, SvpVec * two)
 
     assert(one->v.size() == two->v.size() &&
 	    two->v.size() == tr.current_contexts().size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = is_set(one->v[c]);
 	rlv = is_relabeling(two->v[c]);
 	if (setvp->rank != rank) {
@@ -1912,7 +1912,7 @@ SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
 
 	assert(two->v.size() == three->v.size());
 	/* Apply process labeling, for each context separately. */
-	for (int k=0; k<two->v.size(); k++) {
+	for (unsigned int k=0; k<two->v.size(); k++) {
 	    setvp = is_set(two->v[k]);
 	    lts = is_lts(three->v[k]);
 	    lts->labeling(*setvp);
@@ -1930,7 +1930,7 @@ SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
 
 	assert(one->v.size() == vp->v.size());
 	/* Apply process sharing. */
-	for (int k=0; k<one->v.size(); k++) {
+	for (unsigned int k=0; k<one->v.size(); k++) {
 	    lts = is_lts(vp->v[k]);
 	    setvp = is_set(one->v[k]);
 	    lts->sharing(*setvp);
@@ -1971,13 +1971,13 @@ SvpVec * callback__78(FspTranslator& tr, SvpVec * one, SvpVec * two,
 
 	assert(two->v.size() == three->v.size());
 	/* Apply process labeling, for each context separately. */
-	for (int k=0; k<two->v.size(); k++) {
+	for (unsigned int k=0; k<two->v.size(); k++) {
 	    setvp = is_set(two->v[k]);
 	    lcp = is_ltscomposition(three->v[k]);
 
 	    /* Apply process labeling to each component process, before
 	       performing the composition. */
-	    for (int i=0; i<lcp->lts.size(); i++)
+	    for (unsigned int i=0; i<lcp->lts.size(); i++)
 		lcp->lts[i]->labeling(*setvp);
 	    lcp->rank = setvp->rank;
 	}
@@ -1993,10 +1993,10 @@ SvpVec * callback__78(FspTranslator& tr, SvpVec * one, SvpVec * two,
 
 	assert(one->v.size() == vp->v.size());
 	/* Apply process sharing, before performing the composition. */
-	for (int k=0; k<one->v.size(); k++) {
+	for (unsigned int k=0; k<one->v.size(); k++) {
 	    setvp = is_set(one->v[k]);
 	    lcp = is_ltscomposition(vp->v[k]);
-	    for (int i=0; i<lcp->lts.size(); i++)
+	    for (unsigned int i=0; i<lcp->lts.size(); i++)
 		lcp->lts[i]->sharing(*setvp);
 	}
 
@@ -2019,23 +2019,23 @@ SvpVec * callback__79(FspTranslator& tr, SvpVec * one, SvpVec * two,
     if (five) {
 	/* Apply relabeling. */
 	assert(four->v.size() == five->v.size());
-	for (int c=0; c<five->v.size(); c++) {
+	for (unsigned int c=0; c<five->v.size(); c++) {
 	    lcp = is_ltscomposition(four->v[c]);
 
 	    /* Apply relabeling to each component process, before
 	       performing the composition. */
-	    for (int i=0; i<lcp->lts.size(); i++)
+	    for (unsigned int i=0; i<lcp->lts.size(); i++)
 		relabel_one(five->v[c], lcp->lts[i]);
 
 	}
     }
 
     /* Perform parallel composition. */
-    for (int c=0; c<four->v.size(); c++) {
+    for (unsigned int c=0; c<four->v.size(); c++) {
 	lcp = is_ltscomposition(four->v[c]);
 	/* Compose all the processes contained in 'lcp'. */
 	lts = lcp->lts[0];
-	for (int i=1; i<lcp->lts.size(); i++) {
+	for (unsigned int i=1; i<lcp->lts.size(); i++) {
 	    lts->compose(*(lcp->lts[i]));
 	    delete lcp->lts[i];
 	}
@@ -2057,7 +2057,7 @@ SvpVec * callback__80(FspTranslator& tr, SvpVec * one, SvpVec * two)
 
     tr.css.pop();
     assert(one->v.size() == two->v.size());
-    for (int k=0; k<one->v.size(); k++) {
+    for (unsigned int k=0; k<one->v.size(); k++) {
 	setvp = is_set(one->v[k]);
 	lts = is_lts(two->v[k]);
 	lts->rank = setvp->rank;
@@ -2081,10 +2081,10 @@ SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
     assert(!three || one->v.size() == three->v.size());
     if (!vp) {
 	vp = new SvpVec;
-	for (int k=0; k<one->v.size(); k++)
+	for (unsigned int k=0; k<one->v.size(); k++)
 	    vp->v.push_back(new Lts(LtsNode::Normal, &tr.cr.actions));
     }
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	cvp = is_const(one->v[c]);
 	if (!cvp->value) {
 	    SymbolValue * tmp = two->v[c];
@@ -2103,7 +2103,7 @@ SvpVec * callback__82(FspTranslator& tr, SvpVec * one)
     LtsComposition * lcp;
     Lts * lts;
 
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	lts = is_lts(one->v[c]);
 	lcp = new LtsComposition;
 	lcp->lts.push_back(lts);
@@ -2121,7 +2121,7 @@ SvpVec * callback__83(FspTranslator& tr, SvpVec * one, SvpVec * two)
     Lts * lts;
 
     assert(one->v.size() == two->v.size());
-    for (int c=0; c<one->v.size(); c++) {
+    for (unsigned int c=0; c<one->v.size(); c++) {
 	lcp = is_ltscomposition(one->v[c]);
 	lts = is_lts(two->v[c]);
 	lcp->lts.push_back(lts);
@@ -2153,17 +2153,16 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 	/* 'argvp' is going to specify the default parameters for every
 	   context. */
 	argvp = new SvpVec;
-	for (int k=0; k<tr.current_contexts().size(); k++) {
+	for (unsigned int k=0; k<tr.current_contexts().size(); k++) {
 	    avp = new ArgumentsValue;
 	    avp->args = ppp->parameter_defaults;
 	    argvp->v.push_back(avp);
 	}
     }
 
-    for (int k=0; k<argvp->v.size(); k++) {
+    for (unsigned int k=0; k<argvp->v.size(); k++) {
 	string name = *one;
 	string extension;
-	SymbolValue * svp;
 
 	avp = is_arguments(argvp->v[k]);
 	lts = get_parametric_lts(tr, *one, ppp, avp);

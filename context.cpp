@@ -26,13 +26,13 @@ Context::Context(const Context& ctx)
 {
     names = ctx.names;
     values.resize(ctx.values.size());
-    for (int i=0; i<values.size(); i++)
+    for (unsigned int i=0; i<values.size(); i++)
 	    values[i] = ctx.values[i]->clone();
     ruled_out = ctx.ruled_out;
 }
 
 bool Context::lookup(const string& s, SymbolValue*& ret) {
-    for (int i=0; i<names.size(); i++)
+    for (unsigned int i=0; i<names.size(); i++)
 	if (s == names[i]) {
 	    ret = values[i];
 	    return true;
@@ -42,7 +42,7 @@ bool Context::lookup(const string& s, SymbolValue*& ret) {
 
 bool Context::insert(const string& s, int value) {
     ConstValue * cvp;
-    for (int i=0; i<names.size(); i++)
+    for (unsigned int i=0; i<names.size(); i++)
 	if (s == names[i])
 	    return false;
     names.push_back(s);
@@ -54,7 +54,7 @@ bool Context::insert(const string& s, int value) {
 
 bool Context::insert(const string& s, const string& value) {
     SetValue * setvp;
-    for (int i=0; i<names.size(); i++)
+    for (unsigned int i=0; i<names.size(); i++)
 	if (s == names[i])
 	    return false;
     names.push_back(s);
@@ -66,7 +66,7 @@ bool Context::insert(const string& s, const string& value) {
 
 void Context::print() const {
     cout << "ctx = {";
-    for (int i=0; i<names.size(); i++) {
+    for (unsigned int i=0; i<names.size(); i++) {
 	cout << names[i] << "="; 
 	switch (values[i]->type()) {
 	    case SymbolValue::Const:
@@ -83,7 +83,7 @@ void Context::print() const {
 
 Context::~Context()
 {
-    for (int i=0; i<values.size(); i++)
+    for (unsigned int i=0; i<values.size(); i++)
 	delete values[i];
 }
 
@@ -93,7 +93,7 @@ Context::~Context()
 ContextsSet::ContextsSet(const ContextsSet& cs)
 {
     s.resize(cs.s.size());
-    for (int i=0; i<cs.s.size(); i++) {
+    for (unsigned int i=0; i<cs.s.size(); i++) {
 	s[i] = new Context(*cs.s[i]);
     }
     frontier = cs.frontier;
@@ -112,16 +112,16 @@ bool ContextsSet::is_ruled_out(int c) const {
 void ContextsSet::print() const {
     cout << "#contexts = " << s.size() << "; ";
     cout << "frnt: {";
-    for (int i=0; i<frontier.size(); i++)
+    for (unsigned int i=0; i<frontier.size(); i++)
 	cout << "(" << frontier[i].pnp << "," << frontier[i].child
 	    << "), ";
     cout << "}\n";
-    for (int i=0; i<s.size(); i++)
+    for (unsigned int i=0; i<s.size(); i++)
 	s[i]->print();
 }
 
 ContextsSet::~ContextsSet() {
-    for (int i=0; i<s.size(); i++) {
+    for (unsigned int i=0; i<s.size(); i++) {
 	delete s[i];
     }
 }

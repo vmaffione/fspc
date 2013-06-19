@@ -168,7 +168,7 @@ void Deserializer::actions_table(ActionsTable &at, bool raw)
     this->stl_string(at.name, 1);
     this->integer(size, 1);
     at.reverse.resize(size);
-    for (int i=0; i<size; i++) {
+    for (unsigned int i=0; i<size; i++) {
 	this->stl_string(s, 1);
 	this->integer(x, 1);
 	at.table.insert(pair<string, int>(s, x));
@@ -183,7 +183,7 @@ void serializeLtsVisitFunction(int state, const struct LtsNode& node, void * opa
 {
     Serializer * serp = static_cast<Serializer *>(opaque);
 
-    for (int i=0; i<node.children.size(); i++) {
+    for (unsigned int i=0; i<node.children.size(); i++) {
 	serp->integer(state, 1);
 	serp->integer(node.children[i].action, 1);
 	serp->integer(node.children[i].dest, 1);
@@ -204,7 +204,7 @@ void Serializer::lts(const class Lts &lts, bool raw)
     this->stl_string(lts.name, 1);
     this->integer(lts.ntr, 1);
     this->integer(lts.nodes.size(), 1);
-    for (int i=0; i<lts.nodes.size(); i++) {
+    for (unsigned int i=0; i<lts.nodes.size(); i++) {
 	switch (lts.nodes[i].type) {
 	    case LtsNode::End:
 		end = i;
@@ -249,11 +249,11 @@ void Deserializer::lts(class Lts &lts, bool raw)
     this->integer(x, 1); lts.nodes.resize(x);
     this->integer(end, 1);
     this->integer(error, 1);
-    for (int i=0; i<lts.nodes.size(); i++)
+    for (unsigned int i=0; i<lts.nodes.size(); i++)
 	lts.nodes[i].type = LtsNode::Normal;
-    if (end != ~0)
+    if (end != ~0U)
 	lts.nodes[end].type = LtsNode::End;
-    if (error != ~0) // XXX if (~error)
+    if (error != ~0U) // XXX if (~error)
 	lts.nodes[error].type = LtsNode::Error;
 
     for (int i=0; i<lts.ntr; i++) {
@@ -266,7 +266,7 @@ void Deserializer::lts(class Lts &lts, bool raw)
     }
 
     this->integer(x, 1);
-    for (int i=0; i<x; i++) {
+    for (uint32_t i=0; i<x; i++) {
 	this->integer(y, 1);
 	lts.updateAlphabet(y);
     }
@@ -280,7 +280,7 @@ void Serializer::set_value(const struct SetValue& setv, bool raw)
     }
 
     this->integer(setv.actions.size(), 1);
-    for (int i=0; i<setv.actions.size(); i++) {
+    for (unsigned int i=0; i<setv.actions.size(); i++) {
 	this->stl_string(setv.actions[i], 1);
     }
 }
@@ -300,7 +300,7 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
 
     this->integer(x, 1);
     setv.actions.resize(x);
-    for (int i=0; i<setv.actions.size(); i++) {
+    for (unsigned int i=0; i<setv.actions.size(); i++) {
 	this->stl_string(setv.actions[i], 1);
     }
 }

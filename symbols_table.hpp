@@ -40,7 +40,7 @@ struct ActionsTable {
     int serial;
 
     ActionsTable() { }
-    ActionsTable(const string& nm) : serial(0), name(nm) { insert("tau"); }
+    ActionsTable(const string& nm) { serial = 0; name = nm; insert("tau"); }
     int insert(const string& s);
     int lookup(const string& s) const;
     void print() const;
@@ -65,6 +65,8 @@ struct SymbolValue {
     static const int Hiding = 10;
     static const int Priority = 11;
     static const int LtsComposition = 12;
+
+    virtual ~SymbolValue() { }
 };
 
 /* Class that supports a list of SymbolValue*. */
@@ -73,7 +75,7 @@ struct SvpVec {
     bool shared;
 
     SvpVec();
-    SymbolValue * detach(int i);
+    SymbolValue * detach(unsigned int i);
     void detach_all();
     void print();
     ~SvpVec();
@@ -135,7 +137,7 @@ struct RelabelingValue: public SymbolValue {
     void add(SetValue *, SetValue *);
     void merge(RelabelingValue& rlv);
     void detach_all();
-    int size() const { return old_labels.size(); }
+    unsigned int size() const { return old_labels.size(); }
     void print() const;
     int type() const { return SymbolValue::Relabeling; }
     SymbolValue * clone() const;
@@ -168,6 +170,7 @@ struct ProcessBase {
     virtual bool unresolved() const = 0;
     virtual bool connected() const { return false; }
     virtual void print(ActionsTable * atp) = 0; 
+    virtual ~ProcessBase() { }
 };
 
 struct Pvec {

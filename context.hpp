@@ -53,7 +53,7 @@ struct ContextsSet {
 
     ContextsSet() { }
     ContextsSet(const ContextsSet&);
-    int size() const { return s.size(); }
+    unsigned int size() const { return s.size(); }
     Context*& operator[](int i) { return s[i]; }
     void append(Context * ctx);
     void rule_out(int c);

@@ -165,6 +165,6 @@ ProcessNode * err_if_not_procnode(ProcessBase * pbp, const struct YYLTYPE& loc)
 
 void err_if_not_const_svpvec(SvpVec * vp, const struct YYLTYPE& loc)
 {
-    for (int c=0; c<vp->v.size(); c++)
+    for (unsigned int c=0; c<vp->v.size(); c++)
 	err_if_not_const(vp->v[c], loc);
 }

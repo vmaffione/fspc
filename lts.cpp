@@ -118,7 +118,7 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
     Edge e;
     pair< map<ProcessNode*, int>::iterator, bool> ret;
 
-    for (int i=0; i<pnp->children.size(); i++) {
+    for (unsigned int i=0; i<pnp->children.size(); i++) {
 	int next = mapp->size();
 	ret = mapp->insert(make_pair(pnp->children[i].dest, next));
 	if (ret.second) {
@@ -165,9 +165,9 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 void Lts::print() const {
     atp->print();
     cout << "LTS " << name << "\n";
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	cout << "State " << i << ":\n";
-	for (int j=0; j<nodes[i].children.size(); j++)
+	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    cout << "    " << ati(nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
@@ -204,7 +204,7 @@ void Lts::reduce(const vector<LtsNode>& unconnected)
 	Edge e;
 
 	state = frontier[pop++];
-	for (int j=0; j<unconnected[state].children.size(); j++) {
+	for (unsigned int j=0; j<unconnected[state].children.size(); j++) {
 	    int child = unconnected[state].children[j].dest;
 
 	    if (map[child] == -1) {
@@ -251,8 +251,8 @@ void Lts::compose(const Lts& p, const Lts& q)
     product.resize(n);
 
     /* Scan the P graph and combine P actions with Q states. */
-    for (int ip=0; ip<p.nodes.size(); ip++)
-	for (int jp=0; jp<p.nodes[ip].children.size(); jp++) {
+    for (unsigned int ip=0; ip<p.nodes.size(); ip++)
+	for (unsigned int jp=0; jp<p.nodes[ip].children.size(); jp++) {
 	    const Edge& ep = p.nodes[ip].children[jp];
 	    /* We analyze an edge of P: (i, ep.action, ep.dest). */
 	    e.action = ep.action;
@@ -268,8 +268,8 @@ void Lts::compose(const Lts& p, const Lts& q)
 	    } else {
 		/* If ep.action is included in the alphabet of Q, this
 		   action can be executed by P only together with Q. */
-		for (int iq=0; iq<q.nodes.size(); iq++)
-		    for (int jq=0; jq<q.nodes[iq].children.size(); jq++) {
+		for (unsigned int iq=0; iq<q.nodes.size(); iq++)
+		    for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
 			const Edge& eq = q.nodes[iq].children[jq];
 
 			if (eq.action == ep.action) {
@@ -282,8 +282,8 @@ void Lts::compose(const Lts& p, const Lts& q)
 	}
 
     /* Scan the Q graph and combine Q actions with P states */
-    for (int iq=0; iq<q.nodes.size(); iq++)
-	for (int jq=0; jq<q.nodes[iq].children.size(); jq++) {
+    for (unsigned int iq=0; iq<q.nodes.size(); iq++)
+	for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
 	    const Edge& eq = q.nodes[iq].children[jq];
 	    /* We analyze an edge of Q: (i, eq.action, eq.dest). */
 	    e.action = eq.action;
@@ -301,8 +301,8 @@ void Lts::compose(const Lts& p, const Lts& q)
 
     /* A composed state is an END state when both the components are
        END states. */
-    for (int ip=0; ip<p.nodes.size(); ip++)
-	for (int iq=0; iq<q.nodes.size(); iq++)
+    for (unsigned int ip=0; ip<p.nodes.size(); ip++)
+	for (unsigned int iq=0; iq<q.nodes.size(); iq++)
 	    if ((p.nodes[ip].type == LtsNode::Error) ||
 		    (q.nodes[iq].type == LtsNode::Error))
 		product[ip*nq+iq].type = LtsNode::Error;
@@ -362,7 +362,7 @@ int Lts::deadlockAnalysis() const
 
     /* Keep visiting until the queue is empty. */
     while (pop != push) {
-	int i;
+	unsigned int i;
 
 	/* Pop a state and examine all its child. */
 	state = frontier[pop];
@@ -419,18 +419,18 @@ int Lts::terminalSets()
     terminal_sets_computed = true;
 
     /* Data structures for the iterative DFS implementation */
-    vector<int> state_stack(n);  /* Emulated recursion stack */
-    vector<int> action_stack(n); /* Actions stack parallel to the previous */
-    vector<int> back(n);	 /* Backpointers parallel stack */
+    vector<unsigned int> state_stack(n);  /* Emulated recursion stack */
+    vector<unsigned int> action_stack(n); /* Actions stack parallel to the previous */
+    vector<unsigned int> back(n);	 /* Backpointers parallel stack */
     vector<bool> entered(n);	 /* Marks states started to be visited */
-    vector<int> next_child(n);	 /* Records the next child to examine */
-    vector<int> action_trace(n);
+    vector<unsigned int> next_child(n);	 /* Records the next child to examine */
+    vector<unsigned int> action_trace(n);
     int top;
 
     /* Tarjan algorithm data structures */
-    vector<int> tarjan_index(n);
-    vector<int> tarjan_stack(n);
-    vector<int> tarjan_lowlink(n);
+    vector<unsigned int> tarjan_index(n);
+    vector<unsigned int> tarjan_stack(n);
+    vector<unsigned int> tarjan_lowlink(n);
     vector<bool> tarjan_in_stack(n); /* Set if state 'i' is on the stack */
     int tarjan_counter;
     int tarjan_top;
@@ -489,7 +489,7 @@ int Lts::terminalSets()
 
 	    IFD(cout << state << ".end\n");
 
-	    for (int i=0; i<nodes[state].children.size(); i++) {
+	    for (unsigned int i=0; i<nodes[state].children.size(); i++) {
 		int child = nodes[state].children[i].dest; 
 		if (tarjan_index[child] > tarjan_index[state]) {
 		    /* If this condition holds, child must be a descendent
@@ -540,7 +540,7 @@ int Lts::terminalSets()
 		    terminal = true;
 		    for (int j=0; j<nc; j++) {
 			s = tarjan_component_states[j];
-			for (int i=0; i<nodes[s].children.size(); i++) {
+			for (unsigned int i=0; i<nodes[s].children.size(); i++) {
 			    e = nodes[s].children[i];
 			    if (!tarjan_state_in_component[e.dest]) {
 				/* We have a transition that exit the
@@ -626,13 +626,13 @@ clear_flags:
 
 bool Lts::isDeterministic() const
 {
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	map<int, int> links;
 	pair<map<int, int>::iterator, bool> ret;
 
 	/* For each node, we have to check that the mapping
 	   action --> destination_node is injective (one-to-one).*/
-	for (int j=0; j<nodes[i].children.size(); j++) {
+	for (unsigned int j=0; j<nodes[i].children.size(); j++) {
 	    ret = links.insert(pair<int, int>(nodes[i].children[j].action,
 				    nodes[i].children[j].dest));
 	    if (!ret.second)
@@ -669,7 +669,7 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
 	state = frontier[pop++];
 	/* Invoke the visit function */
 	lvo.vfp(state, nodes[state], lvo.opaque);
-	for (int i=0; i<nodes[state].children.size(); i++) {
+	for (unsigned int i=0; i<nodes[state].children.size(); i++) {
 	    int child = nodes[state].children[i].dest;
 	    if (!seen[child]) {
 		seen[child] = true;
@@ -684,11 +684,11 @@ ProcessNode * Lts::toProcessNode(ProcessNodeAllocator& pna) const
 {
     vector<ProcessNode *> pnodes(nodes.size());
 
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
 	pnodes[i] = pna.allocate(nodes[i].type);
 
-    for (int i=0; i<nodes.size(); i++)
-	for (int j=0; j<nodes[i].children.size(); j++) {
+    for (unsigned int i=0; i<nodes.size(); i++)
+	for (unsigned int j=0; j<nodes[i].children.size(); j++) {
 	    ProcessEdge e;
 
 	    e.dest = pnodes[nodes[i].children[j].dest];
@@ -711,7 +711,7 @@ Lts& Lts::labeling(const SetValue& labels)
 	Lts copy(*this);
 
 	this->labeling(labels.actions[0]);
-	for (int i=1; i<labels.actions.size(); i++) {
+	for (unsigned int i=1; i<labels.actions.size(); i++) {
 	    Lts right(copy);
 
 	    right.labeling(labels.actions[i]);
@@ -743,8 +743,8 @@ Lts& Lts::labeling(const string& label)
     alphabet = new_alphabet;
 
     /* Update the edges actions. */
-    for (int i=0; i<nodes.size(); i++)
-	for (int j=0; j<nodes[i].children.size(); j++)
+    for (unsigned int i=0; i<nodes.size(); i++)
+	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    nodes[i].children[j].action = mapping[nodes[i].children[j].action];
 
     return *this;
@@ -765,7 +765,7 @@ Lts& Lts::sharing(const SetValue& labels)
 	vector<int> new_indexes;
 
 	old_index = *it;
-	for (int i=0; i<labels.actions.size(); i++) {
+	for (unsigned int i=0; i<labels.actions.size(); i++) {
 	    new_index = atp->insert(labels.actions[i] + "." + 
 						atp->reverse[old_index]);
 	    new_alphabet.insert(new_index);
@@ -776,14 +776,14 @@ Lts& Lts::sharing(const SetValue& labels)
     alphabet = new_alphabet;
 
     /* Replace the children array of each node. */
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	vector<Edge> new_children;
 
-	for (int j=0; j<nodes[i].children.size(); j++) {
+	for (unsigned int j=0; j<nodes[i].children.size(); j++) {
 	    Edge e = nodes[i].children[j];
 	    vector<int> new_indexes = mapping[e.action];
 
-	    for (int k=0; k<new_indexes.size(); k++) {
+	    for (unsigned int k=0; k<new_indexes.size(); k++) {
 		e.action = new_indexes[k];
 		new_children.push_back(e);
 	    }
@@ -815,7 +815,7 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 	/* Prefix match: check if 'oldlabel' is a prefix of 'action'. */
 	mm = mismatch(oldlabel.begin(), oldlabel.end(), action.begin());
 	if (mm.first == oldlabel.end()) {
-	    for (int i=0; i<newlabels.actions.size(); i++) {
+	    for (unsigned int i=0; i<newlabels.actions.size(); i++) {
 		string new_action = action;
 
 		new_action.replace(0, oldlabel.size(), newlabels.actions[i]);
@@ -830,12 +830,12 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
     alphabet = new_alphabet;
 
     /* Replace the children that are to be replaced. */
-    for (int i=0; i<nodes.size(); i++) {
-	int original_size = nodes[i].children.size();
+    for (unsigned int i=0; i<nodes.size(); i++) {
+	unsigned int original_size = nodes[i].children.size();
 	/* We need 'original_size' since we are going to push_back() in 
 	   'nodes[i].children', e.g. the same vector we are cycling on. */
 
-	for (int j=0; j<original_size; j++) {
+	for (unsigned int j=0; j<original_size; j++) {
 	    Edge e = nodes[i].children[j];
     
 	    if (mapping.count(e.action)) {
@@ -843,7 +843,7 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 
 		e.action = new_indexes[0];
 		nodes[i].children[j] = e;
-		for (int k=1; k<new_indexes.size(); k++) {
+		for (unsigned int k=1; k<new_indexes.size(); k++) {
 		    e.action = new_indexes[k];
 		    nodes[i].children.push_back(e);
 		}
@@ -856,7 +856,7 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 
 Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
 {
-    for (int i=0; i<oldlabels.actions.size(); i++)
+    for (unsigned int i=0; i<oldlabels.actions.size(); i++)
 	this->relabeling(newlabels, oldlabels.actions[i]);
 
     return *this;
@@ -865,13 +865,12 @@ Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
 Lts& Lts::hiding(const SetValue& s, bool interface)
 {
     set<int> new_alphabet;
-    int action;
 
     terminal_sets_computed = false;
 
     /* Update the alphabet. */
     if (interface) {
-	for (int i=0; i<s.actions.size(); i++) {
+	for (unsigned int i=0; i<s.actions.size(); i++) {
 	    /* The action s.actions[i] can select multiple alphabet
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
@@ -888,7 +887,7 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
 	}
     } else {
 	new_alphabet = alphabet;
-	for (int i=0; i<s.actions.size(); i++) {
+	for (unsigned int i=0; i<s.actions.size(); i++) {
 	    /* The action s.actions[i] can hide multiple alphabet elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
@@ -906,8 +905,8 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
     alphabet = new_alphabet;
 
     /* Update the edges actions. */
-    for (int i=0; i<nodes.size(); i++)
-	for (int j=0; j<nodes[i].children.size(); j++)
+    for (unsigned int i=0; i<nodes.size(); i++)
+	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    if (!alphabet.count(nodes[i].children[j].action))
 		/* We are sure that atp->lookup("tau") == 0. */
 		nodes[i].children[j].action = 0;
@@ -917,14 +916,13 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
 
 Lts& Lts::priority(const SetValue& s, bool low)
 {
-    int action;
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
     vector<LtsNode> new_nodes(nodes.size());
 
     terminal_sets_computed = false;
 
-    for (int i=0; i<s.actions.size(); i++) {
+    for (unsigned int i=0; i<s.actions.size(); i++) {
 	    /* The action s.actions[i] can select multiple alphabet
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
@@ -940,11 +938,11 @@ Lts& Lts::priority(const SetValue& s, bool low)
 	    }
     }
 
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	vector<Edge> new_children;
 	bool found = false;
 
-	for (int j=0; j<nodes[i].children.size(); j++) 
+	for (unsigned int j=0; j<nodes[i].children.size(); j++) 
 	    if (priority_actions.count(nodes[i].children[j].action)
 							    ^ low_int) {
 		new_children.push_back(nodes[i].children[j]);
@@ -974,8 +972,8 @@ Lts& Lts::property()
     terminal_sets_computed = false;
 
     /* Look for the ERROR state. If there is no ERROR state, create one. */
-    e.dest = -1;
-    for (int i=0; i<nodes.size(); i++) {
+    e.dest = ~0U;
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	switch (nodes[i].type) {
 	    case LtsNode::Error:
 		e.dest = i;
@@ -986,7 +984,7 @@ Lts& Lts::property()
 		break;
 	}
     }
-    if (e.dest == -1) {
+    if (e.dest == ~0U) {
 	nodes.push_back(LtsNode());
 	nodes.back().type = LtsNode::Error;
 	e.dest = nodes.size() - 1;
@@ -995,10 +993,10 @@ Lts& Lts::property()
     /* For each node different from the ERROR node, consider all the actions
        in the alphabet that don't label an edge outgoing from the node.
        For such actions, create an outgoing edge to the ERROR state. */
-    for (int i=0; i<nodes.size(); i++)
+    for (unsigned int i=0; i<nodes.size(); i++)
 	if (i != e.dest) {
 	    set<int> to_error = alphabet;
-	    for (int j=0; j<nodes[i].children.size(); j++)
+	    for (unsigned int j=0; j<nodes[i].children.size(); j++)
 		to_error.erase(nodes[i].children[j].action);
 	    for (set<int>::iterator it=to_error.begin();
 					it!=to_error.end(); it++) {
@@ -1015,12 +1013,12 @@ int Lts::progress(const string& progress_name, const SetValue& s)
 {
     terminalSets();
 
-    for (int i=0; i<terminal_sets.size(); i++) {
+    for (unsigned int i=0; i<terminal_sets.size(); i++) {
 	TerminalSet& ts = terminal_sets[i];
 	bool violation = true;
 	/* There is a progress violation for the set 's' if the terminal set
 	   'ts' does not contain any action in 's'. */
-	for (int j=0; j<s.actions.size(); j++)
+	for (unsigned int j=0; j<s.actions.size(); j++)
 	    if(ts.actions.count(atp->lookup(s.actions[j]))) {
 		violation = false;
 		break;
@@ -1030,7 +1028,7 @@ int Lts::progress(const string& progress_name, const SetValue& s)
 	    cout << "Progress violation detected for process " << name
 		<< " and progress property " << progress_name << ":\n";
 	    cout << "	Trace to violation: ";
-	    for (int j=0; j<ts.trace.size(); j++)
+	    for (unsigned int j=0; j<ts.trace.size(); j++)
 		cout << ati(ts.trace[j]) << "-> ";
 	    cout << "\n";
 	    cout << "	Actions in terminal set: {";
@@ -1057,7 +1055,7 @@ static void graphvizVisitFunction(int state, const struct LtsNode& node,
     OutputData * gvdp = static_cast<OutputData *>(opaque);
     ActionsTable * atp = gvdp->atp;
 
-    for (int i=0; i<node.children.size(); i++)
+    for (unsigned int i=0; i<node.children.size(); i++)
 	(*(gvdp->fsptr)) << state << " -> " << node.children[i].dest
 	    << " [label = \"" << ati(node.children[i].action) << "\"];\n";
 }
@@ -1072,7 +1070,7 @@ void Lts::graphvizOutput(const char * filename) const
     fout << "digraph G {\n";
     fout << "rankdir = LR;\n";
     //fout << "ratio = 1.0;\n";
-    for (int i=0; i<nodes.size(); i++) {
+    for (unsigned int i=0; i<nodes.size(); i++) {
 	switch (nodes[i].type) {
 	    case LtsNode::Normal:
 		fout << i
@@ -1120,12 +1118,12 @@ void Lts::simulate() const
     vector<int> trace;
 
     for (;;) {
-	int i;
+	unsigned int i;
 	string choice;
-	set<int> elegible_actions_set;
-	vector<int> elegible_actions;
+	set<unsigned int> elegible_actions_set;
+	vector<unsigned int> elegible_actions;
 	char * dummy;
-	long idx;
+	unsigned long idx;
 	vector<int> dest;
 
 	/* Build the elegible actions as a set in order to remove 
@@ -1135,7 +1133,7 @@ void Lts::simulate() const
 	}
 
 	/* Build a vector<int> from the set<int>. */
-	for (set<int>::iterator it = elegible_actions_set.begin();
+	for (set<unsigned int>::iterator it = elegible_actions_set.begin();
 		it != elegible_actions_set.end(); it++) {
 	    elegible_actions.push_back(*it);
 	}
@@ -1159,7 +1157,7 @@ choose:
 	if (choice.size() && choice[0] == 'q')
 	    return;
 
-	idx = strtol(choice.c_str(), &dummy, 10);
+	idx = strtoul(choice.c_str(), &dummy, 10);
 	if (idx < 1 || idx > elegible_actions.size() || *dummy != '\0') {
 	    cout << "        Invalid choice\n\n";
 	    goto choose;
@@ -1247,7 +1245,7 @@ Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)
 void LtsComposition::print() const
 {
     cout << "LtsComposition {\n";
-    for (int i=0; i<lts.size(); i++)
+    for (unsigned int i=0; i<lts.size(); i++)
 	if (lts[i])
 	    lts[i]->print();
     cout << "}\n";
@@ -1258,7 +1256,7 @@ SymbolValue * LtsComposition::clone() const
     LtsComposition * lc = new LtsComposition;
 
     lc->lts.resize(lts.size());
-    for (int i=0; i<lts.size(); i++)
+    for (unsigned int i=0; i<lts.size(); i++)
 	if (lts[i])
 	    lc->lts[i] = static_cast<class Lts *>(lts[i]->clone());
 	else

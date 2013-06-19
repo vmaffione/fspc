@@ -1,5 +1,7 @@
 CC=g++
-CFLAGS=-g -Wall
+DEBUG=-g
+CFLAGS=$(DEBUG) -Wall
+CXXFLAGS=$(DEBUG) -Wall
 
 VER=1.0
 
@@ -14,7 +16,7 @@ REPORT=
 all: fspcc
 
 fspcc: $(OBJS)
-	$(CC) -g $(OBJS) -o fspcc
+	$(CC) $(CFLAGS) $(OBJS) -o fspcc
 
 fspcc.o: symbols_table.hpp lts.cpp interface.hpp
 
@@ -22,23 +24,23 @@ symbols_table.o: symbols_table.hpp symbols_table.cpp
 
 strings_set.o: strings_set.hpp strings_set.cpp
 
-lts.o: lts.hpp symbols_table.hpp
+lts.o: lts.hpp symbols_table.hpp parser.hpp
 
 context.o: context.hpp symbols_table.hpp
 
 parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o interface.hpp circular_buffer.hpp
 
-translator.o: translator.hpp
+translator.o: translator.hpp parser.hpp
 
-utils.o: utils.hpp
+utils.o: utils.hpp parser.hpp
 
-callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp
+callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp parser.hpp
 
 circular_buffer.o: circular_buffer.hpp
 
 serializer.o: serializer.hpp
 
-shell.o: shell.hpp lts.hpp
+shell.o: shell.hpp lts.hpp parser.hpp
 
 parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp
@@ -46,7 +48,7 @@ parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp
-	$(CC) -c scanner.cpp
+	$(CC) $(DEBUG) -c scanner.cpp
 
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex

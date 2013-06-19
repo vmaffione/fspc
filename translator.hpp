@@ -141,7 +141,8 @@ struct FspCompiler {
 			    parametric(new ParametricProcess), tr(*this) { }
 
     ~FspCompiler() {
-	delete parametric;
+	if (parametric)
+	    delete parametric;
     }
 };
 
