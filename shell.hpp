@@ -35,6 +35,7 @@ class Shell {
 	map<string, const char*> help_map;
 	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args);
 	map<string, ShellCmdFunc> cmd_map;
+	istream& in;
 
 	void ls(const vector<string> &args);
 	void safety(const vector<string> &args);
@@ -46,7 +47,7 @@ class Shell {
 	void help(const vector<string> &args);
 
     public:
-	Shell(FspCompiler &cr);
+	Shell(FspCompiler& cr, istream& inr);
 	int run();
 };
 

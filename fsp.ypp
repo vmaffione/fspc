@@ -1778,7 +1778,7 @@ int parser(const CompilerOptions& co)
 
     /* Run the interactive shell if the user asked for that. */
     if (co.shell) {
-	return Shell(c).run();
+	return Shell(c, std::cin).run();
     }
 
     return 0;

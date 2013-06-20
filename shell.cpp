@@ -26,7 +26,7 @@
 #include "lts.hpp"
 
 
-Shell::Shell(FspCompiler& cr) : c(cr)
+Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
 {
     /* Initialize the help map. */
     help_map["ls"] = "ls: show a list of compiled FSPs";
