@@ -21,6 +21,9 @@
 #ifndef __CIRCULAR__BUFFER__HH
 #define __CIRCULAR__BUFFER__HH
 
+#include "parser.hpp"
+
+
 class CircularBuffer {
     static const int Size = 30;
 
@@ -37,6 +40,10 @@ class CircularBuffer {
     void flush();
     void print(int col) const;
     void print() const;
+
+    void location_extend(struct YYLTYPE& loc, int len);
+    void location_step(struct YYLTYPE& loc);
+    void location_lines(struct YYLTYPE& loc, int num);
 };
 
 #endif

@@ -42,25 +42,11 @@ using namespace std;
 /* The following is executed before each rule's action. */
 #define YY_USER_ACTION \
     do { \
-	yylloc.last_column += yyleng; \
+	last_tokens.location_extend(yylloc, yyleng); \
 	last_tokens.insert(yytext, yyleng); \
     } while (0);
 
 
-/* Initialize LOC. */
-# define LOCATION_RESET(Loc)                  \
-  (Loc).first_column = (Loc).first_line = 1;  \
-  (Loc).last_column =  (Loc).last_line = 1;
-
-/* Advance of NUM lines. */
-# define LOCATION_LINES(Loc, Num)             \
-  (Loc).last_column = 1;                      \
-  (Loc).last_line += Num;
-
-/* Restart: move the first cursor to the last position. */
-# define LOCATION_STEP(Loc)                   \
-  (Loc).first_column = (Loc).last_column;     \
-  (Loc).first_line = (Loc).last_line;
 /* ==============================================================
    ============================================================== */
 %}
@@ -89,7 +75,7 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
      verbatim at the beginning of yylex(). At each yylex() 
      invocation, therefore, we mark the current last position as the
      start of the next token.  */
-    LOCATION_STEP(yylloc);
+    last_tokens.location_step(yylloc);
 %}
 
 "/*" {
@@ -103,14 +89,15 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <COMMENTS>[\n]+ {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+    last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc);
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
 }
 
 <COMMENTS>. {
-    LOCATION_STEP(yylloc);
+    last_tokens.location_step(yylloc);
 }
 
 "//" {
@@ -120,7 +107,8 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <INLINECOMMENTS>[\n] {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+    last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc);
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
@@ -128,7 +116,7 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 }
 
 <INLINECOMMENTS>. {
-    LOCATION_STEP(yylloc);
+    last_tokens.location_step(yylloc);
 }
 
 
@@ -237,12 +225,13 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
 
 [ \t\r]+ {
     /* Eat up whitespaces, and keep tracking positions. */
-    LOCATION_STEP(yylloc);
+    last_tokens.location_step(yylloc);
 }
 
 [\n]+ {
     /* Update the line counter and step forward. */
-    LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+    last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc);
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
