@@ -30,6 +30,8 @@ struct CompilerOptions {
     bool progress;
     bool graphviz;
     bool shell;
+    bool script;
+    const char * script_file;
 
     static const int InputTypeFsp = 0;
     static const int InputTypeLts = 1;

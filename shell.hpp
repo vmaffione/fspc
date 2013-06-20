@@ -36,6 +36,9 @@ class Shell {
 	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args);
 	map<string, ShellCmdFunc> cmd_map;
 	istream& in;
+	bool interactive;  /* True if in is an interactive input. */
+
+	void common_init();
 
 	void ls(const vector<string> &args);
 	void safety(const vector<string> &args);
@@ -48,6 +51,7 @@ class Shell {
 
     public:
 	Shell(FspCompiler& cr, istream& inr);
+	Shell(FspCompiler& cr, ifstream& inr);
 	int run();
 };
 

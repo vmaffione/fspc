@@ -26,9 +26,10 @@
 #include "lts.hpp"
 
 
-Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
+void Shell::common_init()
 {
     /* Initialize the help map. */
+
     help_map["ls"] = "ls: show a list of compiled FSPs";
     help_map["safety"] = "safety [FSP_NAME]: run deadlock/error analysis on \
 the specified FSP or on every FSP";
@@ -53,6 +54,18 @@ specified FSP using GraphViz";
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["help"] = &Shell::help;
+}
+
+Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
+{
+    common_init();
+    interactive = true;
+}
+
+Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
+{
+    common_init();
+    interactive = false;
 }
 
 void Shell::ls(const vector<string> &args)
@@ -194,6 +207,12 @@ void Shell::see(const vector<string> &args)
     SymbolValue * svp;
     Lts * lts;
 
+    if (!interactive) {
+	// XXX do we really need this restriction ?
+	cerr << "Cannot use 'see' command in scripts\n";
+	return;
+    }
+
     if (!args.size()) {
 	cout << "Invalid command: try 'help'\n";
 	return;
@@ -255,11 +274,16 @@ int Shell::run()
 	vector<string> tokens;
 	map<string, ShellCmdFunc>::iterator it;
 
-	cout << "fspcc >> ";
-	cout.flush();
-	getline(cin, line);
-	if (cin.fail()) {
-	    cout << "Shell input error\n";
+	if (interactive) {
+	    cout << "fspcc >> ";
+	    cout.flush();
+	}
+	getline(in, line);
+	if (in.eof()) {
+	    return 0;
+	}
+	if (in.fail()) {
+	    cerr << "Shell input error\n";
 	    return -1;
 	}
 
@@ -280,7 +304,7 @@ int Shell::run()
 	    return 0;
 	it = cmd_map.find(token);
 	if (it == cmd_map.end()) {
-	    cout << "	Unrecognized command\n";
+	    cerr << "	Unrecognized command\n";
 	} else {
 	    ShellCmdFunc fp = it->second;
 

@@ -2,4 +2,3 @@
 [O] fix memory leaks
 [O] recursive sequential processes: const N=3 SEQ(I=1) = if (I<=N) then (act[I]-> SEQ(I+1);END) else END.
 [O] aggregate labels and edges when printing with graphviz
-[O] add scripting support

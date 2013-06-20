@@ -42,6 +42,7 @@ void help()
     cout << "	-g : Outputs a graphviz representation file of every FSP.\n";
     cout << "	-a : The same as '-d -p -g'\n";
     cout << "	-s : Run a LTS analysis interactive shell\n";
+    cout << "	-S : Run an LTS analysis script\n";
     cout << "	-h : Shows this help.\n";
 }
 
@@ -60,8 +61,9 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     co.progress = false;
     co.graphviz = false;
     co.shell = false;
+    co.script = false;
 
-    while ((ch = getopt(argc, argv, "i:l:o:adpghs")) != -1) {
+    while ((ch = getopt(argc, argv, "i:l:o:adpghsS:")) != -1) {
 	switch (ch) {
 	    default:
 		cout << "\n";
@@ -108,6 +110,11 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
 	    case 's':
 		co.shell = true;
+		break;
+
+	    case 'S':
+		co.script = true;
+		co.script_file = optarg;
 		break;
 	}
     }

@@ -1776,6 +1776,23 @@ int parser(const CompilerOptions& co)
     if (desp)
 	delete desp;
 
+    /* Run a LTS analysis script if the user asked for that. */
+    if (co.script) {
+	ifstream fin(co.script_file, ios::in);
+	int ret;
+
+	if (fin.fail()) {
+	    cerr << co.script_file << ": no such script file\n";
+	    exit(-1);
+	}
+
+	ret = Shell(c, fin).run();
+	fin.close();
+	if (ret) {
+	    return ret;
+	}
+    }
+
     /* Run the interactive shell if the user asked for that. */
     if (co.shell) {
 	return Shell(c, std::cin).run();
