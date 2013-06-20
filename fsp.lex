@@ -72,6 +72,7 @@ LowerCaseID	[_a-z][_a-zA-Z0-9]*
 UpperCaseID	[A-Z][_a-zA-Z0-9]*
 
 %x COMMENTS
+%x INLINECOMMENTS
 
 /* We don't want to take a standard yywrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
@@ -111,6 +112,25 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <COMMENTS>. {
     LOCATION_STEP(yylloc);
 }
+
+"//" {
+    BEGIN(INLINECOMMENTS);
+}
+
+<INLINECOMMENTS>[\n] {
+    /* When in comment state, throw away anything but keep
+       tracking locations. */
+    LOCATION_LINES(yylloc, yyleng); LOCATION_STEP(yylloc);
+
+    /* When reporting an error we want to see the last line only. */
+    last_tokens.flush();
+    BEGIN(INITIAL);
+}
+
+<INLINECOMMENTS>. {
+    LOCATION_STEP(yylloc);
+}
+
 
 {DIGIT}+ {
     yylval.int_value = atoi(yytext);
