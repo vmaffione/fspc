@@ -438,7 +438,7 @@ struct Callback_N_S : public Callback {
 
     Callback_N_S(FPT fp, const string& s) : cbp(fp), one(s) { }
     void * execute(FspTranslator &tr, vector<void *>& stack) {
-	return (*cbp)(tr, new string(one));
+	return (*cbp)(tr, &one);
     }
     void print() const { cout << "N_S" << "\n";}
     bool is_void() const { return true; }

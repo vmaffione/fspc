@@ -67,22 +67,13 @@ struct ContextsSet {
 struct ContextsSetStack {
     vector<ContextsSet *> stack;
 
-    ContextsSetStack() { }
-    void push(ContextsSet * ctxset) {
-	stack.push_back(ctxset);
-    }
-    void push_clone() {
-	stack.push_back(new ContextsSet(*stack.back()));
-    }
-    void update(ContextsSet * ctxset) {
-	delete stack.back();
-	stack.back() = ctxset;
-    }
-    void pop() {
-	delete stack.back();
-	stack.pop_back();
-    }
-    ContextsSet& top() { return *(stack.back()); }
+    void push(ContextsSet * ctxset);
+    void push_clone();
+    bool update(ContextsSet * ctxset);
+    bool pop();
+    ContextsSet& top();
+    ~ContextsSetStack();
 };
 
 #endif
+

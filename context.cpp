@@ -125,3 +125,41 @@ ContextsSet::~ContextsSet() {
 	delete s[i];
     }
 }
+
+
+/* ========================== ContextsSetStack =========================== */
+
+void ContextsSetStack::push(ContextsSet * ctxset) {
+    stack.push_back(ctxset);
+}
+
+void ContextsSetStack::push_clone() {
+    stack.push_back(new ContextsSet(*stack.back()));
+}
+
+bool ContextsSetStack::update(ContextsSet * ctxset) {
+    if (!stack.size())
+	return false;
+
+    delete stack.back();
+    stack.back() = ctxset;
+
+    return true;
+}
+
+bool ContextsSetStack::pop() {
+    if (!stack.size())
+	return false;
+
+    delete stack.back();
+    stack.pop_back();
+
+    return true;
+}
+
+ContextsSet& ContextsSetStack::top() { return *(stack.back()); }
+
+ContextsSetStack::~ContextsSetStack() {
+    while (pop()) { }
+}
+

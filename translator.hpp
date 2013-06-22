@@ -111,6 +111,9 @@ struct FspTranslator {
     void init_fakenode();
 
     void print_fakenode_forest();
+
+    ~FspTranslator() {
+    }
 };
 
 

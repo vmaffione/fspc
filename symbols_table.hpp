@@ -44,6 +44,8 @@ struct ActionsTable {
     int insert(const string& s);
     int lookup(const string& s) const;
     void print() const;
+
+    ~ActionsTable() { table.clear(); reverse.clear(); }
 };
 
 

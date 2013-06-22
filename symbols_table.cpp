@@ -235,7 +235,7 @@ SetValue& SetValue::indexize(int index)
     string suffix = "[" + sstr.str() + "]";
 
     for (unsigned int i=0; i<actions.size(); i++)
-	actions[i] += suffix;
+	actions[i] = actions[i] + suffix;
 
     return *this;
 }
