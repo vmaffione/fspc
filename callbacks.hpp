@@ -120,6 +120,8 @@ struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;
     virtual bool is_void() const { return false; }
     virtual void print() const = 0;
+
+    virtual ~Callback() { }
 };
 
 struct ParametricProcess: public SymbolValue {
@@ -131,6 +133,7 @@ struct ParametricProcess: public SymbolValue {
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }
+    ~ParametricProcess();
 };
 
 ParametricProcess* err_if_not_parametric(SymbolValue * svp);

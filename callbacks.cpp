@@ -112,6 +112,13 @@ void ParametricProcess::print() const
     cout << "   List of " << record.size() << " callbacks\n";
 }
 
+ParametricProcess::~ParametricProcess()
+{
+    for (unsigned int i=0; i<record.size(); i++)
+	if (record[i])
+	    delete record[i];
+}
+
 
 ParametricProcess* err_if_not_parametric(SymbolValue * svp,
 						const struct YYLTYPE& loc)
