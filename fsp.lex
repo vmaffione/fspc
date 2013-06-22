@@ -340,8 +340,11 @@ void InputBuffersStack::push(const char * buffer, int size)
        necessary to call it again. */
 }
 
-void InputBuffersStack::pop()
+bool InputBuffersStack::pop()
 {
+    if (!buffers.size())
+	return false;
+
     BufferInfo& bi = buffers.back();
 
     if (bi.type == BufferInfo::File) {
@@ -352,6 +355,13 @@ void InputBuffersStack::pop()
     assert(buffers.size());
     buffers.pop_back();
     yy_switch_to_buffer(buffers.back().yybs);
+
+    return true;
+}
+
+InputBuffersStack::~InputBuffersStack()
+{
+    while (pop()) { }
 }
 
 /* XXX Deprecated. */

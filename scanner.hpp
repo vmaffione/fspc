@@ -73,7 +73,8 @@ class InputBuffersStack {
   public:
     void push(const char * input_name);
     void push(const char * buffer, int size);
-    void pop();
+    bool pop();
+    ~InputBuffersStack();
 };
 
 #endif
