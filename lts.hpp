@@ -90,7 +90,7 @@ class Lts: public SymbolValue {
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
     int numTransitions() const { return ntr; }
-    int deadlockAnalysis() const;
+    int deadlockAnalysis(stringstream& ss) const;
     int terminalSets();
     bool isDeterministic() const;
     Lts& compose(const Lts& q);
@@ -102,19 +102,20 @@ class Lts: public SymbolValue {
     Lts& hiding(const SetValue& s, bool interface);
     Lts& priority(const SetValue& s, bool low);
     Lts& property();
-    int progress(const string& progress_name, const SetValue& s);
+    int progress(const string& progress_name, const SetValue& s,
+		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
-    void simulate() const;
-    void basic(const string& outfile) const;
+    void simulate(stringstream& ss) const;
+    void basic(const string& outfile, stringstream& ss) const;
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;
     void mergeAlphabetInto(set<int>& actions) const;
     void mergeAlphabetFrom(const set<int>& actions);
     int alphabetSize() const { return alphabet.size(); }
-    void printAlphabet() const;
+    void printAlphabet(stringstream& ss) const;
 
     /* Methods to implement because of the base class. */
     void print() const;

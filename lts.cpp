@@ -70,14 +70,14 @@ void Lts::mergeAlphabetFrom(const set<int>& actions)
     }
 }
 
-void Lts::printAlphabet() const
+void Lts::printAlphabet(stringstream& ss) const
 {
     set<int>::iterator it;
 
-    cout << "Alphabet: {";
+    ss << "Alphabet: {";
     for (it=alphabet.begin(); it != alphabet.end(); it++)    
-	cout << ati(*it) << ", ";
-    cout << "}\n";
+	ss << ati(*it) << ", ";
+    ss << "}\n";
 }
 
 Lts::Lts(int type, struct ActionsTable * p) : atp(p)
@@ -163,6 +163,8 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 }
 
 void Lts::print() const {
+    stringstream ss;
+
     atp->print();
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
@@ -171,7 +173,7 @@ void Lts::print() const {
 	    cout << "    " << ati(nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
-    printAlphabet();
+    printAlphabet(ss); cout << ss.str();
     cout << numStates() << " states, " << ntr << " transitions\n";
 }
 
@@ -336,7 +338,7 @@ Lts& Lts::compose(const Lts& q)
     return *this;
 }
 
-int Lts::deadlockAnalysis() const
+int Lts::deadlockAnalysis(stringstream& ss) const
 {
     int nd = 0;
     int state = 0;
@@ -386,7 +388,7 @@ int Lts::deadlockAnalysis() const
 		ed = "Deadlock";
 	    else
 		ed = "Property violation";
-	    cout << ed << " found for process " << name << ": state "
+	    ss << ed << " found for process " << name << ": state "
 			<< state << "\n";
 	    /* Starting from 'state', we follow the backpointers to build the
 	       trace to deadlock (in reverse order). */
@@ -396,10 +398,10 @@ int Lts::deadlockAnalysis() const
 		action_trace[j++] = actions[t];
 		t = back[t];
 	    }
-	    cout << "	Trace to " << ed << ": ";
+	    ss << "	Trace to " << ed << ": ";
 	    for (j--; j>=0; j--)
-		cout << ati(action_trace[j]) << "->";
-	    cout << "\n\n";
+		ss << ati(action_trace[j]) << "->";
+	    ss << "\n\n";
 	    nd++;
 	}
 	pop++; /* Pops 'state' from the queue */
@@ -1009,7 +1011,8 @@ Lts& Lts::property()
     return *this;
 }
 
-int Lts::progress(const string& progress_name, const SetValue& s)
+int Lts::progress(const string& progress_name, const SetValue& s,
+					    stringstream& ss)
 {
     terminalSets();
 
@@ -1112,7 +1115,7 @@ void Lts::print_trace(const vector<int>& trace) const
     cout << ati(trace[size-1]) << "\n";
 }
 
-void Lts::simulate() const
+void Lts::simulate(stringstream& ss) const
 {
     int state = 0;
     vector<int> trace;
@@ -1141,25 +1144,24 @@ void Lts::simulate() const
 	print_trace(trace);
 
 	if (elegible_actions.size() == 0) {
-	    cout << "    Simulation done.\n";
+	    ss << "    Simulation done.\n";
 	    break;
 	}
 
 choose:
-	cout << "    Elegible actions: \n";
+	ss << "    Elegible actions: \n";
 	for (i=0; i<elegible_actions.size(); i++) {
-	    cout << "	    (" << i+1 << ") "
+	    ss << "	    (" << i+1 << ") "
 		    << ati(elegible_actions[i]) << "\n";
 	}
-	cout << "    Your choice ('q' to quit): ";
-	cout.flush();
-	cin >> choice;
+	ss << "    Your choice ('q' to quit): ";
+	cin >> choice; //XXX to change
 	if (choice.size() && choice[0] == 'q')
 	    return;
 
 	idx = strtoul(choice.c_str(), &dummy, 10);
 	if (idx < 1 || idx > elegible_actions.size() || *dummy != '\0') {
-	    cout << "        Invalid choice\n\n";
+	    ss << "        Invalid choice\n\n";
 	    goto choose;
 	}
 	idx--;
@@ -1174,7 +1176,7 @@ choose:
 	assert(dest.size() > 0);
 	state = dest[0];
 
-	cout << "\n";
+	ss << "\n";
     }
 }
 
@@ -1211,7 +1213,7 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
     }
 }
 
-void Lts::basic(const string& outfile) const
+void Lts::basic(const string& outfile, stringstream& ss) const
 {
     fstream fout(outfile.c_str(), fstream::out);
     LtsVisitObject lvo;

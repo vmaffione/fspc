@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <unistd.h>	/* fork() */
 #include <sys/wait.h>	/* waitpid() */
+#include <ncurses.h>
 #include "shell.hpp"
 #include "lts.hpp"
 
@@ -60,6 +61,12 @@ Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = true;
+
+    /* Curses initialization. */
+    initscr();
+    raw();
+    noecho();
+    keypad(stdscr, TRUE);
 }
 
 Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
@@ -68,21 +75,36 @@ Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
     interactive = false;
 }
 
-void Shell::ls(const vector<string> &args)
+Shell::~Shell()
+{
+    if (interactive)
+	endwin();   /* Exit curses mode. */
+}
+
+void Shell::putsstream(stringstream& ss) {
+    string s = ss.str();
+
+    if (interactive)
+	printw("%s", s.c_str());
+    else
+	cout << s;
+}
+
+void Shell::ls(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
     Lts * lts;
 
-    cout << "Compiled FSPs:\n";
+    ss << "Compiled FSPs:\n";
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	lts = is_lts(it->second);
-	cout << "   " << it->first << ": " << lts->numStates()
+	ss << "   " << it->first << ": " << lts->numStates()
 	    << " states, " << lts->numTransitions() << " transitions, "
 	    << lts->alphabetSize() << " actions in alphabet\n";
     }
 }
 
-void Shell::safety(const vector<string> &args)
+void Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
     SymbolValue * svp;
@@ -91,22 +113,22 @@ void Shell::safety(const vector<string> &args)
     if (args.size()) {
 	/* Deadlock analysis on args[0]. */
 	if (!c.processes.lookup(args[0], svp)) {
-	    cout << "Process " << args[0] << " not found\n";
+	    ss << "Process " << args[0] << " not found\n";
 	} else {
 	    lts = is_lts(svp);
-	    lts->deadlockAnalysis();
+	    lts->deadlockAnalysis(ss);
 	}
     } else {
 	/* Deadlock analysis on every process. */
 	for (it=c.processes.table.begin();
 		    it!=c.processes.table.end(); it++) {
 	    lts = is_lts(it->second);
-	    lts->deadlockAnalysis();
+	    lts->deadlockAnalysis(ss);
 	}
     }
 }
 
-void Shell::progress(const vector<string> &args)
+void Shell::progress(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
@@ -117,13 +139,13 @@ void Shell::progress(const vector<string> &args)
     if (args.size()) {
 	/* Progress analysis on args[0]. */
 	if (!c.processes.lookup(args[0], svp)) {
-	    cout << "Process " << args[0] << " not found\n";
+	    ss << "Process " << args[0] << " not found\n";
 	} else {
 	    lts = is_lts(svp);
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
 		setvp = is_set(it->second);
-		lts->progress(it->first, *setvp);
+		lts->progress(it->first, *setvp, ss);
 	    }
 	}
     } else {
@@ -134,42 +156,42 @@ void Shell::progress(const vector<string> &args)
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
 		setvp = is_set(jt->second);
-		lts->progress(jt->first, *setvp);
+		lts->progress(jt->first, *setvp, ss);
 	    }
 	}
     }
 }
 
-void Shell::simulate(const vector<string> &args)
+void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
     Lts * lts;
 
     if (args.size()) {
 	if (!c.processes.lookup(args[0], svp)) {
-	    cout << "Process " << args[0] << " not found\n";
+	    ss << "Process " << args[0] << " not found\n";
 	} else {
 	    lts = is_lts(svp);
-	    lts->simulate();
+	    lts->simulate(ss);
 	}
     } else {
-	cout << "Invalid command: try 'help'\n";
+	ss << "Invalid command: try 'help'\n";
     }
 }
 
-void Shell::basic(const vector<string> &args)
+void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
     SymbolValue * svp;
     Lts * lts;
 
     if (!args.size()) {
-	cout << "Invalid command: try 'help'\n";
+	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
     if (!c.processes.lookup(args[0], svp)) {
-	cout << "Process " << args[0] << " not found\n";
+	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
@@ -180,58 +202,58 @@ void Shell::basic(const vector<string> &args)
     }
 
     lts = is_lts(svp);
-    lts->basic(outfile);
+    lts->basic(outfile, ss);
 }
 
-void Shell::alpha(const vector<string> &args)
+void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
     Lts * lts;
 
     if (!args.size()) {
-	cout << "Invalid command: try 'help'\n";
+	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
     if (!c.processes.lookup(args[0], svp)) {
-	cout << "Process " << args[0] << " not found\n";
+	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
     lts = is_lts(svp);
-    lts->printAlphabet();
+    lts->printAlphabet(ss);
 }
 
-void Shell::see(const vector<string> &args)
+void Shell::see(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
     Lts * lts;
 
     if (!interactive) {
 	// XXX do we really need this restriction ?
-	cerr << "Cannot use 'see' command in scripts\n";
+	ss << "Cannot use 'see' command in scripts\n";
 	return;
     }
 
     if (!args.size()) {
-	cout << "Invalid command: try 'help'\n";
+	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
     if (!c.processes.lookup(args[0], svp)) {
-	cout << "Process " << args[0] << " not found\n";
+	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
     lts = is_lts(svp);
     lts->graphvizOutput(".tmp.gv");
 
-    /* XXX UNIX-specific section. */
+    /* UNIX-specific section. */
     pid_t drawer = fork();
 
     switch (drawer) {
 	case -1:
-	    cout << "fork() error\n";
+	    ss << "fork() error\n";
 	    return;
 	    break;
 	case 0:
@@ -247,21 +269,46 @@ void Shell::see(const vector<string> &args)
     remove(".tmp.gv");
 }
 
-void Shell::help(const vector<string> &args)
+void Shell::help(const vector<string> &args, stringstream& ss)
 {
     map<string, const char *>::iterator it;
 
     if (args.size()) {
 	it = help_map.find(args[0]);
 	if (it == help_map.end()) {
-	    cout << "	No command named like that\n";
+	    ss << "	No command named like that\n";
 	    return;
 	}
-	cout << "   " << it->second << "\n";
+	ss << "   " << it->second << "\n";
     } else {
 	/* Show the help for every command. */
 	for (it=help_map.begin(); it!=help_map.end(); it++) {
-	    cout << "   " << it->second << "\n";
+	    ss << "   " << it->second << "\n";
+	}
+    }
+}
+
+void Shell::getline_ncurses(string& line)
+{
+    int ch;
+
+    line = "";
+    printw("fspcc >> ");
+    refresh();
+    for (;;) {
+	ch = getch();
+
+	switch (ch) {
+	    case '\r':
+	    case '\n':
+		printw("\n");
+		refresh();
+		return;
+
+	    default:
+		line += ch;
+		printw("%c", ch);
+		refresh();
 	}
     }
 }
@@ -273,12 +320,13 @@ int Shell::run()
 	string token;
 	vector<string> tokens;
 	map<string, ShellCmdFunc>::iterator it;
+	stringstream ss;
 
-	if (interactive) {
-	    cout << "fspcc >> ";
-	    cout.flush();
-	}
-	getline(in, line);
+	if (interactive)
+	    getline_ncurses(line);
+	else
+	    getline(in, line);
+
 	if (in.eof()) {
 	    return 0;
 	}
@@ -304,12 +352,13 @@ int Shell::run()
 	    return 0;
 	it = cmd_map.find(token);
 	if (it == cmd_map.end()) {
-	    cerr << "	Unrecognized command\n";
+	    ss << "	Unrecognized command\n";
 	} else {
 	    ShellCmdFunc fp = it->second;
 
-	    (this->*fp)(tokens);
+	    (this->*fp)(tokens, ss);
 	}
+	putsstream(ss);
     }
     
 }

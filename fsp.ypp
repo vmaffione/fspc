@@ -1671,6 +1671,7 @@ int parser(const CompilerOptions& co)
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
     int produceLts = (co.input_type != CompilerOptions::InputTypeLts);
+    stringstream ss;
 
     /* XXX For now there are three input selection methods, with two of
        them commented out. We still have to choose "the one". */
@@ -1741,7 +1742,7 @@ int parser(const CompilerOptions& co)
 	}
 
 	if (co.deadlock) {
-	    lts->deadlockAnalysis();
+	    lts->deadlockAnalysis(ss);
 	}
 
 	if (co.graphviz) {
@@ -1760,7 +1761,7 @@ int parser(const CompilerOptions& co)
 	    for (jt=c.processes.table.begin();
 		    jt!=c.processes.table.end(); jt++) {
 		lts = is_lts(jt->second);
-		lts->progress(it->first, *setvp);
+		lts->progress(it->first, *setvp, ss);
 	    }
 	}
 
@@ -1775,6 +1776,9 @@ int parser(const CompilerOptions& co)
 	delete serp;
     if (desp)
 	delete desp;
+
+    /* Flush out program output. */
+    cout << ss.str();
 
     /* Run a LTS analysis script if the user asked for that. */
     if (co.script) {

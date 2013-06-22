@@ -16,7 +16,7 @@ REPORT=
 all: fspcc
 
 fspcc: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o fspcc
+	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
 
 fspcc.o: symbols_table.hpp lts.cpp interface.hpp
 

@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <map>
 
 #include "translator.hpp"
@@ -33,26 +34,29 @@ using namespace std;
 class Shell {
 	FspCompiler& c;
 	map<string, const char*> help_map;
-	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args);
+	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args, stringstream& ss);
 	map<string, ShellCmdFunc> cmd_map;
 	istream& in;
 	bool interactive;  /* True if in is an interactive input. */
 
 	void common_init();
+	void getline_ncurses(string& line);
+	void putsstream(stringstream& ss);
 
-	void ls(const vector<string> &args);
-	void safety(const vector<string> &args);
-	void progress(const vector<string> &args);
-	void simulate(const vector<string> &args);
-	void basic(const vector<string> &args);
-	void alpha(const vector<string> &args);
-	void see(const vector<string> &args);
-	void help(const vector<string> &args);
+	void ls(const vector<string> &args, stringstream& ss);
+	void safety(const vector<string> &args, stringstream& ss);
+	void progress(const vector<string> &args, stringstream& ss);
+	void simulate(const vector<string> &args, stringstream& ss);
+	void basic(const vector<string> &args, stringstream& ss);
+	void alpha(const vector<string> &args, stringstream& ss);
+	void see(const vector<string> &args, stringstream& ss);
+	void help(const vector<string> &args, stringstream& ss);
 
     public:
 	Shell(FspCompiler& cr, istream& inr);
 	Shell(FspCompiler& cr, ifstream& inr);
 	int run();
+	~Shell();
 };
 
 
