@@ -31,6 +31,15 @@
 using namespace std;
 
 
+struct NcursesState {
+	int frontier_y;
+	int frontier_x;
+
+    public:
+	NcursesState() : frontier_y(0), frontier_x(0) { }
+};
+
+
 class Shell {
 	FspCompiler& c;
 	map<string, const char*> help_map;
@@ -38,10 +47,11 @@ class Shell {
 	map<string, ShellCmdFunc> cmd_map;
 	istream& in;
 	bool interactive;  /* True if in is an interactive input. */
+	NcursesState ncs;
 
 	void common_init();
-	void getline_ncurses(string& line);
 	void putsstream(stringstream& ss);
+	void getline_ncurses(string& line);
 
 	void ls(const vector<string> &args, stringstream& ss);
 	void safety(const vector<string> &args, stringstream& ss);

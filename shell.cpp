@@ -64,9 +64,10 @@ Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
 
     /* Curses initialization. */
     initscr();
-    raw();
+    cbreak(); //raw();
     noecho();
     keypad(stdscr, TRUE);
+    scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
 Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
@@ -291,12 +292,27 @@ void Shell::help(const vector<string> &args, stringstream& ss)
 void Shell::getline_ncurses(string& line)
 {
     int ch;
+    int y, x;
+    int prompt_x, prompt_y;
+    int rows, cols;
+    int str_cursor = 0;
+    static const char * prompt = "fspcc >> ";
+
+    getmaxyx(stdscr, rows, cols);
+    printw(prompt);
+    refresh();
+    getyx(stdscr, prompt_y, prompt_x);
 
     line = "";
-    printw("fspcc >> ");
-    refresh();
     for (;;) {
 	ch = getch();
+	getyx(stdscr, y, x);
+	if (y > ncs.frontier_y) {
+	    ncs.frontier_y = y;
+	    ncs.frontier_x = 0;
+	}
+	if (y == ncs.frontier_y)
+	    ncs.frontier_x = max(ncs.frontier_x, x);
 
 	switch (ch) {
 	    case '\r':
@@ -305,12 +321,58 @@ void Shell::getline_ncurses(string& line)
 		refresh();
 		return;
 
+	    case KEY_UP:
+	    case KEY_DOWN:
+		/* Still not implemented. */
+		break;
+
+	    case KEY_LEFT:
+		if (y > prompt_y || x > prompt_x) {
+		    if (x)
+			move(y, x-1);
+		    else
+			move(y-1, cols-1);
+		    str_cursor--;
+		}
+		break;
+
+	    case KEY_RIGHT:
+		if (y < ncs.frontier_y || x < ncs.frontier_x) {
+		    if (x < cols-1)
+			move(y, x+1);
+		    else
+			move(y+1, 0);
+		    str_cursor++;
+		}
+		break;
+
+	    case KEY_HOME:
+		move(prompt_y, prompt_x);
+		str_cursor = 0;
+		break;
+
+	    case KEY_END:
+		move(ncs.frontier_y, ncs.frontier_x);
+		str_cursor = line.size();
+		break;
+
+	    case KEY_DC:    /* Canc */
+		/* TODO implement */
+		break;
+
+	    case 127:	/* Backspace. */
+		break;
+
 	    default:
 		line += ch;
-		printw("%c", ch);
-		refresh();
+		str_cursor++;
+		//printw("%c", ch);
+		printw("%d", ch);
 	}
+	refresh();
     }
+
+    assert(rows < 10000);
 }
 
 int Shell::run()
