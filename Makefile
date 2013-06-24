@@ -18,13 +18,13 @@ all: fspcc
 fspcc: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
 
-fspcc.o: symbols_table.hpp lts.cpp interface.hpp
+fspcc.o: symbols_table.hpp lts.cpp interface.hpp parser.hpp
 
 symbols_table.o: symbols_table.hpp symbols_table.cpp
 
 strings_set.o: strings_set.hpp strings_set.cpp
 
-lts.o: lts.hpp symbols_table.hpp parser.hpp
+lts.o: lts.hpp symbols_table.hpp parser.hpp shell.hpp
 
 context.o: context.hpp symbols_table.hpp
 

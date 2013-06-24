@@ -29,6 +29,7 @@
 #include <assert.h>
 
 #include "symbols_table.hpp"
+#include "shell.hpp"
 
 using namespace std;
 
@@ -75,7 +76,7 @@ class Lts: public SymbolValue {
 
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
-    void print_trace(const vector<int>& trace) const;
+    void print_trace(const vector<int>& trace, stringstream& ss) const;
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
     friend class Serializer;
@@ -107,7 +108,7 @@ class Lts: public SymbolValue {
     void visit(const struct LtsVisitObject&) const;
     ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
-    void simulate(stringstream& ss) const;
+    void simulate(Shell& sh) const;
     void basic(const string& outfile, stringstream& ss) const;
 
     void updateAlphabet(int action);

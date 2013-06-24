@@ -1100,23 +1100,24 @@ void Lts::graphvizOutput(const char * filename) const
     fout.close();
 }
 
-void Lts::print_trace(const vector<int>& trace) const
+void Lts::print_trace(const vector<int>& trace, stringstream& ss) const
 {
     int size = trace.size();
 
     if (!size)
 	return;
 
-    cout << "    Current trace:\n";
-    cout << "        ";
+    ss << "    Current trace:\n";
+    ss << "        ";
     for (int i=0; i<size-1; i++) {
-	cout << ati(trace[i]) << " -> ";
+	ss << ati(trace[i]) << " -> ";
     }
-    cout << ati(trace[size-1]) << "\n";
+    ss << ati(trace[size-1]) << "\n";
 }
 
-void Lts::simulate(stringstream& ss) const
+void Lts::simulate(Shell& sh) const
 {
+    stringstream ss;
     int state = 0;
     vector<int> trace;
 
@@ -1141,10 +1142,11 @@ void Lts::simulate(stringstream& ss) const
 	    elegible_actions.push_back(*it);
 	}
 
-	print_trace(trace);
+	print_trace(trace, ss);
 
 	if (elegible_actions.size() == 0) {
 	    ss << "    Simulation done.\n";
+	    sh.putsstream(ss, true); ss.clear();
 	    break;
 	}
 
@@ -1155,7 +1157,8 @@ choose:
 		    << ati(elegible_actions[i]) << "\n";
 	}
 	ss << "    Your choice ('q' to quit): ";
-	cin >> choice; //XXX to change
+	sh.putsstream(ss, false); ss.clear();
+	sh.readline(choice);
 	if (choice.size() && choice[0] == 'q')
 	    return;
 
@@ -1177,6 +1180,7 @@ choose:
 	state = dest[0];
 
 	ss << "\n";
+	sh.putsstream(ss, true); ss.clear();
     }
 }
 
