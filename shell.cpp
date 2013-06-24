@@ -77,6 +77,13 @@ Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
     cbreak(); //raw();
     noecho();
     keypad(stdscr, TRUE);
+
+    start_color();
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_CYAN, COLOR_BLACK);
+    init_pair(4, COLOR_BLUE, COLOR_BLACK);
+
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
@@ -187,7 +194,9 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 
     getmaxyx(stdscr, rows, cols);
     if (prompt) {
+	attron(COLOR_PAIR(2));
 	printw(prompt);
+	attroff(COLOR_PAIR(2));
 	refresh();
     }
     getyx(stdscr, prompt_y, prompt_x);
