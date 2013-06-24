@@ -20,6 +20,7 @@
 
 #include <sstream>
 #include <cstdio>
+#include <cctype>	/* isprint() */
 #include <unistd.h>	/* fork() */
 #include <sys/wait.h>	/* waitpid() */
 #include <ncurses.h>
@@ -293,7 +294,9 @@ void Shell::getline_ncurses(string& line)
 {
     int ch;
     int y, x;
-    int prompt_x, prompt_y;
+    int prompt_y, prompt_x;
+    int frontier_y, frontier_x;
+    int tmp_y, tmp_x;
     int rows, cols;
     int str_cursor = 0;
     static const char * prompt = "fspcc >> ";
@@ -302,21 +305,18 @@ void Shell::getline_ncurses(string& line)
     printw(prompt);
     refresh();
     getyx(stdscr, prompt_y, prompt_x);
+    frontier_y = prompt_y;
+    frontier_x = prompt_x;
 
     line = "";
     for (;;) {
 	ch = getch();
 	getyx(stdscr, y, x);
-	if (y > ncs.frontier_y) {
-	    ncs.frontier_y = y;
-	    ncs.frontier_x = 0;
-	}
-	if (y == ncs.frontier_y)
-	    ncs.frontier_x = max(ncs.frontier_x, x);
 
 	switch (ch) {
 	    case '\r':
 	    case '\n':
+		move(frontier_y, frontier_x);
 		printw("\n");
 		refresh();
 		return;
@@ -328,20 +328,26 @@ void Shell::getline_ncurses(string& line)
 
 	    case KEY_LEFT:
 		if (y > prompt_y || x > prompt_x) {
-		    if (x)
-			move(y, x-1);
-		    else
-			move(y-1, cols-1);
+		    if (x) {
+			x--;
+		    } else {
+			y--;
+			x = cols-1;
+		    }
+		    move(y, x);
 		    str_cursor--;
 		}
 		break;
 
 	    case KEY_RIGHT:
-		if (y < ncs.frontier_y || x < ncs.frontier_x) {
-		    if (x < cols-1)
-			move(y, x+1);
-		    else
-			move(y+1, 0);
+		if (y < frontier_y || x < frontier_x) {
+		    if (x == cols-1) {
+			x = 0;
+			y++;
+		    } else {
+			x++;
+		    }
+		    move(y, x);
 		    str_cursor++;
 		}
 		break;
@@ -352,22 +358,87 @@ void Shell::getline_ncurses(string& line)
 		break;
 
 	    case KEY_END:
-		move(ncs.frontier_y, ncs.frontier_x);
+		move(frontier_y, frontier_x);
 		str_cursor = line.size();
 		break;
 
-	    case KEY_DC:    /* Canc */
-		/* TODO implement */
-		break;
-
 	    case 127:	/* Backspace. */
+		if (str_cursor) {
+		    /* Compute the next cursor position. */
+		    if (x) {
+			x--;
+		    } else {
+			y--;
+			x = cols-1;
+		    }
+		    str_cursor--;
+		    /* Use the same implementation of KEY_DC. */
+		} else break;
+
+	    case KEY_DC:    /* Canc */
+		if (line.size()) {
+		    line.erase(str_cursor, 1);
+
+		    /* Update the frontier. */
+		    if (frontier_x) {
+			frontier_x--;
+		    } else {
+			frontier_x = cols-1;
+			frontier_y--;
+		    }
+
+		    /* Reflush the command string. */
+		    move(prompt_y, prompt_x);
+		    printw("%s", line.c_str());
+
+		    /* Clear up to the end to the line, in order to remove
+		       old trailing character (they have been shifted). */
+		    clrtoeol();
+
+		    /* Restore the cursor position. */
+		    move(y, x);
+		}
 		break;
 
 	    default:
-		line += ch;
-		str_cursor++;
-		//printw("%c", ch);
-		printw("%d", ch);
+		if (isprint(ch)) {
+		    /* Insert a character in the command string at the
+		       current cursor position. */
+		    line.insert(str_cursor, 1, static_cast<char>(ch));
+
+		    /* Compute the new cursor position. */
+		    if (x == cols-1) {
+			x = 0;
+			if (y < rows-1)
+			    y++;
+			else {
+			    prompt_y--;
+			    //printw();
+			    // TODO implement autoscroll??
+			}
+		    } else {
+			x++;
+		    }
+		    str_cursor++;
+
+		    /* Reflush the whole command string. */
+		    move(prompt_y, prompt_x);
+		    printw("%s", line.c_str());
+
+		    /* Update the frontier. */
+		    getyx(stdscr, tmp_y, tmp_x);
+		    if (tmp_y > frontier_y) {
+			frontier_y = tmp_y;
+			frontier_x = 0;
+		    }
+		    if (tmp_y == frontier_y)
+			frontier_x = max(frontier_x, tmp_x);
+
+		    /* Restore the cursor position. */
+		    move(y, x);
+		} else {
+		    printw("??%d??", ch);
+		}
 	}
 	refresh();
     }
