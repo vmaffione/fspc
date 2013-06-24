@@ -28,6 +28,15 @@
 #include "lts.hpp"
 
 
+
+#define DEBUG
+#ifdef DEBUG
+#define IFD(x)	(x)
+#else
+#define IFD(x)
+#endif
+
+
 void Shell::common_init()
 {
     /* Initialize the help map. */
@@ -317,7 +326,7 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		    /* Restore the cursor position. */
 		    move(y, x);
 		} else {
-		    printw("??%d??", ch);
+		    IFD(printw("??%d??", ch));
 		}
 	}
 	refresh();
