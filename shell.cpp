@@ -68,7 +68,7 @@ Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
     cbreak(); //raw();
     noecho();
     keypad(stdscr, TRUE);
-    scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
+    //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
 Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
@@ -83,13 +83,69 @@ Shell::~Shell()
 	endwin();   /* Exit curses mode. */
 }
 
-void Shell::putsstream(stringstream& ss) {
-    string s = ss.str();
+static void scroll_screen(int n, int y, int x)
+{
+    int rows, cols;
+    int r_i, c_i;
+    chtype ch;
 
-    if (interactive)
-	printw("%s", s.c_str());
-    else
-	cout << s;
+    getmaxyx(stdscr, rows, cols);
+    if (n >= rows)
+	return;
+
+    /* Shift everything n rows up. */
+    for (r_i=n; r_i<rows; r_i++) {
+	for (c_i=0; c_i<cols; c_i++) {
+	    ch = mvinch(r_i, c_i);
+	    mvaddch(r_i-n, c_i, ch);
+	}
+    }
+
+    /* Clear the last n rows. */
+    move(rows-n, 0);
+    clrtobot();
+
+    /* Move the cursor to the required position. */
+    move(y, x);
+    refresh();
+}
+
+void Shell::putsstream(stringstream& ss) {
+
+    if (interactive) {
+	string line;
+	int y, x;
+	int rows, cols;
+
+	getmaxyx(stdscr, rows, cols);
+
+	/* Split the stringstream content in lines (using '\n' as
+	   separator. */
+	while (getline(ss, line)) {
+	    int rows_required;
+
+	    /* Compute the number of rows that are necessary to print the
+	       line. */
+	    rows_required = line.size() / cols;
+	    if (line.size() % cols)
+		rows_required++;
+
+	    getyx(stdscr, y, x);
+	    /* If there is not enough empty rows in the screen, we scroll as
+	       many times as needed to make enough room, and move the
+	       cursor at the beginning of the first empty row after
+	       scrolling. */
+	    if (y + rows_required >= rows)
+		scroll_screen(y + rows_required - rows + 1,
+				rows - rows_required-1, 0);
+	    /* Finally print the line and a newline. */
+	    printw("%s\n", line.c_str());
+	    refresh();
+	}
+    }
+    else {
+	cout << ss.str();
+    }
 }
 
 void Shell::ls(const vector<string> &args, stringstream& ss)
@@ -317,6 +373,9 @@ void Shell::getline_ncurses(string& line)
 	    case '\r':
 	    case '\n':
 		move(frontier_y, frontier_x);
+		if (frontier_y == rows-1) {
+		    scroll_screen(1, frontier_y-1,frontier_x);
+		}
 		printw("\n");
 		refresh();
 		return;
@@ -391,9 +450,9 @@ void Shell::getline_ncurses(string& line)
 		    move(prompt_y, prompt_x);
 		    printw("%s", line.c_str());
 
-		    /* Clear up to the end to the line, in order to remove
+		    /* Clear up to the end of the screen, in order to remove
 		       old trailing character (they have been shifted). */
-		    clrtoeol();
+		    clrtobot();
 
 		    /* Restore the cursor position. */
 		    move(y, x);
@@ -409,12 +468,12 @@ void Shell::getline_ncurses(string& line)
 		    /* Compute the new cursor position. */
 		    if (x == cols-1) {
 			x = 0;
-			if (y < rows-1)
-			    y++;
-			else {
+			if (y == rows-1) {
 			    prompt_y--;
-			    //printw();
-			    // TODO implement autoscroll??
+			    scroll_screen(1, rows - 1, 0);
+			    frontier_y = rows - 2;
+			} else {
+			    y++;
 			}
 		    } else {
 			x++;
