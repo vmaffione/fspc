@@ -3,7 +3,7 @@ DEBUG=-g
 CFLAGS=$(DEBUG) -Wall
 CXXFLAGS=$(DEBUG) -Wall
 
-VER=1.0
+VER=1.1
 
 OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o serializer.o shell.o
 
@@ -70,7 +70,7 @@ aurlocal: fspcc-$(VER).tar.gz
 
 aur:
 	-rm fspcc-$(VER).tar.gz
-	wget "https://bitbucket.org/lisztinf/fspc/downloads/fspcc-$(VER).tar.gz"
+	wget "https://bitbucket.org/vmaffione/fspc/downloads/fspcc-$(VER).tar.gz"
 	python create_pkgbuild.py remote $(VER)
 
 fspcc-$(VER).tar.gz:

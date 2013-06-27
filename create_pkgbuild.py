@@ -13,7 +13,7 @@ archive = pkgname + '-' + pkgver + '.tar.gz'
 if local:
     url = 'http://127.0.0.1/$pkgname-$pkgver.tar.gz'
 else:
-    url = "https://bitbucket.org/lisztinf/fspc/downloads/fspcc-%s.tar.gz" % (ver, )
+    url = "https://bitbucket.org/vmaffione/fspc/downloads/fspcc-%s.tar.gz" % (ver, )
 
 # output of the PKGBUILD
 f = open("PKGBUILD", "w")
