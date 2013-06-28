@@ -57,7 +57,8 @@ Specifies an input file pathname containing FSP definitions to compile.
 .PP
 \fB\-o\fR \fIPATHNAME\fR
 .RS 3
-Specifies the output file pathname where compiled LTSs are stored.
+Specifies the output file pathname where compiled LTSs are stored. If this
+option is not specified, the default output file name is 'output.lts'.
 .RE
 .PP
 \fB\-l\fR \fIPATHNAME\fR
@@ -67,17 +68,23 @@ Specifies the input file pathname containing compiled LTSs.
 .PP
 \fB\-d\fR
 .RS 3
-Runs deadlock/error analysis on every compiled LTS.
+Runs deadlock/error analysis on every compiled LTS. A list of deadlocks/errors
+will be printed on the standard output. If there are no such problems, no
+output is produced.
 .RE
 .PP
 \fB\-p\fR
 .RS 3
-Runs all the specified progress checks on every compiled LTS.
+Runs all the specified progress checks on every compiled LTS. A list of
+progress violations will be printed on the standard output. If there are no
+such problems, no output is produced.
+
 .RE
 .PP
 \fB\-g\fR
 .RS 3
 Outputs a GraphViz representation file corrisponding to every LTS.
+For each process named 'P', a file called 'P.gv' is created.
 .RE
 .PP
 \fB\-a\fR
@@ -96,6 +103,47 @@ Runs an LTS analysis interactive shell. The shell is run after compilation
 Runs the LTS analysis script specified by the pathname. The script is
 run after the compilation (if any) but before invoking the interactive shell
 (when \fB\-s\fR is specified).
+.RE
+
+.SH EXAMPLES
+Here is a simple example of FSP input file (say in.fsp):
+.PP
+.RS 4
+P = (a->b->P|c->d->END).
+.br
+Q = (t[i:1..2]-> (when (i>1) u->Q | v->Q)).
+.br
+||C = (P || Q).
+.RE
+.PP
+Compile these FSP models and store the result into 'out.lts'
+.PP
+.RS 4
+fspcc -i in.fsp -o out.lts
+.RE
+.PP
+Now run all the analysis and produce GraphViz representations
+.PP
+.RS 4
+fspcc -a -l out.lts
+.RE
+.PP
+Alternatively, you can do the same thing with just one command
+.PP
+.RS 4
+fspcc -a -i in.fsp -o out.lts
+.RE
+.PP
+To launch an interactive shell
+.PP
+.RS 4
+fspcc -s -i in.fsp
+.RE
+.PP
+or, from a compiled LTS file
+.PP
+.RS 4
+fspcc -s -l in.fsp
 .RE
 
 

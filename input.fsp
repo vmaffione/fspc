@@ -4,11 +4,16 @@ set S = {x,y,z}
 
 // these are comments
 
+P = (a->b->P|c->d->END).
+Q = (t[i:1..2]-> (when (i>1) u->Q | v->Q)).
+||C = (P || Q).
+
+/*
 P(K=1)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
 K=(a->b[i:R]->END).
-
+*/
 
 /*
 P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
