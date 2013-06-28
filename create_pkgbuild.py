@@ -36,12 +36,24 @@ f.write('source=("%s")\n' % (url, ));
 ret = subprocess.check_output(["md5sum", archive])
 f.write('md5sums=(\'%s\')\n' % ( ret[0:32].decode('latin-1'), ))
 
+f.write('\nbuild() {\n'
+            '\tcd "$srcdir%s"\n'
+            '\tmake || return 1 \n'
+        '}\n' % (src, ));
 
-f.write('\nbuild() {\n\tcd "$srcdir%s"\n\tmake || return 1 \n}\n' % (src, ));
+f.write('\ncheck() {\n'
+            '\techo "nothing to check"\n'
+        '}\n');
 
-f.write('\ncheck() {\n\techo "nothing to check"\n}\n');
-
-f.write('\npackage() {\n\tcd "$srcdir%s"\n\tmkdir -p "$pkgdir/usr/bin"\n\tcp fspcc "$pkgdir/usr/bin"\n\tcp ltsee "$pkgdir/usr/bin"\n}\n' % (src, ));
+f.write('\npackage() {\n'
+            '\tcd "$srcdir%s"\n'
+            '\tmkdir -p "$pkgdir/usr/bin"\n'
+            '\tcp fspcc "$pkgdir/usr/bin"\n'
+            '\tcp ltsee "$pkgdir/usr/bin"\n'
+            '\tmkdir -p "$pkgdir/usr/share/man/man1"\n'
+            '\tcp fspcc.1 "$pkgdir/usr/share/man/man1"\n'
+            '\tgzip "$pkgdir/usr/share/man/man1/fspcc.1"\n'
+        '}\n' % (src, ));
 
 f.write('# vim:set ts=2 sw=2 et:\n')
 f.close()

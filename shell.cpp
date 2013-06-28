@@ -48,7 +48,7 @@ the specified FSP or on every FSP";
 the specified FSP or on every FSP";
     help_map["simulate"] = "simulate FSP_NAME: run an interactive simulation of \
 the specified FSP";
-    help_map["basic"] = "basic FSP_NAME FILE_NAME: writes a basic process \
+    help_map["basic"] = "basic FSP_NAME FILE_NAME: write a basic process \
 description of the specified FSP into the specified output file";
     help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
 FSP";
