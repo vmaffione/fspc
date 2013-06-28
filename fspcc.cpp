@@ -33,7 +33,7 @@ using namespace std;
 void help()
 {
     cout << "fspc - A Finite State Process compiler and LTS analisys tool.\n";
-    cout << "USAGE: fspc [-d] [-p] [-g] [-a] [-h] [-i FILE | -l FILE] [-o FILE]\n";
+    cout << "USAGE: fspc [-dpgasSh] [-i FILE | -l FILE] [-o FILE]\n";
     cout << "	-i FILE : Specifies FILE as the input file containing FSP definitions.\n";
     cout << "	-l FILE : Specifies FILE as the input file containing compiled LTSs.\n";
     cout << "	-o FILE : Specifies the output FILE, e.g. the file that will contain the compiled LTSs.\n";
@@ -41,8 +41,8 @@ void help()
     cout << "	-p : Runs all the specified progress verifications on every FSP.\n";
     cout << "	-g : Outputs a graphviz representation file of every FSP.\n";
     cout << "	-a : The same as '-d -p -g'\n";
-    cout << "	-s : Run a LTS analysis interactive shell\n";
-    cout << "	-S : Run an LTS analysis script\n";
+    cout << "	-s : Runs an LTS analysis interactive shell\n";
+    cout << "	-S : Runs an LTS analysis script\n";
     cout << "	-h : Shows this help.\n";
 }
 
