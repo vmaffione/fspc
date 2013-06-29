@@ -67,7 +67,7 @@ specified FSP using GraphViz";
     cmd_map["help"] = &Shell::help;
 }
 
-Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
+Shell::Shell(fsp_driver& cr, istream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = true;
@@ -87,7 +87,7 @@ Shell::Shell(FspCompiler& cr, istream& inr) : c(cr), in(inr)
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
-Shell::Shell(FspCompiler& cr, ifstream& inr) : c(cr), in(inr)
+Shell::Shell(fsp_driver& cr, ifstream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = false;
@@ -356,7 +356,7 @@ void Shell::readline(string& line)
 void Shell::ls(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
-    Lts * lts;
+    yy::Lts * lts;
 
     ss << "Compiled FSPs:\n";
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
@@ -371,7 +371,7 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (args.size()) {
 	/* Deadlock analysis on args[0]. */
@@ -397,7 +397,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
     map<string, SymbolValue *>::iterator jt;
     SymbolValue * svp;
     SetValue * setvp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (args.size()) {
 	/* Progress analysis on args[0]. */
@@ -428,7 +428,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (args.size()) {
 	if (!c.processes.lookup(args[0], svp)) {
@@ -446,7 +446,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -471,7 +471,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -490,7 +490,7 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 void Shell::see(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (!interactive) {
 	// XXX do we really need this restriction ?

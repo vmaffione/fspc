@@ -40,10 +40,6 @@ class CircularBuffer {
     void flush();
     void print(int col) const;
     void print() const;
-
-    void location_extend(struct YYLTYPE& loc, int len);
-    void location_step(struct YYLTYPE& loc);
-    void location_lines(struct YYLTYPE& loc, int num);
 };
 
 #endif

@@ -29,9 +29,9 @@
 CircularBuffer last_tokens;
 
 
-void print_error_location(const struct YYLTYPE& loc, int col)
+void print_error_location(const yy::location& loc, int col)
 {
-    cout << "@ line " << loc.first_line << ", col " << loc.first_column
+    cout << "@ line " << loc.begin.line << ", col " << loc.begin.column
 	    << ":\n";
     if (col == -1)
 	last_tokens.print();
@@ -39,21 +39,21 @@ void print_error_location(const struct YYLTYPE& loc, int col)
 	last_tokens.print(col);
 }
 
-void syntax_error(const char * s, const struct YYLTYPE& loc)
+void syntax_error(const char * s, const yy::location& loc)
 {
     print_error_location(loc, -1);
     cout << s << endl;
     exit(-1);
 }
 
-void semantic_error(const stringstream& ss, const struct YYLTYPE& loc)
+void semantic_error(const stringstream& ss, const yy::location& loc)
 {
-    print_error_location(loc, loc.first_column);
+    print_error_location(loc, loc.begin.column);
     cout << "Semantic error: " << ss.str() << "\n";
     exit(-1);
 }
 
-ConstValue* err_if_not_const(SymbolValue * svp, const struct YYLTYPE& loc)
+ConstValue* err_if_not_const(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Const) {
 	stringstream errstream;
@@ -64,7 +64,7 @@ ConstValue* err_if_not_const(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<ConstValue *>(svp);
 }
 
-RangeValue* err_if_not_range(SymbolValue * svp, const struct YYLTYPE& loc)
+RangeValue* err_if_not_range(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Range) {
 	stringstream errstream;
@@ -75,7 +75,7 @@ RangeValue* err_if_not_range(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<RangeValue *>(svp);
 }
 
-SetValue* err_if_not_set(SymbolValue * svp, const struct YYLTYPE& loc)
+SetValue* err_if_not_set(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Set) {
 	stringstream errstream;
@@ -86,7 +86,7 @@ SetValue* err_if_not_set(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<SetValue *>(svp);
 }
 
-ProcessValue* err_if_not_process(SymbolValue * svp, const struct YYLTYPE& loc)
+ProcessValue* err_if_not_process(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Process) {
 	stringstream errstream;
@@ -97,7 +97,7 @@ ProcessValue* err_if_not_process(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<ProcessValue *>(svp);
 }
 
-ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const struct YYLTYPE& loc)
+ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::ProcnodePair) {
 	stringstream errstream;
@@ -108,7 +108,7 @@ ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const struct YYLTY
     return static_cast<ProcnodePairValue *>(svp);
 }
 
-ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const struct YYLTYPE& loc)
+ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Arguments) {
 	stringstream errstream;
@@ -119,7 +119,7 @@ ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const struct YYLTYPE& lo
     return static_cast<ArgumentsValue *>(svp);
 }
 
-RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const struct YYLTYPE& loc)
+RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Relabeling) {
 	stringstream errstream;
@@ -130,7 +130,7 @@ RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const struct YYLTYPE& 
     return static_cast<RelabelingValue *>(svp);
 }
 
-HidingValue* err_if_not_hiding(SymbolValue * svp, const struct YYLTYPE& loc)
+HidingValue* err_if_not_hiding(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Hiding) {
 	stringstream errstream;
@@ -141,7 +141,7 @@ HidingValue* err_if_not_hiding(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<HidingValue *>(svp);
 }
 
-PriorityValue* err_if_not_priority(SymbolValue * svp, const struct YYLTYPE& loc)
+PriorityValue* err_if_not_priority(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Priority) {
 	stringstream errstream;
@@ -152,7 +152,7 @@ PriorityValue* err_if_not_priority(SymbolValue * svp, const struct YYLTYPE& loc)
     return static_cast<PriorityValue *>(svp);
 }
 
-ProcessNode * err_if_not_procnode(ProcessBase * pbp, const struct YYLTYPE& loc)
+ProcessNode * err_if_not_procnode(ProcessBase * pbp, const yy::location& loc)
 {
     if (pbp->unresolved() || pbp->connected()) {
 	stringstream errstream;
@@ -163,7 +163,7 @@ ProcessNode * err_if_not_procnode(ProcessBase * pbp, const struct YYLTYPE& loc)
 }
 
 
-void err_if_not_const_svpvec(SvpVec * vp, const struct YYLTYPE& loc)
+void err_if_not_const_svpvec(SvpVec * vp, const yy::location& loc)
 {
     for (unsigned int c=0; c<vp->v.size(); c++)
 	err_if_not_const(vp->v[c], loc);

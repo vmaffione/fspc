@@ -23,11 +23,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
-#include "lts.hpp"
 
 using namespace std;
 
-#include "interface.hpp"
+#include "driver.hpp"
 
 
 void help()
@@ -209,12 +208,13 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
 int main (int argc, char ** argv)
 {
-    int ret;
+    fsp_driver driver;
     CompilerOptions co;
+    int ret;
     
     process_args(co, argc, argv);
 
-    ret = parser(co);
+    ret = driver.parse(co);
 
     return ret;
 }

@@ -1,24 +1,33 @@
-/*
- *  fspc top level data structures
- *
- *  Copyright (C) 2013  Vincenzo Maffione
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/* Inline utilities. */
+#include "utils.hpp"
+
+/* Context, ContextsSet and ContextsSetStack. */
+#include "context.hpp"
+
+/* Stuff from flex that bison needs to know about. */
+#include "scanner.hpp"
+
+/* Lts definitions and operations. */
+#include "lts.hpp"
+
+/* Callbacks. */
+#include "callbacks.hpp"
+
+/* Compiler options. */
+#include "interface.hpp"
+
+/* Serialization and deserialization support. */
+#include "serializer.hpp"
+
+/* Interactive shell */
+#include "shell.hpp"
+
+#include "driver.hpp"
+#include "parser.hpp"
 
 
-#include "translator.hpp"
+using namespace std;
+
 
 //#define DEBUG
 #ifdef DEBUG
@@ -27,6 +36,8 @@
 #define IFD(x)
 #endif
 
+
+/* ================================ Aliases ============================== */
 
 void Aliases::insert(const string& left, const string& right) {
     int left_index = -1;
@@ -150,6 +161,9 @@ void Aliases::print()
 	    IFD(cout << i << ": " << groups[i][j].name << ", " << groups[i][j].assigned << "\n");
 }
 
+
+/*============================== FspTranslator ============================*/
+
 void FspTranslator::init_fakenode() {
     vector<ProcessEdge> cv;
     struct ProcessEdge e;
@@ -179,5 +193,161 @@ void FspTranslator::print_fakenode_forest() {
     for (unsigned int i=0; i<fakenode.children.size(); i++)
 	if (fakenode.children[i].dest)
 	    fakenode.children[i].dest->print(&cr.actions);
+}
+
+
+/* ============================== fsp_driver ============================= */
+
+fsp_driver::fsp_driver() : actions("Global actions table"), tr(*this)
+{
+    trace_scanning = trace_parsing = false;
+    record_mode_on = 0;
+    parametric = new ParametricProcess;
+}
+
+fsp_driver::~fsp_driver ()
+{
+    if (parametric)
+	delete parametric;
+}
+
+int fsp_driver::parse(const CompilerOptions& co)
+{
+    Serializer * serp = NULL;
+    Deserializer * desp = NULL;
+    int produceLts = (co.input_type != CompilerOptions::InputTypeLts);
+    stringstream ss;
+
+    if (co.input_type == CompilerOptions::InputTypeFsp) {
+	/* Parse the FSP input file. */
+	scan_begin(co.input_file);
+	yy::fsp_parser parser(*this);
+	parser.set_debug_level(trace_parsing);
+	this->current_file = string(co.input_file);
+	parser.parse();
+	scan_end();
+
+	serp = new Serializer(co.output_file);
+    } else { /* Load the processes table from an LTS file. */
+	uint32_t nlts, nprogr;
+
+	desp = new Deserializer(co.input_file);
+
+	desp->actions_table(actions, 0);
+	desp->integer(nlts, 0);
+	for (uint32_t i=0; i<nlts; i++) {
+	    yy::Lts * lts = new yy::Lts(LtsNode::End, &actions);
+
+	    desp->lts(*lts, 0);
+	    /* Insert lts into the global 'processes' table. */
+	    if (!processes.insert(lts->name, lts)) {
+		assert(0);  //XXX Should be an invalid LTS file
+	    }
+	}
+
+	desp->integer(nprogr, 0);
+	for (uint32_t i=0; i<nprogr; i++) {
+	    SetValue * setvp = new SetValue;
+	    string name;
+
+	    desp->stl_string(name, 0);
+	    desp->set_value(*setvp, 0);
+	    if (!progresses.insert(name, setvp)) {
+		assert(0);
+	    }
+	}
+    }
+
+    /* Scan the 'processes' symbols table. For each process, output
+       the associated LTS and do the deadlock analysis. */
+    map<string, SymbolValue *>::iterator it;
+    map<string, SymbolValue *>::iterator jt;
+    yy::Lts * lts;
+    SetValue * setvp;    
+
+    if (produceLts) {
+	serp->actions_table(actions, 0);
+	serp->integer(processes.table.size(), 0);
+    }
+    for (it=processes.table.begin(); it!=processes.table.end(); it++) {
+	lts = is_lts(it->second);
+
+	/* We output an LTS file only if the input is not an LTS file. */
+	if (produceLts) {
+	    serp->lts(*lts, 0);
+	}
+
+	if (co.deadlock) {
+	    lts->deadlockAnalysis(ss);
+	}
+
+	if (co.graphviz) {
+	    lts->graphvizOutput((lts->name + ".gv").c_str());
+	}
+    }
+
+    if (produceLts) {
+	serp->integer(progresses.table.size(), 0);
+    }
+    /* Do each progress check against all the global processes. */
+    for (it=progresses.table.begin(); it!=progresses.table.end();
+	    it++) {
+	setvp = is_set(it->second);
+	if (co.progress) {
+	    for (jt=processes.table.begin();
+		    jt!=processes.table.end(); jt++) {
+		lts = is_lts(jt->second);
+		lts->progress(it->first, *setvp, ss);
+	    }
+	}
+
+	/* Output the property if the input is not an LTS file. */
+	if (produceLts) {
+	    serp->stl_string(it->first, 0);
+	    serp->set_value(*setvp, 0);
+	}
+    }
+
+    if (serp)
+	delete serp;
+    if (desp)
+	delete desp;
+
+    /* Flush out program output. */
+    cout << ss.str();
+
+    /* Run a LTS analysis script if the user asked for that. */
+    if (co.script) {
+	ifstream fin(co.script_file, ios::in);
+	int ret;
+
+	if (fin.fail()) {
+	    cerr << co.script_file << ": no such script file\n";
+	    exit(-1);
+	}
+
+	ret = Shell(*this, fin).run();
+	fin.close();
+	if (ret) {
+	    return ret;
+	}
+    }
+
+    /* Run the interactive shell if the user asked for that. */
+    if (co.shell) {
+	return Shell(*this, std::cin).run();
+    }
+
+    return 0;
+}
+
+void fsp_driver::error(const yy::location& l, const std::string& m)
+{
+    cerr << l << ": " << m << endl;
+}
+
+void fsp_driver::error(const std::string& m)
+{
+    cerr << m << endl;
 }
 

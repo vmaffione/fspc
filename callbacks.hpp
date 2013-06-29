@@ -21,7 +21,7 @@
 #ifndef __CALLBACKS__HH
 #define __CALLBACKS__HH
 
-#include "translator.hpp"
+#include "driver.hpp"
 #include "symbols_table.hpp"
 
 struct FspTranslator;
@@ -40,7 +40,7 @@ SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__10(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
-class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
+class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
 void * callback__19(FspTranslator& tr, SvpVec * one); /*21*/
@@ -113,7 +113,7 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__85(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__86(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__87(FspTranslator& tr, SvpVec * one); /*17*/
-Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
+yy::Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
 					SvpVec * three, SvpVec * four); /*30*/
 
 struct Callback {
@@ -129,7 +129,7 @@ struct ParametricProcess: public SymbolValue {
     vector<int> parameter_defaults;
     vector<Callback *> record;
 
-    class Lts * replay(struct FspTranslator& tr, const vector<int>& values);
+    class yy::Lts * replay(struct FspTranslator& tr, const vector<int>& values);
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }
@@ -250,7 +250,7 @@ struct Callback_P_SV : public Callback {
 
 /*7*/
 struct Callback_P_SPVVV : public Callback {
-    typedef Lts * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *,
+    typedef yy::Lts * (*FPT)(FspTranslator&, string *, Pvec *, SvpVec *,
 							SvpVec *, SvpVec *);
     FPT cbp;
     string one;
@@ -604,7 +604,7 @@ struct Callback_V_VVV : public Callback {
 
 /*30*/
 struct Callback_V_SVVV : public Callback {
-    typedef Lts * (*FPT)(FspTranslator&, string *, SvpVec *, SvpVec *,
+    typedef yy::Lts * (*FPT)(FspTranslator&, string *, SvpVec *, SvpVec *,
 							    SvpVec *);
     FPT cbp;
     string one;

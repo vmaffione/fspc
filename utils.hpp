@@ -29,23 +29,23 @@ using namespace std;
 #include "symbols_table.hpp"
 #include "parser.hpp"
 
-void syntax_error(const char * s, const struct YYLTYPE& loc);
-void semantic_error(const stringstream& ss, const struct YYLTYPE& loc);
+void syntax_error(const char * s, const yy::location& loc);
+void semantic_error(const stringstream& ss, const yy::location& loc);
 
 /* Helper function used to get a ConstValue* from a SymbolValue*. If the
    object pointed is not a constant, a semantic error is issued. */
-ConstValue* err_if_not_const(SymbolValue * svp, const struct YYLTYPE& loc);
-RangeValue* err_if_not_range(SymbolValue * svp, const struct YYLTYPE& loc);
-SetValue* err_if_not_set(SymbolValue * svp, const struct YYLTYPE& loc);
-ProcessValue* err_if_not_process(SymbolValue * svp, const struct YYLTYPE& loc);
-ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const struct YYLTYPE& loc);
-ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const struct YYLTYPE& loc);
-RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const struct YYLTYPE& loc);
-HidingValue* err_if_not_hiding(SymbolValue * svp, const struct YYLTYPE& loc);
-PriorityValue* err_if_not_priority(SymbolValue * svp, const struct YYLTYPE& loc);
-ProcessNode * err_if_not_procnode(ProcessBase * pbp, const struct YYLTYPE& loc);
+ConstValue* err_if_not_const(SymbolValue * svp, const yy::location& loc);
+RangeValue* err_if_not_range(SymbolValue * svp, const yy::location& loc);
+SetValue* err_if_not_set(SymbolValue * svp, const yy::location& loc);
+ProcessValue* err_if_not_process(SymbolValue * svp, const yy::location& loc);
+ProcnodePairValue* err_if_not_procnodepair(SymbolValue * svp, const yy::location& loc);
+ArgumentsValue* err_if_not_arguments(SymbolValue * svp, const yy::location& loc);
+RelabelingValue* err_if_not_relabeling(SymbolValue * svp, const yy::location& loc);
+HidingValue* err_if_not_hiding(SymbolValue * svp, const yy::location& loc);
+PriorityValue* err_if_not_priority(SymbolValue * svp, const yy::location& loc);
+ProcessNode * err_if_not_procnode(ProcessBase * pbp, const yy::location& loc);
 
-void err_if_not_const_svpvec(SvpVec * vp, const struct YYLTYPE& loc);
+void err_if_not_const_svpvec(SvpVec * vp, const yy::location& loc);
 
 
 

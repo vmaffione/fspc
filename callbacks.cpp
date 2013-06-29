@@ -25,7 +25,7 @@
 #include "context.hpp"
 
 /* Definition of the FspTranslator class. */
-#include "translator.hpp"
+#include "driver.hpp"
 
 /* Lts definitions and operations. */
 #include "lts.hpp"
@@ -45,12 +45,12 @@
 
 /* Replay a sequence of callbacks under a local translator and a local
    stack. */
-Lts * ParametricProcess::replay(struct FspTranslator& tr,
+yy::Lts * ParametricProcess::replay(struct FspTranslator& tr,
 					    const vector<int>& values)
 {
     unsigned int i;
     vector<void *> stack;
-    FspCompiler& c = tr.cr;
+    fsp_driver& c = tr.cr;
     FspTranslator ltr(c);
     ConstValue * cvp;
     SymbolValue * svp;
@@ -101,7 +101,7 @@ Lts * ParametricProcess::replay(struct FspTranslator& tr,
 
     PROX(cout << "END Replay!!\n");
 
-    return static_cast<class Lts *>(stack.back());
+    return static_cast<class yy::Lts *>(stack.back());
 }
 
 void ParametricProcess::print() const
@@ -121,7 +121,7 @@ ParametricProcess::~ParametricProcess()
 
 
 ParametricProcess* err_if_not_parametric(SymbolValue * svp,
-						const struct YYLTYPE& loc)
+						const yy::location& loc)
 {
     if (svp->type() != SymbolValue::ParametricProcess) {
 	stringstream errstream;
@@ -292,8 +292,8 @@ SvpVec * indexize_svpvec(struct FspTranslator& tr, SvpVec * left,
 void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result)
 {
     int rank = -1;
-    Lts * merged = NULL;
-    Lts * lts;
+    yy::Lts * merged = NULL;
+    yy::Lts * lts;
 
     assert(result.v.size() == 0);
     assert(ltsv->v.size() == tr.current_contexts().size());
@@ -312,7 +312,7 @@ void merge_lts_by_rank(FspTranslator& tr, SvpVec * ltsv, SvpVec& result)
 
 void relabel_one(SymbolValue * r, SymbolValue * l)
 {
-    Lts * lts = is_lts(l);
+    yy::Lts * lts = is_lts(l);
     RelabelingValue * rlv = is_relabeling(r);
 
     /* Apply relabeling. */
@@ -338,8 +338,8 @@ void merge_ltscomp_by_rank(FspTranslator& tr, SvpVec * ltscompv,
 							    SvpVec& result)
 {
     int rank = -1;
-    LtsComposition * merged = NULL;
-    LtsComposition * lcp;
+    yy::LtsComposition * merged = NULL;
+    yy::LtsComposition * lcp;
 
     assert(result.v.size() == 0);
     assert(ltscompv->v.size() == tr.current_contexts().size());
@@ -674,7 +674,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
+class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three, SvpVec * four, SvpVec * five)
 {
     PROP("process_def --> ... process_body ...");
@@ -683,7 +683,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     ProcessBase * pbp = two->v[0];
     SymbolValue * svp;
     ProcessValue * pvp = NULL;
-    Lts * lts;
+    yy::Lts * lts;
 
     assert(two->v.size() == 1);
 
@@ -739,7 +739,7 @@ class Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
 
     /* Convert the collection of ProcessNodes in an Lts object. */
-    lts = new Lts(pvp->pnp, &tr.cr.actions);
+    lts = new yy::Lts(pvp->pnp, &tr.cr.actions);
 
     /* Note: We don't delete pnp, since this has been inserted in
        'local_processes', and will be thereafter deleted when the symbol
@@ -1680,12 +1680,12 @@ Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
 }
 
 
-Lts * get_parametric_lts(FspTranslator& tr, const string& name,
+yy::Lts * get_parametric_lts(FspTranslator& tr, const string& name,
 		    ParametricProcess * ppp, ArgumentsValue * avp)
 {
     string extension;
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
 
     if (avp->args.size() != ppp->parameter_names.size()) {
 	stringstream errstream;
@@ -1710,7 +1710,7 @@ Lts * get_parametric_lts(FspTranslator& tr, const string& name,
 	if (!tr.cr.processes.insert(name + extension, lts)) {
 	    assert(0);
 	}
-	lts = static_cast<Lts *>(lts->clone());
+	lts = static_cast<yy::Lts *>(lts->clone());
     }
 
     return lts;
@@ -1720,7 +1720,7 @@ Lts * get_parametric_lts(FspTranslator& tr, const string& name,
 Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 {
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
     ParametricProcess * ppp;
     Pvec * vp = new Pvec;
     SvpVec * argvp = two;
@@ -1911,7 +1911,7 @@ SvpVec * callback__76(FspTranslator& tr, SvpVec * one, SvpVec * two,
 					    SvpVec * three)
 {
     SvpVec * vp;
-    Lts * lts;
+    yy::Lts * lts;
 
     assert(three->v.size() == tr.current_contexts().size());
     if (two) {
@@ -1967,7 +1967,7 @@ SvpVec * callback__78(FspTranslator& tr, SvpVec * one, SvpVec * two,
 						    SvpVec * three)
 {
     SvpVec * vp;
-    LtsComposition * lcp;
+    yy::LtsComposition * lcp;
 
     /* Restore the contexts modified by labeling_OPT. */
     tr.css.pop();
@@ -2020,8 +2020,8 @@ SvpVec * callback__79(FspTranslator& tr, SvpVec * one, SvpVec * two,
 				SvpVec * three, SvpVec * four, SvpVec * five)
 {
     SvpVec * vp = new SvpVec;
-    LtsComposition * lcp;
-    Lts * lts;
+    yy::LtsComposition * lcp;
+    yy::Lts * lts;
 
     if (five) {
 	/* Apply relabeling. */
@@ -2060,7 +2060,7 @@ SvpVec * callback__80(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
     SvpVec * vp = new SvpVec;
     SetValue * setvp;
-    Lts * lts;
+    yy::Lts * lts;
 
     tr.css.pop();
     assert(one->v.size() == two->v.size());
@@ -2089,7 +2089,7 @@ SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
     if (!vp) {
 	vp = new SvpVec;
 	for (unsigned int k=0; k<one->v.size(); k++)
-	    vp->v.push_back(new Lts(LtsNode::Normal, &tr.cr.actions));
+	    vp->v.push_back(new yy::Lts(LtsNode::Normal, &tr.cr.actions));
     }
     for (unsigned int c=0; c<one->v.size(); c++) {
 	cvp = is_const(one->v[c]);
@@ -2107,12 +2107,12 @@ SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
 SvpVec * callback__82(FspTranslator& tr, SvpVec * one)
 {
     SvpVec * vp = new SvpVec;
-    LtsComposition * lcp;
-    Lts * lts;
+    yy::LtsComposition * lcp;
+    yy::Lts * lts;
 
     for (unsigned int c=0; c<one->v.size(); c++) {
 	lts = is_lts(one->v[c]);
-	lcp = new LtsComposition;
+	lcp = new yy::LtsComposition;
 	lcp->lts.push_back(lts);
 	vp->v.push_back(lcp);
     }
@@ -2124,8 +2124,8 @@ SvpVec * callback__82(FspTranslator& tr, SvpVec * one)
 
 SvpVec * callback__83(FspTranslator& tr, SvpVec * one, SvpVec * two)
 {
-    LtsComposition * lcp;
-    Lts * lts;
+    yy::LtsComposition * lcp;
+    yy::Lts * lts;
 
     assert(one->v.size() == two->v.size());
     for (unsigned int c=0; c<one->v.size(); c++) {
@@ -2142,7 +2142,7 @@ SvpVec * callback__83(FspTranslator& tr, SvpVec * one, SvpVec * two)
 SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 {
     SymbolValue * svp;
-    Lts * lts;
+    yy::Lts * lts;
     ParametricProcess * ppp;
     SvpVec * vp = new SvpVec;
     SvpVec * argvp = two;
@@ -2211,10 +2211,10 @@ SvpVec * callback__87(FspTranslator& tr, SvpVec * one)
     return priority_callback(tr, one, false);
 }
 
-Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
+yy::Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
 					    SvpVec * three, SvpVec * four)
 {
-    Lts * lts;
+    yy::Lts * lts;
 
     tr.css.pop();
     assert(two->v.size() == 1);

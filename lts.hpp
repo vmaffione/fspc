@@ -64,6 +64,9 @@ struct LtsVisitObject {
 class Serializer;
 class Deserializer;
 
+
+namespace yy {
+
 class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     ActionsTable * atp;
@@ -79,8 +82,8 @@ class Lts: public SymbolValue {
     void print_trace(const vector<int>& trace, stringstream& ss) const;
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
-    friend class Serializer;
-    friend class Deserializer;
+    friend class ::Serializer;
+    friend class ::Deserializer;
 
   public:
     string name;
@@ -124,14 +127,8 @@ class Lts: public SymbolValue {
     SymbolValue * clone() const;
 };
 
-Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc);
 
-inline Lts * is_lts(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Lts);
-
-    return static_cast<Lts *>(svp);
-}
+yy::Lts * err_if_not_lts(SymbolValue * svp, const yy::location& loc);
 
 /* A list of Lts. */
 struct LtsComposition: public SymbolValue {
@@ -144,13 +141,24 @@ struct LtsComposition: public SymbolValue {
 };
 
 LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
-					    const struct YYLTYPE& loc);
+					    const yy::location& loc);
 
-inline LtsComposition * is_ltscomposition(SymbolValue * svp)
+} /* namespace yy */
+
+
+inline yy::Lts * is_lts(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::Lts);
+
+    return static_cast<yy::Lts *>(svp);
+}
+
+
+inline yy::LtsComposition * is_ltscomposition(SymbolValue * svp)
 {
     assert(svp->type() == SymbolValue::LtsComposition);
 
-    return static_cast<LtsComposition *>(svp);
+    return static_cast<yy::LtsComposition *>(svp);
 }
 
 #endif

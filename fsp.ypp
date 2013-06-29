@@ -18,6 +18,38 @@
  */
 
 
+%skeleton "lalr1.cc" /* -*- C++ -*- */
+//%require "2.6.90.8-d4fe"
+
+/* Create a parser header file. This is needed because we define yylex()
+   in another source file (the FLEX generated scanner source file). */
+%defines
+
+/* Name of the parser implementation file. */
+%output "parser.cpp"
+
+/* Write an extra output file containing verbose descriptions of the parser
+    states and what is done for each type of lookahead token in that state
+%verbose
+*/
+
+%define parser_class_name "fsp_parser"
+%code requires {
+#include <string>
+class fsp_driver;
+}
+// The parsing context.
+%parse-param { fsp_driver& driver }
+%lex-param   { fsp_driver& driver }
+%locations
+%initial-action
+{
+  // Initialize the initial location.
+  @$.begin.filename = @$.end.filename = &driver.current_file;
+}
+%debug
+%error-verbose
+
 %code top {
 #include <cstdio>
 #include <iostream>
@@ -32,7 +64,9 @@ using namespace std;
 //#define NDEBUG
 #include <assert.h>
 
-#define YYERROR_VERBOSE
+//#define YYERROR_VERBOSE
+
+#include "driver.hpp"
 
 }
 
@@ -50,21 +84,6 @@ extern class CircularBuffer last_tokens;
 }
 
 
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "YYSTYPE".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "YYSTYPE":
-%union {
-    int int_value;
-    float float_value;
-    std::string *string_ptr;
-    class SymbolValue *sv_ptr;
-    struct SvpVec * svpvec_ptr;
-    struct Pvec * pvec_ptr;
-    class Lts * lts_ptr;
-}
-
 
 %{
 
@@ -75,7 +94,7 @@ extern class CircularBuffer last_tokens;
 #include "context.hpp"
 
 /* Definition of the FspTranslator class. */
-#include "translator.hpp"
+#include "driver.hpp"
 
 /* Stuff from flex that bison needs to know about. */
 #include "scanner.hpp"
@@ -97,7 +116,7 @@ extern class CircularBuffer last_tokens;
 
 
 /* A global data structure containing everything the compiler needs. */
-struct FspCompiler c;
+//struct fsp_driver c;
 
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
@@ -122,52 +141,68 @@ inline void AA(void * barg, int midx, int tot)
 
 /* Called after callback__15() and callback__88() to do common registration
    work. */
-void post_process_definition(Lts * lts, const struct YYLTYPE& loc) {
+void post_process_definition(fsp_driver& driver, yy::Lts * lts, const yy::location& loc) {
     string extension;
 
     /* Clear tr.alphabet_extension, so that the same translator can
        be used for other processes. */
-    c.tr.alphabet_extension.clear();
+    driver.tr.alphabet_extension.clear();
 
-    /* Remove process parameters from c.identifiers. */
-    for (unsigned int i=0; i<c.parametric->parameter_names.size(); i++)
-	c.identifiers.remove(c.parametric->parameter_names[i]);
+    /* Remove process parameters from driver.identifiers. */
+    for (unsigned int i=0; i<driver.parametric->parameter_names.size(); i++)
+	driver.identifiers.remove(driver.parametric->parameter_names[i]);
 
     /* Restore overridden identifiers. */
-    for (unsigned int i=0; i<c.tr.overridden_names.size(); i++)
-	c.identifiers.insert(c.tr.overridden_names[i],
-		c.tr.overridden_values[i]);
-    c.tr.overridden_names.clear();
-    c.tr.overridden_values.clear();
+    for (unsigned int i=0; i<driver.tr.overridden_names.size(); i++)
+	driver.identifiers.insert(driver.tr.overridden_names[i],
+		driver.tr.overridden_values[i]);
+    driver.tr.overridden_names.clear();
+    driver.tr.overridden_values.clear();
 
-    /* Store c.parametric in parametric_processes. */
-    if (!c.parametric_processes.insert(lts->name, c.parametric)) {
+    /* Store driver.parametric in parametric_processes. */
+    if (!driver.parametric_processes.insert(lts->name, driver.parametric)) {
 	stringstream errstream;
 	errstream << "Parametric process " << lts->name
 	    << " already declared";
 	semantic_error(errstream, loc);
     }
-    PROX(c.parametric->print());
+    PROX(driver.parametric->print());
 
     /* Compute the LTS name extension, but don't extend lts->name (pretty
        output). */
-    lts_name_extension(c.parametric->parameter_defaults, extension);
+    lts_name_extension(driver.parametric->parameter_defaults, extension);
 
     /* Insert lts into the global 'processes' table. */
-    if (!c.processes.insert(lts->name + extension, lts)) {
+    if (!driver.processes.insert(lts->name + extension, lts)) {
 	stringstream errstream;
 	errstream << "Process " << lts->name << " already declared";
 	semantic_error(errstream, loc);
     }
 
     /* Prepare for the next parametric process. */
-    c.parametric = new ParametricProcess;
-    c.record_mode_on = 0;
+    driver.parametric = new ParametricProcess;
+    driver.record_mode_on = 0;
 }
 
-
-void yyerror(const char *s);
 %}
+
+
+
+// Bison fundamentally works by asking flex to get the next token, which it
+// returns as an object of type "YYSTYPE".  But tokens could be of any
+// arbitrary data type!  So we deal with that in Bison by defining a C union
+// holding each of the types of tokens that Flex could return, and have Bison
+// use that union instead of "int" for the definition of "YYSTYPE":
+%union {
+    int int_value;
+    float float_value;
+    std::string *string_ptr;
+    class SymbolValue *sv_ptr;
+    struct SvpVec * svpvec_ptr;
+    struct Pvec * pvec_ptr;
+    class Lts * lts_ptr;
+}
+
 
 
 /* define the "terminal symbol", token types we're going to use (in CAPS
@@ -209,8 +244,9 @@ void yyerror(const char *s);
 %type <svpvec_ptr> bitand_expr bitxor_expr bitor_expr and_expr or_expr
 
 %type <string_ptr> variable constant_id range_id set_id range_or_set_id
-%type <string_ptr> parameter_id process_id progress_id menu_id
+%type <string_ptr> parameter_id process_id progress_id
 %type <string_ptr> const_range_set_parameter_id
+//%type <string_ptr> menu_id
 
 %type <svpvec_ptr> set set_elements set_expr
 %type <svpvec_ptr> action_labels
@@ -234,22 +270,13 @@ void yyerror(const char *s);
 %type <svpvec_ptr> relabel_OPT relabel_def relabel_defs braces_relabel_defs
 %type <svpvec_ptr> hiding_OPT hiding priority_OPT priority
 
+%printer    { yyoutput << *$$; } <string_ptr>
+%destructor { /*delete $$;*/ } <string_ptr>
+%printer    { yyoutput << $$; } <int_value>
+
 /* Generate a Generic LR parser, instead of a standard LR parser. We need
    this to resolve conflicts at runtime. */
 %glr-parser
-
-/* Name of the parser implementation file. */
-%output "parser.cpp"
-
-/* Create a parser header file. This is needed because we define yylex()
-   in another source file (the FLEX generated scanner source file). */
-%defines
-
-/* Write an extra output file containing verbose descriptions of the parser
-    states and what is done for each type of lookahead token in that state
-%verbose
-*/
-
 
 
 %%
@@ -267,19 +294,19 @@ fsp_definition:
     | set_def
     | property_def
     | progress_def
-    | menu_def
     | process_def
     | composite_def
+//  | menu_def
     ;
 
 
 /* Action labels TODO: fix */
 action_labels:
     LowerCaseID {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_S(&callback__1, *$1));
-	$$ = callback__1(c.tr, $1);
+	$$ = callback__1(driver.tr, $1);
 	ps.push_back($$);
     }
     | set {
@@ -288,26 +315,26 @@ action_labels:
     }
     | action_labels '.' LowerCaseID {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				new Callback_V_VS(&callback__2, *$3));
-	$$ = callback__2(c.tr, $1, $3);
+	$$ = callback__2(driver.tr, $1, $3);
 	
     }
     | action_labels '.' set {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__3));
-	$$ = callback__3(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__3));
+	$$ = callback__3(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | action_labels '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
 
-	c.tr.locations[0] = @3;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__4));
-	$$ = callback__4(c.tr, $1, $3);
+	driver.tr.locations[0] = @3;
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__4));
+	$$ = callback__4(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -318,11 +345,11 @@ set:
     set_id {
 	AA($1,1,1);
 
-	c.tr.locations[0] = @1;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	driver.tr.locations[0] = @1;
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_S(&callback__5, *$1));
-	$$ = callback__5(c.tr, $1);
+	$$ = callback__5(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -334,14 +361,14 @@ set:
 
 set_expr:
     '{' {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } set_elements '}' {
 	AA($3,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__75));
-	$$ = callback__75(c.tr, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__75));
+	$$ = callback__75(driver.tr, $3);
 	$$ = $3;
     }
     ;
@@ -363,31 +390,31 @@ action_range:
     }
     | variable ':' range_or_set_id {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				new Callback_V_SS(&callback__6, *$1, *$3));
-	c.tr.locations[0] = @3;
-	$$ = callback__6(c.tr, $1, $3);
+	driver.tr.locations[0] = @3;
+	$$ = callback__6(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | variable ':' range_expr {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_SV(&callback__7, *$1));
-	$$ = callback__7(c.tr, $1, $3);
+	$$ = callback__7(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | variable ':' set_expr {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_SV(&callback__8, *$1));
-	$$ = callback__8(c.tr, $1, $3);
+	$$ = callback__8(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -397,9 +424,9 @@ action_range:
 range_expr:
     const_expression DOTDOT const_expression {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__9));
-	$$ = callback__9(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__9));
+	$$ = callback__9(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -415,7 +442,7 @@ constant_def:
 
 	ConstValue* cvp = is_const($4->v[0]);
 	$4->detach(0);
-	if (!c.identifiers.insert(*$2, cvp)) {
+	if (!driver.identifiers.insert(*$2, cvp)) {
 	    stringstream errstream;
 	    errstream << "const " << *$2 << " declared twice";
 	    semantic_error(errstream, @2);
@@ -438,7 +465,7 @@ range_def:
 	rvp->high = cvp2->value;
 	delete $4;
 	delete $6;
-	if (!c.identifiers.insert(*$2, rvp)) {
+	if (!driver.identifiers.insert(*$2, rvp)) {
 	    stringstream errstream;
 	    errstream << "range " << *$2 << " declared twice";
 	    semantic_error(errstream, @2);
@@ -456,7 +483,7 @@ set_def:
 
 	assert($4->v.size() == 1);
 	setvp = is_set($4->v[0]);
-	if (!c.identifiers.insert(*$2, setvp)) {
+	if (!driver.identifiers.insert(*$2, setvp)) {
 	    stringstream errstream;
 	    errstream << "set " << *$2 << " declared twice";
 	    semantic_error(errstream, @2);
@@ -471,23 +498,23 @@ set_def:
 set_elements:
     action_labels {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__10));
-	$$ = callback__10(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__10));
+	$$ = callback__10(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
 
     }
     | set_elements ',' {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(1, 1));
-	Callback_pop_push::exe(c.tr, 1, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(1, 1));
+	Callback_pop_push::exe(driver.tr, 1, 1);
     }  action_labels {
 	AA($1,1,2); AA($4,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__13));
-	$$ = callback__13(c.tr, $1, $4);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__13));
+	$$ = callback__13(driver.tr, $1, $4);
 	ps.pop_back();
     }
     ;
@@ -497,32 +524,32 @@ set_elements:
 process_def:
     process_id param_OPT {
 	AA($1,1,1);
-	c.record_mode_on = 1;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	driver.record_mode_on = 1;
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_N_S(&callback__14, *$1));
-	callback__14(c.tr, $1);
+	callback__14(driver.tr, $1);
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	AA($1,1,5); AA($5,2,5); AA($6,3,5); AA($7,4,5); AA($8,5,5);
 	string name = *$1;
-	Lts * lts;
+	yy::Lts * lts;
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_P_SPVVV(&callback__15, *$1));
-	c.tr.locations[0] = @1;
-	lts = callback__15(c.tr, $1, $5, $6, $7, $8);
+	driver.tr.locations[0] = @1;
+	lts = callback__15(driver.tr, $1, $5, $6, $7, $8);
 
 	/* Clear and free 'local_processes'. */
-	c.tr.local_processes.clear();
+	driver.tr.local_processes.clear();
 	/* Clear 'aliases'. */
-	c.tr.aliases.clear();
-	/* Free all the nodes allocated by c.pna, and remove the from
+	driver.tr.aliases.clear();
+	/* Free all the nodes allocated by driver.pna, and remove the from
 	   the allocator itself. */
-	c.pna.clear();
+	driver.pna.clear();
 
-	post_process_definition(lts, @1);
+	post_process_definition(driver, lts, @1);
 
 	PROX(lts->print(); lts->graphvizOutput((name + ".gv").c_str()));
 	$$ = lts;
@@ -543,8 +570,8 @@ process_body:
     | local_process ',' local_process_defs {
 	AA($1,1,2); AA($3,2,2);
 	$$ = $1;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop);
 	ps.pop_back();
     }
     ;
@@ -556,8 +583,8 @@ local_process_defs:
     }
     | local_process_defs ',' local_process_def {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop);
 	$$ = $1;
 	ps.pop_back();
     }
@@ -566,27 +593,27 @@ local_process_defs:
 local_process_def:
     process_id {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 			new Callback_pop_push(0, 1));
 	/* The following nonterminal 'index_ranges_OPT' may result
 	   in contexts ramifications, and so tr.css.update() must be called.
 	   We therefore push a clone of the current ContextsSet, which is 
 	   the initial empty one, so that the initial one is not modified. */
-	Callback_pop_push::exe(c.tr, 0, 1);
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_N_SV(&callback__17, *$1));
-	callback__17(c.tr, $1, $3);
+	callback__17(driver.tr, $1, $3);
     } local_process {
 	AA($1,1,3); AA($3,2,3); AA($6,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_P_SVP(&callback__18, *$1));
-	c.tr.locations[0] = @1;
-	$$ = callback__18(c.tr, $1, $3, $6);
+	driver.tr.locations[0] = @1;
+	$$ = callback__18(driver.tr, $1, $3, $6);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -597,8 +624,8 @@ local_process_def:
 alphabet_extension_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | '+' set {
@@ -618,31 +645,31 @@ local_process:
     }
     | IF const_expression THEN {
 	AA($2,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_N_V(&callback__19));
-	callback__19(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_N_V(&callback__19));
+	callback__19(driver.tr, $2);
     } local_process {
 	AA($2,1,2); AA($5,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_N_VP(&callback__20));
-	callback__20(c.tr, $2, $5);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_N_VP(&callback__20));
+	callback__20(driver.tr, $2, $5);
     } else_OPT {
 	AA($2,1,3); AA($5,2,3); AA($7,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_VPP(&callback__21));
-	$$ = callback__21(c.tr, $2, $5, $7);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__21));
+	$$ = callback__21(driver.tr, $2, $5, $7);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | '(' {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
 	/* Replicate the CSS stack top so that it can be used by 'choice'. */
-	Callback_pop_push::exe(c.tr, 0, 1);
-	PROX(cout << "CSS height (push) " << c.tr.css.stack.size());
-	PROX(c.tr.current_contexts().print());
+	Callback_pop_push::exe(driver.tr, 0, 1);
+	PROX(cout << "CSS height (push) " << driver.tr.css.stack.size());
+	PROX(driver.tr.current_contexts().print());
     } choice ')' {
 	AA($3,1,1);
 	$$ = $3;
@@ -652,8 +679,8 @@ local_process:
 else_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | ELSE local_process {
@@ -663,29 +690,29 @@ else_OPT:
 
 base_local_process:
     END {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P(&callback__23));
-	$$ = callback__23(c.tr);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P(&callback__23));
+	$$ = callback__23(driver.tr);
 	ps.push_back($$);
     }
     | STOP {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P(&callback__24));
-	$$ = callback__24(c.tr);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P(&callback__24));
+	$$ = callback__24(driver.tr);
 	ps.push_back($$);
     }
     | ERROR {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P(&callback__25));
-	$$ = callback__25(c.tr);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P(&callback__25));
+	$$ = callback__25(driver.tr);
 	ps.push_back($$);
     }
     | process_id indices_OPT {
 	AA($1,1,2); AA($2,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_P_SV(&callback__26, *$1));
-	$$ = callback__26(c.tr, $1, $2);;
+	$$ = callback__26(driver.tr, $1, $2);;
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -695,24 +722,24 @@ base_local_process:
 choice:
     action_prefix {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_P(&callback__27));
-	$$ = callback__27(c.tr, $1);
-	PROX(cout << "CSS height = (pop) " << c.tr.css.stack.size());
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_P(&callback__27));
+	$$ = callback__27(driver.tr, $1);
+	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size());
     }
     | choice '|' {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
-	PROX(cout << "CSS height (push) " << c.tr.css.stack.size());
-	PROX(c.tr.current_contexts().print());
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
+	PROX(cout << "CSS height (push) " << driver.tr.css.stack.size());
+	PROX(driver.tr.current_contexts().print());
     } action_prefix {
 	AA($1,1,2); AA($4,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_PP(&callback__29));
-	$$ = callback__29(c.tr, $1, $4);
-	PROX(cout << "CSS height = (pop) " << c.tr.css.stack.size() << "\n");
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_PP(&callback__29));
+	$$ = callback__29(driver.tr, $1, $4);
+	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size() << "\n");
 	ps.pop_back();
     }
     ;
@@ -720,14 +747,14 @@ choice:
 action_prefix:
     guard_OPT {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_N_V(&callback__30));
-	callback__30(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_N_V(&callback__30));
+	callback__30(driver.tr, $1);
     } prefix_actions ARROW local_process {
 	AA($1,1,3); AA($3,2,3); AA($5,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_VPP(&callback__31));
-	$$ = callback__31(c.tr, $1, $3, $5);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__31));
+	$$ = callback__31(driver.tr, $1, $3, $5);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -738,17 +765,17 @@ action_prefix:
 prefix_actions:
     action_labels {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_V(&callback__32));
-	$$ = callback__32(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_V(&callback__32));
+	$$ = callback__32(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | prefix_actions ARROW action_labels {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_PV(&callback__33));
-	$$ = callback__33(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_PV(&callback__33));
+	$$ = callback__33(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -756,8 +783,8 @@ prefix_actions:
 guard_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | WHEN const_expression {
@@ -768,9 +795,9 @@ guard_OPT:
 
 indices_OPT:
     {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V(&callback__34));
-	$$ = callback__34(c.tr);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V(&callback__34));
+	$$ = callback__34(driver.tr);
 	ps.push_back($$);
     }
     | indices
@@ -779,26 +806,26 @@ indices_OPT:
 indices:
     '[' const_expression ']' {
 	AA($2,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__35));
-	$$ = callback__35(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__35));
+	$$ = callback__35(driver.tr, $2);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | indices '[' const_expression ']' {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__36));
-	$$ = callback__36(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__36));
+	$$ = callback__36(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
 
 index_ranges_OPT:
     {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V(&callback__37));
-	$$ = callback__37(c.tr);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V(&callback__37));
+	$$ = callback__37(driver.tr);
 	ps.push_back($$);
     }
     | index_ranges
@@ -807,19 +834,19 @@ index_ranges_OPT:
 index_ranges:
     '[' action_range ']' {
 	AA($2,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__38));
-	c.tr.locations[0] = @2;
-	$$ = callback__38(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__38));
+	driver.tr.locations[0] = @2;
+	$$ = callback__38(driver.tr, $2);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | index_ranges '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__39));
-	c.tr.locations[0] = @3;
-	$$ = callback__39(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__39));
+	driver.tr.locations[0] = @3;
+	$$ = callback__39(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -830,9 +857,9 @@ sequential_composition:
     seq_process_list ';' base_local_process {
 	AA($1,1,2); AA($3,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_PP(&callback__64));
-	$$ = callback__64(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_PP(&callback__64));
+	$$ = callback__64(driver.tr, $1, $3);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -847,10 +874,10 @@ seq_process_list:
     | seq_process_list ';' process_ref_seq {
 	AA($1,1,2); AA($3,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_P_PP(&callback__65));
-	c.tr.locations[0] = @1;
-	$$ = callback__65(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_P_PP(&callback__65));
+	driver.tr.locations[0] = @1;
+	$$ = callback__65(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -859,12 +886,12 @@ process_ref_seq:
     process_id argument_OPT {
 	AA($1,1,2); AA($2,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_P_SV(&callback__66, *$1));
-	c.tr.locations[0] = @1;
-	c.tr.locations[1] = @2;
-	$$ = callback__66(c.tr, $1, $2);
+	driver.tr.locations[0] = @1;
+	driver.tr.locations[1] = @2;
+	$$ = callback__66(driver.tr, $1, $2);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -874,8 +901,8 @@ process_ref_seq:
 argument_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     |'(' argument_list ')' {
@@ -888,17 +915,17 @@ argument_OPT:
 argument_list:
     const_expression {
 	AA($1,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__67));
-	$$ = callback__67(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__67));
+	$$ = callback__67(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | argument_list ',' const_expression {
 	AA($1,1,2); AA($3,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__68));
-	$$ = callback__68(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__68));
+	$$ = callback__68(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -907,20 +934,20 @@ argument_list:
 /* Composite processes */
 composite_def:
     OR process_id param_OPT {
-	c.record_mode_on = 1;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	driver.record_mode_on = 1;
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } '=' composite_body priority_OPT hiding_OPT '.' {
 	AA($2,1,4); AA($6,2,4); AA($7,3,4); AA($8,4,4);
-	Lts * lts;
+	yy::Lts * lts;
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 			new Callback_V_SVVV(&callback__88, *$2));
-	lts = callback__88(c.tr, $2, $6, $7, $8);
+	lts = callback__88(driver.tr, $2, $6, $7, $8);
 
-	post_process_definition(lts, @2);
+	post_process_definition(driver, lts, @2);
 
 	PROX(cout << "#####################Composite process " << lts->name << " defined#############\n");
 	PROX(lts->print(); lts->graphvizOutput((lts->name + ".gv").c_str()));
@@ -935,17 +962,17 @@ composite_def:
 composite_body:
     sharing_OPT labeling_OPT process_ref {
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_np_V_VVV(&callback__76));
-	$<svpvec_ptr>$ = callback__76(c.tr, $1, $2, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_np_V_VVV(&callback__76));
+	$<svpvec_ptr>$ = callback__76(driver.tr, $1, $2, $3);
 	ps.push_back($<svpvec_ptr>$);
     } relabel_OPT {
 	AA($1,1,5); AA($2,2,5); AA($3,3,5); 
 	AA($<svpvec_ptr>4,4,5); AA($5,5,5);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 			    new Callback_V_VVVVV(&callback__77));
-	$$ = callback__77(c.tr, $1, $2, $3, $<svpvec_ptr>4, $5);
+	$$ = callback__77(driver.tr, $1, $2, $3, $<svpvec_ptr>4, $5);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -956,24 +983,24 @@ composite_body:
     | sharing_OPT labeling_OPT '(' {
 	AA($1,1,2); AA($2,2,2);
 	/* Save the contexts modified by labeling_OPT. */
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     }  parallel_composition ')' {
 	AA($1,1,3); AA($2,2,3); AA($5,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 			    new Callback_np_V_VVV(&callback__78));
-	$<svpvec_ptr>$ = callback__78(c.tr, $1, $2, $5);
+	$<svpvec_ptr>$ = callback__78(driver.tr, $1, $2, $5);
 	ps.push_back($<svpvec_ptr>$);
     } relabel_OPT {
 	AA($1,1,5); AA($2,2,5); AA($5,3,5);
 	AA($<svpvec_ptr>7,4,5); AA($8,5,5);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 			    new Callback_V_VVVVV(&callback__79));
-	$$ = callback__79(c.tr, $1, $2, $5, $<svpvec_ptr>7, $8);
+	$$ = callback__79(driver.tr, $1, $2, $5, $<svpvec_ptr>7, $8);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -982,31 +1009,31 @@ composite_body:
 	ps.push_back($$);
     }
     | FORALL {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } index_ranges {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } composite_body {
 	/* Here there is an extension to the original grammar, since
 	   we should have 'ranges' and not 'index_ranges'. */
 	AA($3,1,2); AA($5,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__80));
-	$$ = callback__80(c.tr, $3, $5);
-	c.tr.css.pop();
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__80));
+	$$ = callback__80(driver.tr, $3, $5);
+	driver.tr.css.pop();
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | IF const_expression THEN composite_body composite_else_OPT {
 	AA($2,1,3); AA($4,2,3); AA($5,3,3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VVV(&callback__81));
-	$$ = callback__81(c.tr, $2, $4, $5);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VVV(&callback__81));
+	$$ = callback__81(driver.tr, $2, $4, $5);
 	ps.pop_back();
 	ps.pop_back();
 	ps.pop_back();
@@ -1017,8 +1044,8 @@ composite_body:
 composite_else_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | ELSE composite_body {
@@ -1031,22 +1058,22 @@ parallel_composition:
     composite_body {
 	AA($1,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__82));
-	$$ = callback__82(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__82));
+	$$ = callback__82(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | parallel_composition OR {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(1, 1));
-	Callback_pop_push::exe(c.tr, 1, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(1, 1));
+	Callback_pop_push::exe(driver.tr, 1, 1);
     } composite_body {
 	AA($1,1,2); AA($4,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__83));
-	$$ = callback__83(c.tr, $1, $4);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__83));
+	$$ = callback__83(driver.tr, $1, $4);
 	ps.pop_back();
     }
     ;
@@ -1055,12 +1082,12 @@ process_ref:
     process_id argument_OPT {
 	AA($1,1,2); AA($2,2,2);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				new Callback_V_SV(&callback__84, *$1));
-	c.tr.locations[0] = @1;
-	c.tr.locations[1] = @2;
-	$$ = callback__84(c.tr, $1, $2);
+	driver.tr.locations[0] = @1;
+	driver.tr.locations[1] = @2;
+	$$ = callback__84(driver.tr, $1, $2);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -1070,16 +1097,16 @@ process_ref:
 sharing_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | action_labels SHARING {
 	AA($1,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__85));
-	$$ = callback__85(c.tr, $1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__85));
+	$$ = callback__85(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -1088,13 +1115,13 @@ sharing_OPT:
 labeling_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | action_labels ':' {
 	AA($1,1,1);
-	assert($1->v.size() == c.tr.current_contexts().size());
+	assert($1->v.size() == driver.tr.current_contexts().size());
 	$$ = $1;
     }
     ;
@@ -1102,8 +1129,8 @@ labeling_OPT:
 priority_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | priority {
@@ -1116,16 +1143,16 @@ priority:
     RSHIFT set {
 	AA($2,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__86));
-	$$ = callback__86(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__86));
+	$$ = callback__86(driver.tr, $2);
     }
     | LSHIFT set {
 	AA($2,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__87));
-	$$ = callback__87(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__87));
+	$$ = callback__87(driver.tr, $2);
     }
     ;
 
@@ -1159,21 +1186,21 @@ parameter:
 	ConstValue * cvp = is_const($3->v[0]);
 	SymbolValue * svp;
 	$3->detach(0);
-	if (c.identifiers.lookup(*$1, svp)) {
+	if (driver.identifiers.lookup(*$1, svp)) {
 	    /* Save the overridden identifier. */
-	    c.tr.overridden_names.push_back(*$1);
-	    c.tr.overridden_values.push_back(svp->clone());
-	    c.identifiers.remove(*$1);
+	    driver.tr.overridden_names.push_back(*$1);
+	    driver.tr.overridden_values.push_back(svp->clone());
+	    driver.identifiers.remove(*$1);
 	}
-	if (!c.identifiers.insert(*$1, cvp)) {
+	if (!driver.identifiers.insert(*$1, cvp)) {
 	    stringstream errstream;
 	    errstream << "identifier " << *$1 << " already declared";
 	    semantic_error(errstream, @1);
 	}
 
-	/* Update c.parametric-> */
-	c.parametric->parameter_names.push_back(*$1);
-	c.parametric->parameter_defaults.push_back(cvp->value);
+	/* Update driver.parametric-> */
+	driver.parametric->parameter_names.push_back(*$1);
+	driver.parametric->parameter_defaults.push_back(cvp->value);
 
 	delete $1;
 	delete $3;
@@ -1186,8 +1213,8 @@ parameter:
 /* Re-Labeling and Hiding */
 relabel_OPT: {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | '/' braces_relabel_defs {
@@ -1198,9 +1225,9 @@ relabel_OPT: {
 
 braces_relabel_defs:
     '{' {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } relabel_defs '}' {
 	AA($3,1,1);
 	$$ = $3;
@@ -1213,42 +1240,42 @@ relabel_defs:
 	$$ = $1;
     }
     | relabel_defs ',' {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     }  relabel_def {
 	AA($1,1,2); AA($4,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__69));
-	$$ = callback__69(c.tr, $1, $4);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__69));
+	$$ = callback__69(driver.tr, $1, $4);
 	ps.pop_back();
     }
     ;
 
 relabel_def:
     action_labels '/' {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(1, 1));
-	Callback_pop_push::exe(c.tr, 1, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(1, 1));
+	Callback_pop_push::exe(driver.tr, 1, 1);
     }  action_labels {
 	AA($1,1,2); AA($4,2,2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__70));
-	$$ = callback__70(c.tr, $1, $4);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__70));
+	$$ = callback__70(driver.tr, $1, $4);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
     }
     | FORALL {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_pop_push(0, 1));
-	Callback_pop_push::exe(c.tr, 0, 1);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
+	Callback_pop_push::exe(driver.tr, 0, 1);
     } index_ranges braces_relabel_defs {
 	AA($3,1,2); AA($4,2,2);
-	if (c.record_mode_on) {
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__73));
+	if (driver.record_mode_on) {
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__73));
 	}
-	$$ = callback__73(c.tr, $3, $4);
+	$$ = callback__73(driver.tr, $3, $4);
 	ps.pop_back();
 	ps.pop_back();
 	ps.push_back($$);
@@ -1258,8 +1285,8 @@ relabel_def:
 hiding_OPT:
     {
 	$$ = NULL;
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_null);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_null);
 	ps.push_back($$);
     }
     | hiding {
@@ -1271,17 +1298,17 @@ hiding_OPT:
 hiding:
     '\\' set {
 	AA($2,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__71));
-	$$ = callback__71(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__71));
+	$$ = callback__71(driver.tr, $2);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | '@' set {
 	AA($2,1,1);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__72));
-	$$ = callback__72(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__72));
+	$$ = callback__72(driver.tr, $2);
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -1306,7 +1333,7 @@ property_def:
 
 progress_def:
     PROGRESS progress_id {
-	c.tr.css.push_clone();
+	driver.tr.css.push_clone();
     } index_ranges_OPT '=' set {
 	AA($2,1,3); AA($4,2,3); AA($6,3,3);
 	SetValue * setvp;
@@ -1320,13 +1347,13 @@ progress_def:
 	    /* We discard irp->actions[i] for i>0. */
 	    name = *$2 + irp->actions[0]; 
 	    
-	    if (!c.progresses.insert(name, setvp)) {
+	    if (!driver.progresses.insert(name, setvp)) {
 		stringstream errstream;
 		errstream << "progress " << name << " declared twice";
 		semantic_error(errstream, @2);
 	    }
 	}
-	c.tr.css.pop();
+	driver.tr.css.pop();
 	delete $2;
 	delete $4;
 
@@ -1336,10 +1363,11 @@ progress_def:
     }
     ;
 
+/*
 menu_def:
     MENU menu_id '=' set
     ;
-
+*/
 
 /* An expression or a simple_expression: standard operators and priorities. */
 const_expression:
@@ -1374,9 +1402,9 @@ or_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__41));
-	$$ = callback__41(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__41));
+	$$ = callback__41(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1388,9 +1416,9 @@ and_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__42));
-	$$ = callback__42(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__42));
+	$$ = callback__42(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1402,9 +1430,9 @@ bitor_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__43));
-	$$ = callback__43(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__43));
+	$$ = callback__43(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1416,9 +1444,9 @@ bitxor_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__44));
-	$$ = callback__44(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__44));
+	$$ = callback__44(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1430,9 +1458,9 @@ bitand_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__45));
-	$$ = callback__45(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__45));
+	$$ = callback__45(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1444,9 +1472,9 @@ equality_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__46));
-	$$ = callback__46(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__46));
+	$$ = callback__46(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | equality_expr NOTEQUAL relational_expr {
@@ -1454,9 +1482,9 @@ equality_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__47));
-	$$ = callback__47(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__47));
+	$$ = callback__47(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1468,9 +1496,9 @@ relational_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__48));
-	$$ = callback__48(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__48));
+	$$ = callback__48(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr '>' shift_expr {
@@ -1478,9 +1506,9 @@ relational_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__49));
-	$$ = callback__49(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__49));
+	$$ = callback__49(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr LOE shift_expr {
@@ -1488,9 +1516,9 @@ relational_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__50));
-	$$ = callback__50(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__50));
+	$$ = callback__50(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | relational_expr GOE shift_expr {
@@ -1498,9 +1526,9 @@ relational_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__51));
-	$$ = callback__51(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__51));
+	$$ = callback__51(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1512,9 +1540,9 @@ shift_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__52));
-	$$ = callback__52(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__52));
+	$$ = callback__52(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | shift_expr RSHIFT additive_expr {
@@ -1522,9 +1550,9 @@ shift_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__53));
-	$$ = callback__53(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__53));
+	$$ = callback__53(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1536,9 +1564,9 @@ additive_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__54));
-	$$ = callback__54(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__54));
+	$$ = callback__54(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | additive_expr '-' multiplicative_expr {
@@ -1546,9 +1574,9 @@ additive_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__55));
-	$$ = callback__55(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__55));
+	$$ = callback__55(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1560,9 +1588,9 @@ multiplicative_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__56));
-	$$ = callback__56(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__56));
+	$$ = callback__56(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | multiplicative_expr '/' unary_expr {
@@ -1570,9 +1598,9 @@ multiplicative_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__57));
-	$$ = callback__57(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__57));
+	$$ = callback__57(driver.tr, $1, $3);
 	ps.pop_back();
     }
     | multiplicative_expr '%' unary_expr {
@@ -1580,9 +1608,9 @@ multiplicative_expr:
 
 	err_if_not_const_svpvec($1, @1);
 	err_if_not_const_svpvec($3, @3);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_VV(&callback__58));
-	$$ = callback__58(c.tr, $1, $3);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_VV(&callback__58));
+	$$ = callback__58(driver.tr, $1, $3);
 	ps.pop_back();
     }
     ;
@@ -1599,48 +1627,48 @@ unary_expr:
 	AA($2,1,1);
 
 	err_if_not_const_svpvec($2, @2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__59));
-	$$ = callback__59(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__59));
+	$$ = callback__59(driver.tr, $2);
     }
     | '!' base_expr {
 	AA($2,1,1);
 
 	err_if_not_const_svpvec($2, @2);
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(new Callback_V_V(&callback__60));
-	$$ = callback__60(c.tr, $2);
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(new Callback_V_V(&callback__60));
+	$$ = callback__60(driver.tr, $2);
     }
     ;
 
 /* TODO: complete base_expr */
 base_expr:
     INTEGER {
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				new Callback_V_I(&callback__61, $1));
-	$$ = callback__61(c.tr, $1);
+	$$ = callback__61(driver.tr, $1);
 	ps.push_back($$);
     }
     | variable {
 	AA($1,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_S(&callback__62, *$1));
-	c.tr.locations[0] = @1;
-	$$ = callback__62(c.tr, $1);
+	driver.tr.locations[0] = @1;
+	$$ = callback__62(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
     | const_range_set_parameter_id {
 	AA($1,1,1);
 
-	if (c.record_mode_on)
-	    c.parametric->record.push_back(
+	if (driver.record_mode_on)
+	    driver.parametric->record.push_back(
 				    new Callback_V_S(&callback__63, *$1));
-	c.tr.locations[0] = @1;
-	$$ = callback__63(c.tr, $1);
+	driver.tr.locations[0] = @1;
+	$$ = callback__63(driver.tr, $1);
 	ps.pop_back();
 	ps.push_back($$);
     }
@@ -1651,162 +1679,22 @@ base_expr:
     ;
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
-variable: LowerCaseID { ps.push_back($1); };
-constant_id: UpperCaseID { ps.push_back($1); };
-range_id: UpperCaseID { ps.push_back($1); };
-set_id: UpperCaseID { ps.push_back($1); };
-range_or_set_id: set_id { AA($1,1,1); };
-const_range_set_parameter_id: set_id { AA($1,1,1); };
-parameter_id: UpperCaseID { ps.push_back($1); };
-process_id: UpperCaseID { ps.push_back($1); };
-progress_id: UpperCaseID { ps.push_back($1); };
-menu_id: UpperCaseID { ps.push_back($1); };
+variable: LowerCaseID { ps.push_back($1); $$ = $1; };
+constant_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+range_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+set_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+range_or_set_id: set_id { AA($1,1,1); $$ = $1; };
+const_range_set_parameter_id: set_id { AA($1,1,1); $$ = $1; };
+parameter_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+process_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+progress_id: UpperCaseID { ps.push_back($1); $$ = $1; };
+//menu_id: UpperCaseID { ps.push_back($1); $$ = $1;};
 
 %%
 
-/* const char * ex = "P=(a->b->P)."; */
-
-int parser(const CompilerOptions& co)
+void yy::fsp_parser::error (const yy::fsp_parser::location_type& l,
+	const std::string& m)
 {
-    Serializer * serp = NULL;
-    Deserializer * desp = NULL;
-    int produceLts = (co.input_type != CompilerOptions::InputTypeLts);
-    stringstream ss;
-
-    /* XXX For now there are three input selection methods, with two of
-       them commented out. We still have to choose "the one". */
-    /*
-    ScannerFileBuffer sfb(co.input_file);
-    sfb.select();
-    yyparse();
-
-    ScannerStringBuffer ssb(ex,12);
-    ssb.select();
-    yyparse(); */
-
-    InputBuffersStack ibs;
-
-    if (co.input_type == CompilerOptions::InputTypeFsp) {
-	/* Parse the FSP input file. */
-	ibs.push(co.input_file);
-	yyparse();
-	ibs.pop();
-	serp = new Serializer(co.output_file);
-    } else { /* Load the processes table from an LTS file. */
-	uint32_t nlts, nprogr;
-
-	desp = new Deserializer(co.input_file);
-
-	desp->actions_table(c.actions, 0);
-	desp->integer(nlts, 0);
-	for (uint32_t i=0; i<nlts; i++) {
-	    Lts * lts = new Lts(LtsNode::End, &c.actions);
-
-	    desp->lts(*lts, 0);
-	    /* Insert lts into the global 'processes' table. */
-	    if (!c.processes.insert(lts->name, lts)) {
-		assert(0);  //XXX Should be an invalid LTS file
-	    }
-	}
-
-	desp->integer(nprogr, 0);
-	for (uint32_t i=0; i<nprogr; i++) {
-	    SetValue * setvp = new SetValue;
-	    string name;
-
-	    desp->stl_string(name, 0);
-	    desp->set_value(*setvp, 0);
-	    if (!c.progresses.insert(name, setvp)) {
-		assert(0);
-	    }
-	}
-    }
-
-    /* Scan the 'processes' symbols table. For each process, output
-       the associated LTS and do the deadlock analysis. */
-    map<string, SymbolValue *>::iterator it;
-    map<string, SymbolValue *>::iterator jt;
-    Lts * lts;
-    SetValue * setvp;    
-
-    if (produceLts) {
-	serp->actions_table(c.actions, 0);
-	serp->integer(c.processes.table.size(), 0);
-    }
-    for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	lts = is_lts(it->second);
-
-	/* We output an LTS file only if the input is not an LTS file. */
-	if (produceLts) {
-	    serp->lts(*lts, 0);
-	}
-
-	if (co.deadlock) {
-	    lts->deadlockAnalysis(ss);
-	}
-
-	if (co.graphviz) {
-	    lts->graphvizOutput((lts->name + ".gv").c_str());
-	}
-    }
-
-    if (produceLts) {
-	serp->integer(c.progresses.table.size(), 0);
-    }
-    /* Do each progress check against all the global processes. */
-    for (it=c.progresses.table.begin(); it!=c.progresses.table.end();
-	    it++) {
-	setvp = is_set(it->second);
-	if (co.progress) {
-	    for (jt=c.processes.table.begin();
-		    jt!=c.processes.table.end(); jt++) {
-		lts = is_lts(jt->second);
-		lts->progress(it->first, *setvp, ss);
-	    }
-	}
-
-	/* Output the property if the input is not an LTS file. */
-	if (produceLts) {
-	    serp->stl_string(it->first, 0);
-	    serp->set_value(*setvp, 0);
-	}
-    }
-
-    if (serp)
-	delete serp;
-    if (desp)
-	delete desp;
-
-    /* Flush out program output. */
-    cout << ss.str();
-
-    /* Run a LTS analysis script if the user asked for that. */
-    if (co.script) {
-	ifstream fin(co.script_file, ios::in);
-	int ret;
-
-	if (fin.fail()) {
-	    cerr << co.script_file << ": no such script file\n";
-	    exit(-1);
-	}
-
-	ret = Shell(c, fin).run();
-	fin.close();
-	if (ret) {
-	    return ret;
-	}
-    }
-
-    /* Run the interactive shell if the user asked for that. */
-    if (co.shell) {
-	return Shell(c, std::cin).run();
-    }
-
-    return 0;
-}
-
-
-void yyerror(const char *s) {
-    syntax_error(s, yylloc);
+    driver.error(l, m);
 }
 

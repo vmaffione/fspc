@@ -42,19 +42,19 @@ using namespace std;
 
 
 /* ====================== class Lts implementation ===================== */
-int Lts::lookupAlphabet(int action) const
+int yy::Lts::lookupAlphabet(int action) const
 {
     set<int>::iterator it = alphabet.find(action);
     
     return (it == alphabet.end()) ? -1 : 0;
 }
 
-void Lts::updateAlphabet(int action)
+void yy::Lts::updateAlphabet(int action)
 {
     alphabet.insert(action);
 }
 
-void Lts::mergeAlphabetInto(set<int>& actions) const
+void yy::Lts::mergeAlphabetInto(set<int>& actions) const
 {
     for (set<int>::iterator it = alphabet.begin();
 			it != alphabet.end(); it++) {
@@ -62,7 +62,7 @@ void Lts::mergeAlphabetInto(set<int>& actions) const
     }
 }
 
-void Lts::mergeAlphabetFrom(const set<int>& actions)
+void yy::Lts::mergeAlphabetFrom(const set<int>& actions)
 {
     for (set<int>::iterator it = actions.begin();
 			it != actions.end(); it++) {
@@ -70,7 +70,7 @@ void Lts::mergeAlphabetFrom(const set<int>& actions)
     }
 }
 
-void Lts::printAlphabet(stringstream& ss) const
+void yy::Lts::printAlphabet(stringstream& ss) const
 {
     set<int>::iterator it;
 
@@ -80,7 +80,7 @@ void Lts::printAlphabet(stringstream& ss) const
     ss << "}\n";
 }
 
-Lts::Lts(int type, struct ActionsTable * p) : atp(p)
+yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 {
     struct LtsNode node;
 
@@ -91,13 +91,15 @@ Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 }
 
 struct LtsConvertData {
-    Lts * ltsp;
+    yy::Lts * ltsp;
     map<ProcessNode *, int> * mapp;
 };
 
+namespace yy {
+
 void lts_convert(struct ProcessNode * pnp, void * opaque)
 {
-    Lts * ltsp = ((LtsConvertData *)opaque)->ltsp;
+    yy::Lts * ltsp = ((LtsConvertData *)opaque)->ltsp;
     map<ProcessNode *, int> * mapp = ((LtsConvertData *)opaque)->mapp;
     int state = (mapp->find(pnp))->second;
 
@@ -134,7 +136,9 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
     }
 }
 
-Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
+} /* namespace yy */
+
+yy::Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 {
     ProcessNode * pnp;
     ProcessVisitObject f;
@@ -155,14 +159,14 @@ Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 
     lcd.ltsp = this;
     lcd.mapp = &index_map;
-    f.vfp = &lts_convert;
+    f.vfp = &yy::lts_convert;
     f.opaque = &lcd;
 
     ntr = 0;
     pnp->visit(f, true);
 }
 
-void Lts::print() const {
+void yy::Lts::print() const {
     stringstream ss;
 
     atp->print();
@@ -178,7 +182,7 @@ void Lts::print() const {
 }
 
 /* BFS on the LTS for useless states removal. */
-void Lts::reduce(const vector<LtsNode>& unconnected)
+void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 {
     int np = unconnected.size();
     vector<int> frontier(np);
@@ -228,7 +232,7 @@ void Lts::reduce(const vector<LtsNode>& unconnected)
 }
 
 
-void Lts::compose(const Lts& p, const Lts& q)
+void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
 {    
     int n;
     int nq;
@@ -322,23 +326,23 @@ void Lts::compose(const Lts& p, const Lts& q)
     reduce(product);
 }
 
-Lts::Lts(const Lts& p, const Lts& q)
+yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)
 {
     assert(p.atp && q.atp == p.atp);
     atp = p.atp;
     compose(p, q);
 }
 
-Lts& Lts::compose(const Lts& q)
+yy::Lts& yy::Lts::compose(const yy::Lts& q)
 {
-    Lts copy(*this);
+    yy::Lts copy(*this);
 
     compose(copy, q);
 
     return *this;
 }
 
-int Lts::deadlockAnalysis(stringstream& ss) const
+int yy::Lts::deadlockAnalysis(stringstream& ss) const
 {
     int nd = 0;
     int state = 0;
@@ -410,7 +414,7 @@ int Lts::deadlockAnalysis(stringstream& ss) const
     return nd;
 }
 
-int Lts::terminalSets()
+int yy::Lts::terminalSets()
 {
     int n = nodes.size();
     int na = atp->reverse.size();
@@ -626,7 +630,7 @@ clear_flags:
     return nts;
 }
 
-bool Lts::isDeterministic() const
+bool yy::Lts::isDeterministic() const
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
 	map<int, int> links;
@@ -645,14 +649,14 @@ bool Lts::isDeterministic() const
     return true;
 }
 
-SymbolValue * Lts::clone() const
+SymbolValue * yy::Lts::clone() const
 {
-    Lts * lv = new Lts(*this);
+    yy::Lts * lv = new yy::Lts(*this);
 
     return lv;
 }
 
-void Lts::visit(const struct LtsVisitObject& lvo) const
+void yy::Lts::visit(const struct LtsVisitObject& lvo) const
 {
     int state = 0;
     int n = nodes.size();
@@ -682,7 +686,7 @@ void Lts::visit(const struct LtsVisitObject& lvo) const
 }
 
 /* Convert an Lts to a ProcessNode*. */
-ProcessNode * Lts::toProcessNode(ProcessNodeAllocator& pna) const
+ProcessNode * yy::Lts::toProcessNode(ProcessNodeAllocator& pna) const
 {
     vector<ProcessNode *> pnodes(nodes.size());
 
@@ -702,7 +706,7 @@ ProcessNode * Lts::toProcessNode(ProcessNodeAllocator& pna) const
     return pnodes[0];
 }
 
-Lts& Lts::labeling(const SetValue& labels)
+yy::Lts& yy::Lts::labeling(const SetValue& labels)
 {
     if (!labels.actions.size())
 	return *this;
@@ -710,11 +714,11 @@ Lts& Lts::labeling(const SetValue& labels)
     if (labels.actions.size() == 1)
 	this->labeling(labels.actions[0]);
     else {
-	Lts copy(*this);
+	yy::Lts copy(*this);
 
 	this->labeling(labels.actions[0]);
 	for (unsigned int i=1; i<labels.actions.size(); i++) {
-	    Lts right(copy);
+	    yy::Lts right(copy);
 
 	    right.labeling(labels.actions[i]);
 	    this->compose(right);
@@ -724,7 +728,7 @@ Lts& Lts::labeling(const SetValue& labels)
     return *this;
 }
 
-Lts& Lts::labeling(const string& label)
+yy::Lts& yy::Lts::labeling(const string& label)
 {
     set<int> new_alphabet;
     map<int, int> mapping;
@@ -752,7 +756,7 @@ Lts& Lts::labeling(const string& label)
     return *this;
 }
 
-Lts& Lts::sharing(const SetValue& labels)
+yy::Lts& yy::Lts::sharing(const SetValue& labels)
 {
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
@@ -796,7 +800,7 @@ Lts& Lts::sharing(const SetValue& labels)
     return *this;
 }
 
-Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
+yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
@@ -856,7 +860,7 @@ Lts& Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
     return *this;
 }
 
-Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
+yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
 {
     for (unsigned int i=0; i<oldlabels.actions.size(); i++)
 	this->relabeling(newlabels, oldlabels.actions[i]);
@@ -864,7 +868,7 @@ Lts& Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
     return *this;
 }
 
-Lts& Lts::hiding(const SetValue& s, bool interface)
+yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
 {
     set<int> new_alphabet;
 
@@ -916,7 +920,7 @@ Lts& Lts::hiding(const SetValue& s, bool interface)
     return *this;
 }
 
-Lts& Lts::priority(const SetValue& s, bool low)
+yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
 {
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
@@ -962,7 +966,7 @@ Lts& Lts::priority(const SetValue& s, bool low)
     return *this;
 }
 
-Lts& Lts::property()
+yy::Lts& yy::Lts::property()
 {
     Edge e;
 
@@ -1011,7 +1015,7 @@ Lts& Lts::property()
     return *this;
 }
 
-int Lts::progress(const string& progress_name, const SetValue& s,
+int yy::Lts::progress(const string& progress_name, const SetValue& s,
 					    stringstream& ss)
 {
     terminalSets();
@@ -1063,7 +1067,7 @@ static void graphvizVisitFunction(int state, const struct LtsNode& node,
 	    << " [label = \"" << ati(node.children[i].action) << "\"];\n";
 }
 
-void Lts::graphvizOutput(const char * filename) const
+void yy::Lts::graphvizOutput(const char * filename) const
 {
     LtsVisitObject lvo;
     OutputData gvd;
@@ -1100,7 +1104,7 @@ void Lts::graphvizOutput(const char * filename) const
     fout.close();
 }
 
-void Lts::print_trace(const vector<int>& trace, stringstream& ss) const
+void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
 {
     int size = trace.size();
 
@@ -1115,7 +1119,7 @@ void Lts::print_trace(const vector<int>& trace, stringstream& ss) const
     ss << ati(trace[size-1]) << "\n";
 }
 
-void Lts::simulate(Shell& sh) const
+void yy::Lts::simulate(Shell& sh) const
 {
     stringstream ss;
     int state = 0;
@@ -1217,7 +1221,7 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
     }
 }
 
-void Lts::basic(const string& outfile, stringstream& ss) const
+void yy::Lts::basic(const string& outfile, stringstream& ss) const
 {
     fstream fout(outfile.c_str(), fstream::out);
     LtsVisitObject lvo;
@@ -1236,7 +1240,7 @@ void Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)
+yy::Lts * err_if_not_lts(SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Lts) {
 	stringstream errstream;
@@ -1244,11 +1248,11 @@ Lts * err_if_not_lts(SymbolValue * svp, const struct YYLTYPE& loc)
 	semantic_error(errstream, loc);
     }
 
-    return static_cast<Lts *>(svp);
+    return static_cast<yy::Lts *>(svp);
 }
 
 /* =========================  LtsComposition ============================= */
-void LtsComposition::print() const
+void yy::LtsComposition::print() const
 {
     cout << "LtsComposition {\n";
     for (unsigned int i=0; i<lts.size(); i++)
@@ -1257,22 +1261,22 @@ void LtsComposition::print() const
     cout << "}\n";
 }
 
-SymbolValue * LtsComposition::clone() const
+SymbolValue * yy::LtsComposition::clone() const
 {
-    LtsComposition * lc = new LtsComposition;
+    yy::LtsComposition * lc = new yy::LtsComposition;
 
     lc->lts.resize(lts.size());
     for (unsigned int i=0; i<lts.size(); i++)
 	if (lts[i])
-	    lc->lts[i] = static_cast<class Lts *>(lts[i]->clone());
+	    lc->lts[i] = static_cast<class yy::Lts *>(lts[i]->clone());
 	else
 	    lc->lts[i] = NULL;
 
     return lc;
 }
 
-LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
-						const struct YYLTYPE& loc)
+yy::LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
+						const yy::location& loc)
 {
     if (svp->type() != SymbolValue::LtsComposition) {
 	stringstream errstream;
@@ -1280,5 +1284,5 @@ LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
 	semantic_error(errstream, loc);
     }
 
-    return static_cast<LtsComposition *>(svp);
+    return static_cast<yy::LtsComposition *>(svp);
 }

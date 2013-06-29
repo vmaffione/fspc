@@ -5,9 +5,9 @@ CXXFLAGS=$(DEBUG) -Wall
 
 VER=1.2
 
-OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o serializer.o shell.o
+OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp ltsee csee.sh parser.diff
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp ltsee csee.sh parser.diff
 SOURCES=$(WCIN) fspcc.1 fsp.y
 
 #REPORT=--report=all
@@ -28,13 +28,11 @@ lts.o: lts.hpp symbols_table.hpp parser.hpp shell.hpp
 
 context.o: context.hpp symbols_table.hpp
 
-parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp translator.hpp callbacks.o interface.hpp circular_buffer.hpp
-
-translator.o: translator.hpp parser.hpp
+parser.o: context.hpp symbols_table.hpp parser.cpp lts.hpp utils.hpp scanner.hpp driver.hpp callbacks.o interface.hpp circular_buffer.hpp
 
 utils.o: utils.hpp parser.hpp
 
-callbacks.o: callbacks.hpp utils.hpp context.hpp translator.hpp lts.hpp parser.hpp
+callbacks.o: callbacks.hpp utils.hpp context.hpp driver.hpp lts.hpp parser.hpp
 
 circular_buffer.o: circular_buffer.hpp
 
@@ -42,9 +40,11 @@ serializer.o: serializer.hpp
 
 shell.o: shell.hpp lts.hpp parser.hpp
 
+driver.o: driver.hpp
+
 parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp
-	patch parser.cpp < parser.diff
+	#patch parser.cpp < parser.diff # TODO regenerate the patch
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp

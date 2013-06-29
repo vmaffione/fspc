@@ -121,22 +121,3 @@ void CircularBuffer::print(int col) const
     cout << "COLUMN=" << column << endl;
 }
 
-void CircularBuffer::location_extend(struct YYLTYPE& loc, int len)
-{
-    loc.last_column += len;
-}
-
-/* Restart: move the first cursor to the last position. */
-void CircularBuffer::location_step(struct YYLTYPE& loc)
-{
-    loc.first_column = loc.last_column;
-    loc.first_line = loc.last_line;
-}
-
-/* Advance of NUM lines. */
-void CircularBuffer::location_lines(struct YYLTYPE& loc, int num)
-{
-    loc.last_column = 1;
-    loc.last_line += num;
-}
-

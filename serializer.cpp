@@ -190,7 +190,7 @@ void serializeLtsVisitFunction(int state, const struct LtsNode& node, void * opa
     }
 }
 
-void Serializer::lts(const class Lts &lts, bool raw)
+void Serializer::lts(const class yy::Lts &lts, bool raw)
 {
     LtsVisitObject lvo;
     uint32_t end = ~0;
@@ -228,7 +228,7 @@ void Serializer::lts(const class Lts &lts, bool raw)
     }
 }
 
-void Deserializer::lts(class Lts &lts, bool raw)
+void Deserializer::lts(class yy::Lts &lts, bool raw)
 {
     char type;
     uint32_t x, y, z, end, error;

@@ -17,18 +17,33 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-%{
+%{ /* -*- C++ -*- */
+# include <cstdlib>
+# include <cerrno>
+# include <climits>
+# include <string>
 #include <cstdio>
 #include <iostream>
 #include <assert.h>
+# include "driver.hpp"
+/* Include the bison-generated parser header, in order to get the token
+   types definition that we return, and the CircularBuffer. */
+# include "parser.hpp"
 
 using namespace std;
 
-/* Include the bison-generated parser header, in order to get the token
-   types definition that we return, and the CircularBuffer. */
-#include "parser.hpp" 
 
+/* Work around an incompatibility in flex (at least versions
+   2.5.31 through 2.5.33): it generates code that does
+   not conform to C89.  See Debian bug 333231
+   <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=333231>.  */
+# undef yywrap
+# define yywrap() 1
+
+/* By default yylex returns int, we use token_type.
+   Unfortunately yyterminate by default returns 0, which is
+   not of token_type.  */
+#define yyterminate() return token::END
 
 //#define DEBUG
 #ifdef DEBUG
@@ -38,11 +53,11 @@ using namespace std;
 #endif
 
 
-
 /* The following is executed before each rule's action. */
 #define YY_USER_ACTION \
     do { \
-	last_tokens.location_extend(yylloc, yyleng); \
+	/*last_tokens.location_extend(yylloc, yyleng);*/ \
+	yylloc->columns(yyleng); \
 	last_tokens.insert(yytext, yyleng); \
     } while (0);
 
@@ -51,7 +66,10 @@ using namespace std;
    ============================================================== */
 %}
 
-
+/* We don't want to take a standard yywrap() from fl.so, and so we can
+   avoid linking the executable with -lfl. */
+%option noyywrap nounput batch debug
+%option outfile="scanner.cpp"
 
 DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-zA-Z0-9]*
@@ -60,13 +78,6 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 %x COMMENTS
 %x INLINECOMMENTS
 
-/* We don't want to take a standard yywrap() from fl.so, and so we can
-   avoid linking the executable with -lfl. */
-%option noyywrap
-
-%option outfile="scanner.cpp"
-
-/* %option batch */
 
 %%
 
@@ -75,7 +86,12 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
      verbatim at the beginning of yylex(). At each yylex() 
      invocation, therefore, we mark the current last position as the
      start of the next token.  */
-    last_tokens.location_step(yylloc);
+
+    /* Shortcut typedef. */
+    typedef yy::fsp_parser::token token;
+
+    //last_tokens.location_step(yylloc);
+    yylloc->step ();
 %}
 
 "/*" {
@@ -89,15 +105,18 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <COMMENTS>[\n]+ {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc);
+    /*last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc); */
+    yylloc->lines(yyleng);
+    yylloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
 }
 
 <COMMENTS>. {
-    last_tokens.location_step(yylloc);
+    /* last_tokens.location_step(yylloc); */
+    yylloc->step();
 }
 
 "//" {
@@ -107,8 +126,10 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <INLINECOMMENTS>[\n] {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc);
+    /*last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc);*/
+    yylloc->lines(yyleng);
+    yylloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
@@ -116,122 +137,126 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 }
 
 <INLINECOMMENTS>. {
-    last_tokens.location_step(yylloc);
+    /*last_tokens.location_step(yylloc);*/
+    yylloc->step();
 }
 
 
 {DIGIT}+ {
-    yylval.int_value = atoi(yytext);
-    IFD(cout << "INTEGER: " << yylval.int_value << "\n");
-    return INTEGER;
+    yylval->int_value = atoi(yytext); //TODO strtol()
+    IFD(cout << "INTEGER: " << yylval->int_value << "\n");
+    return token::INTEGER;
 }
 
-if { IFD(cout << "IF\n"); return IF; }
-then { IFD(cout << "THEN\n"); return THEN; }
-else { IFD(cout << "ELSE\n"); return ELSE; }
-when { IFD(cout << "WHEN\n"); return WHEN; }
-const { IFD(cout << "CONST\n"); return CONST; }
-range { IFD(cout << "RANGE\n"); return RANGE; }
-set { IFD(cout << "SET\n"); return SET; }
-property { IFD(cout << "PROPERTY\n"); return PROPERTY; }
-progress { IFD(cout << "PROGRESS\n"); return PROGRESS; }
-menu { IFD(cout << "MENU\n"); return MENU; }
-forall {IFD(cout << "FORALL\n"); return FORALL; }
-END { IFD(cout << "END\n"); return END; }
-STOP { IFD(cout << "STOP\n"); return STOP; }
-ERROR { IFD(cout << "ERROR\n"); return ERROR; }
+if { IFD(cout << "IF\n"); return token::IF; }
+then { IFD(cout << "THEN\n"); return token::THEN; }
+else { IFD(cout << "ELSE\n"); return token::ELSE; }
+when { IFD(cout << "WHEN\n"); return token::WHEN; }
+const { IFD(cout << "CONST\n"); return token::CONST; }
+range { IFD(cout << "RANGE\n"); return token::RANGE; }
+set { IFD(cout << "SET\n"); return token::SET; }
+property { IFD(cout << "PROPERTY\n"); return token::PROPERTY; }
+progress { IFD(cout << "PROGRESS\n"); return token::PROGRESS; }
+menu { IFD(cout << "MENU\n"); return token::MENU; }
+forall {IFD(cout << "FORALL\n"); return token::FORALL; }
+END { IFD(cout << "END\n"); return token::END; }
+STOP { IFD(cout << "STOP\n"); return token::STOP; }
+ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 {LowerCaseID} {
-    yylval.string_ptr = new string(yytext);
+    yylval->string_ptr = new string(yytext);
     IFD(cout << "LowerCaseID\n"); 
-    return LowerCaseID;
+    return token::LowerCaseID;
 }
 
 {UpperCaseID} {
-    yylval.string_ptr = new string(yytext);
+    yylval->string_ptr = new string(yytext);
     IFD(cout << "UpperCaseID\n"); 
-    return UpperCaseID;
+    return token::UpperCaseID;
 }
 
 "->" {
     IFD(cout << "->\n"); 
-    return ARROW;
+    return token::ARROW;
 }
 
 ".." {
     IFD(cout << "..\n"); 
-    return DOTDOT;
+    return token::DOTDOT;
 }
 
 "::" {
     IFD(cout << "::\n");
-    return SHARING;
+    return token::SHARING;
 }
 
 "||" {
     IFD(cout << "||\n"); 
-    return OR;
+    return token::OR;
 }
 
 "&&" {
     IFD(cout << "&&\n"); 
-    return AND;
+    return token::AND;
 }
 
 "==" {
     IFD(cout << "==\n"); 
-    return EQUAL;
+    return token::EQUAL;
 }
 
 "!=" {
     IFD(cout << "!=\n"); 
-    return NOTEQUAL;
+    return token::NOTEQUAL;
 }
 
 "<=" {
     IFD(cout << "<=\n"); 
-    return LOE;
+    return token::LOE;
 }
 
 ">=" {
     IFD(cout << ">=\n"); 
-    return GOE;
+    return token::GOE;
 }
 
 ">>" {
     IFD(cout << ">>\n"); 
-    return RSHIFT;
+    return token::RSHIFT;
 }
 
 "<<" {
     IFD(cout << "aa\n"); 
-    return LSHIFT;
+    return token::LSHIFT;
 }
 
 "|"|"^"|"&"|"<"|">" {
     IFD(cout << yytext[0] << "\n"); 
-    return yytext[0];
+    return yy::fsp_parser::token_type(yytext[0]);
 }
 
 "+"|"-"|"*"|"/"|"%"|"!" {
     IFD(cout << yytext[0] << "\n"); 
-    return yytext[0];
+    return yy::fsp_parser::token_type(yytext[0]);
 }
 
 "("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";"|"@"|"\\" {
     IFD(cout << yytext[0] << "\n"); 
-    return yytext[0];
+    return yy::fsp_parser::token_type(yytext[0]);
 }
 
 [ \t\r]+ {
     /* Eat up whitespaces, and keep tracking positions. */
-    last_tokens.location_step(yylloc);
+    /* last_tokens.location_step(yylloc); */
+    yylloc->step();
 }
 
 [\n]+ {
     /* Update the line counter and step forward. */
-    last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc);
+    /*last_tokens.location_lines(yylloc, yyleng);
+    last_tokens.location_step(yylloc);*/
+    yylloc->lines(yyleng);
+    yylloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
@@ -379,5 +404,22 @@ int scanner_setup(const char * input_name)
     cout << "FLEX buffer " << YY_CURRENT_BUFFER << "\n";
 
     return 0;
+}
+
+void fsp_driver::scan_begin(const char * filename)
+{
+    yy_flex_debug = trace_scanning;
+    if (filename == NULL /* || strcmp(file,"-") == 0 */) {
+	yyin = stdin;
+    } else if (!(yyin = fopen(filename, "r"))) {
+	string err = "cannot open " + string(filename) + ": " + strerror(errno);
+	perror(err.c_str());
+	exit(EXIT_FAILURE);
+    }
+}
+
+void fsp_driver::scan_end ()
+{
+    fclose(yyin);
 }
 

@@ -1,33 +1,13 @@
-/*
- *  fspc top level data structures
- *
- *  Copyright (C) 2013  Vincenzo Maffione
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-
-#ifndef __GLOBAL__HH
-#define __GLOBAL__HH
+#ifndef __DRIVER__HH
+#define __DRIVER__HH
 
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
 #include <set>
 #include <vector>
-
-using namespace std;
+#include <string>
+#include <map>
 
 //#define NDEBUG
 #include <assert.h>
@@ -36,6 +16,10 @@ using namespace std;
 #include "symbols_table.hpp"
 #include "utils.hpp"
 #include "callbacks.hpp"
+#include "parser.hpp"
+#include "interface.hpp"
+
+using namespace std;
 
 
 struct AliasElement {
@@ -72,10 +56,10 @@ struct Aliases {
 };
 
 
-struct FspCompiler;
+class fsp_driver;
 
 struct FspTranslator {
-    FspCompiler& cr;
+    fsp_driver& cr;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
@@ -94,10 +78,11 @@ struct FspTranslator {
        process (see toProcessNode in callback__66. */
     set<int> alphabet_extension;
 
-    struct YYLTYPE locations[8];  // XXX two should be enough
+    //yy::location locations[8];  // XXX two should be enough
+    yy::location locations[8];
 
 
-    FspTranslator(struct FspCompiler& r) : cr(r), aliases(*this) {
+    FspTranslator(struct fsp_driver& r) : cr(r), aliases(*this) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -117,38 +102,60 @@ struct FspTranslator {
 };
 
 
-struct FspCompiler {
-    /* Main actions table. */
-    struct ActionsTable actions;
+// Tell Flex the lexer's prototype ...
+#define YY_DECL                                        \
+  yy::fsp_parser::token_type                         \
+  yylex(yy::fsp_parser::semantic_type* yylval,      \
+         yy::fsp_parser::location_type* yylloc,      \
+         fsp_driver& driver)
+// ... and declare it for the parser's sake.
+YY_DECL;
 
-    /* Const, Range, Set and Parameter objects. */
-    struct SymbolsTable identifiers;
+/* Conducting the whole scanning and parsing of fspcc. */
+class fsp_driver
+{
+    public:
+	/* Main actions table. */
+	struct ActionsTable actions;
 
-    /* Global processes. */
-    struct SymbolsTable processes;
+	/* Const, Range, Set and Parameter objects. */
+	struct SymbolsTable identifiers;
 
-    /* Progress properties. */
-    struct SymbolsTable progresses;
-    
-    int record_mode_on;
-    ParametricProcess * parametric;
-    struct SymbolsTable parametric_processes;
+	/* Global processes. */
+	struct SymbolsTable processes;
 
-    /* The main translator. */
-    FspTranslator tr;
+	/* Progress properties. */
+	struct SymbolsTable progresses;
 
-    /* The ProcessNode allocator. */
-    ProcessNodeAllocator pna;
+	int record_mode_on;
+	ParametricProcess * parametric;
+	struct SymbolsTable parametric_processes;
 
-    FspCompiler() : actions("Global actions table"), record_mode_on(0), 
-			    parametric(new ParametricProcess), tr(*this) { }
+	/* The main translator. */
+	FspTranslator tr;
 
-    ~FspCompiler() {
-	if (parametric)
-	    delete parametric;
-    }
+	/* The ProcessNode allocator. */
+	ProcessNodeAllocator pna;
+
+	string current_file;
+
+
+	fsp_driver();
+	virtual ~fsp_driver();
+
+	/* Handling the scanner. */
+	void scan_begin(const char * filename);
+	void scan_end();
+	bool trace_scanning;
+
+	/* Run the parser.  Return 0 on success. */
+	int parse(const CompilerOptions& co);
+	bool trace_parsing;
+
+	/* Error handling. */
+	void error(const yy::location& l, const std::string& m);
+	void error(const std::string& m);
 };
 
+#endif // ! __DRIVER__HH
 
-
-#endif
