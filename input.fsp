@@ -2,34 +2,10 @@ const Number = 3 * 4
 range R = 1..2
 set S = {x,y,z}
 
-// these are comments
+Q = (t[i:R]-> (when (i>1) u->Q | v->Q)).
 
-P = (a->b->P|c->d->END).
-Q = (t[i:1..2]-> (when (i>1) u->Q | v->Q)).
-||C = (P || Q).
-
-/*
 P(K=1)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
 ||CC = c:C(3).
 K=(a->b[i:R]->END).
-*/
-
-/*
-P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
-P=(l->cs->u->P). L=(l->u->L). ||C=({p[1..2]}:P || {p[1..2]}::L).
-P(K=99) = (a[K]->END). C = P;P(23);P(197);C.
-P(K=1) = (a[K]->(b->END|c->END)). Q = Q[1], Q[1] = (q1->Q[2]), Q[2] = (q2->END|r->Q). C = P(39);Q;P;C.
-P=(a->b->END)/{a[1..2]/a, b[1..3]/b}. Q=(x->y->END). ||C =(p:P || q:Q) / {q1/q}.
-P=(a->b->c->d->END) +{t,v} /{dd/d} \{b}.
-P=(a->b->END). Q=(x->y->END). ||C=(P||Q) << {a} \{y}.
-P=(a->b->END). ||C= forall[i:1..2][j:1..2] p[i+j]:P.
-P=(a->END). ||C = forall[i:1..2] if (i<=1)then (forall[j:1..2] a[i][j]:P) else (forall[j:1..2] b[i][j]:P).
-P=(a[i:1..4][j:1..3]->b[i+j]->END) / { forall[i:2..3]{ forall[j:2..3]{ x[i+j]/b[i+j] } } }.
-P=(a[i:1..4][j:1..3]->b[i][j]->END) / {x[2..3][2..3]/b[i:2..3][j:2..3]}.
-property PP = (a->b->c->END).
-P = (a1[i:1..2]->a2[i]->P[i]), P[i:1..2] = (b[i]->c[i]->d[i]->P[i]). progress PR[i:1..2] = {a[i],b[i]}
-*/
-
-
 

@@ -55,11 +55,20 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
+pp: preproc.o
+	$(CC) -o pp preproc.o
+
+preproc.o: preproc.cpp
+	$(CC) $(DEBUG) -c preproc.cpp
+
+preproc.cpp: preproc.lex
+	flex preproc.lex
+
 tags:
 	cscope -R
 
 clean: cleanaur clc
-	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out
+	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out preproc.cpp
 
 testing: fspcc
 	tests/test.sh
