@@ -541,6 +541,26 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
     return vp;
 }
 
+SvpVec * callback__11(FspTranslator& tr, string * one)
+{
+    SvpVec * vp = new SvpVec;
+    SymbolValue * svp;
+
+    if (!tr.cr.identifiers.lookup(*one, svp)) {
+	stringstream errstream;
+	errstream << "range " << *one << " undeclared";
+	semantic_error(errstream, tr.locations[0]);
+    }
+    delete one;
+    err_if_not_range(svp, tr.locations[0]);
+    svp = svp->clone();
+    vp->shared = true;
+    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
+	vp->v.push_back(svp);
+
+    return vp;
+}
+/* TODO remove, since unused
 SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
 {
     SvpVec * vp = new SvpVec;
@@ -559,7 +579,7 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
     }
     svp = svp->clone();
 
-    /* Pass the variable name to the upper levels.*/
+    // Pass the variable name to the upper levels.
     svp->setVariable(*one);
     delete one;
     vp->shared = true;
@@ -568,13 +588,13 @@ SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
 
     return vp;
 }
-
+*/
 SvpVec * callback__7(FspTranslator& tr, string * one, SvpVec * two)
 {
     RangeValue * rvp;
     for (unsigned int i=0; i<two->v.size(); i++) {
 	rvp = is_range(two->v[i]);
-	/* Pass the variable to the upper levels.*/
+	// Pass the variable to the upper levels.
 	rvp->setVariable(*one);
     }
     delete one;
@@ -587,7 +607,7 @@ SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two)
     SetValue * setvp;
     for (unsigned int i=0; i<two->v.size(); i++) {
 	setvp = is_set(two->v[i]);
-	/* Pass the variable to the upper levels.*/
+	// Pass the variable to the upper levels.
 	setvp->setVariable(*one);
     }
     delete one;

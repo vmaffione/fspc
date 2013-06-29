@@ -5,9 +5,9 @@ CXXFLAGS=$(DEBUG) -Wall
 
 VER=1.2
 
-OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o serializer.o shell.o preprocess.o
+OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o translator.o utils.o callbacks.o circular_buffer.o serializer.o shell.o preproc.o
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp preprocess.?pp ltsee csee.sh parser.diff
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp translator.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp preproc.hpp preproc.lex ltsee csee.sh parser.diff
 SOURCES=$(WCIN) fspcc.1 fsp.y
 
 #REPORT=--report=all
@@ -42,8 +42,6 @@ serializer.o: serializer.hpp
 
 shell.o: shell.hpp lts.hpp parser.hpp
 
-preprocess.o: preprocess.hpp
-
 parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp
 	patch parser.cpp < parser.diff
@@ -55,6 +53,7 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
+# TODO remove
 pp: preproc.o
 	$(CC) -o pp preproc.o
 

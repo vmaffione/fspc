@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define IFD(x) (x)
 #else
@@ -42,7 +42,9 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 /* We don't want to take a standard yywrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
 
+%option nomain
 %option outfile="preproc.cpp"
+%option prefix="pp"
 %option reentrant stack noyywrap
 %option extra-type="struct Preproc *"
 
@@ -67,7 +69,7 @@ range[ \t\r\n]+{UpperCaseID} {
     }
     yyextra->ranges.insert(&yytext[i]);
     s = yytext;
-    s.insert(i, "$r");
+    s.insert(i, "$r ");
     yyextra->out << s;
 }
 
@@ -82,9 +84,8 @@ set[ \t]+{UpperCaseID} {
     }
     yyextra->sets.insert(&yytext[i]);
     s = yytext;
-    s.insert(i, "$s");
+    s.insert(i, "$s ");
     yyextra->out << s;
-    yyextra->out << yytext;
 }
 
 {UpperCaseID} {
@@ -92,9 +93,9 @@ set[ \t]+{UpperCaseID} {
 
     IFD(cout << "UpperCaseID " << yytext << "\n");
     if (yyextra->ranges.count(s)) {
-	s.insert(0, "$r");
+	s.insert(0, "$r ");
     } else if (yyextra->sets.count(s)) {
-	s.insert(0, "$s");
+	s.insert(0, "$s ");
     }
     yyextra->out << s;
 }
@@ -106,10 +107,9 @@ set[ \t]+{UpperCaseID} {
 
 %%
 
-int main()
+int preprocess(const string& input_name, const string& output_name)
 {
-    const char * input_name = "input.fsp";
-    FILE *fin = fopen(input_name, "r");
+    FILE *fin = fopen(input_name.c_str(), "r");
     struct Preproc p;
     yyscan_t scanner;
 
@@ -117,7 +117,7 @@ int main()
 	cerr << "Input error: Can't open " << input_name << "\n";
 	return -1;
     }
-    p.out.open("o.fsp", ios::out);
+    p.out.open(output_name.c_str(), ios::out);
 
     yylex_init_extra(&p, &scanner);
     yyset_in(fin, scanner);

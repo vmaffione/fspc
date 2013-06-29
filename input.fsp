@@ -3,6 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 
 Q = (t[i:R]-> (when (i>1) u->Q | v->Q)).
+Q2 = (t[x:S]-> u[x] ->Q2).
 
 P(K=1)=(a[K]->END).
 ||C(K=1) = p[i:1..K]:P(i).
