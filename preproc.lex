@@ -21,7 +21,6 @@ struct Preproc {
     set<string> sets;
 };
 
-struct Preproc p;
 
 
 /* The following is executed before each rule's action. */
@@ -36,17 +35,16 @@ struct Preproc p;
 %}
 
 
-
 DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-zA-Z0-9]*
 UpperCaseID	[A-Z][_a-zA-Z0-9]*
 
 /* We don't want to take a standard yywrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
-%option noyywrap
 
 %option outfile="preproc.cpp"
-%option prefix="pp"
+%option reentrant stack noyywrap
+%option extra-type="struct Preproc *"
 
 %%
 
@@ -67,10 +65,10 @@ range[ \t\r\n]+{UpperCaseID} {
 	    || yytext[i] == '\n') {
 	i++;
     }
-    p.ranges.insert(&yytext[i]);
+    yyextra->ranges.insert(&yytext[i]);
     s = yytext;
     s.insert(i, "$r");
-    p.out << s;
+    yyextra->out << s;
 }
 
 set[ \t]+{UpperCaseID} {
@@ -82,28 +80,28 @@ set[ \t]+{UpperCaseID} {
 	    || yytext[i] == '\n') {
 	i++;
     }
-    p.sets.insert(&yytext[i]);
+    yyextra->sets.insert(&yytext[i]);
     s = yytext;
     s.insert(i, "$s");
-    p.out << s;
-    p.out << yytext;
+    yyextra->out << s;
+    yyextra->out << yytext;
 }
 
 {UpperCaseID} {
     string s = yytext;
 
     IFD(cout << "UpperCaseID " << yytext << "\n");
-    if (p.ranges.count(s)) {
+    if (yyextra->ranges.count(s)) {
 	s.insert(0, "$r");
-    } else if (p.sets.count(s)) {
+    } else if (yyextra->sets.count(s)) {
 	s.insert(0, "$s");
     }
-    p.out << s;
+    yyextra->out << s;
 }
 
 .|\n {
     // TODO don't filter out
-    p.out << yytext;
+    yyextra->out << yytext;
 }
 
 %%
@@ -112,15 +110,20 @@ int main()
 {
     const char * input_name = "input.fsp";
     FILE *fin = fopen(input_name, "r");
+    struct Preproc p;
+    yyscan_t scanner;
 
     if (!fin) {
 	cerr << "Input error: Can't open " << input_name << "\n";
 	return -1;
     }
-    yyin = fin;
     p.out.open("o.fsp", ios::out);
 
-    yylex();
+    yylex_init_extra(&p, &scanner);
+    yyset_in(fin, scanner);
+    yyset_extra(&p, scanner);
+    yylex(scanner);
+    yylex_destroy(scanner);
 
     p.out.close();
     fclose(fin);
