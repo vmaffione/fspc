@@ -18,8 +18,12 @@
  */
 
 
-%skeleton "lalr1.cc" /* -*- C++ -*- */
+%skeleton "glr.cc" /* -*- C++ -*- */
 //%require "2.6.90.8-d4fe"
+
+/* Generate a Generic LR parser, instead of a standard LR parser. We need
+   this to resolve conflicts at runtime. */
+%glr-parser
 
 /* Create a parser header file. This is needed because we define yylex()
    in another source file (the FLEX generated scanner source file). */
@@ -274,10 +278,6 @@ void post_process_definition(fsp_driver& driver, yy::Lts * lts, const yy::locati
 %printer    { yyoutput << *$$; } <string_ptr>
 %destructor { /*delete $$;*/ } <string_ptr>
 %printer    { yyoutput << $$; } <int_value>
-
-/* Generate a Generic LR parser, instead of a standard LR parser. We need
-   this to resolve conflicts at runtime. */
-%glr-parser
 
 
 %%
