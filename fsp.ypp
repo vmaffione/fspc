@@ -95,6 +95,9 @@ extern class CircularBuffer last_tokens;
 /* Interactive shell */
 #include "shell.hpp"
 
+/* Preprocessor */
+#include "preprocess.hpp"
+
 
 /* A global data structure containing everything the compiler needs. */
 struct FspCompiler c;
@@ -198,6 +201,8 @@ void yyerror(const char *s);
 %token GOE ">="
 %token LSHIFT "<<"
 %token RSHIFT ">>"
+%token EXPECT_RANGE "expected range"
+%token EXPECT_SET "expected set"
 %token <int_value> INTEGER "integer"
 %token <string_ptr> UpperCaseID "upper case identifier"
 %token <string_ptr> LowerCaseID "lower case identifer"
@@ -1688,7 +1693,10 @@ int parser(const CompilerOptions& co)
 
     if (co.input_type == CompilerOptions::InputTypeFsp) {
 	/* Parse the FSP input file. */
-	ibs.push(co.input_file);
+	string tmp(co.input_file);
+	preprocess(tmp);
+	//tmp = "." + tmp;
+	ibs.push(tmp.c_str());
 	yyparse();
 	ibs.pop();
 	serp = new Serializer(co.output_file);

@@ -223,6 +223,14 @@ ERROR { IFD(cout << "ERROR\n"); return ERROR; }
     return yytext[0];
 }
 
+"$r" {
+    return EXPECT_RANGE;
+}
+
+"$s" {
+    return EXPECT_SET;
+}
+
 [ \t\r]+ {
     /* Eat up whitespaces, and keep tracking positions. */
     last_tokens.location_step(yylloc);
