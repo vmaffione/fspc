@@ -43,7 +43,7 @@ using namespace std;
 /* By default yylex returns int, we use token_type.
    Unfortunately yyterminate by default returns 0, which is
    not of token_type.  */
-#define yyterminate() return token::END
+#define yyterminate() return token::ENDOF
 
 //#define DEBUG
 #ifdef DEBUG

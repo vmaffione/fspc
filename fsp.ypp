@@ -208,6 +208,7 @@ void post_process_definition(fsp_driver& driver, yy::Lts * lts, const yy::locati
 /* define the "terminal symbol", token types we're going to use (in CAPS
 / by convention), and associate each with a field of the union: */
 
+%token ENDOF 0 "end of file"
 %token IF "if"
 %token ELSE "else"
 %token THEN "then"
