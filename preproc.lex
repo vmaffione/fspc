@@ -69,7 +69,7 @@ range[ \t\r\n]+{UpperCaseID} {
     }
     yyextra->ranges.insert(&yytext[i]);
     s = yytext;
-    s.insert(i, "$r ");
+    s.insert(i, "$r");
     yyextra->out << s;
 }
 
@@ -84,7 +84,7 @@ set[ \t]+{UpperCaseID} {
     }
     yyextra->sets.insert(&yytext[i]);
     s = yytext;
-    s.insert(i, "$s ");
+    s.insert(i, "$s");
     yyextra->out << s;
 }
 
@@ -93,9 +93,9 @@ set[ \t]+{UpperCaseID} {
 
     IFD(cout << "UpperCaseID " << yytext << "\n");
     if (yyextra->ranges.count(s)) {
-	s.insert(0, "$r ");
+	s.insert(0, "$r");
     } else if (yyextra->sets.count(s)) {
-	s.insert(0, "$s ");
+	s.insert(0, "$s");
     }
     yyextra->out << s;
 }

@@ -560,35 +560,7 @@ SvpVec * callback__11(FspTranslator& tr, string * one)
 
     return vp;
 }
-/* TODO remove, since unused
-SvpVec * callback__6(FspTranslator& tr, string * one, string * two)
-{
-    SvpVec * vp = new SvpVec;
-    SymbolValue * svp;
 
-    if (!tr.cr.identifiers.lookup(*two, svp)) {
-	stringstream errstream;
-	errstream << "range/set " << *two << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
-    }
-    if (!(svp->type() == SymbolValue::Range ||
-		svp->type() == SymbolValue::Set)) {
-	stringstream errstream;
-	errstream << "range/set expected";
-	semantic_error(errstream, tr.locations[0]);
-    }
-    svp = svp->clone();
-
-    // Pass the variable name to the upper levels.
-    svp->setVariable(*one);
-    delete one;
-    vp->shared = true;
-    for (unsigned int c=0; c<tr.current_contexts().size(); c++)
-	vp->v.push_back(svp);
-
-    return vp;
-}
-*/
 SvpVec * callback__7(FspTranslator& tr, string * one, SvpVec * two)
 {
     RangeValue * rvp;
