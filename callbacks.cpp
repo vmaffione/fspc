@@ -30,8 +30,6 @@
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
-#include "callbacks.hpp"
-
 
 //#define DEBUG
 #ifdef DEBUG

@@ -24,9 +24,9 @@
 #include <unistd.h>	/* fork() */
 #include <sys/wait.h>	/* waitpid() */
 #include <ncurses.h>
-#include "shell.hpp"
-#include "lts.hpp"
 
+/* Lts definitions and operations. */
+#include "lts.hpp"
 
 
 #define DEBUG

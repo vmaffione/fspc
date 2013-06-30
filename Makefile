@@ -53,10 +53,6 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
-# TODO remove
-pp: preproc.o
-	$(CC) -o pp preproc.o
-
 preproc.o: preproc.cpp
 	$(CC) $(DEBUG) -c preproc.cpp
 

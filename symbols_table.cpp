@@ -23,6 +23,8 @@
 #include <sstream>
 #include <fstream>
 #include <assert.h>
+
+/* Symbols tables and symbol types. */
 #include "symbols_table.hpp"
 
 

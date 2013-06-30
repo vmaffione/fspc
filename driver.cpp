@@ -1,20 +1,8 @@
 /* Inline utilities. */
 #include "utils.hpp"
 
-/* Context, ContextsSet and ContextsSetStack. */
-#include "context.hpp"
-
-/* Stuff from flex that bison needs to know about. */
-#include "scanner.hpp"
-
 /* Lts definitions and operations. */
 #include "lts.hpp"
-
-/* Callbacks. */
-#include "callbacks.hpp"
-
-/* Compiler options. */
-#include "interface.hpp"
 
 /* Serialization and deserialization support. */
 #include "serializer.hpp"
@@ -25,8 +13,7 @@
 /* Preprocessor */
 #include "preproc.hpp"
 
-
-#include "driver.hpp"
+/* Bison generated parser. */
 #include "parser.hpp"
 
 

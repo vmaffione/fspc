@@ -1599,7 +1599,7 @@ variable: LowerCaseID { ps.push_back($1); $$ = $1; };
 constant_id: UpperCaseID { ps.push_back($1); $$ = $1; };
 range_id: UpperCaseID { ps.push_back($1); $$ = $1; };
 set_id: UpperCaseID { ps.push_back($1); $$ = $1; };
-const_parameter_id: constant_id { AA($1,1,1); };
+const_parameter_id: constant_id { AA($1,1,1); $$ = $1; };
 parameter_id: UpperCaseID { ps.push_back($1); $$ = $1; };
 process_id: UpperCaseID { ps.push_back($1); $$ = $1; };
 progress_id: UpperCaseID { ps.push_back($1); $$ = $1; };

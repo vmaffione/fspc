@@ -21,9 +21,11 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "utils.hpp"
+
+/* Token buffer support. */
 #include "circular_buffer.hpp"
 
+/* Main class driver. */
 #include "driver.hpp"
 
 

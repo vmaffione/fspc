@@ -23,9 +23,15 @@
 #include <algorithm>
 #include <cstdlib>
 #include <assert.h>
-#include "lts.hpp"
-#include "symbols_table.hpp"
+
+/* Inline utilities. */
 #include "utils.hpp"
+
+/* Lts definitions and operations. */
+#include "lts.hpp"
+
+/* Symbol tables and symbol types. */
+#include "symbols_table.hpp"
 
 using namespace std;
 

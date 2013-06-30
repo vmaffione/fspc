@@ -26,6 +26,7 @@
 
 using namespace std;
 
+/* Main FspDriver class, instantiating the parser. */
 #include "driver.hpp"
 
 
