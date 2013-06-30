@@ -100,9 +100,6 @@ extern class CircularBuffer last_tokens;
 /* Definition of the FspTranslator class. */
 #include "driver.hpp"
 
-/* Stuff from flex that bison needs to know about. */
-#include "scanner.hpp"
-
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
