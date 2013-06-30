@@ -24,7 +24,7 @@ $(OBJS): $(HDRS)
 
 parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp
-	#patch parser.cpp < parser.diff # TODO regenerate the patch
+	patch parser.cpp < parser.diff
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp
