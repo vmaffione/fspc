@@ -32,7 +32,7 @@ using namespace std;
 
 
 class Shell {
-	fsp_driver& c;
+	FspDriver& c;
 	map<string, const char*> help_map;
 	typedef void (Shell::*ShellCmdFunc)(const vector<string>& args, stringstream& ss);
 	map<string, ShellCmdFunc> cmd_map;
@@ -52,8 +52,8 @@ class Shell {
 	void help(const vector<string> &args, stringstream& ss);
 
     public:
-	Shell(fsp_driver& cr, istream& inr);
-	Shell(fsp_driver& cr, ifstream& inr);
+	Shell(FspDriver& cr, istream& inr);
+	Shell(FspDriver& cr, ifstream& inr);
 
 	int run();
 	void readline(string& line);

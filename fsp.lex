@@ -88,7 +88,7 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
      start of the next token.  */
 
     /* Shortcut typedef. */
-    typedef yy::fsp_parser::token token;
+    typedef yy::FspParser::token token;
 
     //last_tokens.location_step(yylloc);
     yylloc->step ();
@@ -232,17 +232,17 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 "|"|"^"|"&"|"<"|">" {
     IFD(cout << yytext[0] << "\n"); 
-    return yy::fsp_parser::token_type(yytext[0]);
+    return yy::FspParser::token_type(yytext[0]);
 }
 
 "+"|"-"|"*"|"/"|"%"|"!" {
     IFD(cout << yytext[0] << "\n"); 
-    return yy::fsp_parser::token_type(yytext[0]);
+    return yy::FspParser::token_type(yytext[0]);
 }
 
 "("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";"|"@"|"\\" {
     IFD(cout << yytext[0] << "\n"); 
-    return yy::fsp_parser::token_type(yytext[0]);
+    return yy::FspParser::token_type(yytext[0]);
 }
 
 "$r" {
@@ -417,7 +417,7 @@ int scanner_setup(const char * input_name)
     return 0;
 }
 
-void fsp_driver::scan_begin(const char * filename)
+void FspDriver::scan_begin(const char * filename)
 {
     yy_flex_debug = trace_scanning;
     if (filename == NULL /* || strcmp(file,"-") == 0 */) {
@@ -429,7 +429,7 @@ void fsp_driver::scan_begin(const char * filename)
     }
 }
 
-void fsp_driver::scan_end ()
+void FspDriver::scan_end ()
 {
     fclose(yyin);
 }

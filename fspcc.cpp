@@ -208,7 +208,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
 int main (int argc, char ** argv)
 {
-    fsp_driver driver;
+    FspDriver driver;
     CompilerOptions co;
     int ret;
     

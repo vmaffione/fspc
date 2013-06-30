@@ -50,7 +50,7 @@ yy::Lts * ParametricProcess::replay(struct FspTranslator& tr,
 {
     unsigned int i;
     vector<void *> stack;
-    fsp_driver& c = tr.cr;
+    FspDriver& c = tr.cr;
     FspTranslator ltr(c);
     ConstValue * cvp;
     SymbolValue * svp;

@@ -56,10 +56,10 @@ struct Aliases {
 };
 
 
-class fsp_driver;
+class FspDriver;
 
 struct FspTranslator {
-    fsp_driver& cr;
+    FspDriver& cr;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
@@ -82,7 +82,7 @@ struct FspTranslator {
     yy::location locations[8];
 
 
-    FspTranslator(struct fsp_driver& r) : cr(r), aliases(*this) {
+    FspTranslator(struct FspDriver& r) : cr(r), aliases(*this) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -104,15 +104,15 @@ struct FspTranslator {
 
 // Tell Flex the lexer's prototype ...
 #define YY_DECL                                        \
-  yy::fsp_parser::token_type                         \
-  yylex(yy::fsp_parser::semantic_type* yylval,      \
-         yy::fsp_parser::location_type* yylloc,      \
-         fsp_driver& driver)
+  yy::FspParser::token_type                         \
+  yylex(yy::FspParser::semantic_type* yylval,      \
+         yy::FspParser::location_type* yylloc,      \
+         FspDriver& driver)
 // ... and declare it for the parser's sake.
 YY_DECL;
 
 /* Conducting the whole scanning and parsing of fspcc. */
-class fsp_driver
+class FspDriver
 {
     public:
 	/* Main actions table. */
@@ -141,8 +141,8 @@ class fsp_driver
 	string current_file;
 
 
-	fsp_driver();
-	virtual ~fsp_driver();
+	FspDriver();
+	virtual ~FspDriver();
 
 	/* Handling the scanner. */
 	void scan_begin(const char * filename);

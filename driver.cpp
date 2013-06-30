@@ -200,16 +200,16 @@ void FspTranslator::print_fakenode_forest() {
 }
 
 
-/* ============================== fsp_driver ============================= */
+/* ============================== FspDriver ============================= */
 
-fsp_driver::fsp_driver() : actions("Global actions table"), tr(*this)
+FspDriver::FspDriver() : actions("Global actions table"), tr(*this)
 {
     trace_scanning = trace_parsing = false;
     record_mode_on = 0;
     parametric = new ParametricProcess;
 }
 
-fsp_driver::~fsp_driver ()
+FspDriver::~FspDriver()
 {
     if (parametric)
 	delete parametric;
@@ -218,7 +218,7 @@ fsp_driver::~fsp_driver ()
 	remove(remove_file.c_str());
 }
 
-int fsp_driver::parse(const CompilerOptions& co)
+int FspDriver::parse(const CompilerOptions& co)
 {
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
@@ -239,7 +239,7 @@ int fsp_driver::parse(const CompilerOptions& co)
 
 	/* Parse the preprocessed temporary file. */
 	scan_begin(temp.c_str());
-	yy::fsp_parser parser(*this);
+	yy::FspParser parser(*this);
 	parser.set_debug_level(trace_parsing);
 	this->current_file = orig; /* TODO redundant (remove_file)*/
 	parser.parse();
@@ -363,12 +363,12 @@ int fsp_driver::parse(const CompilerOptions& co)
     return 0;
 }
 
-void fsp_driver::error(const yy::location& l, const std::string& m)
+void FspDriver::error(const yy::location& l, const std::string& m)
 {
     cerr << l << ": " << m << endl;
 }
 
-void fsp_driver::error(const std::string& m)
+void FspDriver::error(const std::string& m)
 {
     cerr << m << endl;
 }

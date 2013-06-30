@@ -37,14 +37,14 @@
 %verbose
 */
 
-%define parser_class_name "fsp_parser"
+%define parser_class_name "FspParser"
 %code requires {
 #include <string>
-class fsp_driver;
+class FspDriver;
 }
 // The parsing context.
-%parse-param { fsp_driver& driver }
-%lex-param   { fsp_driver& driver }
+%parse-param { FspDriver& driver }
+%lex-param   { FspDriver& driver }
 %locations
 %initial-action
 {
@@ -120,7 +120,7 @@ extern class CircularBuffer last_tokens;
 
 
 /* A global data structure containing everything the compiler needs. */
-//struct fsp_driver c;
+//struct FspDriver c;
 
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
@@ -145,7 +145,7 @@ inline void AA(void * barg, int midx, int tot)
 
 /* Called after callback__15() and callback__88() to do common registration
    work. */
-void post_process_definition(fsp_driver& driver, yy::Lts * lts, const yy::location& loc) {
+void post_process_definition(FspDriver& driver, yy::Lts * lts, const yy::location& loc) {
     string extension;
 
     /* Clear tr.alphabet_extension, so that the same translator can
@@ -1607,7 +1607,7 @@ progress_id: UpperCaseID { ps.push_back($1); $$ = $1; };
 
 %%
 
-void yy::fsp_parser::error (const yy::fsp_parser::location_type& l,
+void yy::FspParser::error (const yy::FspParser::location_type& l,
 	const std::string& m)
 {
     driver.error(l, m);

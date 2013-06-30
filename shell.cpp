@@ -67,7 +67,7 @@ specified FSP using GraphViz";
     cmd_map["help"] = &Shell::help;
 }
 
-Shell::Shell(fsp_driver& cr, istream& inr) : c(cr), in(inr)
+Shell::Shell(FspDriver& cr, istream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = true;
@@ -87,7 +87,7 @@ Shell::Shell(fsp_driver& cr, istream& inr) : c(cr), in(inr)
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
-Shell::Shell(fsp_driver& cr, ifstream& inr) : c(cr), in(inr)
+Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = false;
