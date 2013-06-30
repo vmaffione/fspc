@@ -245,6 +245,14 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
     return yy::fsp_parser::token_type(yytext[0]);
 }
 
+"$r" {
+    return token::EXPECT_RANGE;
+}
+
+"$s" {
+    return token::EXPECT_SET;
+}
+
 [ \t\r]+ {
     /* Eat up whitespaces, and keep tracking positions. */
     /* last_tokens.location_step(yylloc); */
@@ -325,11 +333,11 @@ ScannerStringBuffer::ScannerStringBuffer(const char * buf, int sz)
 }
 
 
-void InputBuffersStack::push(const char * input_name)
+void InputBuffersStack::push(const string& input_name)
 {
     struct BufferInfo bi;
 
-    bi.fin = fopen(input_name, "r");
+    bi.fin = fopen(input_name.c_str(), "r");
     if (!bi.fin) {
 	cerr << "Input error: Can't open " << input_name << "\n";
 	cerr << "see 'fspc -h'\n";
@@ -363,6 +371,7 @@ void InputBuffersStack::push(const char * buffer, int size)
     /* The yy_scan_bytes() function has a side effect: it calls
        yy_switch_to_buffer() on the new buffer. Therefore it's not
        necessary to call it again. */
+
 }
 
 bool InputBuffersStack::pop()
@@ -379,7 +388,9 @@ bool InputBuffersStack::pop()
     yy_delete_buffer(bi.yybs);
     assert(buffers.size());
     buffers.pop_back();
-    yy_switch_to_buffer(buffers.back().yybs);
+
+    if (buffers.size())
+	yy_switch_to_buffer(buffers.back().yybs);
 
     return true;
 }

@@ -5,9 +5,9 @@ CXXFLAGS=$(DEBUG) -Wall
 
 VER=1.2
 
-OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o
+OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o preproc.o
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp ltsee csee.sh parser.diff
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile scanner.hpp symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp preproc.hpp preproc.lex ltsee csee.sh parser.diff
 SOURCES=$(WCIN) fspcc.1 fsp.y
 
 #REPORT=--report=all
@@ -53,11 +53,21 @@ scanner.o: scanner.cpp
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
+# TODO remove
+pp: preproc.o
+	$(CC) -o pp preproc.o
+
+preproc.o: preproc.cpp
+	$(CC) $(DEBUG) -c preproc.cpp
+
+preproc.cpp: preproc.lex
+	flex preproc.lex
+
 tags:
 	cscope -R
 
 clean: cleanaur clc
-	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out
+	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out preproc.cpp
 
 testing: fspcc
 	tests/test.sh

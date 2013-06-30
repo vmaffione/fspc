@@ -3,7 +3,7 @@ range R = 1..2
 set S = {x,y,z}
 set K = {x,y}
 
-P(K=1)=(a[K]->b[K]->END).
-Q(K=3)=P(K);P(K+1);END.
+P(G=1)=(a[G]->b[G]->END).
+Q(G=3)=P(G);P(G+1);END.
 T=Q(8);Q;END.
 H=(h[K]->STOP).

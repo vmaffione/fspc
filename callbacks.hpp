@@ -33,11 +33,11 @@ SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/
 SvpVec * callback__3(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__4(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__5(FspTranslator& tr, string * one); /*1*/
-SvpVec * callback__6(FspTranslator& tr, string * one, string * two); /*4*/
 SvpVec * callback__7(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__8(FspTranslator& tr, string * one, SvpVec * two); /*5*/
 SvpVec * callback__9(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 SvpVec * callback__10(FspTranslator& tr, SvpVec * one); /*17*/
+SvpVec * callback__11(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
 class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/

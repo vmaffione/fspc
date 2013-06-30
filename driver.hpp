@@ -7,7 +7,7 @@
 #include <set>
 #include <vector>
 #include <string>
-#include <map>
+#include <cstdio>
 
 //#define NDEBUG
 #include <assert.h>
@@ -137,6 +137,7 @@ class fsp_driver
 	/* The ProcessNode allocator. */
 	ProcessNodeAllocator pna;
 
+	string remove_file;
 	string current_file;
 
 

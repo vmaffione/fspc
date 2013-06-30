@@ -71,7 +71,7 @@ class InputBuffersStack {
     vector<BufferInfo> buffers;
 
   public:
-    void push(const char * input_name);
+    void push(const string& input_name);
     void push(const char * buffer, int size);
     bool pop();
     ~InputBuffersStack();

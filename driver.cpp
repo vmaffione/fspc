@@ -22,6 +22,10 @@
 /* Interactive shell */
 #include "shell.hpp"
 
+/* Preprocessor */
+#include "preproc.hpp"
+
+
 #include "driver.hpp"
 #include "parser.hpp"
 
@@ -209,6 +213,9 @@ fsp_driver::~fsp_driver ()
 {
     if (parametric)
 	delete parametric;
+
+    if (remove_file.size())
+	remove(remove_file.c_str());
 }
 
 int fsp_driver::parse(const CompilerOptions& co)
@@ -219,13 +226,28 @@ int fsp_driver::parse(const CompilerOptions& co)
     stringstream ss;
 
     if (co.input_type == CompilerOptions::InputTypeFsp) {
-	/* Parse the FSP input file. */
-	scan_begin(co.input_file);
+	string orig(co.input_file);
+	string temp = ".fspcc." + orig;
+
+	for (unsigned int i=0; i<temp.size(); i++)
+	    if (temp[i] == '\\' || temp[i] == '/')
+		temp[i] = '.';
+
+	/* Preprocess the input file, producing a temporary file. */
+	preprocess(orig, temp);
+	this->remove_file = temp;
+
+	/* Parse the preprocessed temporary file. */
+	scan_begin(temp.c_str());
 	yy::fsp_parser parser(*this);
 	parser.set_debug_level(trace_parsing);
-	this->current_file = string(co.input_file);
+	this->current_file = orig; /* TODO redundant (remove_file)*/
 	parser.parse();
 	scan_end();
+
+	/* Remove the temporary file. */
+	remove(temp.c_str());
+	this->remove_file = "";
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */
