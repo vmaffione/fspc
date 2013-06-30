@@ -128,7 +128,7 @@ class Lts: public SymbolValue {
 };
 
 
-yy::Lts * err_if_not_lts(SymbolValue * svp, const yy::location& loc);
+yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 
 /* A list of Lts. */
 struct LtsComposition: public SymbolValue {
@@ -140,7 +140,7 @@ struct LtsComposition: public SymbolValue {
     SymbolValue * clone() const;
 };
 
-LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
+LtsComposition * err_if_not_ltscomposition(FspDriver& driver, SymbolValue * svp,
 					    const yy::location& loc);
 
 } /* namespace yy */

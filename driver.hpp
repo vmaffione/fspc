@@ -59,7 +59,7 @@ struct Aliases {
 class FspDriver;
 
 struct FspTranslator {
-    FspDriver& cr;
+    FspDriver& dr;
 
     /* Names of local processes. */
     struct SymbolsTable local_processes;
@@ -78,11 +78,10 @@ struct FspTranslator {
        process (see toProcessNode in callback__66. */
     set<int> alphabet_extension;
 
-    //yy::location locations[8];  // XXX two should be enough
     yy::location locations[8];
 
 
-    FspTranslator(struct FspDriver& r) : cr(r), aliases(*this) {
+    FspTranslator(struct FspDriver& r) : dr(r), aliases(*this) {
 	/* Initialize shared data structures: A stack containing a single
 	   ContextsSet. This set contains a single empty Context and an
 	   empty frontier. */
@@ -143,6 +142,7 @@ class FspDriver
 
 	FspDriver();
 	virtual ~FspDriver();
+	void clear();	/* Destructor like */
 
 	/* Handling the scanner. */
 	void scan_begin(const char * filename);

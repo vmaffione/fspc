@@ -1240,12 +1240,12 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-yy::Lts * err_if_not_lts(SymbolValue * svp, const yy::location& loc)
+yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Lts) {
 	stringstream errstream;
 	errstream << "Lts expected";
-	semantic_error(errstream, loc);
+	semantic_error(driver, errstream, loc);
     }
 
     return static_cast<yy::Lts *>(svp);
@@ -1275,13 +1275,13 @@ SymbolValue * yy::LtsComposition::clone() const
     return lc;
 }
 
-yy::LtsComposition * err_if_not_ltscomposition(SymbolValue * svp,
+yy::LtsComposition * err_if_not_ltscomposition(FspDriver& driver, SymbolValue * svp,
 						const yy::location& loc)
 {
     if (svp->type() != SymbolValue::LtsComposition) {
 	stringstream errstream;
 	errstream << "LtsComposition expected";
-	semantic_error(errstream, loc);
+	semantic_error(driver, errstream, loc);
     }
 
     return static_cast<yy::LtsComposition *>(svp);

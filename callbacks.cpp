@@ -50,7 +50,7 @@ yy::Lts * ParametricProcess::replay(struct FspTranslator& tr,
 {
     unsigned int i;
     vector<void *> stack;
-    FspDriver& c = tr.cr;
+    FspDriver& c = tr.dr;
     FspTranslator ltr(c);
     ConstValue * cvp;
     SymbolValue * svp;
@@ -120,13 +120,13 @@ ParametricProcess::~ParametricProcess()
 }
 
 
-ParametricProcess* err_if_not_parametric(SymbolValue * svp,
+ParametricProcess* err_if_not_parametric(FspDriver& driver, SymbolValue * svp,
 						const yy::location& loc)
 {
     if (svp->type() != SymbolValue::ParametricProcess) {
 	stringstream errstream;
 	errstream << "Parametric process expected";
-	semantic_error(errstream, loc);
+	semantic_error(driver, errstream, loc);
     }
 
     return static_cast<ParametricProcess *>(svp);
@@ -157,7 +157,7 @@ static Context* extended_context(struct FspTranslator& tr, Context * ctx,
     if (!ctx->insert(var, val)) {
 	stringstream errstream;
 	errstream << "Variable " << var << " declared twice";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
 
     return ctx;
@@ -389,7 +389,7 @@ static void fix_unresolved_references(ProcessNode * pnp, void * opaque)
 		stringstream errstream;
 		errstream << "Local process " << e.unresolved_reference
 			    << " undeclared";
-		semantic_error(errstream, trp->locations[0]);
+		semantic_error(trp->dr, errstream, trp->locations[0]);
 		/* TODO improve localization by saving the location of the
 		   reference in the ProcessEdge e. */
 	    }
@@ -526,13 +526,13 @@ SvpVec * callback__5(FspTranslator& tr, string * one)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
 
-    if (!tr.cr.identifiers.lookup(*one, svp)) {
+    if (!tr.dr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "set " << *one << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     delete one;
-    err_if_not_set(svp, tr.locations[0]);
+    err_if_not_set(tr.dr, svp, tr.locations[0]);
     svp = svp->clone();
     vp->shared = true;
     for (unsigned int c=0; c<tr.current_contexts().size(); c++)
@@ -546,13 +546,13 @@ SvpVec * callback__11(FspTranslator& tr, string * one)
     SvpVec * vp = new SvpVec;
     SymbolValue * svp;
 
-    if (!tr.cr.identifiers.lookup(*one, svp)) {
+    if (!tr.dr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "range " << *one << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     delete one;
-    err_if_not_range(svp, tr.locations[0]);
+    err_if_not_range(tr.dr, svp, tr.locations[0]);
     svp = svp->clone();
     vp->shared = true;
     for (unsigned int c=0; c<tr.current_contexts().size(); c++)
@@ -659,7 +659,7 @@ void * callback__14(FspTranslator& tr, string * one)
 {
     /* Parameters have been pushed inside the 'param_OPT' rule.
        A cleaner approach would be to get a list of parameters from
-       the rule and push the parameters into the 'tr.cr.identifiers' table
+       the rule and push the parameters into the 'tr.dr.identifiers' table
        in this action. */
     tr.init_fakenode();
 
@@ -670,7 +670,7 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three, SvpVec * four, SvpVec * five)
 {
     PROP("process_def --> ... process_body ...");
-    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.cr.actions));
+    PROX(cout<<*one<<" = "; two->v[0]->print(&tr.dr.actions));
 
     ProcessBase * pbp = two->v[0];
     SymbolValue * svp;
@@ -684,7 +684,7 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	   and a global process in the same process_def statement. */
 	stringstream errstream;
 	errstream << "process " << *one << " declared twice";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
 
     if (pbp->unresolved()) {
@@ -697,7 +697,7 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	    // XXX can we reach here??
 	    stringstream errstream;
 	    errstream << "process " << *one << " undeclared";
-	    semantic_error(errstream, tr.locations[0]);
+	    semantic_error(tr.dr, errstream, tr.locations[0]);
 	}
 	pvp = is_process(svp);
     } else {
@@ -708,7 +708,7 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	if (!tr.local_processes.insert(*one, pvp)) {
 	    stringstream errstream;
 	    errstream << "process " << *one << " declared twice";
-	    semantic_error(errstream, tr.locations[0]);
+	    semantic_error(tr.dr, errstream, tr.locations[0]);
 	}
     }
 
@@ -728,10 +728,10 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
     f.opaque = &d;
     pvp->pnp->visit(f, false);
 
-    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.cr.actions));
+    PROX(cout<<"resolved: "; pvp->pnp->print(&tr.dr.actions));
 
     /* Convert the collection of ProcessNodes in an Lts object. */
-    lts = new yy::Lts(pvp->pnp, &tr.cr.actions);
+    lts = new yy::Lts(pvp->pnp, &tr.dr.actions);
 
     /* Note: We don't delete pnp, since this has been inserted in
        'local_processes', and will be thereafter deleted when the symbol
@@ -744,7 +744,7 @@ class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 	assert(three->v.size() == 1);
 	setvp = is_set(three->v[0]);
 	for (unsigned int i=0; i<setvp->actions.size(); i++)
-	    lts->updateAlphabet(tr.cr.actions.insert(setvp->actions[i]));
+	    lts->updateAlphabet(tr.dr.actions.insert(setvp->actions[i]));
     }
 
     /* Extend the alphabet with actions collected by sequential processes
@@ -810,7 +810,7 @@ Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two,
 		    stringstream errstream;
 		    errstream << "process " << procname
 			<< " declared twice";
-		    semantic_error(errstream, tr.locations[0]);
+		    semantic_error(tr.dr, errstream, tr.locations[0]);
 		}
 		PROX(cout << "Process " << procname << " defined (" << pvp->pnp << ")\n");
 	    }
@@ -879,7 +879,7 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
 	else
 	    /* If $7 == NULL there is no else branch, and so we insert
 	       a STOP state. */
-	    pvec->v.push_back(tr.cr.pna.allocate(ProcessNode::Normal));
+	    pvec->v.push_back(tr.dr.pna.allocate(ProcessNode::Normal));
     }
     delete one;
     delete two;
@@ -891,7 +891,7 @@ Pvec * callback__21(FspTranslator& tr, SvpVec * one, Pvec * two, Pvec * three)
 Pvec * callback__23(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::End);
+    ProcessNode * pnp = tr.dr.pna.allocate(ProcessNode::End);
 
     for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -902,7 +902,7 @@ Pvec * callback__23(FspTranslator& tr)
 Pvec * callback__24(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Normal);
+    ProcessNode * pnp = tr.dr.pna.allocate(ProcessNode::Normal);
 
     for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -913,7 +913,7 @@ Pvec * callback__24(FspTranslator& tr)
 Pvec * callback__25(FspTranslator& tr)
 {
     Pvec * pvec = new Pvec;
-    ProcessNode * pnp = tr.cr.pna.allocate(ProcessNode::Error);
+    ProcessNode * pnp = tr.dr.pna.allocate(ProcessNode::Error);
 
     for (unsigned int c=0; c<tr.current_contexts().size(); c++)
 	pvec->v.push_back(pnp);
@@ -941,7 +941,7 @@ Pvec * callback__26(FspTranslator& tr, string * one, SvpVec * two)
 	if (tr.local_processes.lookup(name, svp))
 	    pbp = ((ProcessValue *)svp)->pnp;
 	else
-	    pbp = tr.cr.pna.allocate_unresolved(name);
+	    pbp = tr.dr.pna.allocate_unresolved(name);
 	pvec->v.push_back(pbp);
     }
     delete one;
@@ -1063,7 +1063,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	   */
 	if (pnp->children[child].dest == NULL)
 	    pnp->children[child].dest = 
-		tr.cr.pna.allocate(ProcessNode::Normal);
+		tr.dr.pna.allocate(ProcessNode::Normal);
 	npnp = pnp->children[child].dest;
 
 	/* Once we get the node pointed by the edge i (npnp), we
@@ -1080,7 +1080,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	    setvp = is_set(one->v[c]);
 	    if (setvp->rank == rank) {
 		for (unsigned int k=0; k<setvp->actions.size(); k++) {
-		    e.action = tr.cr.actions.insert(setvp->actions[k]);
+		    e.action = tr.dr.actions.insert(setvp->actions[k]);
 		    e.dest = NULL;
 		    /* We set e.rank to the index in the SvpVec
 		       'one' of setvp, so that this edge will
@@ -1110,7 +1110,7 @@ Pvec * callback__32(FspTranslator& tr, SvpVec * one)
 	/* Tell the upper level rule (action_prefix) that the beginning
 	   of this prefix_actions has already been connected, and so
 	   'local_process' results already connected (see above). */
-	ProcessBase * pbp = tr.cr.pna.allocate_connected();
+	ProcessBase * pbp = tr.dr.pna.allocate_connected();
 	for (int c=0; c<max_rank+1; c++)
 	    pvec->v.push_back(pbp);
     }
@@ -1160,7 +1160,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 	    if (pnp->children[child].dest == NULL &&
 		    pnp->children[child].unresolved_reference == "") {
 		pnp->children[child].dest = 
-		    tr.cr.pna.allocate(ProcessNode::Normal);
+		    tr.dr.pna.allocate(ProcessNode::Normal);
 		npnp = pnp->children[child].dest;
 		rank = pnp->children[child].rank;
 		for (unsigned int c=0; c<two->v.size(); c++) {
@@ -1168,7 +1168,7 @@ Pvec * callback__33(FspTranslator& tr, Pvec * one, SvpVec * two)
 		    setvp = is_set(two->v[c]);
 		    if (setvp->rank == rank) {
 			for (unsigned int k=0; k<setvp->actions.size(); k++) {
-			    e.action = tr.cr.actions.insert(setvp->actions[k]);
+			    e.action = tr.dr.actions.insert(setvp->actions[k]);
 			    e.dest = NULL;
 			    /* We set e.rank to the index in the SvpVec
 			       'two', so that this edge will combine with
@@ -1265,7 +1265,7 @@ SvpVec * callback__38(FspTranslator& tr, SvpVec * one)
     if (one->v[0]->type() == SymbolValue::Set) {
 	stringstream errstream;
 	errstream << "Unexpected set";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     for (unsigned int c=0; c<one->v.size(); c++) {
 	setvp = new SetValue;
@@ -1283,7 +1283,7 @@ SvpVec * callback__39(FspTranslator& tr, SvpVec * one, SvpVec * two)
     if (two->v[0]->type() == SymbolValue::Set) {
 	stringstream errstream;
 	errstream << "Unexpected set";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
 
     return indexize_svpvec(tr, one, two);
@@ -1576,7 +1576,7 @@ SvpVec * callback__62(FspTranslator& tr, string * one)
 	if (!(tr.current_contexts()[c]->lookup(*one, svp))) {
 	    stringstream errstream;
 	    errstream << "variable " << *one << " undeclared";
-	    semantic_error(errstream, tr.locations[0]);
+	    semantic_error(tr.dr, errstream, tr.locations[0]);
 	}
 	svp = svp->clone();
 	vp->v.push_back(svp);
@@ -1592,10 +1592,10 @@ SvpVec * callback__63(FspTranslator& tr, string * one)
     SvpVec * vp; 
 
     /* Lookup the identifier and clone the associated object. */
-    if (!tr.cr.identifiers.lookup(*one, svp)) {
+    if (!tr.dr.identifiers.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "const/range/set/parameter " << *one << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     delete one;
 
@@ -1663,7 +1663,7 @@ Pvec * callback__65(FspTranslator& tr, Pvec * one, Pvec * two)
 	if (!d.end_found) {
 	    stringstream errstream;
 	    errstream << "Process is not sequential";
-	    semantic_error(errstream, tr.locations[0]);
+	    semantic_error(tr.dr, errstream, tr.locations[0]);
 	}
     }
     delete two;
@@ -1682,14 +1682,14 @@ yy::Lts * get_parametric_lts(FspTranslator& tr, const string& name,
     if (avp->args.size() != ppp->parameter_names.size()) {
 	stringstream errstream;
 	errstream << "Parameters mismatch";
-	semantic_error(errstream, tr.locations[1]);
+	semantic_error(tr.dr, errstream, tr.locations[1]);
     }
 
     lts_name_extension(avp->args, extension);
 
     /* We first lookup the global processes table in order to see if
        we already have the requested LTS. */
-    if (tr.cr.processes.lookup(name + extension, svp)) {
+    if (tr.dr.processes.lookup(name + extension, svp)) {
 	/* If there is a cache hit, clone the LTS. */
 	svp = svp->clone();
 	lts = is_lts(svp);
@@ -1699,7 +1699,7 @@ yy::Lts * get_parametric_lts(FspTranslator& tr, const string& name,
 	lts = ppp->replay(tr, avp->args);
 
 	lts->name += extension; /* Here lts->name is complete. */
-	if (!tr.cr.processes.insert(name + extension, lts)) {
+	if (!tr.dr.processes.insert(name + extension, lts)) {
 	    assert(0);
 	}
 	lts = static_cast<yy::Lts *>(lts->clone());
@@ -1719,10 +1719,10 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
     ArgumentsValue * avp;
 
     /* Lookup 'process_id' in the 'parametric_process' table. */
-    if (!tr.cr.parametric_processes.lookup(*one, svp)) {
+    if (!tr.dr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "Process " << *one << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
 
@@ -1743,7 +1743,7 @@ Pvec * callback__66(FspTranslator& tr, string * one, SvpVec * two)
 
 	/* Note that here we don't c.pna.clear(). */
 
-	vp->v.push_back(lts->toProcessNode(tr.cr.pna));
+	vp->v.push_back(lts->toProcessNode(tr.dr.pna));
 
 	/* Merge the alphabet into tr.alphabet_extension, so that we don't
 	   loose the alphabet extension information switching the
@@ -2081,7 +2081,7 @@ SvpVec * callback__81(FspTranslator& tr, SvpVec * one, SvpVec * two,
     if (!vp) {
 	vp = new SvpVec;
 	for (unsigned int k=0; k<one->v.size(); k++)
-	    vp->v.push_back(new yy::Lts(LtsNode::Normal, &tr.cr.actions));
+	    vp->v.push_back(new yy::Lts(LtsNode::Normal, &tr.dr.actions));
     }
     for (unsigned int c=0; c<one->v.size(); c++) {
 	cvp = is_const(one->v[c]);
@@ -2141,10 +2141,10 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
     ArgumentsValue * avp;
 
     /* Lookup 'process_id' in the 'parametric_process' table. */
-    if (!tr.cr.parametric_processes.lookup(*one, svp)) {
+    if (!tr.dr.parametric_processes.lookup(*one, svp)) {
 	stringstream errstream;
 	errstream << "Process " << *one << " undeclared";
-	semantic_error(errstream, tr.locations[0]);
+	semantic_error(tr.dr, errstream, tr.locations[0]);
     }
     ppp = is_parametric(svp);
 
@@ -2168,7 +2168,7 @@ SvpVec * callback__84(FspTranslator& tr, string * one, SvpVec * two)
 
 	/* Free all the nodes allocated by c.pna, and remove the from
 	   the allocator itself. */
-	tr.cr.pna.clear();
+	tr.dr.pna.clear();
 
 	vp->v.push_back(lts);
     }

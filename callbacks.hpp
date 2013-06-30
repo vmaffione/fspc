@@ -136,7 +136,7 @@ struct ParametricProcess: public SymbolValue {
     ~ParametricProcess();
 };
 
-ParametricProcess* err_if_not_parametric(SymbolValue * svp);
+ParametricProcess* err_if_not_parametric(FspDriver& driver, SymbolValue * svp);
 
 inline ParametricProcess* is_parametric(SymbolValue * svp)
 {

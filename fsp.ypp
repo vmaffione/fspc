@@ -168,7 +168,7 @@ void post_process_definition(FspDriver& driver, yy::Lts * lts, const yy::locatio
 	stringstream errstream;
 	errstream << "Parametric process " << lts->name
 	    << " already declared";
-	semantic_error(errstream, loc);
+	semantic_error(driver, errstream, loc);
     }
     PROX(driver.parametric->print());
 
@@ -180,7 +180,7 @@ void post_process_definition(FspDriver& driver, yy::Lts * lts, const yy::locatio
     if (!driver.processes.insert(lts->name + extension, lts)) {
 	stringstream errstream;
 	errstream << "Process " << lts->name << " already declared";
-	semantic_error(errstream, loc);
+	semantic_error(driver, errstream, loc);
     }
 
     /* Prepare for the next parametric process. */
@@ -450,7 +450,7 @@ constant_def:
 	if (!driver.identifiers.insert(*$2, cvp)) {
 	    stringstream errstream;
 	    errstream << "const " << *$2 << " declared twice";
-	    semantic_error(errstream, @2);
+	    semantic_error(driver, errstream, @2);
 	}
 	delete $4;
 	delete $2;
@@ -473,7 +473,7 @@ range_def:
 	if (!driver.identifiers.insert(*$3, rvp)) {
 	    stringstream errstream;
 	    errstream << "range " << *$3 << " declared twice";
-	    semantic_error(errstream, @3);
+	    semantic_error(driver, errstream, @3);
 	}
 	delete $3;
 	ps.pop_back();
@@ -491,7 +491,7 @@ set_def:
 	if (!driver.identifiers.insert(*$3, setvp)) {
 	    stringstream errstream;
 	    errstream << "set " << *$3 << " declared twice";
-	    semantic_error(errstream, @3);
+	    semantic_error(driver, errstream, @3);
 	}
 	$5->detach(0);
 	delete $5;
@@ -1186,7 +1186,7 @@ parameter:
 	    // XXX this should never happen..
 	    stringstream errstream;
 	    errstream << "Illegal use of variables in parameter declaration";
-	    semantic_error(errstream, @3);
+	    semantic_error(driver, errstream, @3);
 	}
 	ConstValue * cvp = is_const($3->v[0]);
 	SymbolValue * svp;
@@ -1200,7 +1200,7 @@ parameter:
 	if (!driver.identifiers.insert(*$1, cvp)) {
 	    stringstream errstream;
 	    errstream << "identifier " << *$1 << " already declared";
-	    semantic_error(errstream, @1);
+	    semantic_error(driver, errstream, @1);
 	}
 
 	/* Update driver.parametric-> */
@@ -1330,7 +1330,7 @@ property_def:
 	    stringstream errstream;
 	    errstream << "cannot apply the property keyword since "
 		<< $2->name << " is a non-deterministic process";
-	    semantic_error(errstream, @2);
+	    semantic_error(driver, errstream, @2);
 	}
 	PROX($2->print(); $2->graphvizOutput(($2->name + ".gv").c_str()));
     }
@@ -1355,7 +1355,7 @@ progress_def:
 	    if (!driver.progresses.insert(name, setvp)) {
 		stringstream errstream;
 		errstream << "progress " << name << " declared twice";
-		semantic_error(errstream, @2);
+		semantic_error(driver, errstream, @2);
 	    }
 	}
 	driver.tr.css.pop();
