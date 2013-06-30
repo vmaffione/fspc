@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <set>
 #include <vector>
+#include <cstdio>
 
 using namespace std;
 
@@ -140,12 +141,17 @@ struct FspCompiler {
     /* The ProcessNode allocator. */
     ProcessNodeAllocator pna;
 
+    string remove_file;
+
     FspCompiler() : actions("Global actions table"), record_mode_on(0), 
 			    parametric(new ParametricProcess), tr(*this) { }
 
     ~FspCompiler() {
 	if (parametric)
 	    delete parametric;
+
+	if (remove_file.size())
+	    remove(remove_file.c_str());
     }
 };
 

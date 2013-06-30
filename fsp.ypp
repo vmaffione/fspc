@@ -1732,19 +1732,24 @@ int parser(const CompilerOptions& co)
     InputBuffersStack ibs;
 
     if (co.input_type == CompilerOptions::InputTypeFsp) {
-	string tmp(co.input_file);
+	string orig(co.input_file);
+	string temp = ".fspcc." + orig;
+
+	for (unsigned int i=0; i<temp.size(); i++)
+	    if (temp[i] == '\\' || temp[i] == '/')
+		temp[i] = '.';
 
 	/* Preprocess the input file, producing a temporary file. */
-	preprocess(tmp, ".fspcc." + tmp);
-	tmp = ".fspcc." + tmp;
+	preprocess(orig, temp);
+	c.remove_file = temp;
 
 	/* Parse the preprocessed file. */
-	ibs.push(tmp);
+	ibs.push(temp);
 	yyparse();
 	ibs.pop();
 
 	/* Remove the temporary file. */
-	//remove(tmp.c_str()); TODO uncomment
+	remove(temp.c_str());
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */
