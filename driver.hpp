@@ -101,13 +101,13 @@ struct FspTranslator {
 };
 
 
-// Tell Flex the lexer's prototype ...
+/* Tell Flex the lexer's prototype... */
 #define YY_DECL                                        \
   yy::FspParser::token_type                         \
   yylex(yy::FspParser::semantic_type* yylval,      \
          yy::FspParser::location_type* yylloc,      \
          FspDriver& driver)
-// ... and declare it for the parser's sake.
+/* ... and declare it for the parser's sake. */
 YY_DECL;
 
 /* Conducting the whole scanning and parsing of fspcc. */

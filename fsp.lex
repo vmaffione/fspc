@@ -25,7 +25,10 @@
 #include <cstdio>
 #include <iostream>
 #include <assert.h>
+
+/* Include tha parser main class definition. */
 # include "driver.hpp"
+
 /* Include the bison-generated parser header, in order to get the token
    types definition that we return, and the CircularBuffer. */
 # include "parser.hpp"
@@ -90,7 +93,7 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
     /* Shortcut typedef. */
     typedef yy::FspParser::token token;
 
-    //last_tokens.location_step(yylloc);
+    /*last_tokens.location_step(yylloc);*/
     yylloc->step ();
 %}
 

@@ -261,6 +261,7 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		break;
 
 	    case 127:	/* Backspace. */
+	    case KEY_BACKSPACE:
 		if (str_cursor) {
 		    /* Compute the next cursor position. */
 		    if (x) {
