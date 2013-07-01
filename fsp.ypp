@@ -17,44 +17,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-%skeleton "glr.cc" /* -*- C++ -*- */
-//%require "2.6.90.8-d4fe"
-
-/* Generate a Generic LR parser, instead of a standard LR parser. We need
-   this to resolve conflicts at runtime. */
-%glr-parser
-
-/* Create a parser header file. This is needed because we define yylex()
-   in another source file (the FLEX generated scanner source file). */
-%defines
-
-/* Name of the parser implementation file. */
-%output "parser.cpp"
-
-/* Write an extra output file containing verbose descriptions of the parser
-    states and what is done for each type of lookahead token in that state
-%verbose
-*/
-
-%define parser_class_name "FspParser"
-%code requires {
-#include <string>
-class FspDriver;
-}
-// The parsing context.
-%parse-param { FspDriver& driver }
-%lex-param   { FspDriver& driver }
-%locations
-%initial-action
-{
-  // Initialize the initial location.
-  @$.begin.filename = @$.end.filename = &driver.current_file;
-}
-%debug
-%error-verbose
-
 %code top {
+/* This piece of code goes verbatim at the the top of the generated
+   parser implementation. */
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -71,13 +36,42 @@ using namespace std;
 //#define YYERROR_VERBOSE
 
 #include "driver.hpp"
-
 }
 
+%skeleton "glr.cc" /* -*- C++ -*- */
+%require "2.6.90.8-d4fe"
+
+/* Generate a Generic LR parser, instead of a standard LR parser. We need
+   this to resolve shift/reduce conflicts at runtime. */
+%glr-parser
+
+/* Create a parser header file. This is needed because we define yylex()
+   in another source file (the FLEX generated scanner source file). */
+%defines
+
+/* Name of the parser implementation file. */
+%output "parser.cpp"
+
+/* Write an extra output file containing verbose descriptions of the parser
+    states and what is done for each type of lookahead token in that state
+%verbose
+*/
+
+%define parser_class_name "FspParser"
+
+/* The parsing context. */
+%parse-param { FspDriver& driver }
+%lex-param   { FspDriver& driver }
+%locations
+%debug
+%error-verbose
 
 %code requires {
 /* This code will be added to the bison-generated header, included
    (among the others) by the FLEX scanner. */
+
+#include <string>
+class FspDriver;
 
 /* Symbols tables. */
 #include "symbols_table.hpp"
@@ -88,6 +82,95 @@ extern class CircularBuffer last_tokens;
 }
 
 
+%{
+%}
+
+
+// Bison fundamentally works by asking flex to get the next token, which it
+// returns as an object of type "YYSTYPE".  But tokens could be of any
+// arbitrary data type!  So we deal with that in Bison by defining a C union
+// holding each of the types of tokens that Flex could return, and have Bison
+// use that union instead of "int" for the definition of "YYSTYPE":
+%union {
+    int int_value;
+    float float_value;
+    std::string *string_ptr;
+    class SymbolValue *sv_ptr;
+    struct SvpVec * svpvec_ptr;
+    struct Pvec * pvec_ptr;
+    class Lts * lts_ptr;
+}
+
+
+
+/* Define the terminal symbols, token types we're going to use
+(in CAPS by convention), and associate each with a field of the union: */
+
+%token ENDOF 0 "end of file"
+%token IF "if"
+%token ELSE "else"
+%token THEN "then"
+%token WHEN "when"
+%token CONST "const"
+%token RANGE "range"
+%token SET "set"
+%token ARROW "->"
+%token DOTDOT ".."
+%token END "END"
+%token STOP "STOP"
+%token ERROR "ERROR"
+%token PROPERTY "property"
+%token PROGRESS "progress"
+%token MENU "menu"
+%token FORALL "forall"
+%token SHARING "::"
+%token OR "||"
+%token AND "&&"
+%token EQUAL "=="
+%token NOTEQUAL "!="
+%token LOE "<="
+%token GOE ">="
+%token LSHIFT "<<"
+%token RSHIFT ">>"
+%token EXPECT_RANGE "$r"
+%token EXPECT_SET "$s"
+%token <int_value> INTEGER "integer"
+%token <string_ptr> UpperCaseID "upper case identifier"
+%token <string_ptr> LowerCaseID "lower case identifer"
+%token <float_value> FLOAT "float"
+
+/* Non-terminal symbols. */
+%type <svpvec_ptr> expression base_expression
+%type <string_ptr> parameter_id process_id progress_id
+/* %type <string_ptr> menu_id */
+%type <string_ptr> variable constant_id range_id set_id
+%type <string_ptr> const_parameter_id
+
+%type <svpvec_ptr> set set_elements set_expr
+%type <svpvec_ptr> action_labels
+%type <svpvec_ptr> alphabet_extension_OPT
+%type <svpvec_ptr> action_range guard_OPT
+%type <svpvec_ptr> range range_expr
+%type <svpvec_ptr> index_ranges_OPT index_ranges indices_OPT indices
+
+%type <pvec_ptr> choice action_prefix prefix_actions
+%type <pvec_ptr> process_body local_process local_process_defs 
+%type <pvec_ptr> local_process_def
+%type <pvec_ptr> sequential_composition base_local_process else_OPT
+
+%type <lts_ptr> process_def
+
+%type <pvec_ptr> seq_process_list process_ref_seq
+%type <svpvec_ptr> argument_list argument_OPT
+%type <svpvec_ptr> process_ref composite_body parallel_composition
+%type <svpvec_ptr> composite_else_OPT
+%type <svpvec_ptr> labeling_OPT sharing_OPT
+%type <svpvec_ptr> relabel_OPT relabel_def relabel_defs braces_relabel_defs
+%type <svpvec_ptr> hiding_OPT hiding priority_OPT priority
+
+%printer    { yyoutput << *$$; } <string_ptr>
+%destructor { /*delete $$;*/ } <string_ptr>
+%printer    { yyoutput << $$; } <int_value>
 
 %{
 
@@ -187,94 +270,11 @@ void post_process_definition(FspDriver& driver, yy::Lts * lts, const yy::locatio
 
 %}
 
-
-
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "YYSTYPE".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "YYSTYPE":
-%union {
-    int int_value;
-    float float_value;
-    std::string *string_ptr;
-    class SymbolValue *sv_ptr;
-    struct SvpVec * svpvec_ptr;
-    struct Pvec * pvec_ptr;
-    class Lts * lts_ptr;
+%initial-action
+{
+  /* Initialize the initial location. */
+  @$.begin.filename = @$.end.filename = &driver.current_file;
 }
-
-
-
-/* define the "terminal symbol", token types we're going to use (in CAPS
-/ by convention), and associate each with a field of the union: */
-
-%token ENDOF 0 "end of file"
-%token IF "if"
-%token ELSE "else"
-%token THEN "then"
-%token WHEN "when"
-%token CONST "const"
-%token RANGE "range"
-%token SET "set"
-%token ARROW "->"
-%token DOTDOT ".."
-%token END "END"
-%token STOP "STOP"
-%token ERROR "ERROR"
-%token PROPERTY "property"
-%token PROGRESS "progress"
-%token MENU "menu"
-%token FORALL "forall"
-%token SHARING "::"
-%token OR "||"
-%token AND "&&"
-%token EQUAL "=="
-%token NOTEQUAL "!="
-%token LOE "<="
-%token GOE ">="
-%token LSHIFT "<<"
-%token RSHIFT ">>"
-%token EXPECT_RANGE "$r"
-%token EXPECT_SET "$s"
-%token <int_value> INTEGER "integer"
-%token <string_ptr> UpperCaseID "upper case identifier"
-%token <string_ptr> LowerCaseID "lower case identifer"
-%token <float_value> FLOAT "float"
-
-%type <svpvec_ptr> expression base_expression
-
-%type <string_ptr> parameter_id process_id progress_id
-//%type <string_ptr> menu_id
-%type <string_ptr> variable constant_id range_id set_id
-%type <string_ptr> const_parameter_id
-
-%type <svpvec_ptr> set set_elements set_expr
-%type <svpvec_ptr> action_labels
-%type <svpvec_ptr> alphabet_extension_OPT
-%type <svpvec_ptr> action_range guard_OPT
-%type <svpvec_ptr> range range_expr
-%type <svpvec_ptr> index_ranges_OPT index_ranges indices_OPT indices
-
-%type <pvec_ptr> choice action_prefix prefix_actions
-%type <pvec_ptr> process_body local_process local_process_defs 
-%type <pvec_ptr> local_process_def
-%type <pvec_ptr> sequential_composition base_local_process else_OPT
-
-%type <lts_ptr> process_def
-
-%type <pvec_ptr> seq_process_list process_ref_seq
-%type <svpvec_ptr> argument_list argument_OPT
-%type <svpvec_ptr> process_ref composite_body parallel_composition
-%type <svpvec_ptr> composite_else_OPT
-%type <svpvec_ptr> labeling_OPT sharing_OPT
-%type <svpvec_ptr> relabel_OPT relabel_def relabel_defs braces_relabel_defs
-%type <svpvec_ptr> hiding_OPT hiding priority_OPT priority
-
-%printer    { yyoutput << *$$; } <string_ptr>
-%destructor { /*delete $$;*/ } <string_ptr>
-%printer    { yyoutput << $$; } <int_value>
-
 
 %%
 
@@ -293,7 +293,7 @@ fsp_definition:
     | progress_def
     | process_def
     | composite_def
-//  | menu_def
+/*  | menu_def */
     ;
 
 
