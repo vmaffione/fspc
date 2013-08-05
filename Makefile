@@ -15,7 +15,7 @@ SOURCES=$(WCIN) fspcc.1 fsp.y
 #REPORT=--report=all
 REPORT=
 
-all: fspcc
+all: fspcc ctags
 
 fspcc: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
@@ -39,8 +39,8 @@ preproc.o: preproc.cpp
 preproc.cpp: preproc.lex
 	flex preproc.lex
 
-tags:
-	cscope -R
+ctags: tags
+	ctags -R
 
 clean: cleanaur clc
 	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out preproc.cpp location.hh position.hh stack.hh *.orig
