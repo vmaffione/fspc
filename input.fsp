@@ -11,3 +11,4 @@ P(K=1)=(a[K]->END).
 K=(a->b[i:R]->END).
 
 H=(enter->choose[i:1..3]->use[i]->exit->H).
+L=(t->h->L|t->k->L).

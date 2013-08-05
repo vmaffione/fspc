@@ -49,6 +49,7 @@ class Shell {
 	void basic(const vector<string> &args, stringstream& ss);
 	void alpha(const vector<string> &args, stringstream& ss);
 	void see(const vector<string> &args, stringstream& ss);
+	void print(const vector<string> &args, stringstream& ss);
 	void help(const vector<string> &args, stringstream& ss);
 
     public:

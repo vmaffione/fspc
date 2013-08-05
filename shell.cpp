@@ -54,6 +54,9 @@ description of the specified FSP into the specified output file";
 FSP";
     help_map["see"] = "see FSP_NAME: show a graphical representation of the \
 specified FSP using GraphViz";
+    help_map["print"] = "print FSP_NAME {png | pdf}: print the GraphViz "
+                        "representation of the specified fsp into a file "
+                        "FSP_NAME.FORMAT";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
@@ -64,6 +67,7 @@ specified FSP using GraphViz";
     cmd_map["basic"] = &Shell::basic;
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
+    cmd_map["print"] = &Shell::print;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -531,6 +535,56 @@ void Shell::see(const vector<string> &args, stringstream& ss)
     }
 
     remove(".tmp.gv");
+}
+
+void Shell::print(const vector<string> &args, stringstream& ss)
+{
+    SymbolValue * svp;
+    yy::Lts * lts;
+    string format = "png";
+    string filename;
+
+    if (!args.size()) {
+	ss << "Invalid command: try 'help'\n";
+	return;
+    }
+
+    if (!c.processes.lookup(args[0], svp)) {
+	ss << "Process " << args[0] << " not found\n";
+	return;
+    }
+    filename = args[0] + ".gv";
+
+    lts = is_lts(svp);
+    lts->graphvizOutput(filename.c_str());
+
+    if (args.size() > 1) {
+        if (args[1] != "png" && args[1] != "pdf") {
+            ss << "Format '" << args[1] << "' unknown\n";
+            return;
+        }
+        format = args[1];
+    }
+
+    /* UNIX-specific section. */
+    pid_t drawer = fork();
+
+    switch (drawer) {
+	case -1:
+	    ss << "fork() error\n";
+	    return;
+	    break;
+	case 0:
+	    execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
+	    exit(1);
+	    break;
+	default:
+	    int status;
+
+	    waitpid(-1, &status, 0);
+    }
+
+    remove(filename.c_str());
 }
 
 void Shell::help(const vector<string> &args, stringstream& ss)

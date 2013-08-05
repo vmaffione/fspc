@@ -66,4 +66,4 @@ cleanaur:
 	-rm *.tar.gz PKGBUILD
 
 clc:
-	-rm *.gv *.lts *.png .*.png *.bfsp
+	-rm *.gv *.lts *.png .*.png *.bfsp *.pdf
