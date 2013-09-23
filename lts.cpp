@@ -362,7 +362,7 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
 
     /* BFS looking for states with no outgoing transitions. We use a BFS
        instead of a DFS because the former is simpler to implement and
-       because it finds the sortest path to each deadlock state. */
+       because it finds the shortest path to each deadlock state. */
 
     /* Initialize a queue that only contains the 0 node. */
     pop = 0;
