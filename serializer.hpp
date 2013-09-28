@@ -46,12 +46,12 @@ class Serializer {
 	void set_value(const struct SetValue& setv, bool raw);
 	~Serializer();
 
-	static const char Integer;
-	static const char String;
-	static const char Byte;
-	static const char ActionsTable;
-	static const char Lts;
-	static const char SetValue;
+	static const char SerInteger;
+	static const char SerString;
+	static const char SerByte;
+	static const char SerActionsTable;
+	static const char SerLts;
+	static const char SerSetValue;
 };
 
 class Deserializer {

@@ -28,12 +28,12 @@ using namespace std;
 
 
 /* ============================= Serializer ============================== */
-const char Serializer::Integer = 'I';
-const char Serializer::String = 'S';
-const char Serializer::Byte = 'B';
-const char Serializer::ActionsTable = 'T';
-const char Serializer::Lts = 'L';
-const char Serializer::SetValue = 'U';
+const char Serializer::SerInteger = 'I';
+const char Serializer::SerString = 'S';
+const char Serializer::SerByte = 'B';
+const char Serializer::SerActionsTable = 'T';
+const char Serializer::SerLts = 'L';
+const char Serializer::SerSetValue = 'U';
 
 Serializer::Serializer(const char * filename)
 {
@@ -48,7 +48,7 @@ Serializer::~Serializer()
 void Serializer::byte(uint8_t v, bool raw)
 {
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::Byte),
+	fout.write(static_cast<const char *>(&Serializer::SerByte),
 						sizeof(char));
     }
 
@@ -61,7 +61,7 @@ void Deserializer::byte(uint8_t &v, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::Byte) {
+	if (type != Serializer::SerByte) {
 	    cout << "Error: expected byte\n";
 	    exit(-1);
 	}
@@ -73,7 +73,7 @@ void Deserializer::byte(uint8_t &v, bool raw)
 void Serializer::integer(uint32_t v, bool raw)
 {
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::Integer),
+	fout.write(static_cast<const char *>(&Serializer::SerInteger),
 						sizeof(char));
     }
 
@@ -87,7 +87,7 @@ void Deserializer::integer(uint32_t &v, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::Integer) {
+	if (type != Serializer::SerInteger) {
 	    cout << "Error: expected integer\n";
 	    exit(-1);
 	}
@@ -108,7 +108,7 @@ void Serializer::stl_string(const string &s, bool raw)
     }
 
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::String),
+	fout.write(static_cast<const char *>(&Serializer::SerString),
 						sizeof(char));
     }
 
@@ -124,7 +124,7 @@ void Deserializer::stl_string(string &s, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::String) {
+	if (type != Serializer::SerString) {
 	    cout << "Error: expected string\n";
 	    exit(-1);
 	}
@@ -141,7 +141,7 @@ void Serializer::actions_table(const struct ActionsTable& at, bool raw)
     map<string, int>::const_iterator it;
 
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::ActionsTable),
+	fout.write(static_cast<const char *>(&Serializer::SerActionsTable),
 						sizeof(char));
     }
 
@@ -162,7 +162,7 @@ void Deserializer::actions_table(ActionsTable &at, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::ActionsTable) {
+	if (type != Serializer::SerActionsTable) {
 	    cout << "Error: expected actions table\n";
 	    exit(-1);
 	}
@@ -200,7 +200,7 @@ void Serializer::lts(const class yy::Lts &lts, bool raw)
     uint32_t error = ~0;
 
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::Lts),
+	fout.write(static_cast<const char *>(&Serializer::SerLts),
 						sizeof(char));
     }
 
@@ -239,7 +239,7 @@ void Deserializer::lts(class yy::Lts &lts, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::Lts) {
+	if (type != Serializer::SerLts) {
 	    cout << "Error: expected LTS\n";
 	    exit(-1);
 	}
@@ -278,7 +278,7 @@ void Deserializer::lts(class yy::Lts &lts, bool raw)
 void Serializer::set_value(const struct SetValue& setv, bool raw)
 {
     if (!raw) {
-	fout.write(static_cast<const char *>(&Serializer::SetValue),
+	fout.write(static_cast<const char *>(&Serializer::SerSetValue),
 						sizeof(char));
     }
 
@@ -295,7 +295,7 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
-	if (type != Serializer::SetValue) {
+	if (type != Serializer::SerSetValue) {
 	    cout << "Error: expected SetValue\n";
 	    exit(-1);
 	}
