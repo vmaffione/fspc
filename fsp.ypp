@@ -36,6 +36,7 @@ using namespace std;
 //#define YYERROR_VERBOSE
 
 #include "driver.hpp"
+#include "tree.hpp"
 }
 
 %skeleton "glr.cc" /* -*- C++ -*- */
@@ -99,6 +100,7 @@ extern class CircularBuffer last_tokens;
     struct SvpVec * svpvec_ptr;
     struct Pvec * pvec_ptr;
     class Lts * lts_ptr;
+    class TreeNode * node;
 }
 
 
