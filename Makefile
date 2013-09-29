@@ -5,11 +5,11 @@ CXXFLAGS=$(DEBUG) -Wall
 
 VER=1.2
 
-OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o preproc.o
+OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o preproc.o tree.o
 
 HDRS=callbacks.hpp circular_buffer.hpp context.hpp driver.hpp interface.hpp lts.hpp preproc.hpp serializer.hpp shell.hpp symbols_table.hpp utils.hpp parser.hpp tree.hpp
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp preproc.hpp preproc.lex ltsee csee.sh parser.diff
+WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp tree.?pp preproc.hpp preproc.lex ltsee csee.sh parser.diff
 SOURCES=$(WCIN) fspcc.1 fsp.y
 
 #REPORT=--report=all

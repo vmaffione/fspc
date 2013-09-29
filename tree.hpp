@@ -19,16 +19,9 @@ class TreeNode {
     public:
         TreeNode(unsigned int t) : type(t) { }
         virtual ~TreeNode() { }
-        void addChild(TreeNode *n) { children.push_back(n); }
-        void addChild(unsigned int t) {
-            children.push_back(new TreeNode(t));
-        }
-        void stealChildren(TreeNode& n) {
-            for (unsigned int i=0; i<n.children.size(); i++) {
-                children.push_back(n.children[i]);
-            }
-            n.children.clear();
-        }
+        void addChild(TreeNode *n);
+        void addChild(unsigned int t);
+        void stealChildren(TreeNode& n);
 
         /* All the possible type for a parse tree node. */
         enum Type {
