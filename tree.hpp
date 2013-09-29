@@ -13,6 +13,7 @@
 namespace yy {
 
 class TreeNode {
+public: //XXX REMOVE
         unsigned int type;
         vector<TreeNode *> children;
 
@@ -24,7 +25,7 @@ class TreeNode {
             children.push_back(new TreeNode(t));
         }
         void stealChildren(TreeNode& n) {
-            for (int i=0; n.children.size(); i++) {
+            for (unsigned int i=0; i<n.children.size(); i++) {
                 children.push_back(n.children[i]);
             }
             n.children.clear();
@@ -194,13 +195,21 @@ class LtsTreeNode : public TreeNode {
 };
 
 template <class T>
-T* do_upcast(TreeNode * n)
+T* do_upcast(TreeNode *n)
 {
     T *ret = dynamic_cast<T*>(n);
 
     assert(ret);
 
     return ret;
+}
+
+template <class T>
+T* do_upcast_null(TreeNode *n)
+{
+    if (!n)
+        return NULL;
+    return do_upcast<T>(n);
 }
 
 #define DO_DOWNCAST(_p, _t)  \

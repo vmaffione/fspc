@@ -215,10 +215,20 @@ using namespace yy;
 /* The 'ps' vector and the AA function are necessary in the debug phase in
    order to check that the callback playback systems can work properly. */
 vector <void *> ps;
-inline void AA(void * barg, int midx, int tot)
-{
-    assert(barg == ps[ps.size()-1-tot+(midx)]);
-}
+#define PUSH(p) \
+    do { \
+        ps.push_back(p); \
+    } while (0);
+#define POP() \
+    do { \
+        assert(ps.size()); \
+        ps.pop_back(); \
+    } while (0);
+
+#define AA(barg, midx, tot) \
+    do { \
+        assert(barg == ps[ps.size()-1-tot+(midx)]); \
+    } while (0);
 
 
 //#define DEBUG
@@ -292,13 +302,11 @@ fsp_description:
     fsp_definition {
         $$ = new TreeNode(TreeNode::Root);
         $$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
     }
     | fsp_description fsp_definition {
         $1->stealChildren(*$2);
         delete $2;  /* Not a deep destructor. */
         $$ = $1;
-        ps.pop_back(); ps.pop_back(); ps.push_back($$);
     }
     ;
 
@@ -318,6 +326,7 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     lower_case_id {
+        AA($1,1,1);
         SvpVec *ret;
         StringTreeNode *n = do_upcast<StringTreeNode>($1);
 
@@ -327,7 +336,7 @@ action_labels:
 	ret = callback__1(driver.tr, n->value);
 	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | set {
 	AA($1,1,1);
@@ -335,10 +344,10 @@ action_labels:
 
 	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, n->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | action_labels '.' lower_case_id {
-	AA($1,1,1);
+	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
         SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
         StringTreeNode *n3 = do_upcast<StringTreeNode>($3);
@@ -352,7 +361,7 @@ action_labels:
         $$->addChild(TreeNode::Period);
         $$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
 	
     }
     | action_labels '.' set {
@@ -369,7 +378,7 @@ action_labels:
         $$->addChild(TreeNode::Period);
         $$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | action_labels '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
@@ -387,7 +396,7 @@ action_labels:
         $$->addChild($3);
         $$->addChild(TreeNode::CloseSquare);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -405,13 +414,14 @@ set:
 	$$ = new SvpVecTreeNode(TreeNode::Set, ret);
 	$$->addChild($2);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | set_expr {
 	AA($1,1,1);
         SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::Set, n->value);
 	$$->addChild($1);
+	POP(); PUSH($$);
     }
     ;
 
@@ -433,7 +443,7 @@ set_expr:
 	$$->addChild($3);
 	$$->addChild(TreeNode::CloseCurly);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     ;
 
@@ -451,14 +461,14 @@ range:
 	$$ = new SvpVecTreeNode(TreeNode::Range, ret);
 	$$->addChild($2);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | range_expr {
 	AA($1,1,1);
         SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::Range, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -468,21 +478,21 @@ action_range:
         SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | range {
 	AA($1,1,1);
         SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | set {
 	AA($1, 1, 1);
         SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | variable ':' range {
 	AA($1,1,2); AA($3,2,2);
@@ -499,7 +509,7 @@ action_range:
 	$$->addChild(TreeNode::Colon);
 	$$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | variable ':' set {
 	AA($1,1,2); AA($3,2,2);
@@ -516,7 +526,7 @@ action_range:
 	$$->addChild(TreeNode::Colon);
 	$$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -535,7 +545,7 @@ range_expr:
 	$$->addChild(TreeNode::DotDot);
 	$$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -564,7 +574,7 @@ constant_def:
 	$$->addChild(TreeNode::Assign);
 	$$->addChild($4);
 
-	ps.pop_back(); ps.pop_back();
+	POP(); POP();
     };
 
 range_def:
@@ -597,7 +607,7 @@ range_def:
 	$$->addChild(TreeNode::DotDot);
 	$$->addChild($7);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); //PUSH($$);
     };
 
 set_def:
@@ -624,7 +634,7 @@ set_def:
 	$$->addChild(TreeNode::Assign);
 	$$->addChild($5);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); // PUSH($$);
     };
 
 set_elements:
@@ -638,8 +648,7 @@ set_elements:
 	ret = callback__10(driver.tr, n->value);
 	$$ = new SvpVecTreeNode(TreeNode::SetElements, ret);
 	$$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
-
+	POP(); PUSH($$);
     }
     | set_elements ',' {
 	AA($1,1,1);
@@ -660,7 +669,7 @@ set_elements:
 	$$->addChild(TreeNode::Comma);
 	$$->addChild($4);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -681,9 +690,9 @@ process_def:
 	AA($1,1,5); AA($5,2,5); AA($6,3,5); AA($7,4,5); AA($8,5,5);
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
-        SvpVecTreeNode *n6 = do_upcast<SvpVecTreeNode>($6);
-        SvpVecTreeNode *n7 = do_upcast<SvpVecTreeNode>($7);
-        SvpVecTreeNode *n8 = do_upcast<SvpVecTreeNode>($8);
+        SvpVecTreeNode *n6 = do_upcast_null<SvpVecTreeNode>($6);
+        SvpVecTreeNode *n7 = do_upcast_null<SvpVecTreeNode>($7);
+        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
 	string name = *(n1->value);
 	yy::Lts * lts;
 
@@ -691,8 +700,10 @@ process_def:
 	    driver.parametric->record.push_back(
 			new Callback_P_SPVVV(&callback__15, *(n1->value)));
 	driver.tr.locations[0] = @1;
-	lts = callback__15(driver.tr, n1->value, n5->value, n6->value,
-                                        n7->value, n8->value);
+	lts = callback__15(driver.tr, n1->value, n5->value,
+                                        n6 ? n6->value : NULL,
+                                        n7 ? n7->value : NULL,
+                                        n8 ? n8->value : NULL);
 
 	/* Clear and free 'local_processes'. */
 	driver.tr.local_processes.clear();
@@ -715,8 +726,8 @@ process_def:
 	$$->addChild($8);
 	$$->addChild(TreeNode::Period);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back();
-        ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP();
+        POP(); POP(); //PUSH($$);
     }
     ;
 
@@ -726,7 +737,7 @@ process_body:
         PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
 	$$ = new PvecTreeNode(TreeNode::ProcessBody, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | local_process ',' local_process_defs {
 	AA($1,1,2); AA($3,2,2);
@@ -738,7 +749,7 @@ process_body:
 	$$->addChild($1);
 	$$->addChild(TreeNode::Comma);
 	$$->addChild($3);
-        ps.pop_back(); ps.pop_back(); ps.push_back($$);
+        POP(); POP(); PUSH($$);
     }
     ;
 
@@ -749,7 +760,7 @@ local_process_defs:
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcessDefs, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | local_process_defs ',' local_process_def {
 	AA($1,1,2); AA($3,2,2);
@@ -761,7 +772,7 @@ local_process_defs:
 	$$->addChild($1);
 	$$->addChild(TreeNode::Comma);
 	$$->addChild($3);
-        ps.pop_back(); ps.pop_back(); ps.push_back($$);
+        POP(); POP(); PUSH($$);
     }
     ;
 
@@ -802,7 +813,7 @@ local_process_def:
 	$$->addChild($3);
 	$$->addChild(TreeNode::Assign);
 	$$->addChild($6);
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); PUSH($$);
     }
     ;
 
@@ -811,7 +822,7 @@ alphabet_extension_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | '+' set {
 	AA($2,1,1);
@@ -820,7 +831,7 @@ alphabet_extension_OPT:
 	$$ = new SvpVecTreeNode(TreeNode::AlphaExt, n->value);
 	$$->addChild(TreeNode::Plus);
 	$$->addChild($2);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -831,7 +842,7 @@ local_process:
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | sequential_composition {
 	AA($1,1,1);
@@ -839,7 +850,7 @@ local_process:
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, n->value);
 	$$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | IF expression THEN {
 	AA($2,1,1);
@@ -861,11 +872,12 @@ local_process:
         Pvec *ret;
         SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
         PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
-        PvecTreeNode *n7 = do_upcast<PvecTreeNode>($7);
+        PvecTreeNode *n7 = do_upcast_null<PvecTreeNode>($7);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__21));
-	ret = callback__21(driver.tr, n2->value, n5->value, n7->value);
+	ret = callback__21(driver.tr, n2->value, n5->value,
+                            n7 ? n7->value : NULL);
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, ret);
 	$$->addChild(TreeNode::If);
 	$$->addChild($2);
@@ -874,7 +886,7 @@ local_process:
 	$$->addChild($7);
 
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); PUSH($$);
     }
     | '(' {
 	if (driver.record_mode_on)
@@ -891,7 +903,7 @@ local_process:
 	$$->addChild(TreeNode::OpenParen);
 	$$->addChild($3);
 	$$->addChild(TreeNode::CloseParen);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -900,7 +912,7 @@ else_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | ELSE local_process {
 	AA($2,1,1);
@@ -909,7 +921,7 @@ else_OPT:
 	$$ = new PvecTreeNode(TreeNode::ProcessElse, n2->value);
 	$$->addChild(TreeNode::Else);
 	$$->addChild($2);
-	ps.push_back($$);
+	POP(); PUSH($$);
     }
 
 base_local_process:
@@ -921,7 +933,7 @@ base_local_process:
 	ret = callback__23(driver.tr);
 	$$ = new PvecTreeNode(TreeNode::BaseLocalProcess, ret);
 	$$->addChild(TreeNode::End);
-	ps.push_back($$);
+	PUSH($$);
     }
     | STOP {
         Pvec *ret;
@@ -931,7 +943,7 @@ base_local_process:
 	ret = callback__24(driver.tr);
 	$$ = new PvecTreeNode(TreeNode::BaseLocalProcess, ret);
 	$$->addChild(TreeNode::Stop);
-	ps.push_back($$);
+	PUSH($$);
     }
     | ERROR {
         Pvec *ret;
@@ -941,7 +953,7 @@ base_local_process:
 	ret = callback__25(driver.tr);
 	$$ = new PvecTreeNode(TreeNode::BaseLocalProcess, ret);
 	$$->addChild(TreeNode::Error);
-	ps.push_back($$);
+	PUSH($$);
     }
     | process_id indices_OPT {
 	AA($1,1,2); AA($2,2,2);
@@ -957,7 +969,7 @@ base_local_process:
 	$$->addChild($1);
 	$$->addChild($2);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -973,7 +985,7 @@ choice:
 	$$ = new PvecTreeNode(TreeNode::Choice, ret);
 	$$->addChild($1);
 	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size());
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | choice '|' {
 	AA($1,1,1);
@@ -997,35 +1009,36 @@ choice:
 	$$->addChild(TreeNode::BitOr);
 	$$->addChild($4);
 	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size() << "\n");
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
 action_prefix:
     guard_OPT {
 	AA($1,1,1);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_N_V(&callback__30));
-	callback__30(driver.tr, n1->value);
+	callback__30(driver.tr, n1 ? n1->value : NULL);
     } prefix_actions ARROW local_process {
 	AA($1,1,3); AA($3,2,3); AA($5,3,3);
         Pvec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
         PvecTreeNode *n3 = do_upcast<PvecTreeNode>($3);
         PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__31));
-	ret = callback__31(driver.tr, n1->value, n3->value, n5->value);
+	ret = callback__31(driver.tr, n1 ? n1->value : NULL, n3->value,
+                                        n5->value);
 	$$ = new PvecTreeNode(TreeNode::PrefixActions, ret);
 	$$->addChild($1);
 	$$->addChild($3);
 	$$->addChild(TreeNode::Arrow);
 	$$->addChild($5);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1041,7 +1054,7 @@ prefix_actions:
 	$$ = new PvecTreeNode(TreeNode::PrefixActions, ret);
 	$$->addChild($1);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | prefix_actions ARROW action_labels {
 	AA($1,1,2); AA($3,2,2);
@@ -1057,7 +1070,7 @@ prefix_actions:
 	$$->addChild(TreeNode::Arrow);
 	$$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1066,7 +1079,7 @@ guard_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | WHEN expression {
 	AA($2,1,1);
@@ -1075,7 +1088,7 @@ guard_OPT:
 	$$ = new SvpVecTreeNode(TreeNode::Guard, n2->value);
 	$$->addChild(TreeNode::When);
 	$$->addChild($2);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1087,7 +1100,7 @@ indices_OPT:
 	    driver.parametric->record.push_back(new Callback_V(&callback__34));
 	ret = callback__34(driver.tr);
         $$ = new SvpVecTreeNode(TreeNode::Indices, ret);
-	ps.push_back($$);
+	PUSH($$);
     }
     | indices {
         $$ = $1;
@@ -1108,7 +1121,7 @@ indices:
 	$$->addChild($2);
 	$$->addChild(TreeNode::CloseSquare);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | indices '[' expression ']' {
 	AA($1,1,2); AA($3,2,2);
@@ -1125,7 +1138,7 @@ indices:
 	$$->addChild($3);
 	$$->addChild(TreeNode::CloseSquare);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1137,7 +1150,7 @@ index_ranges_OPT:
 	    driver.parametric->record.push_back(new Callback_V(&callback__37));
 	ret = callback__37(driver.tr);
         $$ = new SvpVecTreeNode(TreeNode::IndexRanges, ret);
-	ps.push_back($$);
+	PUSH($$);
     }
     | index_ranges {
         SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
@@ -1145,7 +1158,7 @@ index_ranges_OPT:
         $$ = new SvpVecTreeNode(TreeNode::IndexRanges, n1->value);
         $$->addChild($1);
 
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1164,7 +1177,7 @@ index_ranges:
 	$$->addChild($2);
 	$$->addChild(TreeNode::CloseSquare);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | index_ranges '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
@@ -1182,7 +1195,7 @@ index_ranges:
 	$$->addChild($3);
 	$$->addChild(TreeNode::CloseSquare);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1201,7 +1214,7 @@ sequential_composition:
 	$$->addChild(TreeNode::Semicolon);
 	$$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1211,7 +1224,7 @@ seq_process_list:
         PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
 	$$ = new PvecTreeNode(TreeNode::SeqProcessList, n1->value);
 	$$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | seq_process_list ';' process_ref_seq {
 	AA($1,1,2); AA($3,2,2);
@@ -1227,7 +1240,7 @@ seq_process_list:
         $$->addChild($1);
         $$->addChild(TreeNode::Semicolon);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1236,19 +1249,19 @@ process_ref_seq:
 	AA($1,1,2); AA($2,2,2);
         Pvec *ret;
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 		    	new Callback_P_SV(&callback__66, *(n1->value)));
 	driver.tr.locations[0] = @1;
 	driver.tr.locations[1] = @2;
-	ret = callback__66(driver.tr, n1->value, n2->value);
+	ret = callback__66(driver.tr, n1->value, n2 ? n2->value : NULL);
 	$$ = new PvecTreeNode(TreeNode::ProcessRefSeq, ret);
         $$->addChild($1);
         $$->addChild($2);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1257,7 +1270,7 @@ argument_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     |'(' argument_list ')' {
         SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
@@ -1268,6 +1281,7 @@ argument_OPT:
         $$->addChild(TreeNode::OpenParen);
         $$->addChild($2);
         $$->addChild(TreeNode::CloseParen);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1283,7 +1297,7 @@ argument_list:
 	$$ = new SvpVecTreeNode(TreeNode::ArgumentList, ret);
         $$->addChild($1);
 
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | argument_list ',' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -1299,7 +1313,7 @@ argument_list:
         $$->addChild(TreeNode::Comma);
         $$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1316,14 +1330,15 @@ composite_def:
 	yy::Lts * lts;
         StringTreeNode *n2 = do_upcast<StringTreeNode>($2);
         SvpVecTreeNode *n6 = do_upcast<SvpVecTreeNode>($6);
-        SvpVecTreeNode *n7 = do_upcast<SvpVecTreeNode>($7);
-        SvpVecTreeNode *n8 = do_upcast<SvpVecTreeNode>($8);
+        SvpVecTreeNode *n7 = do_upcast_null<SvpVecTreeNode>($7);
+        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 			new Callback_V_SVVV(&callback__88, *(n2->value)));
-	lts = callback__88(driver.tr, n2->value, n6->value, n7->value,
-                                        n8->value);
+	lts = callback__88(driver.tr, n2->value, n6->value,
+                                        n7 ? n7->value : NULL,
+                                        n8 ? n8->value : NULL);
 
 	post_process_definition(driver, lts, @2);
 
@@ -1339,45 +1354,47 @@ composite_def:
         $$->addChild($7);
         $$->addChild($8);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.pop_back();
-        ps.push_back($$);
+	POP(); POP(); POP(); POP();
+        //PUSH($$);
     }
     ;
 
 composite_body:
     sharing_OPT labeling_OPT process_ref {
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
         SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_np_V_VVV(&callback__76));
-	$<svpvec_ptr>$ = callback__76(driver.tr, n1->value, n2->value,
-                                        n3->value);
-	ps.push_back($<svpvec_ptr>$);
+	$<svpvec_ptr>$ = callback__76(driver.tr, n1 ? n1->value : NULL,
+                                                    n2 ? n2->value : NULL,
+                                                    n3->value);
+	PUSH($<svpvec_ptr>$);
     } relabel_OPT {
 	AA($1,1,5); AA($2,2,5); AA($3,3,5); 
 	AA($<svpvec_ptr>4,4,5); AA($5,5,5);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
         SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n5 = do_upcast_null<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 			    new Callback_V_VVVVV(&callback__77));
-	ret = callback__77(driver.tr, n1->value, n2->value, n3->value,
-                            $<svpvec_ptr>4, n5->value);
+	ret = callback__77(driver.tr, n1 ? n1->value : NULL,
+                                        n2 ? n2->value : NULL, n3->value,
+                            $<svpvec_ptr>4, n5 ? n5->value : NULL);
 	$$ = new SvpVecTreeNode(TreeNode::CompositeBody, ret);
         $$->addChild($1);
         $$->addChild($2);
         $$->addChild($3);
         $$->addChild($5);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back();
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP();
+	POP(); POP(); PUSH($$);
     }
     | sharing_OPT labeling_OPT '(' {
 	AA($1,1,2); AA($2,2,2);
@@ -1387,30 +1404,32 @@ composite_body:
 	Callback_pop_push::exe(driver.tr, 0, 1);
     }  parallel_composition ')' {
 	AA($1,1,3); AA($2,2,3); AA($5,3,3);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
         SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 			    new Callback_np_V_VVV(&callback__78));
-	$<svpvec_ptr>$ = callback__78(driver.tr, n1->value, n2->value,
+	$<svpvec_ptr>$ = callback__78(driver.tr, n1 ? n1->value : NULL,
+                                        n2 ? n2->value : NULL,
                                         n5->value);
-	ps.push_back($<svpvec_ptr>$);
+	PUSH($<svpvec_ptr>$);
     } relabel_OPT {
 	AA($1,1,5); AA($2,2,5); AA($5,3,5);
 	AA($<svpvec_ptr>7,4,5); AA($8,5,5);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
         SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
-        SvpVecTreeNode *n8 = do_upcast<SvpVecTreeNode>($8);
+        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 			    new Callback_V_VVVVV(&callback__79));
-	ret = callback__79(driver.tr, n1->value, n2->value, n5->value,
-                            $<svpvec_ptr>7, n8->value);
+	ret = callback__79(driver.tr, n1 ? n1->value : NULL,
+                            n2 ? n2->value : NULL, n5->value,
+                            $<svpvec_ptr>7, n8 ? n8->value : NULL);
 	$$ = new SvpVecTreeNode(TreeNode::CompositeBody, ret);
         $$->addChild($1);
         $$->addChild($2);
@@ -1419,8 +1438,8 @@ composite_body:
         $$->addChild(TreeNode::CloseParen);
         $$->addChild($8);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); 
-        ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); 
+        POP(); POP(); PUSH($$);
     }
     | FORALL {
 	if (driver.record_mode_on)
@@ -1447,18 +1466,19 @@ composite_body:
         $$->addChild($3);
         $$->addChild($5);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | IF expression THEN composite_body composite_else_OPT {
 	AA($2,1,3); AA($4,2,3); AA($5,3,3);
         SvpVec *ret;
         SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
         SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n5 = do_upcast_null<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VVV(&callback__81));
-	ret = callback__81(driver.tr, n2->value, n4->value, n5->value);
+	ret = callback__81(driver.tr, n2->value, n4->value,
+                            n5 ? n5->value : NULL);
 	$$ = new SvpVecTreeNode(TreeNode::CompositeBody, ret);
         $$->addChild(TreeNode::If);
         $$->addChild($2);
@@ -1466,7 +1486,7 @@ composite_body:
         $$->addChild($4);
         $$->addChild($5);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1475,7 +1495,7 @@ composite_else_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | ELSE composite_body {
 	AA($2,1,1);
@@ -1484,7 +1504,7 @@ composite_else_OPT:
 	$$ = new SvpVecTreeNode(TreeNode::CompositeElse, n2->value);
         $$->addChild(TreeNode::Else);
         $$->addChild($2);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     ;
 
@@ -1499,7 +1519,7 @@ parallel_composition:
 	ret = callback__82(driver.tr, n1->value);
 	$$ = new SvpVecTreeNode(TreeNode::ParallelComp, ret);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | parallel_composition OR {
 	if (driver.record_mode_on)
@@ -1518,7 +1538,7 @@ parallel_composition:
         $$->addChild($1);
         $$->addChild(TreeNode::LogicOr);
         $$->addChild($4);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1527,19 +1547,19 @@ process_ref:
 	AA($1,1,2); AA($2,2,2);
         SvpVec *ret;
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
 			new Callback_V_SV(&callback__84, *(n1->value)));
 	driver.tr.locations[0] = @1;
 	driver.tr.locations[1] = @2;
-	ret = callback__84(driver.tr, n1->value, n2->value);
+	ret = callback__84(driver.tr, n1->value, n2 ? n2->value : NULL);
 	$$ = new SvpVecTreeNode(TreeNode::ProcessRef, ret);
         $$->addChild($1);
         $$->addChild($2);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1548,7 +1568,7 @@ sharing_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | action_labels SHARING {
 	AA($1,1,1);
@@ -1561,7 +1581,7 @@ sharing_OPT:
 	$$ = new SvpVecTreeNode(TreeNode::Sharing, ret);
         $$->addChild($1);
         $$->addChild(TreeNode::DoubleColon);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     ;
 
@@ -1570,7 +1590,7 @@ labeling_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | action_labels ':' {
 	AA($1,1,1);
@@ -1580,7 +1600,7 @@ labeling_OPT:
 	$$ = new SvpVecTreeNode(TreeNode::Labeling, n1->value);
         $$->addChild($1);
         $$->addChild(TreeNode::Colon);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1589,7 +1609,7 @@ priority_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | priority {
 	AA($1,1,1);
@@ -1609,7 +1629,7 @@ priority:
 	$$ = new SvpVecTreeNode(TreeNode::Priority, ret);
         $$->addChild(TreeNode::RightShift);
         $$->addChild($2);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     | LSHIFT set {
 	AA($2,1,1);
@@ -1622,7 +1642,7 @@ priority:
 	$$ = new SvpVecTreeNode(TreeNode::Priority, ret);
         $$->addChild(TreeNode::LeftShift);
         $$->addChild($2);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1631,7 +1651,6 @@ priority:
 param_OPT:
     {
         $$ = NULL;
-        ps.push_back($$);
     }
     | param {
         $$ = $1;
@@ -1644,7 +1663,7 @@ param:
         $$->addChild(TreeNode::OpenParen);
         $$->addChild($2);
         $$->addChild(TreeNode::CloseParen);
-        ps.pop_back(); ps.push_back($$);
+        //POP(); PUSH($$);
     }
     ;
 
@@ -1652,14 +1671,14 @@ parameter_list:
     parameter {
         $$ = new TreeNode(TreeNode::ParameterList);
         $$->addChild($1);
-        ps.pop_back(); ps.push_back($$);
+        //POP(); PUSH($$);
     }
     | parameter_list ',' parameter {
         $$ = new TreeNode(TreeNode::ParameterList);
         $$->addChild($1);
         $$->addChild(TreeNode::Comma);
         $$->addChild($3);
-        ps.pop_back(); ps.push_back($$);
+        //POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1702,7 +1721,7 @@ parameter:
         $$->addChild(TreeNode::Assign);
         $$->addChild($3);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP();
     }	
     ;
 
@@ -1712,7 +1731,7 @@ relabel_OPT: {
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | '/' braces_relabel_defs {
 	AA($2,1,1);
@@ -1721,7 +1740,7 @@ relabel_OPT: {
 	$$ = new SvpVecTreeNode(TreeNode::Relabeling, n2->value);
         $$->addChild(TreeNode::Slash);
         $$->addChild($2);
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1739,7 +1758,7 @@ braces_relabel_defs:
         $$->addChild($3);
         $$->addChild(TreeNode::CloseCurly);
 
-        ps.pop_back(); ps.push_back($$);
+        POP(); PUSH($$);
     }
     ;
 
@@ -1750,14 +1769,13 @@ relabel_defs:
 
 	$$ = new SvpVecTreeNode(TreeNode::RelabelDefs, n1->value);
         $$->addChild($1);
-        ps.pop_back();
-        ps.push_back($$);
+        POP(); PUSH($$);
     }
     | relabel_defs ',' {
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_pop_push(0, 1));
 	Callback_pop_push::exe(driver.tr, 0, 1);
-    }  relabel_def {
+    } relabel_def {
 	AA($1,1,2); AA($4,2,2);
         SvpVec *ret;
         SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
@@ -1771,7 +1789,7 @@ relabel_defs:
         $$->addChild(TreeNode::Comma);
         $$->addChild($4);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1794,9 +1812,7 @@ relabel_def:
         $$->addChild(TreeNode::Slash);
         $$->addChild($4);
         
-	ps.pop_back();
-	ps.pop_back();
-	ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | FORALL {
 	if (driver.record_mode_on)
@@ -1817,7 +1833,7 @@ relabel_def:
         $$->addChild($3);
         $$->addChild($4);
 
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     ;
 
@@ -1826,7 +1842,7 @@ hiding_OPT:
 	$$ = NULL;
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_null);
-	ps.push_back($$);
+	PUSH($$);
     }
     | hiding {
 	AA($1,1,1);
@@ -1846,8 +1862,7 @@ hiding:
         $$ = new SvpVecTreeNode(TreeNode::HidingInterf, ret);
         $$->addChild(TreeNode::Hiding);
         $$->addChild($2);
-	ps.pop_back();
-	ps.push_back($$);
+	POP(); PUSH($$);
     }
     | '@' set {
 	AA($2,1,1);
@@ -1860,8 +1875,8 @@ hiding:
         $$ = new SvpVecTreeNode(TreeNode::HidingInterf, ret);
         $$->addChild(TreeNode::Interf);
         $$->addChild($2);
-	ps.pop_back();
-	ps.push_back($$);
+
+	POP(); PUSH($$);
     }
     ;
 
@@ -1885,7 +1900,7 @@ property_def:
         $$->addChild(TreeNode::Property);
         $$->addChild($2);
 
-        ps.pop_back(); ps.push_back($$);
+        // POP(); PUSH($$);
     }
     ;
 
@@ -1925,7 +1940,7 @@ progress_def:
         $$->addChild(TreeNode::Assign);
         $$->addChild($6);
 
-	ps.pop_back(); ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); POP(); // PUSH($$);
     }
     ;
 
@@ -1957,7 +1972,7 @@ expression:
         $$->addChild(TreeNode::OpenParen);
         $$->addChild($2);
         $$->addChild(TreeNode::CloseParen);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | expression OR expression {
 	AA($1,1,2); AA($3,2,2);
@@ -1972,7 +1987,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::LogicOr);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression AND expression {
 	AA($1,1,2); AA($3,2,2);
@@ -1987,7 +2002,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::LogicAnd);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '|' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2002,7 +2017,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::BitOr);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '^' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2017,7 +2032,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::BitXor);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '&' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2032,7 +2047,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::BitAnd);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression EQUAL expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2047,7 +2062,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Equal);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression NOTEQUAL expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2062,7 +2077,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::NotEqual);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '<' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2077,7 +2092,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Less);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '>' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2092,7 +2107,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Greater);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression LOE expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2107,7 +2122,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::LOE);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression GOE expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2122,7 +2137,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::GOE);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression LSHIFT expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2137,7 +2152,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::LeftShift);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression RSHIFT expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2152,7 +2167,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::RightShift);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '+' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2167,7 +2182,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Plus);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '-' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2182,7 +2197,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Minus);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '*' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2197,7 +2212,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Times);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '/' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2212,7 +2227,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Divide);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | expression '%' expression {
 	AA($1,1,2); AA($3,2,2);
@@ -2227,7 +2242,7 @@ expression:
         $$->addChild($1);
         $$->addChild(TreeNode::Modulus);
         $$->addChild($3);
-	ps.pop_back(); ps.pop_back(); ps.push_back($$);
+	POP(); POP(); PUSH($$);
     }
     | base_expression {
 	AA($1,1,1);
@@ -2235,7 +2250,7 @@ expression:
 
         $$ = new SvpVecTreeNode(TreeNode::Expression, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | '+' base_expression {
 	AA($2,1,1);
@@ -2244,7 +2259,7 @@ expression:
         $$ = new SvpVecTreeNode(TreeNode::Expression, n2->value);
         $$->addChild(TreeNode::Plus);
         $$->addChild($2);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | '-' base_expression {
 	AA($2,1,1);
@@ -2257,7 +2272,7 @@ expression:
         $$ = new SvpVecTreeNode(TreeNode::Expression, ret);
         $$->addChild(TreeNode::Minus);
         $$->addChild($2);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | '!' base_expression {
 	AA($2,1,1);
@@ -2270,7 +2285,7 @@ expression:
         $$ = new SvpVecTreeNode(TreeNode::Expression, ret);
         $$->addChild(TreeNode::Bang);
         $$->addChild($2);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     ;
 
@@ -2285,7 +2300,7 @@ base_expression:
 	ret = callback__61(driver.tr, n1->value);
         $$ = new SvpVecTreeNode(TreeNode::BaseExpression, ret);
         $$->addChild($1);
-	ps.push_back($$);
+	POP(); PUSH($$);
     }
     | variable {
 	AA($1,1,1);
@@ -2299,7 +2314,7 @@ base_expression:
 	ret = callback__62(driver.tr, n1->value);
         $$ = new SvpVecTreeNode(TreeNode::BaseExpression, ret);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     | const_parameter_id {
 	AA($1,1,1);
@@ -2313,23 +2328,23 @@ base_expression:
 	ret = callback__63(driver.tr, n1->value);
         $$ = new SvpVecTreeNode(TreeNode::BaseExpression, ret);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     }
     ;
 
 integer: INTEGER {
         $$ = new IntTreeNode(TreeNode::Integer, $1);
-        ps.push_back($$);
+        PUSH($$);
     };
 
 lower_case_id: LowerCaseID {
         $$ = new StringTreeNode(TreeNode::LowerCaseId, $1);
-        ps.push_back($$);
+        PUSH($$);
 };
 
 upper_case_id: UpperCaseID {
         $$ = new StringTreeNode(TreeNode::UpperCaseId, $1);
-        ps.push_back($$);
+        PUSH($$);
 };
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
@@ -2337,56 +2352,56 @@ variable: lower_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::VariableId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 constant_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ConstantId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 range_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::RangeId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 set_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::SetId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 const_parameter_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ConstParameterId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 parameter_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ParameterId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 process_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ProcessId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 
 progress_id: upper_case_id {
         StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ProgressId, n1->value);
         $$->addChild($1);
-	ps.pop_back(); ps.push_back($$);
+	POP(); PUSH($$);
     };
 //menu_id: UpperCaseID { ps.push_back($1); $$ = $1;};
 
