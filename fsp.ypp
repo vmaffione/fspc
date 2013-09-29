@@ -328,7 +328,7 @@ action_labels:
     lower_case_id {
         AA($1,1,1);
         SvpVec *ret;
-        StringTreeNode *n = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n = tree_downcast<StringTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -340,7 +340,7 @@ action_labels:
     }
     | set {
 	AA($1,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 
 	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, n->value);
         $$->addChild($1);
@@ -349,8 +349,8 @@ action_labels:
     | action_labels '.' lower_case_id {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        StringTreeNode *n3 = do_upcast<StringTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        StringTreeNode *n3 = tree_downcast<StringTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -367,8 +367,8 @@ action_labels:
     | action_labels '.' set {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__3));
@@ -383,8 +383,8 @@ action_labels:
     | action_labels '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	driver.tr.locations[0] = @3;
 	if (driver.record_mode_on)
@@ -404,7 +404,7 @@ set:
     EXPECT_SET set_id {
 	AA($2,1,1);
         SvpVec *ret;
-        StringTreeNode *n2 = do_upcast<StringTreeNode>($2);
+        StringTreeNode *n2 = tree_downcast<StringTreeNode>($2);
 
 	driver.tr.locations[0] = @2;
 	if (driver.record_mode_on)
@@ -418,7 +418,7 @@ set:
     }
     | set_expr {
 	AA($1,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::Set, n->value);
 	$$->addChild($1);
 	POP(); PUSH($$);
@@ -433,7 +433,7 @@ set_expr:
     } set_elements '}' {
 	AA($3,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__75));
@@ -451,7 +451,7 @@ range:
     EXPECT_RANGE range_id {
 	AA($2,1,1);
         SvpVec *ret;
-        StringTreeNode *n = do_upcast<StringTreeNode>($2);
+        StringTreeNode *n = tree_downcast<StringTreeNode>($2);
 
 	driver.tr.locations[0] = @2;
 	if (driver.record_mode_on)
@@ -465,7 +465,7 @@ range:
     }
     | range_expr {
 	AA($1,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::Range, n->value);
 	$$->addChild($1);
         POP(); PUSH($$);
@@ -475,21 +475,21 @@ range:
 action_range:
     expression {
 	AA($1,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
         POP(); PUSH($$);
     }
     | range {
 	AA($1,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
         POP(); PUSH($$);
     }
     | set {
 	AA($1, 1, 1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 	$$ = new SvpVecTreeNode(TreeNode::ActionRange, n->value);
 	$$->addChild($1);
         POP(); PUSH($$);
@@ -497,8 +497,8 @@ action_range:
     | variable ':' range {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -514,8 +514,8 @@ action_range:
     | variable ':' set {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -534,8 +534,8 @@ range_expr:
     expression DOTDOT expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__9));
@@ -554,8 +554,8 @@ range_expr:
 constant_def:
     CONST constant_id '=' expression {
 	AA($2,1,2); AA($4,2,2);
-        StringTreeNode *n2 = do_upcast<StringTreeNode>($2);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        StringTreeNode *n2 = tree_downcast<StringTreeNode>($2);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 	assert(n4->value->v.size() == 1);
 
 	ConstValue* cvp = is_const(n4->value->v[0]);
@@ -580,9 +580,9 @@ constant_def:
 range_def:
     RANGE EXPECT_RANGE range_id '=' expression DOTDOT expression {
 	AA($3,1,3); AA($5,2,3); AA($7,3,3);
-        StringTreeNode *n3 = do_upcast<StringTreeNode>($3);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
-        SvpVecTreeNode *n7 = do_upcast<SvpVecTreeNode>($7);
+        StringTreeNode *n3 = tree_downcast<StringTreeNode>($3);
+        SvpVecTreeNode *n5 = tree_downcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n7 = tree_downcast<SvpVecTreeNode>($7);
 	assert(n5->value->v.size() == 1 && n7->value->v.size() == 1);
 
 	RangeValue* rvp = new RangeValue;
@@ -613,8 +613,8 @@ range_def:
 set_def:
     SET EXPECT_SET set_id '=' set_expr {
 	AA($3,1,2); AA($5,2,2);
-        StringTreeNode *n3 = do_upcast<StringTreeNode>($3);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
+        StringTreeNode *n3 = tree_downcast<StringTreeNode>($3);
+        SvpVecTreeNode *n5 = tree_downcast<SvpVecTreeNode>($5);
 	SetValue * setvp;
 
 	assert(n5->value->v.size() == 1);
@@ -641,7 +641,7 @@ set_elements:
     action_labels {
 	AA($1,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__10));
@@ -658,8 +658,8 @@ set_elements:
     } action_labels {
 	AA($1,1,2); AA($4,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__13));
@@ -678,7 +678,7 @@ set_elements:
 process_def:
     process_id param_OPT {
 	AA($1,1,1);
-        StringTreeNode *n = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n = tree_downcast<StringTreeNode>($1);
 
 	driver.record_mode_on = 1;
 	if (driver.record_mode_on)
@@ -688,11 +688,11 @@ process_def:
     }
     '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	AA($1,1,5); AA($5,2,5); AA($6,3,5); AA($7,4,5); AA($8,5,5);
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
-        SvpVecTreeNode *n6 = do_upcast_null<SvpVecTreeNode>($6);
-        SvpVecTreeNode *n7 = do_upcast_null<SvpVecTreeNode>($7);
-        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        PvecTreeNode *n5 = tree_downcast<PvecTreeNode>($5);
+        SvpVecTreeNode *n6 = tree_downcast_null<SvpVecTreeNode>($6);
+        SvpVecTreeNode *n7 = tree_downcast_null<SvpVecTreeNode>($7);
+        SvpVecTreeNode *n8 = tree_downcast_null<SvpVecTreeNode>($8);
 	string name = *(n1->value);
 	yy::Lts * lts;
 
@@ -734,14 +734,14 @@ process_def:
 process_body:
     local_process {
 	AA($1,1,1);
-        PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
 	$$ = new PvecTreeNode(TreeNode::ProcessBody, n->value);
 	$$->addChild($1);
         POP(); PUSH($$);
     }
     | local_process ',' local_process_defs {
 	AA($1,1,2); AA($3,2,2);
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_pop);
@@ -756,7 +756,7 @@ process_body:
 local_process_defs:
     local_process_def {
 	AA($1,1,1);
-        PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcessDefs, n->value);
 	$$->addChild($1);
@@ -764,7 +764,7 @@ local_process_defs:
     }
     | local_process_defs ',' local_process_def {
 	AA($1,1,2); AA($3,2,2);
-        PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_pop);
@@ -789,8 +789,8 @@ local_process_def:
 	Callback_pop_push::exe(driver.tr, 0, 1);
     } index_ranges_OPT '=' {
 	AA($1,1,2); AA($3,2,2);
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -799,9 +799,9 @@ local_process_def:
     } local_process {
 	AA($1,1,3); AA($3,2,3); AA($6,3,3);
         Pvec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
-        PvecTreeNode *n6 = do_upcast<PvecTreeNode>($6);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
+        PvecTreeNode *n6 = tree_downcast<PvecTreeNode>($6);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -826,7 +826,7 @@ alphabet_extension_OPT:
     }
     | '+' set {
 	AA($2,1,1);
-        SvpVecTreeNode *n = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new SvpVecTreeNode(TreeNode::AlphaExt, n->value);
 	$$->addChild(TreeNode::Plus);
@@ -838,7 +838,7 @@ alphabet_extension_OPT:
 local_process:
     base_local_process {
 	AA($1,1,1);
-        PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, n->value);
 	$$->addChild($1);
@@ -846,7 +846,7 @@ local_process:
     }
     | sequential_composition {
 	AA($1,1,1);
-        PvecTreeNode *n = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, n->value);
 	$$->addChild($1);
@@ -854,15 +854,15 @@ local_process:
     }
     | IF expression THEN {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_N_V(&callback__19));
 	callback__19(driver.tr, n2->value);
     } local_process {
 	AA($2,1,2); AA($5,2,2);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
-        PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
+        PvecTreeNode *n5 = tree_downcast<PvecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_N_VP(&callback__20));
@@ -870,9 +870,9 @@ local_process:
     } else_OPT {
 	AA($2,1,3); AA($5,2,3); AA($7,3,3);
         Pvec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
-        PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
-        PvecTreeNode *n7 = do_upcast_null<PvecTreeNode>($7);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
+        PvecTreeNode *n5 = tree_downcast<PvecTreeNode>($5);
+        PvecTreeNode *n7 = tree_downcast_null<PvecTreeNode>($7);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__21));
@@ -897,7 +897,7 @@ local_process:
 	PROX(driver.tr.current_contexts().print());
     } choice ')' {
 	AA($3,1,1);
-        PvecTreeNode *n3 = do_upcast<PvecTreeNode>($3);
+        PvecTreeNode *n3 = tree_downcast<PvecTreeNode>($3);
 
 	$$ = new PvecTreeNode(TreeNode::LocalProcess, n3->value);
 	$$->addChild(TreeNode::OpenParen);
@@ -916,7 +916,7 @@ else_OPT:
     }
     | ELSE local_process {
 	AA($2,1,1);
-        PvecTreeNode *n2 = do_upcast<PvecTreeNode>($2);
+        PvecTreeNode *n2 = tree_downcast<PvecTreeNode>($2);
 
 	$$ = new PvecTreeNode(TreeNode::ProcessElse, n2->value);
 	$$->addChild(TreeNode::Else);
@@ -958,8 +958,8 @@ base_local_process:
     | process_id indices_OPT {
 	AA($1,1,2); AA($2,2,2);
         Pvec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -977,7 +977,7 @@ choice:
     action_prefix {
 	AA($1,1,1);
         Pvec *ret;
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_P(&callback__27));
@@ -998,8 +998,8 @@ choice:
     } action_prefix {
 	AA($1,1,2); AA($4,2,2);
         Pvec *ret;
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
-        PvecTreeNode *n4 = do_upcast<PvecTreeNode>($4);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
+        PvecTreeNode *n4 = tree_downcast<PvecTreeNode>($4);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PP(&callback__29));
@@ -1016,7 +1016,7 @@ choice:
 action_prefix:
     guard_OPT {
 	AA($1,1,1);
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_N_V(&callback__30));
@@ -1024,9 +1024,9 @@ action_prefix:
     } prefix_actions ARROW local_process {
 	AA($1,1,3); AA($3,2,3); AA($5,3,3);
         Pvec *ret;
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
-        PvecTreeNode *n3 = do_upcast<PvecTreeNode>($3);
-        PvecTreeNode *n5 = do_upcast<PvecTreeNode>($5);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
+        PvecTreeNode *n3 = tree_downcast<PvecTreeNode>($3);
+        PvecTreeNode *n5 = tree_downcast<PvecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__31));
@@ -1046,7 +1046,7 @@ prefix_actions:
     action_labels {
 	AA($1,1,1);
         Pvec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_V(&callback__32));
@@ -1059,8 +1059,8 @@ prefix_actions:
     | prefix_actions ARROW action_labels {
 	AA($1,1,2); AA($3,2,2);
         Pvec *ret;
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PV(&callback__33));
@@ -1083,7 +1083,7 @@ guard_OPT:
     }
     | WHEN expression {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new SvpVecTreeNode(TreeNode::Guard, n2->value);
 	$$->addChild(TreeNode::When);
@@ -1111,7 +1111,7 @@ indices:
     '[' expression ']' {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__35));
@@ -1126,8 +1126,8 @@ indices:
     | indices '[' expression ']' {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__36));
@@ -1153,7 +1153,7 @@ index_ranges_OPT:
 	PUSH($$);
     }
     | index_ranges {
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
         $$ = new SvpVecTreeNode(TreeNode::IndexRanges, n1->value);
         $$->addChild($1);
@@ -1166,7 +1166,7 @@ index_ranges:
     '[' action_range ']' {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__38));
@@ -1182,8 +1182,8 @@ index_ranges:
     | index_ranges '[' action_range ']' {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__39));
@@ -1203,8 +1203,8 @@ sequential_composition:
     seq_process_list ';' base_local_process {
 	AA($1,1,2); AA($3,2,2);
         Pvec *ret;
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
-        PvecTreeNode *n3 = do_upcast<PvecTreeNode>($3);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
+        PvecTreeNode *n3 = tree_downcast<PvecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PP(&callback__64));
@@ -1221,7 +1221,7 @@ sequential_composition:
 seq_process_list:
     process_ref_seq {
 	AA($1,1,1);
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
 	$$ = new PvecTreeNode(TreeNode::SeqProcessList, n1->value);
 	$$->addChild($1);
 	POP(); PUSH($$);
@@ -1229,8 +1229,8 @@ seq_process_list:
     | seq_process_list ';' process_ref_seq {
 	AA($1,1,2); AA($3,2,2);
         Pvec *ret;
-        PvecTreeNode *n1 = do_upcast<PvecTreeNode>($1);
-        PvecTreeNode *n3 = do_upcast<PvecTreeNode>($3);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
+        PvecTreeNode *n3 = tree_downcast<PvecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PP(&callback__65));
@@ -1248,8 +1248,8 @@ process_ref_seq:
     process_id argument_OPT {
 	AA($1,1,2); AA($2,2,2);
         Pvec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1273,7 +1273,7 @@ argument_OPT:
 	PUSH($$);
     }
     |'(' argument_list ')' {
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	@$ = @2;
 	AA($2,1,1);
@@ -1289,7 +1289,7 @@ argument_list:
     expression {
 	AA($1,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__67));
@@ -1302,8 +1302,8 @@ argument_list:
     | argument_list ',' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__68));
@@ -1328,10 +1328,10 @@ composite_def:
     } '=' composite_body priority_OPT hiding_OPT '.' {
 	AA($2,1,4); AA($6,2,4); AA($7,3,4); AA($8,4,4);
 	yy::Lts * lts;
-        StringTreeNode *n2 = do_upcast<StringTreeNode>($2);
-        SvpVecTreeNode *n6 = do_upcast<SvpVecTreeNode>($6);
-        SvpVecTreeNode *n7 = do_upcast_null<SvpVecTreeNode>($7);
-        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
+        StringTreeNode *n2 = tree_downcast<StringTreeNode>($2);
+        SvpVecTreeNode *n6 = tree_downcast<SvpVecTreeNode>($6);
+        SvpVecTreeNode *n7 = tree_downcast_null<SvpVecTreeNode>($7);
+        SvpVecTreeNode *n8 = tree_downcast_null<SvpVecTreeNode>($8);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1362,9 +1362,9 @@ composite_def:
 composite_body:
     sharing_OPT labeling_OPT process_ref {
 	AA($1,1,3); AA($2,2,3); AA($3,3,3);
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_np_V_VVV(&callback__76));
@@ -1376,10 +1376,10 @@ composite_body:
 	AA($1,1,5); AA($2,2,5); AA($3,3,5); 
 	AA($<svpvec_ptr>4,4,5); AA($5,5,5);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
-        SvpVecTreeNode *n5 = do_upcast_null<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n5 = tree_downcast_null<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1404,9 +1404,9 @@ composite_body:
 	Callback_pop_push::exe(driver.tr, 0, 1);
     }  parallel_composition ')' {
 	AA($1,1,3); AA($2,2,3); AA($5,3,3);
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n5 = tree_downcast<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1419,10 +1419,10 @@ composite_body:
 	AA($1,1,5); AA($2,2,5); AA($5,3,5);
 	AA($<svpvec_ptr>7,4,5); AA($8,5,5);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast_null<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
-        SvpVecTreeNode *n8 = do_upcast_null<SvpVecTreeNode>($8);
+        SvpVecTreeNode *n1 = tree_downcast_null<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n5 = tree_downcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n8 = tree_downcast_null<SvpVecTreeNode>($8);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1454,8 +1454,8 @@ composite_body:
 	   we should have 'ranges' and not 'index_ranges'. */
 	AA($3,1,2); AA($5,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
-        SvpVecTreeNode *n5 = do_upcast<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n5 = tree_downcast<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__80));
@@ -1471,9 +1471,9 @@ composite_body:
     | IF expression THEN composite_body composite_else_OPT {
 	AA($2,1,3); AA($4,2,3); AA($5,3,3);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
-        SvpVecTreeNode *n5 = do_upcast_null<SvpVecTreeNode>($5);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n5 = tree_downcast_null<SvpVecTreeNode>($5);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VVV(&callback__81));
@@ -1499,7 +1499,7 @@ composite_else_OPT:
     }
     | ELSE composite_body {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new SvpVecTreeNode(TreeNode::CompositeElse, n2->value);
         $$->addChild(TreeNode::Else);
@@ -1512,7 +1512,7 @@ parallel_composition:
     composite_body {
 	AA($1,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__82));
@@ -1528,8 +1528,8 @@ parallel_composition:
     } composite_body {
 	AA($1,1,2); AA($4,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__83));
@@ -1546,8 +1546,8 @@ process_ref:
     process_id argument_OPT {
 	AA($1,1,2); AA($2,2,2);
         SvpVec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n2 = do_upcast_null<SvpVecTreeNode>($2);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n2 = tree_downcast_null<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -1573,7 +1573,7 @@ sharing_OPT:
     | action_labels SHARING {
 	AA($1,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__85));
@@ -1594,7 +1594,7 @@ labeling_OPT:
     }
     | action_labels ':' {
 	AA($1,1,1);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	assert(n1->value->v.size() == driver.tr.current_contexts().size());
 	$$ = new SvpVecTreeNode(TreeNode::Labeling, n1->value);
@@ -1621,7 +1621,7 @@ priority:
     RSHIFT set {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__86));
@@ -1634,7 +1634,7 @@ priority:
     | LSHIFT set {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__87));
@@ -1685,8 +1685,8 @@ parameter_list:
 parameter:
     parameter_id '=' expression {
 	AA($1,1,2); AA($3,2,2);
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (n3->value->v.size() != 1) {
 	    // XXX this should never happen..
@@ -1735,7 +1735,7 @@ relabel_OPT: {
     }
     | '/' braces_relabel_defs {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new SvpVecTreeNode(TreeNode::Relabeling, n2->value);
         $$->addChild(TreeNode::Slash);
@@ -1751,7 +1751,7 @@ braces_relabel_defs:
 	Callback_pop_push::exe(driver.tr, 0, 1);
     } relabel_defs '}' {
 	AA($3,1,1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	$$ = new SvpVecTreeNode(TreeNode::BracesRelabelDefs, n3->value);
         $$->addChild(TreeNode::OpenCurly);
@@ -1765,7 +1765,7 @@ braces_relabel_defs:
 relabel_defs:
     relabel_def {
 	AA($1,1,1);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
 	$$ = new SvpVecTreeNode(TreeNode::RelabelDefs, n1->value);
         $$->addChild($1);
@@ -1778,8 +1778,8 @@ relabel_defs:
     } relabel_def {
 	AA($1,1,2); AA($4,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__69));
@@ -1801,8 +1801,8 @@ relabel_def:
     }  action_labels {
 	AA($1,1,2); AA($4,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__70));
@@ -1821,8 +1821,8 @@ relabel_def:
     } index_ranges braces_relabel_defs {
 	AA($3,1,2); AA($4,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
 
 	if (driver.record_mode_on) {
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__73));
@@ -1854,7 +1854,7 @@ hiding:
     '\\' set {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__71));
@@ -1867,7 +1867,7 @@ hiding:
     | '@' set {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__72));
@@ -1885,7 +1885,7 @@ hiding:
 // TODO second form of progress (if S then C)
 property_def:
     PROPERTY process_def {
-        LtsTreeNode *n2 = do_upcast<LtsTreeNode>($2);
+        LtsTreeNode *n2 = tree_downcast<LtsTreeNode>($2);
 
 	if (n2->value->isDeterministic()) {
 	    n2->value->property();
@@ -1909,9 +1909,9 @@ progress_def:
 	driver.tr.css.push_clone();
     } index_ranges_OPT '=' set {
 	AA($2,1,3); AA($4,2,3); AA($6,3,3);
-        StringTreeNode *n2 = do_upcast<StringTreeNode>($2);
-        SvpVecTreeNode *n4 = do_upcast<SvpVecTreeNode>($4);
-        SvpVecTreeNode *n6 = do_upcast<SvpVecTreeNode>($6);
+        StringTreeNode *n2 = tree_downcast<StringTreeNode>($2);
+        SvpVecTreeNode *n4 = tree_downcast<SvpVecTreeNode>($4);
+        SvpVecTreeNode *n6 = tree_downcast<SvpVecTreeNode>($6);
 	SetValue * setvp;
 	SetValue * irp;
 	string name;
@@ -1966,7 +1966,7 @@ menu_def:
 expression:
     '(' expression ')' {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new SvpVecTreeNode(TreeNode::Expression, n2->value);
         $$->addChild(TreeNode::OpenParen);
@@ -1977,8 +1977,8 @@ expression:
     | expression OR expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__41));
@@ -1992,8 +1992,8 @@ expression:
     | expression AND expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__42));
@@ -2007,8 +2007,8 @@ expression:
     | expression '|' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__43));
@@ -2022,8 +2022,8 @@ expression:
     | expression '^' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__44));
@@ -2037,8 +2037,8 @@ expression:
     | expression '&' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__45));
@@ -2052,8 +2052,8 @@ expression:
     | expression EQUAL expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__46));
@@ -2067,8 +2067,8 @@ expression:
     | expression NOTEQUAL expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__47));
@@ -2082,8 +2082,8 @@ expression:
     | expression '<' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__48));
@@ -2097,8 +2097,8 @@ expression:
     | expression '>' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__49));
@@ -2112,8 +2112,8 @@ expression:
     | expression LOE expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__50));
@@ -2127,8 +2127,8 @@ expression:
     | expression GOE expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__51));
@@ -2142,8 +2142,8 @@ expression:
     | expression LSHIFT expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__52));
@@ -2157,8 +2157,8 @@ expression:
     | expression RSHIFT expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__53));
@@ -2172,8 +2172,8 @@ expression:
     | expression '+' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__54));
@@ -2187,8 +2187,8 @@ expression:
     | expression '-' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__55));
@@ -2202,8 +2202,8 @@ expression:
     | expression '*' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__56));
@@ -2217,8 +2217,8 @@ expression:
     | expression '/' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__57));
@@ -2232,8 +2232,8 @@ expression:
     | expression '%' expression {
 	AA($1,1,2); AA($3,2,2);
         SvpVec *ret;
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
-        SvpVecTreeNode *n3 = do_upcast<SvpVecTreeNode>($3);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n3 = tree_downcast<SvpVecTreeNode>($3);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__58));
@@ -2246,7 +2246,7 @@ expression:
     }
     | base_expression {
 	AA($1,1,1);
-        SvpVecTreeNode *n1 = do_upcast<SvpVecTreeNode>($1);
+        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
 
         $$ = new SvpVecTreeNode(TreeNode::Expression, n1->value);
         $$->addChild($1);
@@ -2254,7 +2254,7 @@ expression:
     }
     | '+' base_expression {
 	AA($2,1,1);
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
         $$ = new SvpVecTreeNode(TreeNode::Expression, n2->value);
         $$->addChild(TreeNode::Plus);
@@ -2264,7 +2264,7 @@ expression:
     | '-' base_expression {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__59));
@@ -2277,7 +2277,7 @@ expression:
     | '!' base_expression {
 	AA($2,1,1);
         SvpVec *ret;
-        SvpVecTreeNode *n2 = do_upcast<SvpVecTreeNode>($2);
+        SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__60));
@@ -2292,7 +2292,7 @@ expression:
 base_expression:
     integer {
         SvpVec * ret;
-        IntTreeNode *n1 = do_upcast<IntTreeNode>($1);
+        IntTreeNode *n1 = tree_downcast<IntTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -2305,7 +2305,7 @@ base_expression:
     | variable {
 	AA($1,1,1);
         SvpVec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -2319,7 +2319,7 @@ base_expression:
     | const_parameter_id {
 	AA($1,1,1);
         SvpVec *ret;
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(
@@ -2349,56 +2349,56 @@ upper_case_id: UpperCaseID {
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
 variable: lower_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::VariableId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 constant_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ConstantId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 range_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::RangeId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 set_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::SetId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 const_parameter_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ConstParameterId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 parameter_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ParameterId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 process_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ProcessId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
     };
 
 progress_id: upper_case_id {
-        StringTreeNode *n1 = do_upcast<StringTreeNode>($1);
+        StringTreeNode *n1 = tree_downcast<StringTreeNode>($1);
         $$ = new StringTreeNode(TreeNode::ProgressId, n1->value);
         $$->addChild($1);
 	POP(); PUSH($$);
