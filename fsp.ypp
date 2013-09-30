@@ -350,8 +350,13 @@ action_labels:
 	    driver.parametric->record.push_back(
 			    new Callback_V_VS(&callback__2, *(n3->value)));
 	ret = callback__2(driver.tr, n1->value, n3->value);
-	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Period);
         $$->addChild($3);
 
@@ -367,8 +372,13 @@ action_labels:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__3));
 	ret = callback__3(driver.tr, n1->value, n3->value);
-	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Period);
         $$->addChild($3);
 
@@ -384,8 +394,13 @@ action_labels:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__4));
 	ret = callback__4(driver.tr, n1->value, n3->value);
-	$$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::ActionLabels, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::OpenSquare);
         $$->addChild($3);
         $$->addChild(TreeNode::CloseSquare);
@@ -658,8 +673,13 @@ set_elements:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__13));
 	ret = callback__13(driver.tr, n1->value, n4->value);
-	$$ = new SvpVecTreeNode(TreeNode::SetElements, ret);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::SetElements, ret);
+            $$->addChild($1);
+        }
 	$$->addChild(TreeNode::Comma);
 	$$->addChild($4);
 
@@ -758,12 +778,16 @@ local_process_defs:
     }
     | local_process_defs ',' local_process_def {
 	AA($1,1,2); AA($3,2,2);
-        PvecTreeNode *n = tree_downcast<PvecTreeNode>($1);
+        PvecTreeNode *n1 = tree_downcast<PvecTreeNode>($1);
 
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_pop);
-	$$ = new PvecTreeNode(TreeNode::LocalProcessDefs, n->value);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+        } else {
+            $$ = new PvecTreeNode(TreeNode::LocalProcessDefs, n1->value);
+            $$->addChild($1);
+        }
 	$$->addChild(TreeNode::Comma);
 	$$->addChild($3);
         POP(); POP(); PUSH($$);
@@ -998,8 +1022,13 @@ choice:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PP(&callback__29));
 	ret = callback__29(driver.tr, n1->value, n4->value);
-	$$ = new PvecTreeNode(TreeNode::Choice, ret);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new PvecTreeNode(TreeNode::Choice, ret);
+            $$->addChild($1);
+        }
 	$$->addChild(TreeNode::BitOr);
 	$$->addChild($4);
 	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size() << "\n");
@@ -1026,7 +1055,7 @@ action_prefix:
 	    driver.parametric->record.push_back(new Callback_P_VPP(&callback__31));
 	ret = callback__31(driver.tr, n1 ? n1->value : NULL, n3->value,
                                         n5->value);
-	$$ = new PvecTreeNode(TreeNode::PrefixActions, ret);
+	$$ = new PvecTreeNode(TreeNode::ActionPrefix, ret);
 	$$->addChild($1);
 	$$->addChild($3);
 	$$->addChild(TreeNode::Arrow);
@@ -1059,8 +1088,13 @@ prefix_actions:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_P_PV(&callback__33));
 	ret = callback__33(driver.tr, n1->value, n3->value);
-	$$ = new PvecTreeNode(TreeNode::PrefixActions, ret);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new PvecTreeNode(TreeNode::PrefixActions, ret);
+            $$->addChild($1);
+        }
 	$$->addChild(TreeNode::Arrow);
 	$$->addChild($3);
 
@@ -1183,8 +1217,13 @@ index_ranges:
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__39));
 	driver.tr.locations[0] = @3;
 	ret = callback__39(driver.tr, n1->value, n3->value);
-	$$ = new SvpVecTreeNode(TreeNode::IndexRanges, ret);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::IndexRanges, ret);
+            $$->addChild($1);
+        }
 	$$->addChild(TreeNode::OpenSquare);
 	$$->addChild($3);
 	$$->addChild(TreeNode::CloseSquare);
@@ -1230,8 +1269,13 @@ seq_process_list:
 	    driver.parametric->record.push_back(new Callback_P_PP(&callback__65));
 	driver.tr.locations[0] = @1;
 	ret = callback__65(driver.tr, n1->value, n3->value);
-	$$ = new PvecTreeNode(TreeNode::SeqProcessList, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new PvecTreeNode(TreeNode::SeqProcessList, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Semicolon);
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
@@ -1302,8 +1346,13 @@ argument_list:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__68));
 	ret = callback__68(driver.tr, n1->value, n3->value);
-	$$ = new SvpVecTreeNode(TreeNode::ArgumentList, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::ArgumentList, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Comma);
         $$->addChild($3);
 
@@ -1528,8 +1577,13 @@ parallel_composition:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__83));
 	ret = callback__83(driver.tr, n1->value, n4->value);
-	$$ = new SvpVecTreeNode(TreeNode::ParallelComp, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::ParallelComp, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::LogicOr);
         $$->addChild($4);
 	POP(); POP(); PUSH($$);
@@ -1668,8 +1722,12 @@ parameter_list:
         //POP(); PUSH($$);
     }
     | parameter_list ',' parameter {
-        $$ = new TreeNode(TreeNode::ParameterList);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+        } else {
+            $$ = new TreeNode(TreeNode::ParameterList);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Comma);
         $$->addChild($3);
         //POP(); POP(); PUSH($$);
@@ -1778,8 +1836,13 @@ relabel_defs:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__69));
 	ret = callback__69(driver.tr, n1->value, n4->value);
-        $$ = new SvpVecTreeNode(TreeNode::RelabelDefs, ret);
-        $$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new SvpVecTreeNode(TreeNode::RelabelDefs, ret);
+            $$->addChild($1);
+        }
         $$->addChild(TreeNode::Comma);
         $$->addChild($4);
 
