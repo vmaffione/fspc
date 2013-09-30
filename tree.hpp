@@ -22,10 +22,11 @@ class TreeNode {
         void addChild(TreeNode *n);
         void addChild(unsigned int t);
         void stealChildren(TreeNode& n);
+        void print();
 
         /* All the possible type for a parse tree node. */
         enum Type {
-            BaseExpression,
+            BaseExpression = 0,
             Integer,
             VariableId,
             ConstantId,
