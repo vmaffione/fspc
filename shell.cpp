@@ -20,7 +20,6 @@
 
 #include <sstream>
 #include <cstdio>
-#include <cctype>	/* isprint() */
 #include <unistd.h>	/* fork() */
 #include <sys/wait.h>	/* waitpid() */
 #include <ncurses.h>
@@ -186,6 +185,11 @@ void Shell::putsstream(stringstream& ss, bool eol) {
     }
 }
 
+bool is_printable(int ch)
+{
+    return ch>=32 && ch<=126;
+}
+
 void Shell::getline_ncurses(string& line, const char * prompt)
 {
     int ch;
@@ -304,7 +308,7 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		break;
 
 	    default:
-		if (isprint(ch)) {
+		if (is_printable(ch)) {
 		    /* Insert a character in the command string at the
 		       current cursor position. */
 		    line.insert(str_cursor, 1, static_cast<char>(ch));
@@ -339,8 +343,6 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 
 		    /* Restore the cursor position. */
 		    move(y, x);
-		} else {
-		    IFD(printw("??%d??", ch));
 		}
 	}
 	refresh();

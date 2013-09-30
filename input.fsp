@@ -1,2 +1,1 @@
-P=(a->END).
-const C=3
+P=(a->b->c->END).
