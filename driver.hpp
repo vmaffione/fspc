@@ -18,6 +18,7 @@
 #include "callbacks.hpp"
 #include "parser.hpp"
 #include "interface.hpp"
+#include "tree.hpp"
 
 using namespace std;
 
@@ -132,6 +133,9 @@ class FspDriver
 
 	/* The main translator. */
 	FspTranslator tr;
+
+        /* The parsing result. */
+        yy::TreeNode *tree;
 
 	/* The ProcessNode allocator. */
 	ProcessNodeAllocator pna;

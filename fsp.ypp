@@ -87,19 +87,17 @@ extern class CircularBuffer last_tokens;
 %}
 
 
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "YYSTYPE".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "YYSTYPE":
+/* Bison fundamentally works by asking flex to get the next token, which it
+   returns as an object of type "YYSTYPE".  But tokens could be of any
+   arbitrary data type!  So we deal with that in Bison by defining a C union
+   holding each of the types of tokens that Flex could return, and have Bison
+   use that union instead of "int" for the definition of "YYSTYPE": */
 %union {
     int int_value;
     float float_value;
     std::string *string_ptr;
-    class SymbolValue *sv_ptr;
-    struct SvpVec * svpvec_ptr;
-    struct Pvec * pvec_ptr;
-    class Lts * lts_ptr;
+    struct SvpVec * svpvec_ptr; // XXX remove
+    class Lts * lts_ptr;        // XXX remove
     class TreeNode * node_ptr;
 }
 
@@ -208,12 +206,9 @@ extern class CircularBuffer last_tokens;
 
 using namespace yy;
 
-/* A global data structure containing everything the compiler needs. */
-//struct FspDriver c;
-
 
 /* The 'ps' vector and the AA function are necessary in the debug phase in
-   order to check that the callback playback systems can work properly. */
+   order to check that the callback playback system can work properly. */
 vector <void *> ps;
 #define PUSH(p) \
     do { \
@@ -300,13 +295,12 @@ void post_process_definition(FspDriver& driver, yy::Lts * lts, const yy::locatio
 /* Start symbol: an arbitrary long list of fsp_definitions */
 fsp_description:
     fsp_definition {
-        $$ = new TreeNode(TreeNode::Root);
+        driver.tree = $$ = new TreeNode(TreeNode::Root);
         $$->addChild($1);
     }
     | fsp_description fsp_definition {
-        $1->stealChildren(*$2);
-        delete $2;  /* Not a deep destructor. */
-        $$ = $1;
+        $1->addChild($2);
+        driver.tree = $$ = $1;
     }
     ;
 

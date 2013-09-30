@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 #include "tree.hpp"
 
@@ -19,26 +20,26 @@ static const char* names[] = {
     "ProgressId",
     "Variable",
     "Expression",
-    "Bang",
-    "Minus",
-    "Plus",
-    "Modulus",
-    "Divide",
-    "Times",
-    "RightShift",
-    "GOE",
-    "LOE",
-    "Greater",
-    "Less",
-    "NotEqual",
-    "Equal",
-    "BitAnd",
-    "BitXor",
-    "BitOr",
-    "LogicAnd",
-    "LogicOr",
-    "OpenParen",
-    "CloseParen",
+    "!",
+    "-",
+    "+",
+    "%",
+    "/",
+    "*",
+    ">>",
+    ">=",
+    "<=",
+    ">",
+    "<",
+    "!=",
+    "==",
+    "&",
+    "^",
+    "|",
+    "&&",
+    "||",
+    "(",
+    ")",
     "ProgressDef",
     "PropertyDef",
     "Property",
@@ -47,48 +48,48 @@ static const char* names[] = {
     "Interf",
     "RelabelDef",
     "Slash",
-    "Forall",
+    "forall",
     "RelabelDefs",
-    "Comma",
-    "OpenCurly",
-    "CloseCurly",
+    ",",
+    "{",
+    "}",
     "BracesRelabelDefs",
     "Parameter",
-    "Assign",
+    "=",
     "ParameterList",
     "Param",
-    "Colon",
+    ":",
     "Labeling",
-    "DoubleColon",
+    "::",
     "Sharing",
     "ProcessRef",
     "ParallelComp",
     "CompositeElse",
-    "Else",
+    "else",
     "CompositeBody",
-    "If",
-    "Then",
+    "if",
+    "then",
     "CompositeDef",
     "ArgumentList",
     "Arguments",
     "ProcessRefSeq",
     "SeqProcessList",
-    "Semicolon",
+    ";",
     "SeqComp",
     "IndexRanges",
-    "OpenSquare",
-    "CloseSquare",
+    "[",
+    "]",
     "Indices",
     "Guard",
-    "When",
+    "when",
     "PrefixActions",
-    "Arrow",
+    "->",
     "ActionPrefix",
     "Choice",
     "BaseLocalProcess",
-    "End",
-    "Stop",
-    "Error",
+    "END",
+    "STOP",
+    "ERROR",
     "ProcessElse",
     "LocalProcess",
     "AlphaExt",
@@ -96,13 +97,13 @@ static const char* names[] = {
     "LocalProcessDefs",
     "ProcessBody",
     "ProcessDef",
-    "Period",
+    ".",
     "SetElements",
     "SetDef",
     "SetKwd",
     "RangeDef",
     "RangeKwd",
-    "DotDot",
+    "..",
     "ConstDef",
     "ConstKwd",
     "RangeExpr",
@@ -115,10 +116,18 @@ static const char* names[] = {
     "UpperCaseId",
     "Root",
     "Priority",
-    "LeftShift",
+    "<<",
     "Relabeling",
     "ProgressKwd",
 };
+
+void int2string(int x, string& s)
+{
+    ostringstream oss;
+
+    oss << x;
+    s = oss.str();
+}
 
 void yy::TreeNode::addChild(yy::TreeNode *n)
 {
@@ -138,12 +147,53 @@ void yy::TreeNode::stealChildren(yy::TreeNode& n)
     n.children.clear();
 }
 
-void yy::TreeNode::print()
+void yy::TreeNode::print(ofstream& os)
 {
     vector<TreeNode *> frontier;
+    TreeNode *current;
+    unsigned int pop = 0;
+    bool print_nulls = false;  /* Do we want to print null nodes? (i.e. optional symbols) */
 
+    os << "digraph G {\n";
     frontier.push_back(this);
 
-    cout << names[this->type] << "\n";
+    while (pop != frontier.size()) {
+        string label = "NULL";
+
+        current = frontier[pop];
+        if (current) {
+            StringTreeNode *sn;
+            IntTreeNode *in;
+
+            switch (current->type) {
+                case UpperCaseId:
+                case LowerCaseId:
+                    sn = tree_downcast<StringTreeNode>(current);
+                    label = sn->saved;
+                    break;
+
+                case Integer:
+                    in = tree_downcast<IntTreeNode>(current);
+                    int2string(in->value, label);
+                    break;
+
+                default:
+                    label = names[current->type];
+            }
+        }
+        if (current || print_nulls)
+            os << pop << " [label=\"" << label << "\", style=filled];\n";
+        if (current) {
+            for (unsigned int i=0; i<current->children.size(); i++) {
+                if (current->children[i] || print_nulls) {
+                    frontier.push_back(current->children[i]);
+                    os << pop << " -> " << frontier.size()-1 << " [label=\"\"];\n";
+                }
+            }
+        }
+        pop++;
+    }
+
+    os << "}\n";
 }
 

@@ -194,6 +194,7 @@ FspDriver::FspDriver() : actions("Global actions table"), tr(*this)
     trace_scanning = trace_parsing = false;
     record_mode_on = 0;
     parametric = new ParametricProcess;
+    tree = NULL;
 }
 
 FspDriver::~FspDriver()
@@ -242,6 +243,12 @@ int FspDriver::parse(const CompilerOptions& co)
 	/* Remove the temporary file. */
 	remove(temp.c_str());
 	this->remove_file = "";
+
+        /* Output a GraphViz representation of the parse tree. */
+        assert(tree);
+        ofstream treef("tree.gv");
+        tree->print(treef);
+        treef.close();
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */

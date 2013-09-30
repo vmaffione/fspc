@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #include "symbols_table.hpp"
 #include "lts.hpp"
@@ -22,7 +23,7 @@ class TreeNode {
         void addChild(TreeNode *n);
         void addChild(unsigned int t);
         void stealChildren(TreeNode& n);
-        void print();
+        void print(ofstream& os);
 
         /* All the possible type for a parse tree node. */
         enum Type {
@@ -157,9 +158,13 @@ class FloatTreeNode : public TreeNode {
 class StringTreeNode : public TreeNode {
     public:
         std::string *value;
+        /* The memory pointed by "value" is freed during the parsing. We therefore use the
+           "saved" field to retrieve the string after the parsing (e.g. when printing the
+           parse tree. */
+        std::string saved;
 
         StringTreeNode(unsigned int t, std::string *v)
-                                            : TreeNode(t), value(v) { }
+                                            : TreeNode(t), value(v), saved(*v) { }
 };
 
 class SymbolTreeNode : public TreeNode {
@@ -220,7 +225,7 @@ T* tree_downcast_null(TreeNode *n)
         tmp; \
     } )
 
-#endif
-
 } /* namespace yy */
+
+#endif
 
