@@ -129,6 +129,12 @@ void int2string(int x, string& s)
     s = oss.str();
 }
 
+yy::TreeNode::~TreeNode()
+{
+    for (unsigned int i=0; i<children.size(); i++)
+        delete children[i];
+}
+
 void yy::TreeNode::addChild(yy::TreeNode *n)
 {
     children.push_back(n);

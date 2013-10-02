@@ -250,6 +250,8 @@ int FspDriver::parse(const CompilerOptions& co)
         ofstream treef("tree.gv");
         tree->print(treef);
         treef.close();
+        delete tree;
+        tree = NULL;
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */

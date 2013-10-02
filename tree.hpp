@@ -19,7 +19,7 @@ class TreeNode {
 
     public:
         TreeNode(unsigned int t) : type(t) { }
-        virtual ~TreeNode() { }
+        virtual ~TreeNode();
         void addChild(TreeNode *n);
         void addChild(unsigned int t);
         void stealChildren(TreeNode& n);
