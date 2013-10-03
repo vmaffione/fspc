@@ -14,145 +14,31 @@
 namespace yy {
 
 class TreeNode {
-        unsigned int type;
         vector<TreeNode *> children;
 
     public:
-        TreeNode(unsigned int t) : type(t) { }
         virtual ~TreeNode();
         void addChild(TreeNode *n);
         void addChild(unsigned int t);
         void stealChildren(TreeNode& n);
         void print(ofstream& os);
+        virtual int translate();
+        virtual string getClassName() const;
 
-        /* All the possible type for a parse tree node. */
-        enum Type {
-            BaseExpression = 0,
-            Integer,
-            VariableId,
-            ConstantId,
-            RangeId,
-            SetId,
-            ConstParameterId,
-            ParameterId,
-            ProcessId,
-            ProgressId,
-            Variable,
-            Expression,
-            Bang,
-            Minus,
-            Plus,
-            Modulus,
-            Divide,
-            Times,
-            RightShift,
-            GOE,
-            LOE,
-            Greater,
-            Less,
-            NotEqual,
-            Equal,
-            BitAnd,
-            BitXor,
-            BitOr,
-            LogicAnd,
-            LogicOr,
-            OpenParen,
-            CloseParen,
-            ProgressDef,
-            PropertyDef,
-            Property,
-            HidingInterf,
-            Hiding,
-            Interf,
-            RelabelDef,
-            Slash,
-            Forall,
-            RelabelDefs,
-            Comma,
-            OpenCurly,
-            CloseCurly,
-            BracesRelabelDefs,
-            Parameter,
-            Assign,
-            ParameterList,
-            Param,
-            Colon,
-            Labeling,
-            DoubleColon,
-            Sharing,
-            ProcessRef,
-            ParallelComp,
-            CompositeElse,
-            Else,
-            CompositeBody,
-            If,
-            Then,
-            CompositeDef,
-            ArgumentList,
-            Arguments,
-            ProcessRefSeq,
-            SeqProcessList,
-            Semicolon,
-            SeqComp,
-            IndexRanges,
-            OpenSquare,
-            CloseSquare,
-            Indices,
-            Guard,
-            When,
-            PrefixActions,
-            Arrow,
-            ActionPrefix,
-            Choice,
-            BaseLocalProcess,
-            End,
-            Stop,
-            Error,
-            ProcessElse,
-            LocalProcess,
-            AlphaExt,
-            LocalProcessDef,
-            LocalProcessDefs,
-            ProcessBody,
-            ProcessDef,
-            Period,
-            SetElements,
-            SetDef,
-            SetKwd,
-            RangeDef,
-            RangeKwd,
-            DotDot,
-            ConstDef,
-            ConstKwd,
-            RangeExpr,
-            ActionRange,
-            Range,
-            SetExpr,
-            Set,
-            ActionLabels,
-            LowerCaseId,
-            UpperCaseId,
-            Root,
-            Priority,
-            LeftShift,
-            Relabeling,
-            ProgressKwd,
-        };
 };
 
 class IntTreeNode : public TreeNode {
     public:
         int value;
 
-        IntTreeNode(unsigned int t, int v) : TreeNode(t), value(v) { }
+        IntTreeNode(int v) : value(v) { }
 };
 
 class FloatTreeNode : public TreeNode {
     public:
         float value;
 
-        FloatTreeNode(unsigned int t, float v) : TreeNode(t), value(v) { }
+        FloatTreeNode(float v) : value(v) { }
 };
 
 class StringTreeNode : public TreeNode {
@@ -163,46 +49,716 @@ class StringTreeNode : public TreeNode {
            parse tree. */
         std::string saved;
 
-        StringTreeNode(unsigned int t, std::string *v)
-                                            : TreeNode(t), value(v), saved(*v) { }
+        StringTreeNode(std::string *v) : value(v), saved(*v) { }
 };
 
 class SymbolTreeNode : public TreeNode {
     public:
         class SymbolValue *value;
 
-        SymbolTreeNode(unsigned int t, class SymbolValue *v)
-                                            : TreeNode(t), value(v) { }
+        SymbolTreeNode(class SymbolValue *v) : value(v) { }
 };
 
 class SvpVecTreeNode : public TreeNode {
     public:
         class SvpVec *value;
 
-        SvpVecTreeNode(unsigned int t, class SvpVec *v)
-                                            : TreeNode(t), value(v) { }
+        SvpVecTreeNode(class SvpVec *v) : value(v) { }
 };
 
 class PvecTreeNode : public TreeNode {
     public:
         class Pvec *value;
 
-        PvecTreeNode(unsigned int t, class Pvec *v)
-                                            : TreeNode(t), value(v) { }
+        PvecTreeNode(class Pvec *v) : value(v) { }
 };
 
 class LtsTreeNode : public TreeNode {
     public:
         class yy::Lts *value;
 
-        LtsTreeNode(unsigned int t, class yy::Lts *v)
-                                            : TreeNode(t), value(v) { }
+        LtsTreeNode(class yy::Lts *v) : value(v) { }
 };
+
+class BaseExpressionNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "BaseExpression"; }
+        BaseExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class IntegerNode : public IntTreeNode {
+    public:
+        string getClassName() const { return "Integer"; }
+        IntegerNode(int v) : IntTreeNode(v) { }
+
+};
+
+class VariableIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "VariableId"; }
+        VariableIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class ConstantIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "ConstantId"; }
+        ConstantIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class RangeIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "RangeId"; }
+        RangeIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class SetIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "SetId"; }
+        SetIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class ConstParameterIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "ConstParameterId"; }
+        ConstParameterIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class ParameterIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "ParameterId"; }
+        ParameterIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class ProcessIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "ProcessId"; }
+        ProcessIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class ProgressIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "ProgressId"; }
+        ProgressIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class VariableNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Variable"; }
+        VariableNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ExpressionNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Expression"; }
+        ExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class BangNode : public TreeNode {
+    public:
+        string getClassName() const { return "!"; }
+};
+
+class MinusNode : public TreeNode {
+    public:
+        string getClassName() const { return "-"; }
+};
+
+class PlusNode : public TreeNode {
+    public:
+        string getClassName() const { return "+"; }
+};
+
+class ModulusNode : public TreeNode {
+    public:
+        string getClassName() const { return "%"; }
+};
+
+class DivideNode : public TreeNode {
+    public:
+        string getClassName() const { return "/"; }
+};
+
+class TimesNode : public TreeNode {
+    public:
+        string getClassName() const { return "*"; }
+};
+
+class RightShiftNode : public TreeNode {
+    public:
+        string getClassName() const { return ">>"; }
+};
+
+class GOENode : public TreeNode {
+    public:
+        string getClassName() const { return ">="; }
+};
+
+class LOENode : public TreeNode {
+    public:
+        string getClassName() const { return "<="; }
+};
+
+class GreaterNode : public TreeNode {
+    public:
+        string getClassName() const { return ">"; }
+};
+
+class LessNode : public TreeNode {
+    public:
+        string getClassName() const { return "<"; }
+};
+
+class NotEqualNode : public TreeNode {
+    public:
+        string getClassName() const { return "!="; }
+};
+
+class EqualNode : public TreeNode {
+    public:
+        string getClassName() const { return "=="; }
+};
+
+class BitAndNode : public TreeNode {
+    public:
+        string getClassName() const { return "&"; }
+};
+
+class BitXorNode : public TreeNode {
+    public:
+        string getClassName() const { return "^"; }
+};
+
+class BitOrNode : public TreeNode {
+    public:
+        string getClassName() const { return "|"; }
+};
+
+class LogicAndNode : public TreeNode {
+    public:
+        string getClassName() const { return "&&"; }
+};
+
+class LogicOrNode : public TreeNode {
+    public:
+        string getClassName() const { return "||"; }
+};
+
+class OpenParenNode : public TreeNode {
+    public:
+        string getClassName() const { return "("; }
+};
+
+class CloseParenNode : public TreeNode {
+    public:
+        string getClassName() const { return ")"; }
+};
+
+class ProgressDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "ProgressDef"; }
+};
+
+class PropertyDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "PropertyDef"; }
+};
+
+class PropertyNode : public TreeNode {
+    public:
+        string getClassName() const { return "property"; }
+};
+
+class HidingInterfNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "HidingInterf"; }
+        HidingInterfNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class HidingNode : public TreeNode {
+    public:
+        string getClassName() const { return "Hiding"; }
+};
+
+class InterfNode : public TreeNode {
+    public:
+        string getClassName() const { return "Interf"; }
+};
+
+class RelabelDefNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "RelabelDef"; }
+        RelabelDefNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class SlashNode : public TreeNode {
+    public:
+        string getClassName() const { return "Slash"; }
+};
+
+class ForallNode : public TreeNode {
+    public:
+        string getClassName() const { return "forall"; }
+};
+
+class RelabelDefsNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "RelabelDefs"; }
+        RelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class CommaNode : public TreeNode {
+    public:
+        string getClassName() const { return ","; }
+};
+
+class OpenCurlyNode : public TreeNode {
+    public:
+        string getClassName() const { return "{"; }
+};
+
+class CloseCurlyNode : public TreeNode {
+    public:
+        string getClassName() const { return "}"; }
+};
+
+class BracesRelabelDefsNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "BracesRelabelDefs"; }
+        BracesRelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ParameterNode : public TreeNode {
+    public:
+        string getClassName() const { return "Parameter"; }
+
+};
+
+class AssignNode : public TreeNode {
+    public:
+        string getClassName() const { return "="; }
+};
+
+class ParameterListNode : public TreeNode {
+    public:
+        string getClassName() const { return "ParameterList"; }
+};
+
+class ParamNode : public TreeNode {
+    public:
+        string getClassName() const { return "Param"; }
+};
+
+class ColonNode : public TreeNode {
+    public:
+        string getClassName() const { return ":"; }
+};
+
+class LabelingNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Labeling"; }
+        LabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class DoubleColonNode : public TreeNode {
+    public:
+        string getClassName() const { return "::"; }
+};
+
+class SharingNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Sharing"; }
+        SharingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ProcessRefNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "ProcessRef"; }
+        ProcessRefNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ParallelCompNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "ParallelComp"; }
+        ParallelCompNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class CompositeElseNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "CompositeElse"; }
+        CompositeElseNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ElseNode : public TreeNode {
+    public:
+        string getClassName() const { return "else"; }
+};
+
+class CompositeBodyNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "CompositeBody"; }
+        CompositeBodyNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class IfNode : public TreeNode {
+    public:
+        string getClassName() const { return "if"; }
+};
+
+class ThenNode : public TreeNode {
+    public:
+        string getClassName() const { return "Then"; }
+};
+
+class CompositeDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "CompositeDef"; }
+
+};
+
+class ArgumentListNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "ArgumentList"; }
+        ArgumentListNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ArgumentsNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Arguments"; }
+        ArgumentsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ProcessRefSeqNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "ProcessRefSeq"; }
+        ProcessRefSeqNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class SeqProcessListNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "SeqProcessList"; }
+        SeqProcessListNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class SemicolonNode : public TreeNode {
+    public:
+        string getClassName() const { return ";"; }
+};
+
+class SeqCompNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "SeqComp"; }
+        SeqCompNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class IndexRangesNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "IndexRanges"; }
+        IndexRangesNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class OpenSquareNode : public TreeNode {
+    public:
+        string getClassName() const { return "["; }
+};
+
+class CloseSquareNode : public TreeNode {
+    public:
+        string getClassName() const { return "]"; }
+};
+
+class IndicesNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Indices"; }
+        IndicesNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class GuardNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Guard"; }
+        GuardNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class WhenNode : public TreeNode {
+    public:
+        string getClassName() const { return "when"; }
+};
+
+class PrefixActionsNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "PrefixActions"; }
+        PrefixActionsNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class ArrowNode : public TreeNode {
+    public:
+        string getClassName() const { return "->"; }
+};
+
+class ActionPrefixNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "ActionPrefix"; }
+        ActionPrefixNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class ChoiceNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "Choice"; }
+        ChoiceNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class BaseLocalProcessNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "BaseLocalProcess"; }
+        BaseLocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class EndNode : public TreeNode {
+    public:
+        string getClassName() const { return "END"; }
+};
+
+class StopNode : public TreeNode {
+    public:
+        string getClassName() const { return "STOP"; }
+};
+
+class ErrorNode : public TreeNode {
+    public:
+        string getClassName() const { return "ERROR"; }
+};
+
+class ProcessElseNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "ProcessElse"; }
+        ProcessElseNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class LocalProcessNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "LocalProcess"; }
+        LocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class AlphaExtNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "AlphaExt"; }
+        AlphaExtNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class LocalProcessDefNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "LocalProcessDef"; }
+        LocalProcessDefNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class LocalProcessDefsNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "LocalProcessDefs"; }
+        LocalProcessDefsNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class ProcessBodyNode : public PvecTreeNode {
+    public:
+        string getClassName() const { return "ProcessBody"; }
+        ProcessBodyNode(Pvec *v) : PvecTreeNode(v) { }
+
+};
+
+class ProcessDefNode : public LtsTreeNode {
+    public:
+        string getClassName() const { return "ProcessDef"; }
+        ProcessDefNode(Lts *v) : LtsTreeNode(v) { }
+
+};
+
+class PeriodNode : public TreeNode {
+    public:
+        string getClassName() const { return "."; }
+};
+
+class SetElementsNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "SetElements"; }
+        SetElementsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class SetDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "SetDef"; }
+};
+
+class SetKwdNode : public TreeNode {
+    public:
+        string getClassName() const { return "SetKwd"; }
+};
+
+class RangeDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "RangeDef"; }
+
+};
+
+class RangeKwdNode : public TreeNode {
+    public:
+        string getClassName() const { return "RangeKwd"; }
+
+};
+
+class DotDotNode : public TreeNode {
+    public:
+        string getClassName() const { return ".."; }
+};
+
+class ConstDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "ConstDef"; }
+
+};
+
+class ConstKwdNode : public TreeNode {
+    public:
+        string getClassName() const { return "ConstKwd"; }
+
+};
+
+class RangeExprNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "RangeExpr"; }
+        RangeExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ActionRangeNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "ActionRange"; }
+        ActionRangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class RangeNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Range"; }
+        RangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class SetExprNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "SetExpr"; }
+        SetExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class SetNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Set"; }
+        SetNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ActionLabelsNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "ActionLabels"; }
+        ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class LowerCaseIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "LowerCaseId"; }
+        LowerCaseIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class UpperCaseIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "UpperCaseId"; }
+        UpperCaseIdNode(string *v) : StringTreeNode(v) { }
+
+};
+
+class RootNode : public TreeNode {
+    public:
+        string getClassName() const { return "Root"; }
+
+};
+
+class PriorityNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Priority"; }
+        PriorityNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class LeftShiftNode : public TreeNode {
+    public:
+        string getClassName() const { return "<<"; }
+};
+
+class RelabelingNode : public SvpVecTreeNode {
+    public:
+        string getClassName() const { return "Relabeling"; }
+        RelabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+
+};
+
+class ProgressKwdNode : public TreeNode {
+    public:
+        string getClassName() const { return "ProgressKwd"; }
+};
+
+
+template <class T>
+T* tree_downcast_safe(TreeNode *n)
+{
+    T *ret = dynamic_cast<T*>(n);
+
+    return ret;
+}
 
 template <class T>
 T* tree_downcast(TreeNode *n)
 {
-    T *ret = dynamic_cast<T*>(n);
+    T *ret = tree_downcast_safe<T>(n);
 
     assert(ret);
 

@@ -5,121 +5,8 @@
 #include "tree.hpp"
 
 using namespace std;
+using namespace yy;
 
-
-static const char* names[] = {
-    "BaseExpression",
-    "Integer",
-    "VariableId",
-    "ConstantId",
-    "RangeId",
-    "SetId",
-    "ConstParameterId",
-    "ParameterId",
-    "ProcessId",
-    "ProgressId",
-    "Variable",
-    "Expression",
-    "!",
-    "-",
-    "+",
-    "%",
-    "/",
-    "*",
-    ">>",
-    ">=",
-    "<=",
-    ">",
-    "<",
-    "!=",
-    "==",
-    "&",
-    "^",
-    "|",
-    "&&",
-    "||",
-    "(",
-    ")",
-    "ProgressDef",
-    "PropertyDef",
-    "Property",
-    "HidingInterf",
-    "Hiding",
-    "Interf",
-    "RelabelDef",
-    "Slash",
-    "forall",
-    "RelabelDefs",
-    ",",
-    "{",
-    "}",
-    "BracesRelabelDefs",
-    "Parameter",
-    "=",
-    "ParameterList",
-    "Param",
-    ":",
-    "Labeling",
-    "::",
-    "Sharing",
-    "ProcessRef",
-    "ParallelComp",
-    "CompositeElse",
-    "else",
-    "CompositeBody",
-    "if",
-    "then",
-    "CompositeDef",
-    "ArgumentList",
-    "Arguments",
-    "ProcessRefSeq",
-    "SeqProcessList",
-    ";",
-    "SeqComp",
-    "IndexRanges",
-    "[",
-    "]",
-    "Indices",
-    "Guard",
-    "when",
-    "PrefixActions",
-    "->",
-    "ActionPrefix",
-    "Choice",
-    "BaseLocalProcess",
-    "END",
-    "STOP",
-    "ERROR",
-    "ProcessElse",
-    "LocalProcess",
-    "AlphaExt",
-    "LocalProcessDef",
-    "LocalProcessDefs",
-    "ProcessBody",
-    "ProcessDef",
-    ".",
-    "SetElements",
-    "SetDef",
-    "SetKwd",
-    "RangeDef",
-    "RangeKwd",
-    "..",
-    "ConstDef",
-    "ConstKwd",
-    "RangeExpr",
-    "ActionRange",
-    "Range",
-    "SetExpr",
-    "Set",
-    "ActionLabels",
-    "LowerCaseId",
-    "UpperCaseId",
-    "Root",
-    "Priority",
-    "<<",
-    "Relabeling",
-    "ProgressKwd",
-};
 
 void int2string(int x, string& s)
 {
@@ -135,6 +22,11 @@ yy::TreeNode::~TreeNode()
         delete children[i];
 }
 
+string yy::TreeNode::getClassName() const
+{
+    return "TreeNode";
+}
+
 void yy::TreeNode::addChild(yy::TreeNode *n)
 {
     children.push_back(n);
@@ -142,7 +34,7 @@ void yy::TreeNode::addChild(yy::TreeNode *n)
 
 void yy::TreeNode::addChild(unsigned int t)
 {
-    children.push_back(new yy::TreeNode(t));
+    children.push_back(new yy::TreeNode());
 }
 
 void yy::TreeNode::stealChildren(yy::TreeNode& n)
@@ -171,20 +63,14 @@ void yy::TreeNode::print(ofstream& os)
             StringTreeNode *sn;
             IntTreeNode *in;
 
-            switch (current->type) {
-                case UpperCaseId:
-                case LowerCaseId:
-                    sn = tree_downcast<StringTreeNode>(current);
-                    label = sn->saved;
-                    break;
-
-                case Integer:
-                    in = tree_downcast<IntTreeNode>(current);
-                    int2string(in->value, label);
-                    break;
-
-                default:
-                    label = names[current->type];
+            label = current->getClassName();
+            sn = tree_downcast_safe<StringTreeNode>(current);
+            in = tree_downcast_safe<IntTreeNode>(current);
+            assert(!(sn && in));
+            if (sn) {
+                label = sn->saved;
+            } else if (in) {
+                int2string(in->value, label);
             }
         }
         if (current || print_nulls)
@@ -201,5 +87,30 @@ void yy::TreeNode::print(ofstream& os)
     }
 
     os << "}\n";
+}
+
+
+int yy::TreeNode::translate()
+{
+#if 0
+    switch (type) {
+        case Root:
+            for (unsigned int i=0; i<children.size(); i++) {
+                int ret;
+
+                assert(children[i]);
+                ret = children[i]->translate();
+                if (ret) {
+                    return ret;
+                }
+            }
+            break;
+
+        default:
+            cout << "Unimplemented: " << names[type] << "\n";
+            return 0;
+    }
+#endif
+    return 0;
 }
 
