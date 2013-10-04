@@ -13,6 +13,7 @@
 
 namespace yy {
 
+/* Parse tree node base class. */
 class TreeNode {
     protected:
         vector<TreeNode *> children;
@@ -28,6 +29,11 @@ class TreeNode {
         int translate_children();
 
 };
+
+
+/* ============================= FIRST DERIVATION LEVEL ==============================
+   The first derivation level adds the content to a parse tree node. This content can be
+   an integer, a string, or other object types. */
 
 class IntTreeNode : public TreeNode {
     public:
@@ -81,6 +87,12 @@ class LtsTreeNode : public TreeNode {
 
         LtsTreeNode(class yy::Lts *v) : value(v) { }
 };
+
+
+/* ============================= SECOND DERIVATION LEVEL =============================
+   The second level of derivation adds a syntax meaning to a parse tree node: this means
+   that the node corresponds to a terminal or non-terminal symbol in the FSP grammar.
+   Each node is able to "translate" (towards LTS) the subtree rooted in itself. */
 
 class BaseExpressionNode : public SvpVecTreeNode {
     public:
@@ -518,7 +530,7 @@ class PrefixActionsNode : public PvecTreeNode {
     public:
         string getClassName() const { return "PrefixActions"; }
         PrefixActionsNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class ArrowNode : public TreeNode {
@@ -530,21 +542,21 @@ class ActionPrefixNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ActionPrefix"; }
         ActionPrefixNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class ChoiceNode : public PvecTreeNode {
     public:
         string getClassName() const { return "Choice"; }
         ChoiceNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class BaseLocalProcessNode : public PvecTreeNode {
     public:
         string getClassName() const { return "BaseLocalProcess"; }
         BaseLocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class EndNode : public TreeNode {
@@ -702,7 +714,7 @@ class ActionLabelsNode : public SvpVecTreeNode {
     public:
         string getClassName() const { return "ActionLabels"; }
         ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        int translate();
 };
 
 class LowerCaseIdNode : public StringTreeNode {
@@ -750,6 +762,7 @@ class ProgressKwdNode : public TreeNode {
 };
 
 
+/* Useful wrappers for downcasting a TreeNode pointer to pointers to derived types. */
 template <class T>
 T* tree_downcast_safe(TreeNode *n)
 {

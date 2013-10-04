@@ -115,7 +115,7 @@ int yy::TreeNode::translate()
     return translate_children();
 }
 
-/* ============================== Specific =========================== */
+/* ============================== Translation methods =========================== */
 
 int yy::RootNode::translate()
 {
@@ -153,6 +153,56 @@ int yy::ProcessBodyNode::translate()
 }
 
 int yy::LocalProcessNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::ChoiceNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::ActionPrefixNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::PrefixActionsNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::BaseLocalProcessNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::ActionLabelsNode::translate()
 {
     int ret = translate_children();
 
