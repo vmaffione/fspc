@@ -19,7 +19,8 @@ void int2string(int x, string& s)
 yy::TreeNode::~TreeNode()
 {
     for (unsigned int i=0; i<children.size(); i++)
-        delete children[i];
+        if (children[i])
+            delete children[i];
 }
 
 string yy::TreeNode::getClassName() const
@@ -60,15 +61,19 @@ void yy::TreeNode::print(ofstream& os)
 
         current = frontier[pop];
         if (current) {
-            StringTreeNode *sn;
+            LowerCaseIdNode *ln;
+            UpperCaseIdNode *un;
             IntTreeNode *in;
 
             label = current->getClassName();
-            sn = tree_downcast_safe<StringTreeNode>(current);
+            ln = tree_downcast_safe<LowerCaseIdNode>(current);
+            un = tree_downcast_safe<UpperCaseIdNode>(current);
             in = tree_downcast_safe<IntTreeNode>(current);
-            assert(!(sn && in));
-            if (sn) {
-                label = sn->saved;
+            assert(!(in && ln) && !(ln && un) && !(un && in));
+            if (ln) {
+                label = ln->saved;
+            } else if (un) {
+                label = un->saved;
             } else if (in) {
                 int2string(in->value, label);
             }
@@ -89,28 +94,71 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
+int yy::TreeNode::translate_children()
+{
+    int ret = 0;
+
+    for (unsigned int i=0; i<children.size(); i++) {
+        if (children[i]) {
+            ret = children[i]->translate();
+            if (ret) {
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
 
 int yy::TreeNode::translate()
 {
-#if 0
-    switch (type) {
-        case Root:
-            for (unsigned int i=0; i<children.size(); i++) {
-                int ret;
+    return translate_children();
+}
 
-                assert(children[i]);
-                ret = children[i]->translate();
-                if (ret) {
-                    return ret;
-                }
-            }
-            break;
+/* ============================== Specific =========================== */
 
-        default:
-            cout << "Unimplemented: " << names[type] << "\n";
-            return 0;
-    }
-#endif
+int yy::RootNode::translate()
+{
+    return translate_children();
+}
+
+int yy::ProcessDefNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::ProcessIdNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::ProcessBodyNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
+    return 0;
+}
+
+int yy::LocalProcessNode::translate()
+{
+    int ret = translate_children();
+
+    if (ret)
+        return ret;
+
     return 0;
 }
 

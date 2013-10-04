@@ -14,6 +14,7 @@
 namespace yy {
 
 class TreeNode {
+    protected:
         vector<TreeNode *> children;
 
     public:
@@ -24,6 +25,7 @@ class TreeNode {
         void print(ofstream& os);
         virtual int translate();
         virtual string getClassName() const;
+        int translate_children();
 
 };
 
@@ -140,7 +142,7 @@ class ProcessIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ProcessId"; }
         ProcessIdNode(string *v) : StringTreeNode(v) { }
-
+        int translate();
 };
 
 class ProgressIdNode : public StringTreeNode {
@@ -571,7 +573,7 @@ class LocalProcessNode : public PvecTreeNode {
     public:
         string getClassName() const { return "LocalProcess"; }
         LocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class AlphaExtNode : public SvpVecTreeNode {
@@ -599,13 +601,14 @@ class ProcessBodyNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ProcessBody"; }
         ProcessBodyNode(Pvec *v) : PvecTreeNode(v) { }
-
+        int translate();
 };
 
 class ProcessDefNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessDef"; }
         ProcessDefNode(Lts *v) : LtsTreeNode(v) { }
+        int translate();
 
 };
 
@@ -719,7 +722,7 @@ class UpperCaseIdNode : public StringTreeNode {
 class RootNode : public TreeNode {
     public:
         string getClassName() const { return "Root"; }
-
+        int translate();
 };
 
 class PriorityNode : public SvpVecTreeNode {
