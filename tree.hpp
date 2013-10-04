@@ -36,6 +36,8 @@ class TreeNode {
    an integer, a string, or other object types. */
 
 class IntTreeNode : public TreeNode {
+    protected:
+        int res;
     public:
         int value;
 
@@ -43,6 +45,9 @@ class IntTreeNode : public TreeNode {
 };
 
 class FloatTreeNode : public TreeNode {
+    protected:
+        float res;
+
     public:
         float value;
 
@@ -50,6 +55,9 @@ class FloatTreeNode : public TreeNode {
 };
 
 class StringTreeNode : public TreeNode {
+    protected:
+        std::string res;
+
     public:
         std::string *value;
         /* The memory pointed by "value" is freed during the parsing. We therefore use the
@@ -60,6 +68,7 @@ class StringTreeNode : public TreeNode {
         StringTreeNode(std::string *v) : value(v), saved(*v) { }
 };
 
+/* XXX unused */
 class SymbolTreeNode : public TreeNode {
     public:
         class SymbolValue *value;
@@ -75,6 +84,9 @@ class SvpVecTreeNode : public TreeNode {
 };
 
 class PvecTreeNode : public TreeNode {
+    protected:
+        /*yy::Lts res; XXX*/
+
     public:
         class Pvec *value;
 
@@ -82,6 +94,9 @@ class PvecTreeNode : public TreeNode {
 };
 
 class LtsTreeNode : public TreeNode {
+    protected:
+        /* yy::Lts res; XXX */
+
     public:
         class yy::Lts *value;
 
