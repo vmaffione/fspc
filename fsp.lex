@@ -30,8 +30,12 @@
 # include "driver.hpp"
 
 /* Include the bison-generated parser header, in order to get the token
-   types definition that we return, and the CircularBuffer. */
+   types definition that we return. */
 # include "parser.hpp"
+
+/* Circular tokens buffer for good error reporting. */
+#include "circular_buffer.hpp"
+extern class CircularBuffer last_tokens;
 
 using namespace std;
 

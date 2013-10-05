@@ -35,8 +35,8 @@ using namespace std;
 
 //#define YYERROR_VERBOSE
 
-#include "driver.hpp"
-#include "tree.hpp"
+/* Symbols tables. */
+#include "symbols_table.hpp"
 }
 
 %skeleton "glr.cc" /* -*- C++ -*- */
@@ -74,12 +74,9 @@ using namespace std;
 #include <string>
 class FspDriver;
 
-/* Symbols tables. */
-#include "symbols_table.hpp"
-
-/* Circular tokens buffer for good error reporting. */
-#include "circular_buffer.hpp"
-extern class CircularBuffer last_tokens;
+namespace yy {
+    class TreeNode;
+};
 }
 
 
@@ -96,9 +93,8 @@ extern class CircularBuffer last_tokens;
     int int_value;
     float float_value;
     std::string *string_ptr;
-    struct SvpVec * svpvec_ptr; // XXX remove
-    class Lts * lts_ptr;        // XXX remove
-    class TreeNode * node_ptr;
+    SvpVec * svpvec_ptr;     /* Used in mid-rule actions. */
+    TreeNode * node_ptr;
 }
 
 
@@ -200,6 +196,8 @@ extern class CircularBuffer last_tokens;
 /* Interactive shell */
 #include "shell.hpp"
 
+/* TreeNode classes and subclasses. */
+#include "tree.hpp"
 
 using namespace yy;
 
