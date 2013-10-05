@@ -62,7 +62,7 @@ aur:
 fspcc-$(VER).tar.gz:
 	tar -czf fspcc-$(VER).tar.gz $(SOURCES)
 
-deps.gv:
+deps.gv: $(SOURCES)
 	python find_deps.py
 
 cleanaur:

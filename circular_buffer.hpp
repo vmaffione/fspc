@@ -21,9 +21,6 @@
 #ifndef __CIRCULAR__BUFFER__HH
 #define __CIRCULAR__BUFFER__HH
 
-#include "parser.hpp"
-
-
 class CircularBuffer {
     static const int Size = 30;
 
