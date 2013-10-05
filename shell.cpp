@@ -24,6 +24,9 @@
 #include <sys/wait.h>	/* waitpid() */
 #include <ncurses.h>
 
+#include "shell.hpp"
+
+/* FspDriver class to access the compiler structure. */
 #include "driver.hpp"
 
 /* Lts definitions and operations. */

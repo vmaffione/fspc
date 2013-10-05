@@ -27,11 +27,13 @@
 #include <stdint.h>
 #include <endian.h>
 
-#include "symbols_table.hpp"  /* struct ActionsTable */
-#include "lts.hpp"
-
 using namespace std;
 
+
+namespace yy {
+    class Lts;
+}
+struct ActionsTable;
 
 class Serializer {
 	ofstream fout;
@@ -42,7 +44,7 @@ class Serializer {
 	void integer(uint32_t i, bool raw);
 	void stl_string(const string& s, bool raw);
 	void actions_table(const struct ActionsTable& at, bool raw);
-	void lts(const class yy::Lts& lts, bool raw);
+	void lts(const yy::Lts& lts, bool raw);
 	void set_value(const struct SetValue& setv, bool raw);
 	~Serializer();
 
@@ -64,7 +66,7 @@ class Deserializer {
 	void integer(uint32_t &v, bool raw);
 	void stl_string(string& s, bool raw);
 	void actions_table(struct ActionsTable& at, bool raw);
-	void lts(class yy::Lts& lts, bool raw);
+	void lts(yy::Lts& lts, bool raw);
 	void set_value(struct SetValue& setv, bool raw);
 	~Deserializer();
 };

@@ -33,6 +33,9 @@
 /* Symbol tables and symbol types. */
 #include "symbols_table.hpp"
 
+/* The fspc shell. */
+#include "shell.hpp"
+
 using namespace std;
 
 

@@ -30,7 +30,6 @@
 
 #include "symbols_table.hpp"
 #include "location.hh"
-#include "shell.hpp"
 
 using namespace std;
 
@@ -64,6 +63,8 @@ struct LtsVisitObject {
 
 class Serializer;
 class Deserializer;
+class Shell;
+class FspDriver;
 
 
 namespace yy {
@@ -90,6 +91,7 @@ class Lts: public SymbolValue {
     string name;
     int rank;
 
+    Lts() {} /* XXX used by tree: mark as invalid */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
@@ -127,7 +129,6 @@ class Lts: public SymbolValue {
     int type() const { return SymbolValue::Lts; }
     SymbolValue * clone() const;
 };
-
 
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 

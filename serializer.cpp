@@ -20,6 +20,9 @@
 
 #include <iostream>
 
+#include "symbols_table.hpp"  /* struct ActionsTable */
+#include "lts.hpp"            /* class Lts */
+
 /* Serialization support. */
 #include "serializer.hpp"
 

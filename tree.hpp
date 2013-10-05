@@ -85,7 +85,7 @@ class SvpVecTreeNode : public TreeNode {
 
 class PvecTreeNode : public TreeNode {
     protected:
-        /*yy::Lts res; XXX*/
+        yy::Lts res;
 
     public:
         class Pvec *value;
@@ -95,7 +95,7 @@ class PvecTreeNode : public TreeNode {
 
 class LtsTreeNode : public TreeNode {
     protected:
-        /* yy::Lts res; XXX */
+        yy::Lts res;
 
     public:
         class yy::Lts *value;
