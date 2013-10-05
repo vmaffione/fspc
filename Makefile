@@ -15,7 +15,7 @@ SOURCES=$(WCIN) fspcc.1 fsp.y
 #REPORT=--report=all
 REPORT=
 
-all: fspcc ctags
+all: fspcc ctags deps.gv
 
 fspcc: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
@@ -61,6 +61,9 @@ aur:
 
 fspcc-$(VER).tar.gz:
 	tar -czf fspcc-$(VER).tar.gz $(SOURCES)
+
+deps.gv:
+	python find_deps.py
 
 cleanaur:
 	-rm *.tar.gz PKGBUILD
