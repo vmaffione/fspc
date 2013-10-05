@@ -88,13 +88,13 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-int yy::TreeNode::translate_children(struct FspTranslator& tr)
+int yy::TreeNode::translate_children(struct FspDriver& c)
 {
     int ret = 0;
 
     for (unsigned int i=0; i<children.size(); i++) {
         if (children[i]) {
-            ret = children[i]->translate(tr);
+            ret = children[i]->translate(c);
             if (ret) {
                 break;
             }
@@ -104,23 +104,24 @@ int yy::TreeNode::translate_children(struct FspTranslator& tr)
     return ret;
 }
 
-int yy::TreeNode::translate(struct FspTranslator& tr)
+int yy::TreeNode::translate(struct FspDriver& c)
 {
-    return translate_children(tr);
+    return translate_children(c);
 }
 
 /* ========================== Translation methods ======================== */
 
 #define FALSE 3  /* TODO when everything works, switch to "0". */
+#define IMPLEMENT 718  /* TODO when everything works, switch to "0". */
 
-int yy::RootNode::translate(struct FspTranslator& tr)
+int yy::RootNode::translate(struct FspDriver& c)
 {
-    return translate_children(tr);
+    return translate_children(c);
 }
 
-int yy::ProcessDefNode::translate(struct FspTranslator& tr)
+int yy::ProcessDefNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -128,9 +129,9 @@ int yy::ProcessDefNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::ProcessIdNode::translate(struct FspTranslator& tr)
+int yy::ProcessIdNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -138,9 +139,9 @@ int yy::ProcessIdNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::ProcessBodyNode::translate(struct FspTranslator& tr)
+int yy::ProcessBodyNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -148,9 +149,9 @@ int yy::ProcessBodyNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::LocalProcessNode::translate(struct FspTranslator& tr)
+int yy::LocalProcessNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -164,14 +165,16 @@ int yy::LocalProcessNode::translate(struct FspTranslator& tr)
         } else {
             assert(FALSE);
         }
+    } else {
+        assert(IMPLEMENT);
     }
 
     return 0;
 }
 
-int yy::ChoiceNode::translate(struct FspTranslator& tr)
+int yy::ChoiceNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -179,9 +182,9 @@ int yy::ChoiceNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::ActionPrefixNode::translate(struct FspTranslator& tr)
+int yy::ActionPrefixNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -189,9 +192,9 @@ int yy::ActionPrefixNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::PrefixActionsNode::translate(struct FspTranslator& tr)
+int yy::PrefixActionsNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    int ret = translate_children(c);
 
     if (ret)
         return ret;
@@ -199,18 +202,18 @@ int yy::PrefixActionsNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::BaseLocalProcessNode::translate(struct FspTranslator& tr)
+int yy::BaseLocalProcessNode::translate(struct FspDriver& c)
 {
     EndNode *en = tree_downcast_safe<EndNode>(children[0]);
     StopNode *sn = tree_downcast_safe<StopNode>(children[0]);
     ErrorNode *ern = tree_downcast_safe<ErrorNode>(children[0]);
 
     if (en) {
-        res = Lts(LtsNode::End, &tr.dr.actions);
+        res = Lts(LtsNode::End, &c.actions);
     } else if (sn) {
-        res = Lts(LtsNode::Normal, &tr.dr.actions);
+        res = Lts(LtsNode::Normal, &c.actions);
     } else if (ern) {
-        res = Lts(LtsNode::Error, &tr.dr.actions);
+        res = Lts(LtsNode::Error, &c.actions);
     } else {
         assert(FALSE);
     }
@@ -218,12 +221,29 @@ int yy::BaseLocalProcessNode::translate(struct FspTranslator& tr)
     return 0;
 }
 
-int yy::ActionLabelsNode::translate(struct FspTranslator& tr)
+int yy::ActionLabelsNode::translate(struct FspDriver& c)
 {
-    int ret = translate_children(tr);
+    if (children.size() == 1) {
+        StringTreeNode *sn = tree_downcast_safe<StringTreeNode>(children[0]);
+    } else {
+        assert(IMPLEMENT);
+    }
 
-    if (ret)
-        return ret;
+    return 0;
+}
+
+int yy::BaseExpressionNode::translate(struct FspDriver& c)
+{
+    IntTreeNode *in = tree_downcast_safe<IntTreeNode>(children[0]);
+    VariableIdNode *vn = tree_downcast_safe<VariableIdNode>(children[0]);
+    ConstParameterIdNode *cn = tree_downcast_safe<ConstParameterIdNode>(children[0]);
+
+    if (in) {
+    } else if (vn) {
+    } else if (cn) {
+    } else {
+        assert(FALSE);
+    }
 
     return 0;
 }

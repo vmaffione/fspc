@@ -252,7 +252,7 @@ int FspDriver::parse(const CompilerOptions& co)
         ofstream treef("tree.gv");
         tree->print(treef);
         treef.close();
-        tree->translate(this->tr);
+        tree->translate(*this);
         delete tree;
         tree = NULL;
 
