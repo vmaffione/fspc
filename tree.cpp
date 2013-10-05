@@ -109,7 +109,9 @@ int yy::TreeNode::translate(struct FspTranslator& tr)
     return translate_children(tr);
 }
 
-/* ============================== Translation methods =========================== */
+/* ========================== Translation methods ======================== */
+
+#define FALSE 3  /* TODO when everything works, switch to "0". */
 
 int yy::RootNode::translate(struct FspTranslator& tr)
 {
@@ -153,6 +155,17 @@ int yy::LocalProcessNode::translate(struct FspTranslator& tr)
     if (ret)
         return ret;
 
+    if (children.size() == 1) {
+        BaseLocalProcessNode *b =
+                tree_downcast_safe<BaseLocalProcessNode>(children[0]);
+
+        if (b) {
+            res = b->res;
+        } else {
+            assert(FALSE);
+        }
+    }
+
     return 0;
 }
 
@@ -193,8 +206,13 @@ int yy::BaseLocalProcessNode::translate(struct FspTranslator& tr)
     ErrorNode *ern = tree_downcast_safe<ErrorNode>(children[0]);
 
     if (en) {
-        //res = Lts(LtsNode::End, );
+        res = Lts(LtsNode::End, &tr.dr.actions);
     } else if (sn) {
+        res = Lts(LtsNode::Normal, &tr.dr.actions);
+    } else if (ern) {
+        res = Lts(LtsNode::Error, &tr.dr.actions);
+    } else {
+        assert(FALSE);
     }
 
     return 0;

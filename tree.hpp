@@ -28,7 +28,6 @@ class TreeNode {
         virtual int translate(FspTranslator& tr);
         virtual string getClassName() const;
         int translate_children(FspTranslator& tr);
-
 };
 
 
@@ -37,29 +36,24 @@ class TreeNode {
    an integer, a string, or other object types. */
 
 class IntTreeNode : public TreeNode {
-    protected:
-        int res;
     public:
+        int res;
         int value;
 
         IntTreeNode(int v) : value(v) { }
 };
 
 class FloatTreeNode : public TreeNode {
-    protected:
-        float res;
-
     public:
+        float res;
         float value;
 
         FloatTreeNode(float v) : value(v) { }
 };
 
 class StringTreeNode : public TreeNode {
-    protected:
-        std::string res;
-
     public:
+        std::string res;
         std::string *value;
         /* The memory pointed by "value" is freed during the parsing. We therefore use the
            "saved" field to retrieve the string after the parsing (e.g. when printing the
@@ -85,20 +79,16 @@ class SvpVecTreeNode : public TreeNode {
 };
 
 class PvecTreeNode : public TreeNode {
-    protected:
-        yy::Lts res;
-
     public:
+        yy::Lts res;
         class Pvec *value;
 
         PvecTreeNode(class Pvec *v) : value(v) { }
 };
 
 class LtsTreeNode : public TreeNode {
-    protected:
-        yy::Lts res;
-
     public:
+        yy::Lts res;
         class yy::Lts *value;
 
         LtsTreeNode(class yy::Lts *v) : value(v) { }
