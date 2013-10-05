@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "tree.hpp"
+#include "driver.hpp"
 
 using namespace std;
 using namespace yy;
@@ -37,14 +38,6 @@ void yy::TreeNode::addChild(yy::TreeNode *n)
 void yy::TreeNode::addChild(unsigned int t)
 {
     children.push_back(new yy::TreeNode());
-}
-
-void yy::TreeNode::stealChildren(yy::TreeNode& n)
-{
-    for (unsigned int i=0; i<n.children.size(); i++) {
-        children.push_back(n.children[i]);
-    }
-    n.children.clear();
 }
 
 void yy::TreeNode::print(ofstream& os)
@@ -95,13 +88,13 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-int yy::TreeNode::translate_children()
+int yy::TreeNode::translate_children(struct FspTranslator& tr)
 {
     int ret = 0;
 
     for (unsigned int i=0; i<children.size(); i++) {
         if (children[i]) {
-            ret = children[i]->translate();
+            ret = children[i]->translate(tr);
             if (ret) {
                 break;
             }
@@ -111,21 +104,21 @@ int yy::TreeNode::translate_children()
     return ret;
 }
 
-int yy::TreeNode::translate()
+int yy::TreeNode::translate(struct FspTranslator& tr)
 {
-    return translate_children();
+    return translate_children(tr);
 }
 
 /* ============================== Translation methods =========================== */
 
-int yy::RootNode::translate()
+int yy::RootNode::translate(struct FspTranslator& tr)
 {
-    return translate_children();
+    return translate_children(tr);
 }
 
-int yy::ProcessDefNode::translate()
+int yy::ProcessDefNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -133,9 +126,9 @@ int yy::ProcessDefNode::translate()
     return 0;
 }
 
-int yy::ProcessIdNode::translate()
+int yy::ProcessIdNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -143,9 +136,9 @@ int yy::ProcessIdNode::translate()
     return 0;
 }
 
-int yy::ProcessBodyNode::translate()
+int yy::ProcessBodyNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -153,9 +146,9 @@ int yy::ProcessBodyNode::translate()
     return 0;
 }
 
-int yy::LocalProcessNode::translate()
+int yy::LocalProcessNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -163,9 +156,9 @@ int yy::LocalProcessNode::translate()
     return 0;
 }
 
-int yy::ChoiceNode::translate()
+int yy::ChoiceNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -173,9 +166,9 @@ int yy::ChoiceNode::translate()
     return 0;
 }
 
-int yy::ActionPrefixNode::translate()
+int yy::ActionPrefixNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -183,9 +176,9 @@ int yy::ActionPrefixNode::translate()
     return 0;
 }
 
-int yy::PrefixActionsNode::translate()
+int yy::PrefixActionsNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
@@ -193,19 +186,23 @@ int yy::PrefixActionsNode::translate()
     return 0;
 }
 
-int yy::BaseLocalProcessNode::translate()
+int yy::BaseLocalProcessNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    EndNode *en = tree_downcast_safe<EndNode>(children[0]);
+    StopNode *sn = tree_downcast_safe<StopNode>(children[0]);
+    ErrorNode *ern = tree_downcast_safe<ErrorNode>(children[0]);
 
-    if (ret)
-        return ret;
+    if (en) {
+        //res = Lts(LtsNode::End, );
+    } else if (sn) {
+    }
 
     return 0;
 }
 
-int yy::ActionLabelsNode::translate()
+int yy::ActionLabelsNode::translate(struct FspTranslator& tr)
 {
-    int ret = translate_children();
+    int ret = translate_children(tr);
 
     if (ret)
         return ret;
