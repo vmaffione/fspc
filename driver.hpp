@@ -15,13 +15,14 @@
 #include "context.hpp"
 #include "symbols_table.hpp"
 #include "utils.hpp"
-#include "callbacks.hpp"
 #include "parser.hpp"
 #include "interface.hpp"
 #include "tree.hpp"
 
 using namespace std;
 
+
+struct FspTranslator;
 
 struct AliasElement {
     /* Process name */
@@ -56,6 +57,8 @@ struct Aliases {
     void print();
 };
 
+
+#include "callbacks.hpp"
 
 class FspDriver;
 

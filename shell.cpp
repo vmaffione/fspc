@@ -24,6 +24,8 @@
 #include <sys/wait.h>	/* waitpid() */
 #include <ncurses.h>
 
+#include "driver.hpp"
+
 /* Lts definitions and operations. */
 #include "lts.hpp"
 

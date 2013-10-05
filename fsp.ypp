@@ -185,14 +185,11 @@ extern class CircularBuffer last_tokens;
 /* Context, ContextsSet and ContextsSetStack. */
 #include "context.hpp"
 
-/* Definition of the FspTranslator class. */
+/* Definition of the FspTranslator class & callbacks */
 #include "driver.hpp"
 
 /* Lts definitions and operations. */
 #include "lts.hpp"
-
-/* Callbacks. */
-#include "callbacks.hpp"
 
 /* Compiler options. */
 #include "interface.hpp"

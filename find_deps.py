@@ -47,11 +47,42 @@ def get_files(extensions, blacklist):
     return ret
 
 
+def find_cycles_from(g, cur, trace, visited):
+    #print ('cur = ' + cur)
+    visited.append(cur)
+    for f in g[cur]:
+        if f in visited:
+            if f in trace:
+                print('Cycle: ' + str(trace) + '\n')
+        else:
+            trace.append(f)
+            #print(trace)
+            find_cycles_from(g, f, trace, visited)
+            trace.pop(-1)
+            #print(trace)
 
+
+def find_cycles(g):
+    start_pool = list(g.keys())
+
+    while len(start_pool) > 0:
+        start = start_pool[0]
+        trace = []
+        visited = []
+        find_cycles_from(g, start, trace, visited)
+        for f in visited:
+            if f in start_pool:
+                start_pool.remove(f)
+
+
+
+############################## MAIN ###############################
 extensions = ['cpp', 'hpp', 'hh']
 blacklist = ['test-serializer.cpp']
 
 files = get_files(extensions, blacklist)
+
+graph = dict()
 
 fout = open('deps.gv', 'w')
 fout.write('digraph G {\n')
@@ -59,9 +90,14 @@ fout.write('digraph G {\n')
 for f in files:
     includes = get_includes(f)
     left = transform_name(f)
+    graph[left] = []
+    fout.write(left + ' [style="filled", fillcolor="yellow"]')
     for i in includes:
         right = transform_name(i)
+        graph[left].append(right)
         fout.write(left + ' -> ' + right + '\n')
 
 fout.write('}\n')
 fout.close()
+
+find_cycles(graph)

@@ -29,6 +29,7 @@
 #include <assert.h>
 
 #include "symbols_table.hpp"
+#include "location.hh"
 #include "shell.hpp"
 
 using namespace std;

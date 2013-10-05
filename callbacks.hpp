@@ -21,9 +21,6 @@
 #ifndef __CALLBACKS__HH
 #define __CALLBACKS__HH
 
-#include "driver.hpp"
-#include "symbols_table.hpp"
-
 struct FspTranslator;
 
 void lts_name_extension(const vector<int>& values, string& extension);
@@ -116,6 +113,7 @@ SvpVec * callback__87(FspTranslator& tr, SvpVec * one); /*17*/
 yy::Lts * callback__88(FspTranslator& tr, string * one, SvpVec * two,
 					SvpVec * three, SvpVec * four); /*30*/
 
+
 struct Callback {
     virtual void * execute(FspTranslator &tr, vector<void *>& stack) = 0;
     virtual bool is_void() const { return false; }
@@ -144,7 +142,6 @@ inline ParametricProcess* is_parametric(SymbolValue * svp)
 
     return static_cast<ParametricProcess *>(svp);
 }
-
 
 struct Callback_pop_push: public Callback {
     int pop;

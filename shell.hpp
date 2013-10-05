@@ -26,10 +26,10 @@
 #include <sstream>
 #include <map>
 
-#include "driver.hpp"
-
 using namespace std;
 
+
+class FspDriver;
 
 class Shell {
 	FspDriver& c;

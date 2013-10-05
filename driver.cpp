@@ -1,3 +1,5 @@
+#include "driver.hpp"
+
 /* Inline utilities. */
 #include "utils.hpp"
 
