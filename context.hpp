@@ -75,5 +75,31 @@ struct ContextsSetStack {
     ~ContextsSetStack();
 };
 
+/* =========================== New API. ==================== */
+
+/* This object mantains a list of action sets and a list of ranges, with
+   associated variable names. Therefore, it represents a set of "contexts",
+   where each context is a different combination of value assignment to
+   the variables. Using the select_next() method is possible to iterate
+   over the contexts. The lookup methods return the values relative to
+   the currently selected context. */
+class NewContextSet {
+    vector<string> range_vars;
+    vector<RangeValue> range_vals;
+    vector<int> cur_index_vals;
+    vector<string> set_vars;
+    vector<SetValue> set_vals;
+    vector<unsigned int> cur_action_vals;
+
+public:
+    bool insert(const string&, const RangeValue&);
+    bool insert(const string&, const SetValue&);
+    unsigned int num();  /* Number of contexts in the set. */
+    void select_next();
+    void select_first();
+    bool lookup(const string&, int&);
+    bool lookup(const string&, string&);
+};
+
 #endif
 

@@ -224,7 +224,7 @@ int yy::BaseLocalProcessNode::translate(struct FspDriver& c)
 int yy::ActionLabelsNode::translate(struct FspDriver& c)
 {
     if (children.size() == 1) {
-        StringTreeNode *sn = tree_downcast_safe<StringTreeNode>(children[0]);
+        //StringTreeNode *sn = tree_downcast_safe<StringTreeNode>(children[0]);
     } else {
         assert(IMPLEMENT);
     }

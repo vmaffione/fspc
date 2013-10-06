@@ -17,8 +17,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <cassert>
+#include <string>
 #include "context.hpp"
+
+using namespace std;
 
 /* ============================ Context ================================ */
 
@@ -161,5 +164,121 @@ ContextsSet& ContextsSetStack::top() { return *(stack.back()); }
 
 ContextsSetStack::~ContextsSetStack() {
     while (pop()) { }
+}
+
+
+/* ====================== New API implementation ======================= */
+
+bool NewContextSet::insert(const string& var, const RangeValue& v)
+{
+    for (unsigned int i=0; i<range_vars.size(); i++) {
+        if (range_vars[i] == var)
+            return false;
+    }
+
+    range_vars.push_back(var);
+    range_vals.push_back(v);
+    /* Lower index in the range selected. */
+    cur_index_vals.push_back(v.low);
+
+    return true;
+}
+
+bool NewContextSet::insert(const string& var, const SetValue& v)
+{
+    assert(v.actions.size());
+
+    for (unsigned int i=0; i<set_vars.size(); i++) {
+        if (set_vars[i] == var)
+            return false;
+    }
+
+    set_vars.push_back(var);
+    set_vals.push_back(v);
+    /* First action in the set selected. */
+    cur_action_vals.push_back(0);
+
+    return true;
+}
+
+unsigned int NewContextSet::num()
+{
+    unsigned int ret = 1;
+
+    for (unsigned int i=0; i<range_vals.size(); i++) {
+        ret *= range_vals[i].high - range_vals[i].low + 1;
+    }
+
+    for (unsigned int i=0; i<set_vals.size(); i++) {
+        ret *= set_vals[i].actions.size();
+    }
+
+    return ret;
+}
+
+void NewContextSet::select_first()
+{
+    for (unsigned int i=0; i<cur_index_vals.size(); i++) {
+        cur_index_vals[i] = range_vals[i].low;
+    }
+
+    for (unsigned int i=0; i<cur_action_vals.size(); i++) {
+        cur_action_vals[i] = 0;
+    }
+}
+
+void NewContextSet::select_next()
+{
+    unsigned int i = 0;
+
+    while (i < cur_index_vals.size()) {
+        cur_index_vals[i]++;
+        if (cur_index_vals[i] > range_vals[i].high) {
+            /* Overflow wrapping. */
+            cur_index_vals[i] = range_vals[i].low;
+            i++;
+        } else {
+            break;
+        }
+    }
+
+    if (i == cur_index_vals.size()) {
+        /* Enter here only if all the ranges overflowed. */
+        i = 0;
+        while (i < cur_action_vals.size()) {
+            cur_action_vals[i]++;
+            if (cur_action_vals[i] == set_vals[i].actions.size()) {
+                /* Overflow wrapping. */
+                cur_action_vals[i] = 0;
+                i++;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+bool NewContextSet::lookup(const string& name, int& v)
+{
+    for (unsigned int i=0; i<range_vars.size(); i++) {
+        if (name == range_vars[i]) {
+            v = cur_index_vals[i];
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool NewContextSet::lookup(const string& name, string& v)
+{
+    for (unsigned int i=0; i<set_vars.size(); i++) {
+        if (name == set_vars[i]) {
+            v = set_vals[i].actions[ cur_action_vals[i] ];
+            return true;
+        }
+    }
+
+    return false;
 }
 

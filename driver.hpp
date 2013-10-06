@@ -137,6 +137,10 @@ class FspDriver
 	/* The main translator. */
 	FspTranslator tr;
 
+        /* ==== New API ==== */
+        NewContextSet ctxset;
+        /* ================= */
+
         /* The parsing result. */
         yy::TreeNode *tree;
 
