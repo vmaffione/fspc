@@ -560,9 +560,11 @@ class PeriodNode : public TreeNode {
 
 class SetElementsNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "SetElements"; }
         SetElementsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver&);
 };
 
 class SetDefNode : public TreeNode {
@@ -633,9 +635,11 @@ class RangeNode : public SvpVecTreeNode {
 
 class SetExprNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "SetExpr"; }
         SetExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver&);
 };
 
 class SetNode : public SvpVecTreeNode {
@@ -644,7 +648,7 @@ class SetNode : public SvpVecTreeNode {
 
         string getClassName() const { return "Set"; }
         SetNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver&);
 };
 
 class ActionLabelsNode : public SvpVecTreeNode {

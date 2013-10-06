@@ -327,6 +327,59 @@ void yy::RangeNode::translate(FspDriver& c)
     }
 }
 
+void yy::SetElementsNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    res = SetValue();
+
+    do {
+        DTC(ActionLabelsNode, an, children[0]);
+
+        res += an->res;
+    } while (0);
+
+    for (unsigned int i=1; i<children.size(); i+=2) {
+        DTC(ActionLabelsNode, an, children[i+1]);
+
+        res += an->res;
+    }
+}
+
+void yy::SetExprNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(SetElementsNode, sn, children[1]);
+
+    res = sn->res;
+}
+
+void yy::SetNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTCS(SetIdNode, si, children[0]);
+    DTCS(SetExprNode, se, children[0]);
+
+    if (si) {
+        /* Lookup the set identifier. */
+        SymbolValue *svp;
+        SetValue *setvp;
+
+        if (!c.identifiers.lookup(si->res, svp)) {
+            return; //TODO
+        }
+        setvp = err_if_not_set(c, svp, loc);
+        res = *setvp;
+    } else if (se) {
+        /* Return the set expression. */
+        res = se->res;
+    } else {
+        assert(FALSE);
+    }
+}
+
 void yy::ActionRangeNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -405,10 +458,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
         } else if (sqn) {
             /* Apply the "[]" operator. */
             DTC(ActionRangeNode, an, children[i+1]);
-if (!an->res.actions.size()){
-an->res+="XXX"; //XXX will be fixed implementing stuff
-cout << "XXX1\n";
-}
+
             res.indexize(an->res);
             i += 3;
         } else {
@@ -416,5 +466,6 @@ cout << "XXX1\n";
             break;
         }
     }
+    //cout << "Actions labels: "; res.print(); cout << "\n"; // XXX debug
 }
 
