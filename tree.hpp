@@ -37,30 +37,30 @@ class TreeNode {
 
 class IntTreeNode : public TreeNode {
     public:
-        int res;
         int value;
+        int res;
 
-        IntTreeNode(int v) : value(v) { }
+        IntTreeNode(int v) : value(v), res(v) { }
 };
 
 class FloatTreeNode : public TreeNode {
     public:
-        float res;
         float value;
+        float res;
 
-        FloatTreeNode(float v) : value(v) { }
+        FloatTreeNode(float v) : value(v), res(v) { }
 };
 
 class StringTreeNode : public TreeNode {
     public:
-        std::string res;
         std::string *value;
         /* The memory pointed by "value" is freed during the parsing. We therefore use the
            "saved" field to retrieve the string after the parsing (e.g. when printing the
            parse tree. */
         std::string saved;
+        std::string res;
 
-        StringTreeNode(std::string *v) : value(v), saved(*v) { }
+        StringTreeNode(std::string *v) : value(v), saved(*v), res(*v) { }
 };
 
 /* XXX unused */
@@ -102,13 +102,14 @@ class LtsTreeNode : public TreeNode {
 
 class BaseExpressionNode : public SvpVecTreeNode {
     public:
-        vector<int> res;
+        int res;
 
         string getClassName() const { return "BaseExpression"; }
         BaseExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
         int translate(FspDriver &dr);
 };
 
+/* XXX unused */
 class IntegerNode : public IntTreeNode {
     public:
         string getClassName() const { return "Integer"; }
@@ -181,9 +182,11 @@ class VariableNode : public SvpVecTreeNode {
 
 class ExpressionNode : public SvpVecTreeNode {
     public:
+        int res;
+
         string getClassName() const { return "Expression"; }
         ExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        int translate(FspDriver&);
 };
 
 class BangNode : public TreeNode {
