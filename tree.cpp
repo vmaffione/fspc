@@ -88,25 +88,18 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-int yy::TreeNode::translate_children(FspDriver& c)
+void yy::TreeNode::translate_children(FspDriver& c)
 {
-    int ret = 0;
-
     for (unsigned int i=0; i<children.size(); i++) {
         if (children[i]) {
-            ret = children[i]->translate(c);
-            if (ret) {
-                break;
-            }
+            children[i]->translate(c);
         }
     }
-
-    return ret;
 }
 
-int yy::TreeNode::translate(FspDriver& c)
+void yy::TreeNode::translate(FspDriver& c)
 {
-    return translate_children(c);
+    translate_children(c);
 }
 
 /* ========================== Translation methods ======================== */
@@ -114,47 +107,29 @@ int yy::TreeNode::translate(FspDriver& c)
 #define FALSE 3  /* TODO when everything works, switch to "0". */
 #define IMPLEMENT 718  /* TODO when everything works, switch to "0". */
 
-int yy::RootNode::translate(FspDriver& c)
+void yy::RootNode::translate(FspDriver& c)
 {
-    return translate_children(c);
+    translate_children(c);
 }
 
-int yy::ProcessDefNode::translate(FspDriver& c)
+void yy::ProcessDefNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::ProcessIdNode::translate(FspDriver& c)
+void yy::ProcessIdNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::ProcessBodyNode::translate(FspDriver& c)
+void yy::ProcessBodyNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::LocalProcessNode::translate(FspDriver& c)
+void yy::LocalProcessNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
+    translate_children(c);
 
     if (children.size() == 1) {
         DTCS(BaseLocalProcessNode, b, children[0]);
@@ -167,41 +142,24 @@ int yy::LocalProcessNode::translate(FspDriver& c)
     } else {
         assert(IMPLEMENT);
     }
-
-    return 0;
 }
 
-int yy::ChoiceNode::translate(FspDriver& c)
+void yy::ChoiceNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::ActionPrefixNode::translate(FspDriver& c)
+void yy::ActionPrefixNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::PrefixActionsNode::translate(FspDriver& c)
+void yy::PrefixActionsNode::translate(FspDriver& c)
 {
-    int ret = translate_children(c);
-
-    if (ret)
-        return ret;
-
-    return 0;
+    translate_children(c);
 }
 
-int yy::BaseLocalProcessNode::translate(FspDriver& c)
+void yy::BaseLocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -218,11 +176,9 @@ int yy::BaseLocalProcessNode::translate(FspDriver& c)
     } else {
         assert(FALSE);
     }
-
-    return 0;
 }
 
-int yy::ActionLabelsNode::translate(FspDriver& c)
+void yy::ActionLabelsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -231,11 +187,9 @@ int yy::ActionLabelsNode::translate(FspDriver& c)
     } else {
         assert(IMPLEMENT);
     }
-
-    return 0;
 }
 
-int yy::ExpressionNode::translate(FspDriver& c)
+void yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -314,10 +268,9 @@ int yy::ExpressionNode::translate(FspDriver& c)
     } else {
         assert(FALSE);
     }
-    return 0;
 }
 
-int yy::BaseExpressionNode::translate(FspDriver& c)
+void yy::BaseExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -336,11 +289,15 @@ int yy::BaseExpressionNode::translate(FspDriver& c)
     } else {
         assert(FALSE);
     }
-
-    return 0;
 }
 
-int yy::RangeExprNode::translate(FspDriver& c)
+void yy::RangeExprNode::translate(FspDriver& c)
 {
-    return 0;
+    translate_children(c);
+
+    DTC(ExpressionNode, l, children[0]);
+    DTC(ExpressionNode, r, children[2]);
+
+    res.low = l->res;
+    res.high = r->res;
 }

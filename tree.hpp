@@ -25,9 +25,9 @@ class TreeNode {
         void addChild(TreeNode *n);
         void addChild(unsigned int t);
         void print(ofstream& os);
-        virtual int translate(FspDriver& dr);
+        virtual void translate(FspDriver& dr);
         virtual string getClassName() const;
-        int translate_children(FspDriver& dr);
+        void translate_children(FspDriver& dr);
 };
 
 
@@ -106,7 +106,7 @@ class BaseExpressionNode : public SvpVecTreeNode {
 
         string getClassName() const { return "BaseExpression"; }
         BaseExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
-        int translate(FspDriver &dr);
+        void translate(FspDriver &dr);
 };
 
 /* XXX unused */
@@ -163,7 +163,7 @@ class ProcessIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ProcessId"; }
         ProcessIdNode(string *v) : StringTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class ProgressIdNode : public StringTreeNode {
@@ -186,7 +186,7 @@ class ExpressionNode : public SvpVecTreeNode {
 
         string getClassName() const { return "Expression"; }
         ExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
-        int translate(FspDriver&);
+        void translate(FspDriver&);
 };
 
 class OperatorNode : public TreeNode {
@@ -458,7 +458,7 @@ class PrefixActionsNode : public PvecTreeNode {
     public:
         string getClassName() const { return "PrefixActions"; }
         PrefixActionsNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class ArrowNode : public TreeNode {
@@ -470,21 +470,21 @@ class ActionPrefixNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ActionPrefix"; }
         ActionPrefixNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class ChoiceNode : public PvecTreeNode {
     public:
         string getClassName() const { return "Choice"; }
         ChoiceNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class BaseLocalProcessNode : public PvecTreeNode {
     public:
         string getClassName() const { return "BaseLocalProcess"; }
         BaseLocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class EndNode : public TreeNode {
@@ -513,7 +513,7 @@ class LocalProcessNode : public PvecTreeNode {
     public:
         string getClassName() const { return "LocalProcess"; }
         LocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class AlphaExtNode : public SvpVecTreeNode {
@@ -541,14 +541,14 @@ class ProcessBodyNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ProcessBody"; }
         ProcessBodyNode(Pvec *v) : PvecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class ProcessDefNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessDef"; }
         ProcessDefNode(Lts *v) : LtsTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 
 };
 
@@ -605,9 +605,11 @@ class ConstKwdNode : public TreeNode {
 
 class RangeExprNode : public SvpVecTreeNode {
     public:
+        RangeValue res;
+
         string getClassName() const { return "RangeExpr"; }
         RangeExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
-        int translate(FspDriver&);
+        void translate(FspDriver&);
 };
 
 class ActionRangeNode : public SvpVecTreeNode {
@@ -642,7 +644,7 @@ class ActionLabelsNode : public SvpVecTreeNode {
     public:
         string getClassName() const { return "ActionLabels"; }
         ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class LowerCaseIdNode : public StringTreeNode {
@@ -662,7 +664,7 @@ class UpperCaseIdNode : public StringTreeNode {
 class RootNode : public TreeNode {
     public:
         string getClassName() const { return "Root"; }
-        int translate(FspDriver& dr);
+        void translate(FspDriver& dr);
 };
 
 class PriorityNode : public SvpVecTreeNode {
