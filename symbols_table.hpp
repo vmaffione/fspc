@@ -83,25 +83,6 @@ struct SvpVec {
     ~SvpVec();
 };
 
-struct ConstValue: public SymbolValue {
-    int value;
-
-    void print() const { cout << value; }
-    int type() const { return SymbolValue::Const; }
-    SymbolValue * clone() const;
-};
-
-struct RangeValue: public SymbolValue {
-    int low;
-    int high;
-    string variable;
-
-    void print() const { cout << "[" << low << ", " << high << "]"; }
-    int type() const { return SymbolValue::Range; }
-    SymbolValue * clone() const;
-    virtual int setVariable(const string& s) { variable = s; return 0; }
-};
-
 struct SetValue: public SymbolValue {
     vector<string> actions;
     string variable;
@@ -122,6 +103,27 @@ struct SetValue: public SymbolValue {
     SetValue& operator +=(const string&);
 
     void output(const string& name, const char * filename) const;
+};
+
+struct ConstValue: public SymbolValue {
+    int value;
+
+    void print() const { cout << value; }
+    int type() const { return SymbolValue::Const; }
+    void set(SetValue&) const;
+    SymbolValue * clone() const;
+};
+
+struct RangeValue: public SymbolValue {
+    int low;
+    int high;
+    string variable;
+
+    void print() const { cout << "[" << low << ", " << high << "]"; }
+    int type() const { return SymbolValue::Range; }
+    void set(SetValue&) const;
+    SymbolValue * clone() const;
+    virtual int setVariable(const string& s) { variable = s; return 0; }
 };
 
 struct ArgumentsValue: public SymbolValue {

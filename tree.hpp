@@ -19,6 +19,7 @@ namespace yy {
 class TreeNode {
     protected:
         vector<TreeNode *> children;
+        location loc;
 
     public:
         virtual ~TreeNode();
@@ -614,16 +615,20 @@ class RangeExprNode : public SvpVecTreeNode {
 
 class ActionRangeNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "ActionRange"; }
         ActionRangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver&);
 };
 
 class RangeNode : public SvpVecTreeNode {
     public:
+        RangeValue res;
+
         string getClassName() const { return "Range"; }
         RangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver&);
 };
 
 class SetExprNode : public SvpVecTreeNode {
@@ -635,6 +640,8 @@ class SetExprNode : public SvpVecTreeNode {
 
 class SetNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "Set"; }
         SetNode(SvpVec *v) : SvpVecTreeNode(v) { }
 
@@ -642,6 +649,8 @@ class SetNode : public SvpVecTreeNode {
 
 class ActionLabelsNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "ActionLabels"; }
         ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }
         void translate(FspDriver& dr);

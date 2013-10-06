@@ -137,9 +137,8 @@ class FspDriver
 	/* The main translator. */
 	FspTranslator tr;
 
-        /* ==== New API ==== */
+        /* ========================== New API ======================== */
         NewContextSet ctxset;
-        /* ================= */
 
         /* The parsing result. */
         yy::TreeNode *tree;
@@ -147,6 +146,8 @@ class FspDriver
         /* If true the parse tree will be built in a "less" recursive way,
            meaning that left recursive grammar rules will be "unrolled". */
         bool iterated_tree;
+
+        /* =========================================================== */
 
 	/* The ProcessNode allocator. */
 	ProcessNodeAllocator pna;

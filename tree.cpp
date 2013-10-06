@@ -5,18 +5,20 @@
 
 #include "tree.hpp"
 #include "driver.hpp"
+#include "utils.hpp"
 
 using namespace std;
 using namespace yy;
 
-
+string int2string(int x);
+/*
 void int2string(int x, string& s)
 {
     ostringstream oss;
 
     oss << x;
     s = oss.str();
-}
+}*/
 
 yy::TreeNode::~TreeNode()
 {
@@ -69,7 +71,7 @@ void yy::TreeNode::print(ofstream& os)
             } else if (un) {
                 label = un->saved;
             } else if (in) {
-                int2string(in->value, label);
+                label = int2string(in->value);
             }
         }
         if (current || print_nulls)
@@ -178,17 +180,6 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     }
 }
 
-void yy::ActionLabelsNode::translate(FspDriver& c)
-{
-    translate_children(c);
-
-    if (children.size() == 1) {
-        //StringTreeNode *sn = tree_downcast_safe<StringTreeNode>(children[0]);
-    } else {
-        assert(IMPLEMENT);
-    }
-}
-
 void yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -283,9 +274,17 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
     } else if (vn) {
         res = -1;
         if (!c.ctxset.lookup(vn->res, res)) {
-            
+   
         }
     } else if (cn) {
+        SymbolValue *svp;
+        ConstValue *cvp;
+
+        if (!c.identifiers.lookup(cn->res, svp)) {
+            return; // TODO
+        }
+        cvp = err_if_not_const(c, svp, loc);
+        res = cvp->value;
     } else {
         assert(FALSE);
     }
@@ -298,6 +297,124 @@ void yy::RangeExprNode::translate(FspDriver& c)
     DTC(ExpressionNode, l, children[0]);
     DTC(ExpressionNode, r, children[2]);
 
+    /* Build a range from two expressions. */
     res.low = l->res;
     res.high = r->res;
 }
+
+void yy::RangeNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTCS(RangeIdNode, ri, children[0]);
+    DTCS(RangeExprNode, re, children[0]);
+
+    if (ri) {
+        /* Lookup the range identifier. */
+        SymbolValue *svp;
+        RangeValue *rvp;
+
+        if (!c.identifiers.lookup(ri->res, svp)) {
+            return; //TODO
+        }
+        rvp = err_if_not_range(c, svp, loc);
+        res = *rvp;
+    } else if (re) {
+        /* Return the range expression. */
+        res = re->res;
+    } else {
+        assert(FALSE);
+    }
+}
+
+void yy::ActionRangeNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    res = SetValue();
+
+    if (children.size() == 1) {
+        /* Build a set of actions from an integer, a range or a set. */
+        DTCS(ExpressionNode, en, children[0]);
+        DTCS(RangeNode, rn, children[0]);
+        DTCS(SetNode, sn, children[0]);
+
+        if (en) {
+            res += int2string(en->res);
+        } else if (rn) {
+            rn->res.set(res);
+        } else if (sn) {
+            res = sn->res;
+        } else {
+            assert(FALSE);
+        }
+
+    } else {
+        /* Do the same with variable declarations. */
+        assert(IMPLEMENT);
+        res += "c";
+    }
+}
+
+void yy::ActionLabelsNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    /* This function builds a set of actions from an arbitrary complex
+       label expression, e.g.
+       a[1..2].b.{h,j,k}.c[3]
+    */
+
+    res = SetValue();
+
+    /* The leftmost part of the label expression: Fill the set with
+       a single action or a set of actions. */
+    do {
+        DTCS(StringTreeNode, strn, children[0]);
+        DTCS(SetNode, setn, children[0]);
+
+        if (strn) {
+            /* Single action. */
+            res += strn->res;
+        } else if (setn) {
+            /* A set of actions. */
+            res += setn->res;
+        } else {
+            assert(FALSE);
+        }
+    } while (0);
+
+    /* The rest of the expression. */
+    for (unsigned int i=1; i<children.size();) {
+        DTCS(PeriodNode, pn, children[i]);
+        DTCS(OpenSquareNode, sqn, children[i]);
+
+        if (pn) {
+            /* Apply the "." operator. */
+            DTCS(StringTreeNode, strn, children[i+1]);
+            DTCS(SetNode, setn, children[i+1]);
+
+            if (strn) {
+                res.dotcat(strn->res);
+            } else if (setn) {
+                res.dotcat(setn->res);
+            } else {
+                assert(FALSE);
+            }
+            i += 2;
+        } else if (sqn) {
+            /* Apply the "[]" operator. */
+            DTC(ActionRangeNode, an, children[i+1]);
+if (!an->res.actions.size()){
+an->res+="XXX"; //XXX will be fixed implementing stuff
+cout << "XXX1\n";
+}
+            res.indexize(an->res);
+            i += 3;
+        } else {
+            assert(FALSE);
+            break;
+        }
+    }
+}
+

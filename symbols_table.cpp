@@ -194,6 +194,12 @@ SymbolValue * ConstValue::clone() const
     return cv;
 }
 
+void ConstValue::set(SetValue& s) const
+{
+    s.actions.clear();
+    s += int2string(value);
+}
+
 /*============================= RangeValue =============================*/
 SymbolValue * RangeValue::clone() const
 {
@@ -202,6 +208,15 @@ SymbolValue * RangeValue::clone() const
     rv->high = high;
 
     return rv;
+}
+
+void RangeValue::set(SetValue& s) const
+{
+    s.actions.clear();
+
+    for (int i=low; i<=high; i++) {
+        s += int2string(i);
+    }
 }
 
 /*============================= SetValue ================================ */
