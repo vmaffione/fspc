@@ -88,7 +88,7 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-int yy::TreeNode::translate_children(struct FspDriver& c)
+int yy::TreeNode::translate_children(FspDriver& c)
 {
     int ret = 0;
 
@@ -104,7 +104,7 @@ int yy::TreeNode::translate_children(struct FspDriver& c)
     return ret;
 }
 
-int yy::TreeNode::translate(struct FspDriver& c)
+int yy::TreeNode::translate(FspDriver& c)
 {
     return translate_children(c);
 }
@@ -114,12 +114,12 @@ int yy::TreeNode::translate(struct FspDriver& c)
 #define FALSE 3  /* TODO when everything works, switch to "0". */
 #define IMPLEMENT 718  /* TODO when everything works, switch to "0". */
 
-int yy::RootNode::translate(struct FspDriver& c)
+int yy::RootNode::translate(FspDriver& c)
 {
     return translate_children(c);
 }
 
-int yy::ProcessDefNode::translate(struct FspDriver& c)
+int yy::ProcessDefNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -129,7 +129,7 @@ int yy::ProcessDefNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ProcessIdNode::translate(struct FspDriver& c)
+int yy::ProcessIdNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -139,7 +139,7 @@ int yy::ProcessIdNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ProcessBodyNode::translate(struct FspDriver& c)
+int yy::ProcessBodyNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -149,7 +149,7 @@ int yy::ProcessBodyNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::LocalProcessNode::translate(struct FspDriver& c)
+int yy::LocalProcessNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -157,8 +157,7 @@ int yy::LocalProcessNode::translate(struct FspDriver& c)
         return ret;
 
     if (children.size() == 1) {
-        BaseLocalProcessNode *b =
-                tree_downcast_safe<BaseLocalProcessNode>(children[0]);
+        DTCS(BaseLocalProcessNode, b, children[0]);
 
         if (b) {
             res = b->res;
@@ -172,7 +171,7 @@ int yy::LocalProcessNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ChoiceNode::translate(struct FspDriver& c)
+int yy::ChoiceNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -182,7 +181,7 @@ int yy::ChoiceNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ActionPrefixNode::translate(struct FspDriver& c)
+int yy::ActionPrefixNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -192,7 +191,7 @@ int yy::ActionPrefixNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::PrefixActionsNode::translate(struct FspDriver& c)
+int yy::PrefixActionsNode::translate(FspDriver& c)
 {
     int ret = translate_children(c);
 
@@ -202,13 +201,13 @@ int yy::PrefixActionsNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::BaseLocalProcessNode::translate(struct FspDriver& c)
+int yy::BaseLocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    EndNode *en = tree_downcast_safe<EndNode>(children[0]);
-    StopNode *sn = tree_downcast_safe<StopNode>(children[0]);
-    ErrorNode *ern = tree_downcast_safe<ErrorNode>(children[0]);
+    DTCS(EndNode, en, children[0]);
+    DTCS(StopNode, sn, children[0]);
+    DTCS(ErrorNode, ern, children[0]);
 
     if (en) {
         res = Lts(LtsNode::End, &c.actions);
@@ -223,7 +222,7 @@ int yy::BaseLocalProcessNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ActionLabelsNode::translate(struct FspDriver& c)
+int yy::ActionLabelsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -236,25 +235,80 @@ int yy::ActionLabelsNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::ExpressionNode::translate(struct FspDriver& c)
+int yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
     if (children.size() == 1) {
-        BaseExpressionNode *en =
-                        tree_downcast<BaseExpressionNode>(children[0]);
+        DTC(BaseExpressionNode, en, children[0]);
 
         res = en->res;
     } else if (children.size() == 2) {
+        /* OPERATOR EXPR */
+        DTC(OperatorNode, on, children[0]);
+        DTC(BaseExpressionNode, en, children[1]);
+
+        if (on->sign == "+") {
+            res = en->res;
+        } else if (on->sign == "-") {
+            res = -en->res;
+        } else if (on->sign == "!") {
+            res = !en->res;
+        } else {
+            assert(FALSE);
+        }
         
     } else if (children.size() == 3) {
-        OpenParenNode *pn = tree_downcast_safe<OpenParenNode>(children[0]);
+        DTCS(OpenParenNode, pn, children[0]);
 
         if (pn) {
-            ExpressionNode *en = tree_downcast<ExpressionNode>(children[1]);
+            /* ( EXPR ) */
+            DTC(ExpressionNode, en, children[1]);
 
             res = en->res;
-        } else /* ... */ {
+        } else {
+            /* EXPR OPERATOR EXPR */
+            DTC(ExpressionNode, l, children[0]);
+            DTC(OperatorNode, o, children[1]);
+            DTC(ExpressionNode, r, children[2]);
+
+            if (o->sign == "||") {
+                res = l->res || r->res;
+            } else if (o->sign == "&&") {
+                res = l->res && r->res;
+            } else if (o->sign == "|") {
+                res = l->res | r->res;
+            } else if (o->sign == "^") {
+                res = l->res ^ r->res;
+            } else if (o->sign == "&") {
+                res = l->res & r->res;
+            } else if (o->sign == "==") {
+                res = (l->res == r->res);
+            } else if (o->sign == "!=") {
+                res = (l->res != r->res);
+            } else if (o->sign == "<") {
+                res = (l->res < r->res);
+            } else if (o->sign == "<=") {
+                res = (l->res <= r->res);
+            } else if (o->sign == ">=") {
+                res = (l->res >= r->res);
+            } else if (o->sign == "<<") {
+                res = l->res << r->res;
+            } else if (o->sign == ">>") {
+                res = l->res >> r->res;
+            } else if (o->sign == "+") {
+                res = l->res + r->res;
+            } else if (o->sign == "-") {
+                res = l->res - r->res;
+            } else if (o->sign == "*") {
+                res = l->res * r->res;
+            } else if (o->sign == "/") {
+                res = l->res / r->res;
+            } else if (o->sign == "%") {
+                res = l->res % r->res;
+            } else {
+                assert(FALSE);
+            }
         }
         
     } else {
@@ -263,13 +317,13 @@ int yy::ExpressionNode::translate(struct FspDriver& c)
     return 0;
 }
 
-int yy::BaseExpressionNode::translate(struct FspDriver& c)
+int yy::BaseExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    IntTreeNode *in = tree_downcast_safe<IntTreeNode>(children[0]);
-    VariableIdNode *vn = tree_downcast_safe<VariableIdNode>(children[0]);
-    ConstParameterIdNode *cn = tree_downcast_safe<ConstParameterIdNode>(children[0]);
+    DTCS(IntTreeNode, in, children[0]);
+    DTCS(VariableIdNode, vn, children[0]);
+    DTCS(ConstParameterIdNode, cn, children[0]);
 
     if (in) {
         res = in->res;
@@ -286,3 +340,7 @@ int yy::BaseExpressionNode::translate(struct FspDriver& c)
     return 0;
 }
 
+int yy::RangeExprNode::translate(FspDriver& c)
+{
+    return 0;
+}

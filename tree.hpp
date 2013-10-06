@@ -607,7 +607,7 @@ class RangeExprNode : public SvpVecTreeNode {
     public:
         string getClassName() const { return "RangeExpr"; }
         RangeExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        int translate(FspDriver&);
 };
 
 class ActionRangeNode : public SvpVecTreeNode {
@@ -716,6 +716,15 @@ T* tree_downcast_null(TreeNode *n)
         return NULL;
     return tree_downcast<T>(n);
 }
+
+/* Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
+#define DTC(_t, _n, _x) \
+    _t *_n = tree_downcast<_t>(_x);
+
+/* Same as the previous one, but using the safe downcast function. */
+#define DTCS(_t, _n, _x) \
+    _t *_n = tree_downcast_safe<_t>(_x);
+
 
 #define DO_DOWNCAST(_p, _t)  \
     ( { \
