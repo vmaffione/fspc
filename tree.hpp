@@ -189,94 +189,11 @@ class ExpressionNode : public SvpVecTreeNode {
         int translate(FspDriver&);
 };
 
-class BangNode : public TreeNode {
+class OperatorNode : public TreeNode {
     public:
-        string getClassName() const { return "!"; }
-};
-
-class MinusNode : public TreeNode {
-    public:
-        string getClassName() const { return "-"; }
-};
-
-class PlusNode : public TreeNode {
-    public:
-        string getClassName() const { return "+"; }
-};
-
-class ModulusNode : public TreeNode {
-    public:
-        string getClassName() const { return "%"; }
-};
-
-class DivideNode : public TreeNode {
-    public:
-        string getClassName() const { return "/"; }
-};
-
-class TimesNode : public TreeNode {
-    public:
-        string getClassName() const { return "*"; }
-};
-
-class RightShiftNode : public TreeNode {
-    public:
-        string getClassName() const { return ">>"; }
-};
-
-class GOENode : public TreeNode {
-    public:
-        string getClassName() const { return ">="; }
-};
-
-class LOENode : public TreeNode {
-    public:
-        string getClassName() const { return "<="; }
-};
-
-class GreaterNode : public TreeNode {
-    public:
-        string getClassName() const { return ">"; }
-};
-
-class LessNode : public TreeNode {
-    public:
-        string getClassName() const { return "<"; }
-};
-
-class NotEqualNode : public TreeNode {
-    public:
-        string getClassName() const { return "!="; }
-};
-
-class EqualNode : public TreeNode {
-    public:
-        string getClassName() const { return "=="; }
-};
-
-class BitAndNode : public TreeNode {
-    public:
-        string getClassName() const { return "&"; }
-};
-
-class BitXorNode : public TreeNode {
-    public:
-        string getClassName() const { return "^"; }
-};
-
-class BitOrNode : public TreeNode {
-    public:
-        string getClassName() const { return "|"; }
-};
-
-class LogicAndNode : public TreeNode {
-    public:
-        string getClassName() const { return "&&"; }
-};
-
-class LogicOrNode : public TreeNode {
-    public:
-        string getClassName() const { return "||"; }
+        string sign;
+        OperatorNode(const string& s) : sign(s) { }
+        string getClassName() const { return sign; }
 };
 
 class OpenParenNode : public TreeNode {

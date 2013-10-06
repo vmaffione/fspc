@@ -842,7 +842,7 @@ alphabet_extension_OPT:
         SvpVecTreeNode *n = tree_downcast<SvpVecTreeNode>($2);
 
 	$$ = new AlphaExtNode(n->value);
-	$$->addChild(new PlusNode());
+	$$->addChild(new OperatorNode("+"));
 	$$->addChild($2);
         POP(); PUSH($$);
     }
@@ -1024,7 +1024,7 @@ choice:
             $$ = new ChoiceNode(ret);
             $$->addChild($1);
         }
-	$$->addChild(new BitOrNode());
+	$$->addChild(new OperatorNode("|"));
 	$$->addChild($4);
 	PROX(cout << "CSS height = (pop) " << driver.tr.css.stack.size() << "\n");
 	POP(); POP(); PUSH($$);
@@ -1384,7 +1384,7 @@ composite_def:
 	PROX(lts->print(); lts->graphvizOutput((lts->name + ".gv").c_str()));
 
 	$$ = new CompositeDefNode();
-        $$->addChild(new LogicOrNode());
+        $$->addChild(new OperatorNode("||"));
         $$->addChild($2);
         $$->addChild($3);
         $$->addChild(new AssignNode());
@@ -1579,7 +1579,7 @@ parallel_composition:
             $$ = new ParallelCompNode(ret);
             $$->addChild($1);
         }
-        $$->addChild(new LogicOrNode());
+        $$->addChild(new OperatorNode("||"));
         $$->addChild($4);
 	POP(); POP(); PUSH($$);
     }
@@ -1670,7 +1670,7 @@ priority:
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__86));
 	ret = callback__86(driver.tr, n2->value);
 	$$ = new PriorityNode(ret);
-        $$->addChild(new RightShiftNode());
+        $$->addChild(new OperatorNode(">>"));
         $$->addChild($2);
         POP(); PUSH($$);
     }
@@ -2037,7 +2037,7 @@ expression:
 	ret = callback__41(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new LogicOrNode());
+        $$->addChild(new OperatorNode("||"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2052,7 +2052,7 @@ expression:
 	ret = callback__42(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new LogicAndNode());
+        $$->addChild(new OperatorNode("&&"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2067,7 +2067,7 @@ expression:
 	ret = callback__43(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new BitOrNode());
+        $$->addChild(new OperatorNode("|"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2082,7 +2082,7 @@ expression:
 	ret = callback__44(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new BitXorNode());
+        $$->addChild(new OperatorNode("^"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2097,7 +2097,7 @@ expression:
 	ret = callback__45(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new BitAndNode());
+        $$->addChild(new OperatorNode("&"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2112,7 +2112,7 @@ expression:
 	ret = callback__46(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new EqualNode());
+        $$->addChild(new OperatorNode("=="));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2127,7 +2127,7 @@ expression:
 	ret = callback__47(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new NotEqualNode());
+        $$->addChild(new OperatorNode("!="));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2142,7 +2142,7 @@ expression:
 	ret = callback__48(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new LessNode());
+        $$->addChild(new OperatorNode("<"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2157,7 +2157,7 @@ expression:
 	ret = callback__49(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new GreaterNode());
+        $$->addChild(new OperatorNode(">"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2172,7 +2172,7 @@ expression:
 	ret = callback__50(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new LOENode());
+        $$->addChild(new OperatorNode("<="));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2187,7 +2187,7 @@ expression:
 	ret = callback__51(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new GOENode());
+        $$->addChild(new OperatorNode(">="));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2202,7 +2202,7 @@ expression:
 	ret = callback__52(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new LeftShiftNode());
+        $$->addChild(new OperatorNode("<<"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2217,7 +2217,7 @@ expression:
 	ret = callback__53(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new RightShiftNode());
+        $$->addChild(new OperatorNode(">>"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2232,7 +2232,7 @@ expression:
 	ret = callback__54(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new PlusNode());
+        $$->addChild(new OperatorNode("+"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2247,7 +2247,7 @@ expression:
 	ret = callback__55(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new MinusNode());
+        $$->addChild(new OperatorNode("-"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2262,7 +2262,7 @@ expression:
 	ret = callback__56(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new TimesNode());
+        $$->addChild(new OperatorNode("*"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2277,7 +2277,7 @@ expression:
 	ret = callback__57(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new DivideNode());
+        $$->addChild(new OperatorNode("/"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2292,7 +2292,7 @@ expression:
 	ret = callback__58(driver.tr, n1->value, n3->value);
         $$ = new ExpressionNode(ret);
         $$->addChild($1);
-        $$->addChild(new ModulusNode());
+        $$->addChild(new OperatorNode("%"));
         $$->addChild($3);
 	POP(); POP(); PUSH($$);
     }
@@ -2309,7 +2309,7 @@ expression:
         SvpVecTreeNode *n2 = tree_downcast<SvpVecTreeNode>($2);
 
         $$ = new ExpressionNode(n2->value);
-        $$->addChild(new PlusNode());
+        $$->addChild(new OperatorNode("+"));
         $$->addChild($2);
 	POP(); PUSH($$);
     }
@@ -2322,7 +2322,7 @@ expression:
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__59));
 	ret = callback__59(driver.tr, n2->value);
         $$ = new ExpressionNode(ret);
-        $$->addChild(new MinusNode());
+        $$->addChild(new OperatorNode("-"));
         $$->addChild($2);
 	POP(); PUSH($$);
     }
@@ -2335,7 +2335,7 @@ expression:
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__60));
         ret = callback__60(driver.tr, n2->value);
         $$ = new ExpressionNode(ret);
-        $$->addChild(new BangNode());
+        $$->addChild(new OperatorNode("!"));
         $$->addChild($2);
 	POP(); PUSH($$);
     }
