@@ -1,0 +1,20 @@
+CC=g++
+DEBUG=-g
+CFLAGS=$(DEBUG) -Wall
+CXXFLAGS=$(DEBUG) -Wall
+
+all: fspcc
+
+### INITGEN ###
+
+# This rule has been made explicit only to avoid compiler warnings (-Wall)
+scanner.o: scanner.cpp
+	$(CC) $(DEBUG) -c scanner.cpp
+
+# This rule has been made explicit only to avoid compiler warnings (-Wall)
+preproc.o: preproc.cpp
+	$(CC) $(DEBUG) -c preproc.cpp
+
+fspcc: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
+

@@ -1,43 +1,60 @@
-CC=g++
-DEBUG=-g
-CFLAGS=$(DEBUG) -Wall
-CXXFLAGS=$(DEBUG) -Wall
-
 VER=1.2
 
-OBJS=fspcc.o scanner.o parser.o symbols_table.o lts.o context.o utils.o callbacks.o circular_buffer.o serializer.o shell.o driver.o preproc.o tree.o
+# Generated C++ source files.
+GENERATED=parser.cpp parser.hpp scanner.cpp preproc.cpp location.hh position.hh
 
-HDRS=callbacks.hpp circular_buffer.hpp context.hpp driver.hpp interface.hpp lts.hpp preproc.hpp serializer.hpp shell.hpp symbols_table.hpp utils.hpp parser.hpp tree.hpp
+# Non-generated C++ source files.
+NONGEN=callbacks.hpp callbacks.cpp context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp driver.cpp driver.hpp tree.cpp tree.hpp preproc.hpp
 
-WCIN=callbacks.?pp context.?pp fspcc.cpp fsp.lex fsp.ypp input.fsp interface.hpp lts.?pp Makefile symbols_table.?pp utils.?pp circular_buffer.?pp serializer.?pp shell.?pp driver.?pp tree.?pp preproc.hpp preproc.lex ltsee csee.sh parser.diff
-SOURCES=$(WCIN) fspcc.1 fsp.y
+# All the C++ source files.
+SOURCES=$(NONGEN) $(GENERATED)
+
+# All the non-generated files.
+WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh parser.diff fspcc.1
+
+# The files included in the fspc tarball.
+TAR_CONTENT=$(WCIN) fsp.y
 
 #REPORT=--report=all
 REPORT=
 
-all: fspcc ctags deps.gv
 
-fspcc: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses
+# all should be 'complete' for distributions and 'normal' for development.
+all: complete
 
-$(OBJS): $(HDRS)
+# Build the executable using the existing Makefile.gen.
+normal: always $(GENERATED)
+	make -f Makefile.gen
 
-parser.cpp parser.hpp: fsp.ypp fsp.y parser.diff
+# First regenerate Makefile.gen (which depends on all the sources, including $(GENERATED))
+# and then build the executable.
+# The $(GENERATED) dependency is redundant: it has been added for clarity.
+complete: always $(GENERATED) Makefile.gen deps.gv
+	make -f Makefile.gen
+
+# A target that can be used as a dependency so that a rule always fires.
+always:
+
+# Generate Makefile.gen and the GraphViz representation of the include dependencies.
+deps.gv Makefile.gen: $(SOURCES)
+	python find_deps.py
+
+# Generate the parser with GNU Bison.
+parser.cpp parser.hpp location.hh position.hh: fsp.ypp fsp.y parser.diff
 	bison $(REPORT) fsp.ypp
 	patch parser.cpp < parser.diff
 
-# This rule has been made explicit only to avoid compiler warnings (-Wall)
-scanner.o: scanner.cpp
-	$(CC) $(DEBUG) -c scanner.cpp
-
+# Generate the scanner with Flex.
 scanner.cpp: fsp.lex parser.hpp
 	flex fsp.lex
 
-preproc.o: preproc.cpp
-	$(CC) $(DEBUG) -c preproc.cpp
-
+# Generate the preprocessor with Flex.
 preproc.cpp: preproc.lex
 	flex preproc.lex
+
+# Blackbox test against the testset.
+testing: normal
+	tests/test.sh
 
 ctags: tags
 	ctags -R
@@ -45,8 +62,9 @@ ctags: tags
 clean: cleanaur clc
 	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out preproc.cpp location.hh position.hh stack.hh *.orig
 
-testing: fspcc
-	tests/test.sh
+# Also remove the generated Makefile.gen
+cleandist: clean
+	-rm Makefile.gen
 
 lines:
 	wc -l $(WCIN)
@@ -60,10 +78,7 @@ aur:
 	python create_pkgbuild.py remote $(VER)
 
 fspcc-$(VER).tar.gz:
-	tar -czf fspcc-$(VER).tar.gz $(SOURCES)
-
-deps.gv: $(SOURCES)
-	python find_deps.py
+	tar -czf fspcc-$(VER).tar.gz $(TAR_CONTENT)
 
 cleanaur:
 	-rm *.tar.gz PKGBUILD
