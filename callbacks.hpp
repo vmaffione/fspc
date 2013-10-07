@@ -25,6 +25,10 @@ struct FspTranslator;
 
 void lts_name_extension(const vector<int>& values, string& extension);
 
+namespace yy {
+    class Lts;
+}
+
 SvpVec * callback__1(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__2(FspTranslator& tr, SvpVec * one, string * two); /*2*/
 SvpVec * callback__3(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
@@ -37,7 +41,7 @@ SvpVec * callback__10(FspTranslator& tr, SvpVec * one); /*17*/
 SvpVec * callback__11(FspTranslator& tr, string * one); /*1*/
 SvpVec * callback__13(FspTranslator& tr, SvpVec * one, SvpVec * two); /*3*/
 void * callback__14(FspTranslator& tr, string * one); /*19*/
-class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
+yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two, SvpVec * three, SvpVec * four, SvpVec * five); /*7*/
 void * callback__17(FspTranslator& tr, string * one, SvpVec * two); /*20*/
 Pvec * callback__18(FspTranslator& tr, string * one, SvpVec * two, Pvec * three); /*8*/
 void * callback__19(FspTranslator& tr, SvpVec * one); /*21*/
@@ -127,7 +131,7 @@ struct ParametricProcess: public SymbolValue {
     vector<int> parameter_defaults;
     vector<Callback *> record;
 
-    class yy::Lts * replay(struct FspTranslator& tr, const vector<int>& values);
+    yy::Lts * replay(struct FspTranslator& tr, const vector<int>& values);
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue * clone() const { return NULL; }

@@ -1277,7 +1277,7 @@ SymbolValue * yy::LtsComposition::clone() const
     lc->lts.resize(lts.size());
     for (unsigned int i=0; i<lts.size(); i++)
 	if (lts[i])
-	    lc->lts[i] = static_cast<class yy::Lts *>(lts[i]->clone());
+	    lc->lts[i] = static_cast<yy::Lts *>(lts[i]->clone());
 	else
 	    lc->lts[i] = NULL;
 

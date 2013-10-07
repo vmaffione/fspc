@@ -99,7 +99,7 @@ yy::Lts * ParametricProcess::replay(struct FspTranslator& tr,
 
     PROX(cout << "END Replay!!\n");
 
-    return static_cast<class yy::Lts *>(stack.back());
+    return static_cast<yy::Lts *>(stack.back());
 }
 
 void ParametricProcess::print() const
@@ -664,7 +664,7 @@ void * callback__14(FspTranslator& tr, string * one)
     return NULL;
 }
 
-class yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
+yy::Lts * callback__15(FspTranslator& tr, string * one, Pvec * two,
 			SvpVec * three, SvpVec * four, SvpVec * five)
 {
     PROP("process_def --> ... process_body ...");

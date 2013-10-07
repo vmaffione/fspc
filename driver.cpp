@@ -18,6 +18,9 @@
 /* Bison generated parser. */
 #include "parser.hpp"
 
+/* The parse tree structures. */
+#include "tree.hpp"
+
 
 using namespace std;
 

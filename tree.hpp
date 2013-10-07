@@ -90,9 +90,9 @@ class PvecTreeNode : public TreeNode {
 class LtsTreeNode : public TreeNode {
     public:
         yy::Lts res;
-        class yy::Lts *value;
+        yy::Lts *value;
 
-        LtsTreeNode(class yy::Lts *v) : value(v) { }
+        LtsTreeNode(yy::Lts *v) : value(v) { }
 };
 
 

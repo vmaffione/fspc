@@ -17,7 +17,7 @@
 #include "utils.hpp"
 #include "parser.hpp"
 #include "interface.hpp"
-#include "tree.hpp"
+
 
 using namespace std;
 
@@ -113,6 +113,10 @@ struct FspTranslator {
          FspDriver& driver)
 /* ... and declare it for the parser's sake. */
 YY_DECL;
+
+namespace yy {
+    class TreeNode;
+};
 
 /* Conducting the whole scanning and parsing of fspcc. */
 class FspDriver
