@@ -402,10 +402,27 @@ void yy::ActionRangeNode::translate(FspDriver& c)
             assert(FALSE);
         }
 
-    } else {
+    } else if (children.size() == 3) {
         /* Do the same with variable declarations. */
-        assert(IMPLEMENT);
-        res += "c";
+        DTC(VariableIdNode, vn, children[0]);
+        DTCS(RangeNode, rn, children[2]);
+        DTCS(SetNode, sn, children[2]);
+
+        if (rn) {
+            rn->res.set(res);
+            res.variable = vn->res;
+        } else if (sn) {
+            res = sn->res;
+            res.variable = vn->res;
+        } else {
+            assert(FALSE);
+        }
+if (res.actions.size() == 0) { // XXX remove a.s.a.p.
+    cout << "XXX2\n";
+    res += "xxx2";
+}
+    } else {
+        assert(FALSE);
     }
 }
 
