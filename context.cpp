@@ -282,3 +282,41 @@ bool NewContextSet::lookup(const string& name, string& v)
     return false;
 }
 
+bool NewContext::insert(const string& name, const string& s)
+{
+    for (unsigned int i=0; i<vars.size(); i++) {
+        if (name == vars[i]) {
+            return false;
+        }
+    }
+    vars.push_back(name);
+    vals.push_back(s);
+
+    return true;
+}
+
+bool NewContext::lookup(const string& name, string& ret)
+{
+    for (unsigned int i=0; i<vars.size(); i++) {
+        if (name == vars[i]) {
+            ret = vals[i];
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool NewContext::remove(const string& name)
+{
+    for (unsigned int i=0; i<vars.size(); i++) {
+        if (name == vars[i]) {
+            vars.erase(vars.begin() + i);
+            vals.erase(vals.begin() + i);
+            return true;
+        }
+    }
+
+    return false;
+}
+

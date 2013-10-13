@@ -19,6 +19,7 @@
 
 
 #include <cstring>
+#include <cstdlib>
 #include <set>
 #include <sstream>
 #include <fstream>
@@ -42,6 +43,13 @@ string int2string(int x)
     stringstream sstr;
     sstr << x;
     return sstr.str();
+}
+
+int string2int(const string& s)
+{
+    int ret = atoi(s.c_str());
+
+    return ret;
 }
 
 /* ========================= ActionsTable ================================ */
@@ -260,6 +268,11 @@ SetValue& SetValue::indexize(int index)
 SetValue& SetValue::indexize(const SetValue& ss)
 {
     return dotcat(ss);
+}
+
+SetValue& SetValue::indexize(const string& s)
+{
+    return dotcat(s);
 }
 
 SetValue& SetValue::indexize(int low, int high)

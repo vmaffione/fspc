@@ -11,6 +11,7 @@ using namespace std;
 using namespace yy;
 
 string int2string(int x);
+int string2int(const string& s);
 /*
 void int2string(int x, string& s)
 {
@@ -272,10 +273,13 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
     if (in) {
         res = in->res;
     } else if (vn) {
-        res = -1;
-        if (!c.ctxset.lookup(vn->res, res)) {
-   
+        string val;
+
+        if (!c.ctx.lookup(vn->res, val)) {
+            res = -1;
+            return; // TODO error
         }
+        res = string2int(val);
     } else if (cn) {
         SymbolValue *svp;
         ConstValue *cvp;
@@ -327,22 +331,116 @@ void yy::RangeNode::translate(FspDriver& c)
     }
 }
 
+/* This recursive method can be used to compute the set of action defined
+   by an arbitrary complex label expression, e.g.
+        'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
+    The caller should pass a SetValue object built using the
+    default constructor (e.g. an empty SetValue) to 'base', and 0 to 'idx'.
+    The elements vector contains pointers to strings, sets or action ranges.
+*/
+SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
+                                           const vector<TreeNode*>& elements,
+                                           unsigned int idx)
+{
+    assert(idx < elements.size());
+
+    /* Here we do the translation that was deferred in the lower layers.
+       This is necessary because of context expansion: When an action range
+       defines a variable in the middle of a label expression, that variable
+       can influence the translation of the expression elements which are on
+       the right of the variable definition: In these cases, we need to
+       retranslate those elements on the right many times, once for each
+       possibile variable value.
+    */
+    elements[idx]->translate(c);
+    if (idx == 0) {
+        /* This is the first element of a label expression. We set 'base'
+           to its initial value. */
+        DTCS(StringTreeNode, strn, elements[0]);
+        DTCS(SetNode, setn, elements[0]);
+
+        base = SetValue();
+        if (strn) {
+            /* Single action. */
+            base += strn->res;
+         } else if (setn) {
+            /* A set of actions. */
+            base += setn->res;
+        } else {
+            assert(FALSE);
+        }
+    } else {
+        /* Here we are in the middle (or the end) of a label expression.
+           We use the dotcat() or indexize() method to extend the current
+           'base'. */
+        DTCS(StringTreeNode, strn, elements[idx]);
+        DTCS(SetNode, setn, elements[idx]);
+        DTCS(ActionRangeNode, an, elements[idx]);
+
+        if (strn) {
+            base.dotcat(strn->res);
+        } else if (setn) {
+            base.dotcat(setn->res);
+        } else if (an) {
+            if (!an->res.hasVariable() || idx+1 >= elements.size()) {
+                /* When an action range doesn't define a variable, or when
+                   such a declaration is useless since this is the end of
+                   the expression, we just extend the current 'base'. */
+                base.indexize(an->res);
+            } else {
+                /* When an action range does define a variable, we must split
+                   the computation in N parts, one for each action in the
+                   action range, and then concatenate all the results. For
+                   each part, we extend the current 'base' with only an
+                   action, insert the variable into the context and do a
+                   recursive call. */
+                SetValue ret;
+                SetValue next_base;
+                bool ok;
+
+                for (unsigned int j=0; j<an->res.actions.size(); j++) {
+                    next_base = base;
+                    next_base.indexize(an->res.actions[j]);
+                    if (!c.ctx.insert(an->res.variable, an->res.actions[j])) {
+                        cout << "ERROR: ctx.insert()\n";
+                    }
+                    ret += computeActionLabels(c, next_base,
+                                               elements, idx+1);
+                    ok = c.ctx.remove(an->res.variable);
+                    assert(ok);
+                }
+                return ret;
+            }
+        } else {
+            assert(FALSE);
+        }
+    }
+
+    if (idx+1 >= elements.size()) {
+        /* If there are no more elements to scan, return what we have
+           collected so far: The current base, which has been extended
+           by the code above. */
+        return base;
+    }
+
+    /* It there are more elements to scan, extend the current base with
+       the rest of the elements and return the result. */
+    return computeActionLabels(c, base, elements, idx+1);
+}
+
 void yy::SetElementsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
+    /* Here we have a list of ActionLabels. We compute the set of actions
+       corresponding to each element by using the computeActionLabels()
+       protected method, and concatenate all the results. */
+
     res = SetValue();
+    for (unsigned int i=0; i<children.size(); i+=2) {
+        DTC(ActionLabelsNode, an, children[i]);
 
-    do {
-        DTC(ActionLabelsNode, an, children[0]);
-
-        res += an->res;
-    } while (0);
-
-    for (unsigned int i=1; i<children.size(); i+=2) {
-        DTC(ActionLabelsNode, an, children[i+1]);
-
-        res += an->res;
+        res += computeActionLabels(c, SetValue(), an->res, 0);
     }
 }
 
@@ -401,7 +499,6 @@ void yy::ActionRangeNode::translate(FspDriver& c)
         } else {
             assert(FALSE);
         }
-
     } else if (children.size() == 3) {
         /* Do the same with variable declarations. */
         DTC(VariableIdNode, vn, children[0]);
@@ -428,27 +525,29 @@ if (res.actions.size() == 0) { // XXX remove a.s.a.p.
 
 void yy::ActionLabelsNode::translate(FspDriver& c)
 {
-    translate_children(c);
-
-    /* This function builds a set of actions from an arbitrary complex
-       label expression, e.g.
-       a[1..2].b.{h,j,k}.c[3]
+    /* Given an arbitrary complex label expression, e.g.
+            'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
+       this function collects all the children that make up the expression,
+       i.e. a list of TreeNode* pointing to instances of LowerCaseIdNode,
+       SetNode or ActionRangeNode.
+       It's not necessary to call translate the children, since they
+       will be translated in the upper layers.
     */
 
-    res = SetValue();
+    res.clear();
 
-    /* The leftmost part of the label expression: Fill the set with
-       a single action or a set of actions. */
+    /* The leftmost part of the label expression: A single action
+       or a set of actions. */
     do {
         DTCS(StringTreeNode, strn, children[0]);
         DTCS(SetNode, setn, children[0]);
 
         if (strn) {
             /* Single action. */
-            res += strn->res;
+            res.push_back(strn);
         } else if (setn) {
             /* A set of actions. */
-            res += setn->res;
+            res.push_back(setn);
         } else {
             assert(FALSE);
         }
@@ -460,29 +559,28 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
         DTCS(OpenSquareNode, sqn, children[i]);
 
         if (pn) {
-            /* Apply the "." operator. */
+            /* Recognize the "." operator; Can follow a string or a set. */
             DTCS(StringTreeNode, strn, children[i+1]);
             DTCS(SetNode, setn, children[i+1]);
 
             if (strn) {
-                res.dotcat(strn->res);
+                res.push_back(strn);
             } else if (setn) {
-                res.dotcat(setn->res);
+                res.push_back(setn);
             } else {
                 assert(FALSE);
             }
             i += 2;
         } else if (sqn) {
-            /* Apply the "[]" operator. */
+            /* Recognize the "[]" operator; Must follow an action range. */
             DTC(ActionRangeNode, an, children[i+1]);
 
-            res.indexize(an->res);
+            res.push_back(an);
             i += 3;
         } else {
             assert(FALSE);
             break;
         }
     }
-    //cout << "Actions labels: "; res.print(); cout << "\n"; // XXX debug
 }
 

@@ -8,6 +8,7 @@
 
 #include "symbols_table.hpp"
 #include "lts.hpp"
+#include "context.hpp"
 #include "location.hh"
 
 
@@ -20,6 +21,10 @@ class TreeNode {
     protected:
         vector<TreeNode *> children;
         location loc;
+
+        SetValue computeActionLabels(FspDriver& c, SetValue base,
+                                     const vector<TreeNode*>& elements,
+                                     unsigned int idx);
 
     public:
         virtual ~TreeNode();
@@ -653,7 +658,7 @@ class SetNode : public SvpVecTreeNode {
 
 class ActionLabelsNode : public SvpVecTreeNode {
     public:
-        SetValue res;
+        vector<TreeNode *> res;
 
         string getClassName() const { return "ActionLabels"; }
         ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }

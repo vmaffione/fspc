@@ -93,11 +93,13 @@ struct SetValue: public SymbolValue {
     int type() const { return SymbolValue::Set; }
     SymbolValue * clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
+    bool hasVariable() const { return variable.size(); }
 
     SetValue& dotcat(const string&);
     SetValue& dotcat(const SetValue&);
     SetValue& indexize(int index);
     SetValue& indexize(const SetValue&);
+    SetValue& indexize(const string&);
     SetValue& indexize(int low, int high);
     SetValue& operator +=(const SetValue&);
     SetValue& operator +=(const string&);

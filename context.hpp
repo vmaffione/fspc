@@ -83,7 +83,7 @@ struct ContextsSetStack {
    the variables. Using the select_next() method is possible to iterate
    over the contexts. The lookup methods return the values relative to
    the currently selected context. */
-class NewContextSet {
+class NewContextSet { // XXX currently unused: remove??
     vector<string> range_vars;
     vector<RangeValue> range_vals;
     vector<int> cur_index_vals;
@@ -99,6 +99,17 @@ public:
     void select_first();
     bool lookup(const string&, int&);
     bool lookup(const string&, string&);
+};
+
+
+class NewContext {
+        vector<string> vars;
+        vector<string> vals;
+
+    public:
+        bool insert(const string&, const string&);
+        bool lookup(const string&, string&);
+        bool remove(const string&);
 };
 
 #endif
