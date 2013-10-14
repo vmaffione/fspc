@@ -157,11 +157,6 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     translate_children(c);
 }
 
-void yy::PrefixActionsNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
 void yy::BaseLocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -582,5 +577,165 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             break;
         }
     }
+}
+
+bool next_set_indexes(const vector<TreeNode *>& elements,
+                      vector<unsigned int>& indexes)
+{
+    unsigned int j = indexes.size() - 1;
+
+    assert(elements.size() && elements.size() == indexes.size());
+
+    for (;;) {
+        DTCS(StringTreeNode, strn, elements[j]);
+        DTCS(SetNode, setn, elements[j]);
+        DTCS(ActionRangeNode, an, elements[j]);
+
+        if (strn) {
+            /* This element contains just one action, and so there is
+               noting to iterate over. In other words, we always wraparound.
+               Just pass to the next element. */
+        } else if (setn) {
+            indexes[j]++;
+            if (indexes[j] == setn->res.actions.size()) {
+                /* Wraparaund: continue with the next element. */
+                indexes[j] = 0;
+            } else {
+                /* No wraparound: stop here. */
+                break;
+            }
+        } else if (an) {
+            indexes[j]++;
+            if (indexes[j] == an->res.actions.size()) {
+                /* Wraparaund: continue with the next element. */
+                indexes[j] = 0;
+            } else {
+                /* No wraparound: stop here. */
+                break;
+            }
+        } else {
+            assert(FALSE);
+        }
+        /* Continue with the next element, unless we are at the very
+           last one: In the last case tell the caller that all the
+           element combinations have been scanned. At this point
+           'indexes' contain all zeroes. */
+        if (j == 0) {
+            return false;
+        }
+        j--;
+    }
+
+    return true; /* There are more combinations. */
+}
+
+yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
+                                           const vector<TreeNode *>& als,
+                                           unsigned int idx)
+{
+    assert(idx < als.size());
+    DTC(ActionLabelsNode, an, als[idx]);
+    const vector<TreeNode *>& elements = an->res;
+    vector<unsigned int> indexes(elements.size());
+    Lts lts(LtsNode::Normal, &c.actions);
+    NewContext ctx = c.ctx;
+
+    /* Initialize the 'indexes' vector. */
+    for (unsigned int j=0; j<elements.size(); j++) {
+        indexes[j] = 0;
+    }
+
+    do {
+        string label;
+
+        /* Scan the expression from the left to the right, computing the
+           action label corresponding to 'indexes'. */
+        for (unsigned int j=0; j<elements.size(); j++) {
+            /* Here we do the translation that was deferred in the lower
+               layers. This is necessary because of context expansion: When
+               an action range defines a variable in the middle of a label
+               expression, that variable can influence the translation of the
+               expression elements which are on the right of the variable
+               definition: In these cases, we need to retranslate those
+               elements on the right many times, once for each
+               possibile variable value.
+            */
+            elements[j]->translate(c);
+            if (j == 0) {
+                /* This is the first element of a label expression. */
+                DTCS(StringTreeNode, strn, elements[j]);
+                DTCS(SetNode, setn, elements[j]);
+
+                if (strn) {
+                    /* Single action. */
+                    label = strn->res;
+                } else if (setn) {
+                    /* A set of actions. */
+                    label = setn->res.actions[ indexes[j] ];
+                } else {
+                    assert(FALSE);
+                }
+            } else {
+                /* Here we are in the middle (or the end) of a label
+                   expression. */
+                DTCS(StringTreeNode, strn, elements[j]);
+                DTCS(SetNode, setn, elements[j]);
+                DTCS(ActionRangeNode, an, elements[j]);
+
+                if (strn) {
+                    label += "." + strn->res;
+                } else if (setn) {
+                    label += "." + setn->res.actions[ indexes[j] ];
+                } else if (an) {
+                    label += "[" + an->res.actions[ indexes[j] ] + "]";
+                    if (an->res.hasVariable()) {
+                        if (!c.ctx.insert(an->res.variable,
+                                    an->res.actions[ indexes[j] ])) {
+                            cout << "ERROR: ctx.insert()\n";
+                        }
+                    }
+                } else {
+                    assert(FALSE);
+                }
+            }
+        }
+
+        Lts next = (idx+1 >= als.size()) ?
+                            Lts(LtsNode::Incomplete, &c.actions) :
+                            computePrefixActions(c, als, idx + 1);
+
+        /* Attach 'next' to 'lts' using 'label'. */
+        lts.zerocat(next, label);
+
+        /* Restore the saved context. */
+        c.ctx = ctx;
+
+        /* Increment indexes for the next 'label', and exits if there
+           are no more combinations. */
+    } while (next_set_indexes(elements, indexes));
+
+    return lts;
+}
+
+void yy::PrefixActionsNode::translate(FspDriver& c)
+{
+    vector<TreeNode *> action_labels;
+
+    translate_children(c);
+
+    /* Here we have a chain of ActionLabels, e.g.
+            't[1..2] -> g.y7 -> f[j:1..2][9] -> a[j+3].a.y'
+
+       From such a chain we want to build an incomplete LTS, e.g. and LTS
+       that lacks of some connections that will be completed by the upper
+       ActionPrefix node.
+    */
+    for (unsigned int i=0; i<children.size(); i+=2) {
+        DTC(ActionLabelsNode, an, children[i]);
+
+        action_labels.push_back(an);
+    }
+
+    res = computePrefixActions(c, action_labels, 0);
 }
 

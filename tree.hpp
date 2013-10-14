@@ -25,6 +25,9 @@ class TreeNode {
         SetValue computeActionLabels(FspDriver& c, SetValue base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
+        yy::Lts computePrefixActions(FspDriver& c,
+                                     const vector<TreeNode *>& als,
+                                     unsigned int idx);
 
     public:
         virtual ~TreeNode();

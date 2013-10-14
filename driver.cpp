@@ -251,6 +251,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	this->remove_file = "";
 
         /* Output a GraphViz representation of the parse tree. */
+        ActionsTable tmp_at = actions; /* XXX remove when everthing works. */
         assert(tree);
         ofstream treef("tree.gv");
         tree->print(treef);
@@ -258,6 +259,7 @@ int FspDriver::parse(const CompilerOptions& co)
         tree->translate(*this);
         delete tree;
         tree = NULL;
+        actions = tmp_at;
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */

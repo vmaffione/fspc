@@ -52,6 +52,7 @@ struct LtsNode {
     static const int Normal = 0;
     static const int End = 1;
     static const int Error = 2;
+    static const int Incomplete = 3;
 };
 
 typedef void (*LtsVisitFunction)(int, const struct LtsNode&, void*);
@@ -123,6 +124,7 @@ class Lts: public SymbolValue {
     void mergeAlphabetFrom(const set<int>& actions);
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss) const;
+    Lts& zerocat(const Lts& lts, const string& label);
 
     /* Methods to implement because of the base class. */
     void print() const;

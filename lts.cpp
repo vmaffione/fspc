@@ -1249,6 +1249,37 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
+/* This function extend *this appending 'lts' to the start node
+   (nodes[0]). The two Lts object are connected by an edge labeled
+   with 'label'.
+*/
+yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
+{
+    unsigned int offset = nodes.size();
+    Edge e;
+
+    /* Append the new nodes in this->nodes, offsetting the destinations. */
+    for (unsigned int i=0; i<lts.nodes.size(); i++) {
+        const LtsNode& n = lts.nodes[i];
+
+        nodes.push_back(n);
+        for (unsigned int j=0; j<n.children.size(); j++) {
+            Edge& e = nodes.back().children[j];
+
+            e.dest += offset;
+            alphabet.insert(e.action);
+        }
+    }
+
+    /* Make the connection. */
+    e.dest = offset;
+    e.action = atp->insert(label);
+    alphabet.insert(e.action);
+    nodes[0].children.push_back(e);
+
+    return *this;
+}
+
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Lts) {
