@@ -731,9 +731,30 @@ void yy::LocalProcessNode::translate(FspDriver& c)
             /* TODO all the other cases. */
             assert(FALSE);
         }
+    } else if (children.size() == 5) {
+        /* IF expression THEN local_process else_OPT. */
+        DTC(ExpressionNode, en, children[1]);
+        DTC(LocalProcessNode, pn, children[3]);
+        DTCS(ProcessElseNode, pen, children[4]);
+
+        if (en->res) {
+            res = pn->res;
+        } else if (pen) {
+            res = pen->res;
+        } else {
+            res = Lts(LtsNode::Normal, &c.actions);
+        }
     } else {
         assert(IMPLEMENT);
     }
+}
+
+void yy::ProcessElseNode::translate(FspDriver& c)
+{
+    translate_children(c);
+    DTC(LocalProcessNode, pn, children[1]);
+
+    res = pn->res;
 }
 
 void yy::ActionPrefixNode::translate(FspDriver& c)

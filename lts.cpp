@@ -175,6 +175,8 @@ yy::Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 void yy::Lts::print() const {
     stringstream ss;
 
+    assert(atp);
+
     atp->print();
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {

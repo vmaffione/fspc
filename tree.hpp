@@ -517,7 +517,7 @@ class ProcessElseNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ProcessElse"; }
         ProcessElseNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& dr);
 };
 
 class LocalProcessNode : public PvecTreeNode {
