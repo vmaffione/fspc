@@ -95,7 +95,6 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 
     node.type = type;
     nodes.push_back(node);
-    ntr = 0;
     terminal_sets_computed = false;
 }
 
@@ -141,7 +140,6 @@ void lts_convert(struct ProcessNode * pnp, void * opaque)
 	IFD(cout << "Adding " << e.action << ", " << e.dest << "\n");
 	ltsp->nodes[state].children.push_back(e);
 	ltsp->updateAlphabet(e.action);
-	ltsp->ntr++;
     }
 }
 
@@ -171,7 +169,6 @@ yy::Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
     f.vfp = &yy::lts_convert;
     f.opaque = &lcd;
 
-    ntr = 0;
     pnp->visit(f, true);
 }
 
@@ -187,7 +184,20 @@ void yy::Lts::print() const {
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
     printAlphabet(ss); cout << ss.str();
-    cout << numStates() << " states, " << ntr << " transitions\n";
+    cout << numStates() << " states, " << numTransitions() << " transitions\n";
+}
+
+int yy::Lts::numTransitions() const
+{
+    int n = 0;
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        for (unsigned int j=0; j<nodes[i].children.size(); j++) {
+            n++;
+        }
+    }
+
+    return n;
 }
 
 /* BFS on the LTS for useless states removal. */
@@ -200,9 +210,8 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
     int state;
     int n = 0;
 
-    /* We make sure that 'nodes' si empty and 'ntr' is zero. */
+    /* We make sure that 'nodes' is empty. */
     nodes.clear();
-    ntr = 0;
     terminal_sets_computed = false;
 
     /* Overestimation */
@@ -229,7 +238,6 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 	    e.dest = map[child];
 	    e.action = unconnected[state].children[j].action;
 	    nodes[map[state]].children.push_back(e);
-	    ntr++;
 	}
     }
 
@@ -253,7 +261,6 @@ void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
 
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
     nodes.clear();
-    ntr = 0;
     terminal_sets_computed = false;
     alphabet.clear();
 
@@ -1017,7 +1024,6 @@ yy::Lts& yy::Lts::property()
 					it!=to_error.end(); it++) {
 		e.action = *it;
 		nodes[i].children.push_back(e);
-		ntr++;
 	    }
 	}
 
@@ -1249,14 +1255,11 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-/* This function extend *this appending 'lts' to the start node
-   (nodes[0]). The two Lts object are connected by an edge labeled
-   with 'label'.
-*/
-yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
+/* This private function is used to concatenate 'lts' to *this, without creating any
+   transitions between the two. The original number of nodes in *this is returned. */
+unsigned int yy::Lts::append(const yy::Lts& lts)
 {
     unsigned int offset = nodes.size();
-    Edge e;
 
     /* Append the new nodes in this->nodes, offsetting the destinations. */
     for (unsigned int i=0; i<lts.nodes.size(); i++) {
@@ -1271,11 +1274,96 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
         }
     }
 
+    return offset;
+}
+
+/* This function extend *this appending 'lts' to the start node
+   (nodes[0]). The two Lts object are connected by an edge labeled
+   with 'label'.
+*/
+yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
+{
+    unsigned int offset = append(lts);
+    Edge e;
+
     /* Make the connection. */
     e.dest = offset;
     e.action = atp->insert(label);
     alphabet.insert(e.action);
     nodes[0].children.push_back(e);
+
+    return *this;
+}
+
+/* Remove incomplete nodes (and related transitions) from *this, compacting the
+   this->nodes vector. */
+void yy::Lts::removeIncompletes()
+{
+    vector<LtsNode> new_nodes;
+    vector<unsigned int> remap(nodes.size());
+    unsigned int cnt = 0;
+
+    /* Create the mapping from the original state names (indexes) to the names after
+       compacting. */
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        if (nodes[i].type == LtsNode::Incomplete) {
+            remap[i] = ~0U;  /* Undefined remapping. */
+        } else {
+            remap[i] = cnt++;
+        }
+    }
+
+    /* Regenerate this->nodes using the mapping. */
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        const LtsNode& n = nodes[i];
+
+        if (remap[i] != ~0U) {
+            /* Rule out incomplete nodes. */
+            new_nodes.push_back(LtsNode());
+            new_nodes.back().type = n.type;
+            for (unsigned int j=0; j<n.children.size(); j++) {
+                Edge e = n.children[j];
+
+                if (remap[e.dest] != ~0U) {
+                    /* Rule out transitions towards incomplete nodes. */
+                    e.dest = remap[e.dest];
+                    new_nodes.back().children.push_back(e);
+                }
+            }
+        }
+    }
+
+    nodes = new_nodes;
+}
+
+/* Append the Lts 'lts' to *this, replacing each transition x --> I (where 'x' is a node
+   in *this, and 'I' an incomplete node in *this) with the transition x -> lts[0], where
+   lts[0] is the zero node of 'lts'.
+   The incomplete nodes in *this are then removed from *this.
+*/
+yy::Lts& yy::Lts::incompcat(const yy::Lts& lts)
+{
+    unsigned int offset = append(lts);
+
+    assert(lts.nodes.size());
+
+    for (unsigned int i=0; i<offset; i++) {
+        LtsNode& n = nodes[i];
+
+        for (unsigned int j=0; j<n.children.size(); j++) {
+            Edge e = n.children[j];
+
+            if (nodes[e.dest].type == LtsNode::Incomplete) {
+                /* Replace incomplete node destinations with the zero
+                   node of 'lts'. */
+                e.dest = offset;
+                n.children.push_back(e);
+            }
+        }
+    }
+
+    /* Compact the Lts in order to remove incomplete nodes and related transitions. */
+    removeIncompletes();
 
     return *this;
 }

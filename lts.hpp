@@ -73,7 +73,6 @@ namespace yy {
 class Lts: public SymbolValue {
     vector<LtsNode> nodes;
     ActionsTable * atp;
-    int ntr;	/* Number of transactions */
 
     set<int> alphabet;
 
@@ -83,6 +82,8 @@ class Lts: public SymbolValue {
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
+    unsigned int append(const Lts&);
+    void removeIncompletes();
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
     friend class ::Serializer;
@@ -97,7 +98,7 @@ class Lts: public SymbolValue {
     Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
-    int numTransitions() const { return ntr; }
+    int numTransitions() const;
     int deadlockAnalysis(stringstream& ss) const;
     int terminalSets();
     bool isDeterministic() const;
@@ -125,6 +126,7 @@ class Lts: public SymbolValue {
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss) const;
     Lts& zerocat(const Lts& lts, const string& label);
+    Lts& incompcat(const Lts& lts);
 
     /* Methods to implement because of the base class. */
     void print() const;

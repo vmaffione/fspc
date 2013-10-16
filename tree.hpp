@@ -453,6 +453,8 @@ class IndicesNode : public SvpVecTreeNode {
 
 class GuardNode : public SvpVecTreeNode {
     public:
+        int res;
+
         string getClassName() const { return "Guard"; }
         GuardNode(SvpVec *v) : SvpVecTreeNode(v) { }
 

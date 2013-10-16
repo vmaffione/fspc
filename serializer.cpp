@@ -208,7 +208,7 @@ void Serializer::lts(const yy::Lts &lts, bool raw)
     }
 
     this->stl_string(lts.name, 1);
-    this->integer(lts.ntr, 1);
+    this->integer(lts.numTransitions(), 1);
     this->integer(lts.nodes.size(), 1);
     for (unsigned int i=0; i<lts.nodes.size(); i++) {
 	switch (lts.nodes[i].type) {
@@ -239,6 +239,7 @@ void Deserializer::lts(yy::Lts &lts, bool raw)
     char type;
     uint32_t x, y, z, end, error;
     Edge e;
+    int ntr;
 
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
@@ -251,7 +252,7 @@ void Deserializer::lts(yy::Lts &lts, bool raw)
     lts.terminal_sets_computed = false;
 
     this->stl_string(lts.name, 1);
-    this->integer(x, 1); lts.ntr = x;
+    this->integer(x, 1); ntr = x;
     this->integer(x, 1); lts.nodes.resize(x);
     this->integer(end, 1);
     this->integer(error, 1);
@@ -262,7 +263,7 @@ void Deserializer::lts(yy::Lts &lts, bool raw)
     if (error != ~0U) // XXX if (~error)
 	lts.nodes[error].type = LtsNode::Error;
 
-    for (int i=0; i<lts.ntr; i++) {
+    for (int i=0; i<ntr; i++) {
 	this->integer(x, 1);
 	this->integer(y, 1);
 	this->integer(z, 1);

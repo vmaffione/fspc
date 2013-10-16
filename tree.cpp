@@ -130,50 +130,9 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
     translate_children(c);
 }
 
-void yy::LocalProcessNode::translate(FspDriver& c)
-{
-    translate_children(c);
-
-    if (children.size() == 1) {
-        DTCS(BaseLocalProcessNode, b, children[0]);
-
-        if (b) {
-            res = b->res;
-        } else {
-            assert(FALSE);
-        }
-    } else {
-        assert(IMPLEMENT);
-    }
-}
-
 void yy::ChoiceNode::translate(FspDriver& c)
 {
     translate_children(c);
-}
-
-void yy::ActionPrefixNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
-void yy::BaseLocalProcessNode::translate(FspDriver& c)
-{
-    translate_children(c);
-
-    DTCS(EndNode, en, children[0]);
-    DTCS(StopNode, sn, children[0]);
-    DTCS(ErrorNode, ern, children[0]);
-
-    if (en) {
-        res = Lts(LtsNode::End, &c.actions);
-    } else if (sn) {
-        res = Lts(LtsNode::Normal, &c.actions);
-    } else if (ern) {
-        res = Lts(LtsNode::Error, &c.actions);
-    } else {
-        assert(FALSE);
-    }
 }
 
 void yy::ExpressionNode::translate(FspDriver& c)
@@ -737,5 +696,61 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
     }
 
     res = computePrefixActions(c, action_labels, 0);
+}
+
+void yy::BaseLocalProcessNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTCS(EndNode, en, children[0]);
+    DTCS(StopNode, sn, children[0]);
+    DTCS(ErrorNode, ern, children[0]);
+
+    if (en) {
+        res = Lts(LtsNode::End, &c.actions);
+    } else if (sn) {
+        res = Lts(LtsNode::Normal, &c.actions);
+    } else if (ern) {
+        res = Lts(LtsNode::Error, &c.actions);
+    } else {
+        /* TODO process_id indices_OPT. */
+        assert(FALSE);
+    }
+}
+
+void yy::LocalProcessNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    if (children.size() == 1) {
+        DTCS(BaseLocalProcessNode, b, children[0]);
+
+        if (b) {
+            res = b->res;
+        } else {
+            /* TODO all the other cases. */
+            assert(FALSE);
+        }
+    } else {
+        assert(IMPLEMENT);
+    }
+}
+
+void yy::ActionPrefixNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTCS(GuardNode, gn, children[0]);
+    DTC(PrefixActionsNode, pn, children[1]);
+    DTC(LocalProcessNode, lp, children[3]);
+
+    if (!gn || gn->res) {
+if (!lp->res.numStates()) {
+    cout << "XXX786\n";
+    lp->res=Lts(LtsNode::Normal, &c.actions);
+}
+        res = pn->res.incompcat(lp->res);
+        res.graphvizOutput("temp.lts");
+    }
 }
 
