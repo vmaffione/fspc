@@ -1257,24 +1257,33 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-/* This private function is used to concatenate 'lts' to *this, without creating any
-   transitions between the two. The original number of nodes in *this is returned. */
-unsigned int yy::Lts::append(const yy::Lts& lts)
+void LtsNode::offset(int offset)
 {
-    unsigned int offset = nodes.size();
+    for (unsigned int j=0; j<children.size(); j++) {
+        children[j].dest += offset;
+    }
+}
+
+/* This private function is used to concatenate 'lts' to *this, without
+   creating any transitions between the two. This function returns the
+   offset that can be used to compute the 'Edge.dest' field of connection
+   going from this->nodes[0] to a state in 'lts' after the concatenation.
+*/
+unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
+{
+    unsigned int offset = nodes.size() - first;
+
+    assert(first < nodes.size());
 
     /* Append the new nodes in this->nodes, offsetting the destinations. */
-    for (unsigned int i=0; i<lts.nodes.size(); i++) {
+    for (unsigned int i=first; i<lts.nodes.size(); i++) {
         const LtsNode& n = lts.nodes[i];
 
         nodes.push_back(n);
-        for (unsigned int j=0; j<n.children.size(); j++) {
-            Edge& e = nodes.back().children[j];
-
-            e.dest += offset;
-            alphabet.insert(e.action);
-        }
+        nodes.back().offset(offset);
     }
+
+    mergeAlphabetFrom(lts.alphabet);
 
     return offset;
 }
@@ -1285,7 +1294,7 @@ unsigned int yy::Lts::append(const yy::Lts& lts)
 */
 yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
 {
-    unsigned int offset = append(lts);
+    unsigned int offset = append(lts, 0);
     Edge e;
 
     /* Make the connection. */
@@ -1338,14 +1347,14 @@ void yy::Lts::removeIncompletes()
     nodes = new_nodes;
 }
 
-/* Append the Lts 'lts' to *this, replacing each transition x --> I (where 'x' is a node
-   in *this, and 'I' an incomplete node in *this) with the transition x -> lts[0], where
-   lts[0] is the zero node of 'lts'.
+/* Append the Lts 'lts' to *this, replacing each transition x --> I (where 
+   'x' is a node in *this, and 'I' an incomplete node in *this) with the
+   transition x -> lts[0], where lts[0] is the zero node of 'lts'.
    The incomplete nodes in *this are then removed from *this.
 */
 yy::Lts& yy::Lts::incompcat(const yy::Lts& lts)
 {
-    unsigned int offset = append(lts);
+    unsigned int offset = append(lts, 0);
 
     assert(lts.nodes.size());
 
@@ -1364,8 +1373,24 @@ yy::Lts& yy::Lts::incompcat(const yy::Lts& lts)
         }
     }
 
-    /* Compact the Lts in order to remove incomplete nodes and related transitions. */
+    /* Compact the Lts in order to remove incomplete nodes and related
+       transitions. */
     removeIncompletes();
+
+    return *this;
+}
+
+yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
+{
+    unsigned int offset = append(lts, 1);
+
+    /* Make the connections. */
+    for (unsigned int j=0; j<lts.nodes[0].children.size(); j++) {
+        Edge e = lts.nodes[0].children[j];
+
+        e.dest += offset;
+        nodes[0].children.push_back(e);
+    }
 
     return *this;
 }

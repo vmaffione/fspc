@@ -53,6 +53,8 @@ struct LtsNode {
     static const int End = 1;
     static const int Error = 2;
     static const int Incomplete = 3;
+
+    void offset(int offset);
 };
 
 typedef void (*LtsVisitFunction)(int, const struct LtsNode&, void*);
@@ -82,7 +84,7 @@ class Lts: public SymbolValue {
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
-    unsigned int append(const Lts&);
+    unsigned int append(const Lts&, unsigned int first);
     void removeIncompletes();
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
@@ -127,6 +129,7 @@ class Lts: public SymbolValue {
     void printAlphabet(stringstream& ss) const;
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const Lts& lts);
+    Lts& zeromerge(const Lts& lts);
 
     /* Methods to implement because of the base class. */
     void print() const;

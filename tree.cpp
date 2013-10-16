@@ -130,11 +130,6 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
     translate_children(c);
 }
 
-void yy::ChoiceNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
 void yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -718,6 +713,26 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     }
 }
 
+void yy::ChoiceNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    assert(children.size());
+
+    do {
+        DTC(ActionPrefixNode, apn, children[0]);
+
+        res = apn->res;
+    } while (0);
+
+    for (unsigned int i=2; i<children.size(); i+=2) {
+        DTC(ActionPrefixNode, apn, children[i]);
+
+        res.zeromerge(apn->res);
+    }
+    res.graphvizOutput("temp.lts");
+}
+
 void yy::LocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -731,6 +746,11 @@ void yy::LocalProcessNode::translate(FspDriver& c)
             /* TODO all the other cases. */
             assert(FALSE);
         }
+    } else if (children.size() == 3) {
+        /* ( choice ) */
+        DTC(ChoiceNode, cn, children[1]);
+
+        res = cn->res;
     } else if (children.size() == 5) {
         /* IF expression THEN local_process else_OPT. */
         DTC(ExpressionNode, en, children[1]);
@@ -752,6 +772,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
 void yy::ProcessElseNode::translate(FspDriver& c)
 {
     translate_children(c);
+
     DTC(LocalProcessNode, pn, children[1]);
 
     res = pn->res;
@@ -771,7 +792,6 @@ if (!lp->res.numStates()) {
     lp->res=Lts(LtsNode::Normal, &c.actions);
 }
         res = pn->res.incompcat(lp->res);
-        res.graphvizOutput("temp.lts");
     }
 }
 
