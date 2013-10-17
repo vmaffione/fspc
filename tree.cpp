@@ -10,6 +10,7 @@
 using namespace std;
 using namespace yy;
 
+
 string int2string(int x);
 int string2int(const string& s);
 /*
@@ -116,16 +117,6 @@ void yy::RootNode::translate(FspDriver& c)
 }
 
 void yy::ProcessDefNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
-void yy::ProcessIdNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
-void yy::ProcessBodyNode::translate(FspDriver& c)
 {
     translate_children(c);
 }
@@ -691,6 +682,22 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
     }
 
     res = computePrefixActions(c, action_labels, 0);
+
+    /* Push the variables contained in action_labels into c.ctxset. */
+    for (unsigned int i=0; i<action_labels.size(); i++) {
+        DTC(ActionLabelsNode, aln, action_labels[i]);
+        const vector<TreeNode *>& elements = aln->res;
+
+        for (unsigned int j=0; j<elements.size(); j++) {
+            DTCS(ActionRangeNode, arn, elements[j]);
+
+            if (arn && arn->res.hasVariable()) {
+                if (!c.ctxset.insert(arn->res.variable, arn->res)) {
+                    cout << "ERROR: ctx.insert()\n";
+                }
+            }
+        }
+    }
 }
 
 void yy::BaseLocalProcessNode::translate(FspDriver& c)
@@ -780,6 +787,8 @@ void yy::ProcessElseNode::translate(FspDriver& c)
 
 void yy::ActionPrefixNode::translate(FspDriver& c)
 {
+    NewContextSet ctxset = c.ctxset;  /* Save the context set. */
+
     translate_children(c);
 
     DTCS(GuardNode, gn, children[0]);
@@ -792,6 +801,24 @@ if (!lp->res.numStates()) {
     lp->res=Lts(LtsNode::Normal, &c.actions);
 }
         res = pn->res.incompcat(lp->res);
+    }
+
+    c.ctxset = ctxset;  /* Restore the original context set. */
+}
+
+void yy::ProcessBodyNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    if (children.size() == 1) {
+        DTC(LocalProcessNode, pn, children[0]);
+
+        res = pn->res;
+    } else if (children.size() == 3) {
+        // TODO local process_defs
+        res = Lts(LtsNode::Error, &c.actions);
+    } else {
+        assert(FALSE);
     }
 }
 

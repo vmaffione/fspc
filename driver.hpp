@@ -143,6 +143,7 @@ class FspDriver
 
         /* ========================== New API ======================== */
         NewContext ctx;
+        NewContextSet ctxset;
 
         /* The parsing result. */
         yy::TreeNode *tree;

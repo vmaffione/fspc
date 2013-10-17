@@ -59,12 +59,12 @@ testing: normal
 ctags: tags
 	ctags -R
 
-clean: cleanaur clc
-	-rm *.o fspcc scanner.cpp parser.cpp parser.hpp *.out preproc.cpp location.hh position.hh stack.hh *.orig
+clean:
+	-rm *.o fspcc *.out *.orig
 
 # Also remove the generated Makefile.gen
-cleandist: clean
-	-rm Makefile.gen
+cleandist: clean cleanaur clc
+	-rm Makefile.gen $(GENERATED)
 
 lines:
 	wc -l $(WCIN)

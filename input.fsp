@@ -1,1 +1,4 @@
-P5=(a[4..5][i:1..2][i]->P5).
+//P=(a[i:1..2].t->b[j:i..i*2]->c[i+j]->END).
+//P=(a->(a1->END|a2->STOP|a3->STOP)|b->(b1->ERROR|b2->END)|c->c1->(c2->STOP|c3->c4->END)).
+//P=(a->b->P).
+P=(a[i:1..2][3..4]->(b[i]->END)).

@@ -130,7 +130,6 @@ class VariableIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "VariableId"; }
         VariableIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class ConstantIdNode : public StringTreeNode {
@@ -144,14 +143,12 @@ class RangeIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "RangeId"; }
         RangeIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class SetIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "SetId"; }
         SetIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class ConstParameterIdNode : public StringTreeNode {
@@ -172,7 +169,6 @@ class ProcessIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ProcessId"; }
         ProcessIdNode(string *v) : StringTreeNode(v) { }
-        void translate(FspDriver& dr);
 };
 
 class ProgressIdNode : public StringTreeNode {
@@ -186,7 +182,6 @@ class VariableNode : public SvpVecTreeNode {
     public:
         string getClassName() const { return "Variable"; }
         VariableNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
 };
 
 class ExpressionNode : public SvpVecTreeNode {
