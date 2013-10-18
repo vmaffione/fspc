@@ -462,6 +462,7 @@ class WhenNode : public TreeNode {
 
 class PrefixActionsNode : public PvecTreeNode {
     public:
+        vector<TreeNode *> res;
         string getClassName() const { return "PrefixActions"; }
         PrefixActionsNode(Pvec *v) : PvecTreeNode(v) { }
         void translate(FspDriver& dr);

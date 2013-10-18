@@ -664,9 +664,9 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
 
 void yy::PrefixActionsNode::translate(FspDriver& c)
 {
-    vector<TreeNode *> action_labels;
-
     translate_children(c);
+
+    res.clear();
 
     /* Here we have a chain of ActionLabels, e.g.
             't[1..2] -> g.y7 -> f[j:1..2][9] -> a[j+3].a.y'
@@ -678,25 +678,7 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
     for (unsigned int i=0; i<children.size(); i+=2) {
         DTC(ActionLabelsNode, an, children[i]);
 
-        action_labels.push_back(an);
-    }
-
-    res = computePrefixActions(c, action_labels, 0);
-
-    /* Push the variables contained in action_labels into c.ctxset. */
-    for (unsigned int i=0; i<action_labels.size(); i++) {
-        DTC(ActionLabelsNode, aln, action_labels[i]);
-        const vector<TreeNode *>& elements = aln->res;
-
-        for (unsigned int j=0; j<elements.size(); j++) {
-            DTCS(ActionRangeNode, arn, elements[j]);
-
-            if (arn && arn->res.hasVariable()) {
-                if (!c.ctxset.insert(arn->res.variable, arn->res)) {
-                    cout << "ERROR: ctx.insert()\n";
-                }
-            }
-        }
+        res.push_back(an);
     }
 }
 
@@ -787,8 +769,6 @@ void yy::ProcessElseNode::translate(FspDriver& c)
 
 void yy::ActionPrefixNode::translate(FspDriver& c)
 {
-    NewContextSet ctxset = c.ctxset;  /* Save the context set. */
-
     translate_children(c);
 
     DTCS(GuardNode, gn, children[0]);
@@ -796,14 +776,14 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     DTC(LocalProcessNode, lp, children[3]);
 
     if (!gn || gn->res) {
+        res = computePrefixActions(c, pn->res, 0);
+
 if (!lp->res.numStates()) {
     cout << "XXX786\n";
     lp->res=Lts(LtsNode::Normal, &c.actions);
 }
-        res = pn->res.incompcat(lp->res);
+        res.incompcat(lp->res);
     }
-
-    c.ctxset = ctxset;  /* Restore the original context set. */
 }
 
 void yy::ProcessBodyNode::translate(FspDriver& c)
