@@ -95,7 +95,7 @@ class Lts: public SymbolValue {
     string name;
     int rank;
 
-    Lts() {} /* XXX used by tree: mark as invalid */
+    Lts() { atp = NULL; } /* Invalid instance, used by tree. */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */

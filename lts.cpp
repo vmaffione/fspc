@@ -49,6 +49,12 @@ using namespace std;
 
 #define ati(index) atp->reverse[index]
 
+#define CHECKATP(RET) \
+    if (atp == NULL) { \
+        cout << "[" << __LINE__ << "] Null atp\n"; \
+        return RET; \
+    }
+
 
 /* ====================== class Lts implementation ===================== */
 int yy::Lts::lookupAlphabet(int action) const
@@ -82,6 +88,8 @@ void yy::Lts::mergeAlphabetFrom(const set<int>& actions)
 void yy::Lts::printAlphabet(stringstream& ss) const
 {
     set<int>::iterator it;
+
+    CHECKATP();
 
     ss << "Alphabet: {";
     for (it=alphabet.begin(); it != alphabet.end(); it++)    
@@ -175,7 +183,7 @@ yy::Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
 void yy::Lts::print() const {
     stringstream ss;
 
-    assert(atp);
+    CHECKATP();
 
     atp->print();
     cout << "LTS " << name << "\n";
@@ -372,6 +380,8 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
     vector<int> action_trace(n);
     int pop, push;  /* Queue indexes */
 
+    CHECKATP(0);
+
     /* BFS looking for states with no outgoing transitions. We use a BFS
        instead of a DFS because the former is simpler to implement and
        because it finds the shortest path to each deadlock state. */
@@ -464,6 +474,8 @@ int yy::Lts::terminalSets()
     vector<bool> tarjan_state_in_component(n);
     vector<int> tarjan_component_actions(na);
     vector<bool> tarjan_action_in_component(na);
+
+    CHECKATP(0);
 
     /* Initialize DFS structures: at the beginning only the 0 node is on
        the state stack */
@@ -751,6 +763,8 @@ yy::Lts& yy::Lts::labeling(const string& label)
     set<int> new_alphabet;
     map<int, int> mapping;
 
+    CHECKATP(*this);
+
     terminal_sets_computed = false;
 
     /* Update the actions table, compute a one-to-one [old --> new] mapping
@@ -778,6 +792,8 @@ yy::Lts& yy::Lts::sharing(const SetValue& labels)
 {
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
+
+    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -822,6 +838,8 @@ yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
+
+    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -890,6 +908,8 @@ yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
 {
     set<int> new_alphabet;
 
+    CHECKATP(*this);
+
     terminal_sets_computed = false;
 
     /* Update the alphabet. */
@@ -943,6 +963,8 @@ yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
     vector<LtsNode> new_nodes(nodes.size());
+
+    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -1035,6 +1057,8 @@ yy::Lts& yy::Lts::property()
 int yy::Lts::progress(const string& progress_name, const SetValue& s,
 					    stringstream& ss)
 {
+    CHECKATP(0);
+
     terminalSets();
 
     for (unsigned int i=0; i<terminal_sets.size(); i++) {
@@ -1090,6 +1114,8 @@ void yy::Lts::graphvizOutput(const char * filename) const
     OutputData gvd;
     fstream fout;
 
+    CHECKATP();
+
     fout.open(filename, fstream::out);
     fout << "digraph G {\n";
     fout << "rankdir = LR;\n";
@@ -1125,6 +1151,8 @@ void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
 {
     int size = trace.size();
 
+    CHECKATP();
+
     if (!size)
 	return;
 
@@ -1141,6 +1169,8 @@ void yy::Lts::simulate(Shell& sh) const
     stringstream ss;
     int state = 0;
     vector<int> trace;
+
+    CHECKATP();
 
     for (;;) {
 	unsigned int i;
@@ -1244,6 +1274,8 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     LtsVisitObject lvo;
     OutputData bvd;
 
+    CHECKATP();
+
     fout << name << " = S0";
 
     lvo.vfp = basicVisitFunction;
@@ -1296,6 +1328,8 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
 {
     unsigned int offset = append(lts, 0);
     Edge e;
+
+    CHECKATP(*this);
 
     /* Make the connection. */
     e.dest = offset;
