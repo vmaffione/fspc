@@ -576,10 +576,12 @@ bool next_set_indexes(const vector<TreeNode *>& elements,
 
 yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
-                                           unsigned int idx)
+                                           unsigned int idx,
+                                           TreeNode *local_process)
 {
     assert(idx < als.size());
     DTC(ActionLabelsNode, an, als[idx]);
+    DTC(LocalProcessNode, lp, local_process);
     const vector<TreeNode *>& elements = an->res;
     vector<unsigned int> indexes(elements.size());
     Lts lts(LtsNode::Normal, &c.actions);
@@ -646,8 +648,8 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
         }
 
         Lts next = (idx+1 >= als.size()) ?
-                            Lts(LtsNode::Incomplete, &c.actions) :
-                            computePrefixActions(c, als, idx + 1);
+                            (lp->translate(c), lp->res) :
+                            computePrefixActions(c, als, idx + 1, lp);
 
         /* Attach 'next' to 'lts' using 'label'. */
         lts.zerocat(next, label);
@@ -698,6 +700,7 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         res = Lts(LtsNode::Error, &c.actions);
     } else {
         /* TODO process_id indices_OPT. */
+        res = Lts(LtsNode::Error, &c.actions);
         assert(FALSE);
     }
 }
@@ -719,7 +722,6 @@ void yy::ChoiceNode::translate(FspDriver& c)
 
         res.zeromerge(apn->res);
     }
-    res.graphvizOutput("temp.lts");
 }
 
 void yy::LocalProcessNode::translate(FspDriver& c)
@@ -776,13 +778,14 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     DTC(LocalProcessNode, lp, children[3]);
 
     if (!gn || gn->res) {
-        res = computePrefixActions(c, pn->res, 0);
+        res = computePrefixActions(c, pn->res, 0, lp);
 
 if (!lp->res.numStates()) {
     cout << "XXX786\n";
     lp->res=Lts(LtsNode::Normal, &c.actions);
 }
-        res.incompcat(lp->res);
+        res.graphvizOutput("temp.lts");
+        //res.incompcat(lp->res);
     }
 }
 

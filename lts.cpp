@@ -47,7 +47,13 @@ using namespace std;
 #endif
 
 
-#define ati(index) atp->reverse[index]
+string ati(struct ActionsTable * atp, unsigned int index)
+{
+    if (index >= atp->reverse.size())
+        return "UNKN";
+
+    return atp->reverse[index];
+}
 
 #define CHECKATP(RET) \
     if (atp == NULL) { \
@@ -93,7 +99,7 @@ void yy::Lts::printAlphabet(stringstream& ss) const
 
     ss << "Alphabet: {";
     for (it=alphabet.begin(); it != alphabet.end(); it++)    
-	ss << ati(*it) << ", ";
+	ss << ati(atp, *it) << ", ";
     ss << "}\n";
 }
 
@@ -190,7 +196,7 @@ void yy::Lts::print() const {
     for (unsigned int i=0; i<nodes.size(); i++) {
 	cout << "State " << i << ":\n";
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
-	    cout << "    " << ati(nodes[i].children[j].action)
+	    cout << "    " << ati(atp, nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
     printAlphabet(ss); cout << ss.str();
@@ -432,7 +438,7 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
 	    }
 	    ss << "	Trace to " << ed << ": ";
 	    for (j--; j>=0; j--)
-		ss << ati(action_trace[j]) << "->";
+		ss << ati(atp, action_trace[j]) << "->";
 	    ss << "\n\n";
 	    nd++;
 	}
@@ -618,12 +624,12 @@ int yy::Lts::terminalSets()
 		    }
 		    IFD(cout << "Trace to the terminal set:\n");
 		    for (j--; j>=0; j--) {
-			IFD(cout << "    " << ati(action_trace[j]) << "\n");
+			IFD(cout << "    " << ati(atp, action_trace[j]) << "\n");
 			ts.trace.push_back(action_trace[j]);
 		    }
 		    IFD(cout << "Actions in the terminal set: {");
 		    for (j=0; j<nca; j++) {
-			IFD(cout << ati(tarjan_component_actions[j]) << ", ");
+			IFD(cout << ati(atp, tarjan_component_actions[j]) << ", ");
 			ts.actions.insert(tarjan_component_actions[j]);
 		    }
 		    IFD(cout << "}\n");
@@ -919,7 +925,7 @@ yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(*it);
+		string action = ati(atp, *it);
 		pair<string::const_iterator, string::iterator> mm;
 		/* Prefix match: check if 's.actions[i]' is a prefix of
 		   'action'. */
@@ -935,7 +941,7 @@ yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
 	    /* The action s.actions[i] can hide multiple alphabet elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(*it);
+		string action = ati(atp, *it);
 		pair<string::const_iterator, string::iterator> mm;
 		/* Prefix match: check if 's.actions[i]' is a prefix of
 		   'action'. */
@@ -973,7 +979,7 @@ yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(*it);
+		string action = ati(atp, *it);
 		pair<string::const_iterator, string::iterator> mm;
 		/* Prefix match: check if 's.actions[i]' is a prefix of
 		   'action'. */
@@ -1077,12 +1083,12 @@ int yy::Lts::progress(const string& progress_name, const SetValue& s,
 		<< " and progress property " << progress_name << ":\n";
 	    cout << "	Trace to violation: ";
 	    for (unsigned int j=0; j<ts.trace.size(); j++)
-		cout << ati(ts.trace[j]) << "-> ";
+		cout << ati(atp, ts.trace[j]) << "-> ";
 	    cout << "\n";
 	    cout << "	Actions in terminal set: {";
 	    for (set<int>::iterator it=ts.actions.begin();
 		    it!=ts.actions.end(); it++)
-		cout << ati(*it) << ", ";
+		cout << ati(atp, *it) << ", ";
 	    cout << "}\n\n";
 	    
 	}
@@ -1105,7 +1111,7 @@ static void graphvizVisitFunction(int state, const struct LtsNode& node,
 
     for (unsigned int i=0; i<node.children.size(); i++)
 	(*(gvdp->fsptr)) << state << " -> " << node.children[i].dest
-	    << " [label = \"" << ati(node.children[i].action) << "\"];\n";
+	    << " [label = \"" << ati(atp, node.children[i].action) << "\"];\n";
 }
 
 void yy::Lts::graphvizOutput(const char * filename) const
@@ -1159,9 +1165,9 @@ void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
     ss << "    Current trace:\n";
     ss << "        ";
     for (int i=0; i<size-1; i++) {
-	ss << ati(trace[i]) << " -> ";
+	ss << ati(atp, trace[i]) << " -> ";
     }
-    ss << ati(trace[size-1]) << "\n";
+    ss << ati(atp, trace[size-1]) << "\n";
 }
 
 void yy::Lts::simulate(Shell& sh) const
@@ -1205,7 +1211,7 @@ choose:
 	ss << "    Elegible actions: \n";
 	for (i=0; i<elegible_actions.size(); i++) {
 	    ss << "	    (" << i+1 << ") "
-		    << ati(elegible_actions[i]) << "\n";
+		    << ati(atp, elegible_actions[i]) << "\n";
 	}
 	ss << "    Your choice ('q' to quit): ";
 	sh.putsstream(ss, false); ss.clear();
@@ -1260,10 +1266,10 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
 	*fsptr << "(";
 
 	for (int i=0; i<size-1; i++) {
-	    *fsptr << ati(node.children[i].action)
+	    *fsptr << ati(atp, node.children[i].action)
 		<< " -> S" << node.children[i].dest << "\n  | ";
 	}
-	*fsptr << ati(node.children[size-1].action)
+	*fsptr << ati(atp, node.children[size-1].action)
 	    << " -> S" << node.children[size-1].dest << ")";
     }
 }

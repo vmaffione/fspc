@@ -27,7 +27,8 @@ class TreeNode {
                                      unsigned int idx);
         yy::Lts computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
-                                     unsigned int idx);
+                                     unsigned int idx,
+                                     TreeNode *local_process);
 
     public:
         virtual ~TreeNode();
