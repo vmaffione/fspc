@@ -277,3 +277,18 @@ bool NewContext::remove(const string& name)
     return false;
 }
 
+bool NewContext::operator!=(const NewContext& c)
+{
+    if (vars.size() != c.vars.size()) {
+        return true;
+    }
+
+    for (unsigned int i=0; i<vars.size(); i++) {
+        if (vars[i] != c.vars[i] || vals[i] != c.vals[i]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+

@@ -105,6 +105,7 @@ class NewContext {
         bool insert(const string&, const string&);
         bool lookup(const string&, string&);
         bool remove(const string&);
+        bool operator!=(const NewContext& ctx);
 };
 
 #endif

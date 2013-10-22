@@ -108,6 +108,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     struct LtsNode node;
 
     node.type = type;
+    node.priv = ~0U;
     nodes.push_back(node);
     terminal_sets_computed = false;
 }
@@ -258,8 +259,10 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
     }
 
     for (int i=0; i<np; i++)
-	if (map[i] != -1)
+	if (map[i] != -1) {
 	    nodes[map[i]].type = unconnected[i].type;
+            nodes[map[i]].priv = ~0U;
+        }
 
     nodes.resize(n);
 }
@@ -1003,6 +1006,7 @@ yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
 	if (found) {
 	    new_nodes[i].children = new_children;
 	    new_nodes[i].type = nodes[i].type;
+            new_nodes[i].priv = nodes[i].priv;
 	} else
 	    new_nodes[i] = nodes[i];
     }
@@ -1372,6 +1376,7 @@ void yy::Lts::removeIncompletes()
             /* Rule out incomplete nodes. */
             new_nodes.push_back(LtsNode());
             new_nodes.back().type = n.type;
+            new_nodes.back().priv = n.priv;
             for (unsigned int j=0; j<n.children.size(); j++) {
                 Edge e = n.children[j];
 
@@ -1392,23 +1397,32 @@ void yy::Lts::removeIncompletes()
    transition x -> lts[0], where lts[0] is the zero node of 'lts'.
    The incomplete nodes in *this are then removed from *this.
 */
-yy::Lts& yy::Lts::incompcat(const yy::Lts& lts)
+yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
 {
-    unsigned int offset = append(lts, 0);
+    unsigned int num_nodes = nodes.size();
+    vector<unsigned int> offsets(ltsv.size());
+    unsigned int priv;
 
-    assert(lts.nodes.size());
+    for (unsigned int i=0; i<ltsv.size(); i++) {
+        offsets[i] = ~0U;
+    }
 
-    for (unsigned int i=0; i<offset; i++) {
-        LtsNode& n = nodes[i];
+    for (unsigned int i=0; i<num_nodes; i++) {
+        unsigned int sz = nodes[i].children.size();
 
-        for (unsigned int j=0; j<n.children.size(); j++) {
-            Edge e = n.children[j];
+        for (unsigned int j=0; j<sz; j++) {
+            Edge e = nodes[i].children[j];
 
             if (nodes[e.dest].type == LtsNode::Incomplete) {
+                priv = get_priv(e.dest);
+                assert(priv < offsets.size());
+                if (offsets[priv] == ~0U) {
+                    offsets[priv] = append(ltsv[priv], 0);
+                }
                 /* Replace incomplete node destinations with the zero
-                   node of 'lts'. */
-                e.dest = offset;
-                n.children.push_back(e);
+                   node of 'ltsv[priv]'. */
+                e.dest = offsets[priv];
+                nodes[i].children.push_back(e);
             }
         }
     }
@@ -1433,6 +1447,20 @@ yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
     }
 
     return *this;
+}
+
+void yy::Lts::set_priv(unsigned int state, unsigned int val)
+{
+    assert(state < nodes.size());
+
+    nodes[state].priv = val;
+}
+
+unsigned int yy::Lts::get_priv(unsigned int state)
+{
+    assert(state < nodes.size());
+
+    return nodes[state].priv;
 }
 
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)

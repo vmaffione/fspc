@@ -577,11 +577,10 @@ bool next_set_indexes(const vector<TreeNode *>& elements,
 yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
                                            unsigned int idx,
-                                           TreeNode *local_process)
+                                           vector<NewContext>& ctxcache)
 {
     assert(idx < als.size());
     DTC(ActionLabelsNode, an, als[idx]);
-    DTC(LocalProcessNode, lp, local_process);
     const vector<TreeNode *>& elements = an->res;
     vector<unsigned int> indexes(elements.size());
     Lts lts(LtsNode::Normal, &c.actions);
@@ -647,9 +646,28 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
             }
         }
 
-        Lts next = (idx+1 >= als.size()) ?
-                            (lp->translate(c), lp->res) :
-                            computePrefixActions(c, als, idx + 1, lp);
+        Lts next;
+        if (idx+1 >= als.size()) {
+            /* This was the last ActionLabels in the chain: We create an
+               incomplete node which represent an Lts which is the result
+               of a LocalProcessNode we will translate later (in the
+               ActionPrefixNode::translate method). However, we have to
+               save now the context that will be used in the deferred
+               translation. The incomplete node stores an index which refers
+               to a context in the 'ctxcache' array of saved contexts. */
+            if (!ctxcache.size() || c.ctx != ctxcache.back()) {
+                /* Optimization: Avoid to duplicate the last inserted
+                   context. */
+                ctxcache.push_back(c.ctx);
+            }
+            next = Lts(LtsNode::Incomplete, &c.actions);
+            /* Store the index in the 'priv' field. */
+            next.set_priv(0, ctxcache.size() - 1);
+        } else {
+            /* This was not the last ActionLabels in the chain. Get
+               the result of the remainder of the chain. */
+            next = computePrefixActions(c, als, idx + 1, ctxcache);
+        }
 
         /* Attach 'next' to 'lts' using 'label'. */
         lts.zerocat(next, label);
@@ -771,6 +789,9 @@ void yy::ProcessElseNode::translate(FspDriver& c)
 
 void yy::ActionPrefixNode::translate(FspDriver& c)
 {
+    vector<NewContext> ctxcache;
+    NewContext saved_ctx = c.ctx;
+
     translate_children(c);
 
     DTCS(GuardNode, gn, children[0]);
@@ -778,15 +799,28 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     DTC(LocalProcessNode, lp, children[3]);
 
     if (!gn || gn->res) {
-        res = computePrefixActions(c, pn->res, 0, lp);
+        vector<Lts> processes;
+
+        /* Compute an incomplete Lts, and the context related to
+           each incomplete node (ctxcache). */
+        res = computePrefixActions(c, pn->res, 0, ctxcache);
+        /* Translate 'lp' under all the contexts in ctxcache. */
+        for (unsigned int i=0; i<ctxcache.size(); i++) {
+            c.ctx = ctxcache[i];
+            lp->translate(c);
+            processes.push_back(lp->res);
+        }
 
 if (!lp->res.numStates()) {
     cout << "XXX786\n";
     lp->res=Lts(LtsNode::Normal, &c.actions);
 }
+        /* Connect the incomplete Lts to the computed translations. */
+        res.incompcat(processes);
         res.graphvizOutput("temp.lts");
-        //res.incompcat(lp->res);
     }
+
+    c.ctx = saved_ctx;
 }
 
 void yy::ProcessBodyNode::translate(FspDriver& c)

@@ -48,6 +48,7 @@ struct Edge {
 struct LtsNode {
     vector<Edge> children;
     unsigned int type; /* set if the node is an END node */
+    unsigned int priv;
 
     static const int Normal = 0;
     static const int End = 1;
@@ -128,8 +129,11 @@ class Lts: public SymbolValue {
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss) const;
     Lts& zerocat(const Lts& lts, const string& label);
-    Lts& incompcat(const Lts& lts);
+    Lts& incompcat(const vector<Lts>& ltsv);
     Lts& zeromerge(const Lts& lts);
+
+    void set_priv(unsigned int state, unsigned int val);
+    unsigned int get_priv(unsigned int state);
 
     /* Methods to implement because of the base class. */
     void print() const;
