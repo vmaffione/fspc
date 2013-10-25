@@ -1352,7 +1352,7 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
 
 /* Remove incomplete nodes (and related transitions) from *this, compacting the
    this->nodes vector. */
-void yy::Lts::removeIncompletes()
+void yy::Lts::removeType(unsigned int type)
 {
     vector<LtsNode> new_nodes;
     vector<unsigned int> remap(nodes.size());
@@ -1361,7 +1361,7 @@ void yy::Lts::removeIncompletes()
     /* Create the mapping from the original state names (indexes) to the names after
        compacting. */
     for (unsigned int i=0; i<nodes.size(); i++) {
-        if (nodes[i].type == LtsNode::Incomplete) {
+        if (nodes[i].type == type) {
             remap[i] = ~0U;  /* Undefined remapping. */
         } else {
             remap[i] = cnt++;
@@ -1429,7 +1429,7 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
 
     /* Compact the Lts in order to remove incomplete nodes and related
        transitions. */
-    removeIncompletes();
+    removeType(LtsNode::Incomplete);
 
     return *this;
 }
@@ -1462,6 +1462,35 @@ unsigned int yy::Lts::get_priv(unsigned int state)
 
     return nodes[state].priv;
 }
+
+yy::Lts& yy::Lts::resolve(const vector<unsigned int>& states)
+{
+    unsigned int priv;
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        unsigned int sz = nodes[i].children.size();
+
+        for (unsigned int j=0; j<sz; j++) {
+            Edge& e = nodes[i].children[j];
+
+            if (nodes[e.dest].type == LtsNode::Unresolved) {
+                priv = get_priv(e.dest);
+                assert(priv < states.size());
+                assert(states[priv] != ~0U);
+                /* Replace unresolved node destinations with the
+                   state specified in 'states'. */
+                e.dest = states[priv];
+            }
+        }
+    }
+
+    /* Compact the Lts in order to remove incomplete nodes and related
+       transitions. */
+    removeType(LtsNode::Unresolved);
+
+    return *this;
+}
+
 
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {

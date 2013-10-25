@@ -717,6 +717,7 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         /* TODO process_id indices_OPT. */
         res = Lts(LtsNode::Unresolved, &c.actions);
         c.unres_names.push_back(in->res);
+        c.resolved_states.push_back(~0U);
         res.set_priv(0, c.unres_names.size() - 1);
         assert(FALSE);
     }
@@ -739,7 +740,6 @@ void yy::ChoiceNode::translate(FspDriver& c)
 
         res.zeromerge(apn->res);
     }
-    res.graphvizOutput("temp.lts");
 }
 
 void yy::LocalProcessNode::translate(FspDriver& c)
@@ -922,8 +922,91 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     res.setv = sn->res;
 }
 
+void yy::ParameterNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ParameterIdNode, in, children[0]);
+    DTC(ExpressionNode, en, children[2]);
+    ConstValue *cvp = new ConstValue;
+
+    /* TODO overriding stuff
+    SymbolValue *svp;
+    if (c.identifiers.lookup(in->res, svp)) {
+        c.overridden_names.push_back(in->res);
+        c.overridden_values.push_back();
+    } */
+
+    /* Insert the parameter into the identifiers table. */
+    cvp->value = en->res;
+    if (!c.identifiers.insert(in->res, cvp)) {
+        // TODO manage the error
+        delete cvp;
+    }
+    /* Save the parameter name for subsequent removal. */
+    c.param_names.push_back(in->res);
+}
+
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);
+
+    DTC(ProcessIdNode, idn, children[0]);
+    DTC(ProcessBodyNode, bn, children[3]);
+    DTCS(AlphaExtNode, aen, children[4]);
+    DTCS(RelabelingNode, rn, children[5]);
+    DTCS(HidingInterfNode, hin, children[6]);
+
+    /* The base is the process body. */
+    res = bn->res;
+
+    /* Try to resolve the unresolved names against idn->res. */
+    assert(c.unres_names.size() == c.resolved_states.size());
+    for (unsigned int i=0; i<c.unres_names.size(); i++) {
+        if (c.unres_names[i] == idn->res) {
+            /* Fix unresolved references to the name of the whole
+               process (the state index is zero). */
+            c.resolved_states[i] = 0;
+        }
+    }
+
+    /* Check if there are still unresolved names. */
+    for (unsigned int i=0; i<c.resolved_states.size(); i++) {
+        if (c.resolved_states[i] == ~0U) {
+            cout << "Unresolved name!!\n";
+            // TODO manage the error (fail)
+            c.resolved_states[i] = 0;
+        }
+    }
+
+    res.resolve(c.resolved_states);
+
+    /* Extend the alphabet. */
+    if (aen) {
+        SetValue& sv = aen->res;
+
+        for (unsigned int i=0; i<sv.actions.size(); i++) {
+            res.updateAlphabet(c.actions.insert(sv.actions[i]));
+        }
+    }
+
+    /* TODO Merge sequential processes actions into the alphabet. */
+
+    /* Apply the relabeling operator. */
+    if (rn) {
+        NewRelabelingValue& rlv = rn->res;
+
+        for (unsigned int i=0; i<rlv.size(); i++) {
+            res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+        }
+    }
+
+    /* Apply the hiding/interface operator. */
+    if (hin) {
+        NewHidingValue& hv = hin->res;
+
+        res.hiding(hv.setv, hv.interface);
+    }
+    res.graphvizOutput("temp.lts");
 }
 

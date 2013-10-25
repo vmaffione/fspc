@@ -144,6 +144,10 @@ class FspDriver
         /* ========================== New API ======================== */
         NewContext ctx;
         vector<string> unres_names;
+        vector<unsigned int> resolved_states;
+
+        /* The names of the parameters used in a process definition. */
+        vector<string> param_names;
 
         /* The parsing result. */
         yy::TreeNode *tree;

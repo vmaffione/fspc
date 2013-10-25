@@ -87,7 +87,7 @@ class Lts: public SymbolValue {
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
     unsigned int append(const Lts&, unsigned int first);
-    void removeIncompletes();
+    void removeType(unsigned int type);
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
     friend class ::Serializer;
@@ -132,6 +132,7 @@ class Lts: public SymbolValue {
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const vector<Lts>& ltsv);
     Lts& zeromerge(const Lts& lts);
+    Lts& resolve(const vector<unsigned int>& states);
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state);

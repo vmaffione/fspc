@@ -163,7 +163,6 @@ class ParameterIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ParameterId"; }
         ParameterIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class ProcessIdNode : public StringTreeNode {
@@ -300,7 +299,7 @@ class BracesRelabelDefsNode : public SvpVecTreeNode {
 class ParameterNode : public TreeNode {
     public:
         string getClassName() const { return "Parameter"; }
-
+        void translate(FspDriver& c);
 };
 
 class AssignNode : public TreeNode {
@@ -567,7 +566,6 @@ class ProcessDefNode : public LtsTreeNode {
         string getClassName() const { return "ProcessDef"; }
         ProcessDefNode(Lts *v) : LtsTreeNode(v) { }
         void translate(FspDriver& dr);
-
 };
 
 class PeriodNode : public TreeNode {
