@@ -1176,11 +1176,7 @@ index_ranges_OPT:
 	PUSH($$);
     }
     | index_ranges {
-        SvpVecTreeNode *n1 = tree_downcast<SvpVecTreeNode>($1);
-
-        $$ = new IndexRangesNode(n1->value);
-        $$->addChild($1);
-
+        $$ = $1;
         POP(); PUSH($$);
     }
     ;

@@ -947,6 +947,19 @@ void yy::ParameterNode::translate(FspDriver& c)
     c.param_names.push_back(in->res);
 }
 
+void yy::IndexRangesNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    res.clear();
+
+    for (unsigned int i=0; i<children.size(); i+=3) {
+        DTC(ActionRangeNode, arn, children[i+1]);
+
+        res.push_back(arn->res);
+    }
+}
+
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);

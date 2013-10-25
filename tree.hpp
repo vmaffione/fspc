@@ -432,9 +432,11 @@ class SeqCompNode : public PvecTreeNode {
 
 class IndexRangesNode : public SvpVecTreeNode {
     public:
+        vector<SetValue> res;
+
         string getClassName() const { return "IndexRanges"; }
         IndexRangesNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class OpenSquareNode : public TreeNode {
