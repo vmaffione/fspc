@@ -143,6 +143,7 @@ class FspDriver
 
         /* ========================== New API ======================== */
         NewContext ctx;
+        vector<string> unres_names;
 
         /* The parsing result. */
         yy::TreeNode *tree;

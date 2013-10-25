@@ -54,6 +54,7 @@ struct LtsNode {
     static const int End = 1;
     static const int Error = 2;
     static const int Incomplete = 3;
+    static const int Unresolved = 4;
 
     void offset(int offset);
 };

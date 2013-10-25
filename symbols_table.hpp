@@ -136,6 +136,18 @@ struct ArgumentsValue: public SymbolValue {
     SymbolValue * clone() const;
 };
 
+struct NewRelabelingValue: public SymbolValue {
+    vector<SetValue> old_labels;
+    vector<SetValue> new_labels;
+
+    void add(const SetValue& n, const SetValue& o);
+    void merge(NewRelabelingValue& rlv);
+    unsigned int size() const { return old_labels.size(); }
+    void print() const;
+    int type() const { return SymbolValue::Relabeling; }
+    SymbolValue * clone() const;
+};
+
 struct RelabelingValue: public SymbolValue {
     vector<SetValue *> old_labels;
     vector<SetValue *> new_labels;

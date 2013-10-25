@@ -116,11 +116,6 @@ void yy::RootNode::translate(FspDriver& c)
     translate_children(c);
 }
 
-void yy::ProcessDefNode::translate(FspDriver& c)
-{
-    translate_children(c);
-}
-
 void yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -717,8 +712,12 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     } else if (ern) {
         res = Lts(LtsNode::Error, &c.actions);
     } else {
+        DTC(ProcessIdNode, in, children[0]);
+
         /* TODO process_id indices_OPT. */
-        res = Lts(LtsNode::Error, &c.actions);
+        res = Lts(LtsNode::Unresolved, &c.actions);
+        c.unres_names.push_back(in->res);
+        res.set_priv(0, c.unres_names.size() - 1);
         assert(FALSE);
     }
 }
@@ -740,6 +739,7 @@ void yy::ChoiceNode::translate(FspDriver& c)
 
         res.zeromerge(apn->res);
     }
+    res.graphvizOutput("temp.lts");
 }
 
 void yy::LocalProcessNode::translate(FspDriver& c)
@@ -811,13 +811,8 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
             processes.push_back(lp->res);
         }
 
-if (!lp->res.numStates()) {
-    cout << "XXX786\n";
-    lp->res=Lts(LtsNode::Normal, &c.actions);
-}
         /* Connect the incomplete Lts to the computed translations. */
         res.incompcat(processes);
-        res.graphvizOutput("temp.lts");
     }
 
     c.ctx = saved_ctx;
@@ -837,5 +832,77 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
     } else {
         assert(FALSE);
     }
+}
+
+void yy::AlphaExtNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(SetNode, sn, children[1]);
+
+    res = sn->res;
+}
+
+void yy::RelabelDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    assert(children.size() == 3);
+
+    DTCS(ActionLabelsNode, left, children[0]);
+    DTCS(ForallNode, fan, children[0]);
+
+    res = NewRelabelingValue();
+
+    if (left) {
+        DTC(ActionLabelsNode, right, children[2]);
+
+        res.add(computeActionLabels(c, SetValue(), left->res, 0),
+                computeActionLabels(c, SetValue(), right->res, 0));
+    } else if (fan) {
+        // TODO FORALL index_ranges braces_relabel_defs
+    } else {
+        assert(FALSE);
+    }
+}
+
+void yy::RelabelDefsNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    do {
+        DTC(RelabelDefNode, rn, children[0]);
+
+        res = rn->res;
+    } while (0);
+
+    for (unsigned int i=2; i<children.size(); i++) {
+        DTC(RelabelDefNode, rn, children[i]);
+
+        res.merge(rn->res);
+    }
+}
+
+void yy::BracesRelabelDefsNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(RelabelDefsNode, rn, children[1]);
+
+    res = rn->res;
+}
+
+void yy::RelabelingNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(BracesRelabelDefsNode, bd, children[1]);
+
+    res = bd->res;
+}
+
+void yy::ProcessDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
 }
 

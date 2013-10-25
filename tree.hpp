@@ -245,9 +245,11 @@ class InterfNode : public TreeNode {
 
 class RelabelDefNode : public SvpVecTreeNode {
     public:
+        NewRelabelingValue res;
+
         string getClassName() const { return "RelabelDef"; }
         RelabelDefNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class SlashNode : public TreeNode {
@@ -262,9 +264,11 @@ class ForallNode : public TreeNode {
 
 class RelabelDefsNode : public SvpVecTreeNode {
     public:
+        NewRelabelingValue res;
+
         string getClassName() const { return "RelabelDefs"; }
         RelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class CommaNode : public TreeNode {
@@ -284,9 +288,11 @@ class CloseCurlyNode : public TreeNode {
 
 class BracesRelabelDefsNode : public SvpVecTreeNode {
     public:
+        NewRelabelingValue res;
+
         string getClassName() const { return "BracesRelabelDefs"; }
         BracesRelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ParameterNode : public TreeNode {
@@ -526,9 +532,11 @@ class LocalProcessNode : public PvecTreeNode {
 
 class AlphaExtNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "AlphaExt"; }
         AlphaExtNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& dr);
 };
 
 class LocalProcessDefNode : public PvecTreeNode {
@@ -701,9 +709,11 @@ class LeftShiftNode : public TreeNode {
 
 class RelabelingNode : public SvpVecTreeNode {
     public:
+        NewRelabelingValue res;
+
         string getClassName() const { return "Relabeling"; }
         RelabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ProgressKwdNode : public TreeNode {

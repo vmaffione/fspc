@@ -359,6 +359,44 @@ SymbolValue * ArgumentsValue::clone() const
 }
 
 
+/* =========================== NewRelabelingValue =========================*/
+void NewRelabelingValue::print() const
+{
+    for (unsigned int i=0; i<old_labels.size(); i++) {
+	new_labels[i].print();
+	cout << " / ";
+	old_labels[i].print();
+	cout << "\n";
+    }
+}
+
+SymbolValue * NewRelabelingValue::clone() const
+{
+    NewRelabelingValue * rlv = new NewRelabelingValue;
+
+    for (unsigned int i=0; i<old_labels.size(); i++) {
+	rlv->old_labels.push_back(old_labels[i]);
+	rlv->new_labels.push_back(new_labels[i]);
+    }
+
+    return rlv;
+}
+
+void NewRelabelingValue::add(const SetValue& new_setvp,
+                             const SetValue& old_setvp)
+{
+    old_labels.push_back(old_setvp);
+    new_labels.push_back(new_setvp);
+}
+
+void NewRelabelingValue::merge(NewRelabelingValue& rlv)
+{
+    for (unsigned int i=0; i<rlv.old_labels.size(); i++) {
+        add(rlv.new_labels[i], rlv.old_labels[i]);
+    }
+}
+
+
 /* ============================ RelabelingValue ===========================*/
 void RelabelingValue::print() const
 {
