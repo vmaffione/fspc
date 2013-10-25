@@ -901,6 +901,27 @@ void yy::RelabelingNode::translate(FspDriver& c)
     res = bd->res;
 }
 
+void yy::HidingInterfNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTCS(HidingNode, hn, children[0]);
+    DTCS(InterfNode, in, children[0]);
+    DTC(SetNode, sn, children[1]);
+
+    res = NewHidingValue();
+
+    if (hn) {
+        res.interface = false;
+    } else if (in) {
+        res.interface = true;
+    } else {
+        assert(FALSE);
+    }
+
+    res.setv = sn->res;
+}
+
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);

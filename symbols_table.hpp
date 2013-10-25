@@ -162,6 +162,16 @@ struct RelabelingValue: public SymbolValue {
     ~RelabelingValue();
 };
 
+struct NewHidingValue: public SymbolValue {
+    SetValue setv;
+    bool interface;
+
+    NewHidingValue() : interface(false) { }
+    void print() const;
+    int type() const { return SymbolValue::Hiding; }
+    SymbolValue * clone() const;
+};
+
 struct HidingValue: public SymbolValue {
     SetValue * setvp;
     bool interface;

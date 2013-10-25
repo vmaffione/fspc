@@ -228,9 +228,11 @@ class PropertyNode : public TreeNode {
 
 class HidingInterfNode : public SvpVecTreeNode {
     public:
+        NewHidingValue res;
+
         string getClassName() const { return "HidingInterf"; }
         HidingInterfNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class HidingNode : public TreeNode {

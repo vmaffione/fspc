@@ -454,6 +454,28 @@ RelabelingValue::~RelabelingValue()
     }
 }
 
+
+/* ============================ NewHidingValue ===========================*/
+void NewHidingValue::print() const
+{
+    cout << "Hiding: ";
+    if (interface)
+	cout << "@ ";
+    else
+	cout << "\\ ";
+    setv.print();
+}
+
+SymbolValue * NewHidingValue::clone() const
+{
+    NewHidingValue * hv = new NewHidingValue;
+
+    hv->interface = interface;
+    hv->setv = setv;
+
+    return hv;
+}
+
 /* ============================= HidingValue =============================*/
 void HidingValue::print() const
 {
