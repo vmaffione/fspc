@@ -86,7 +86,6 @@ class Lts: public SymbolValue {
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
-    unsigned int append(const Lts&, unsigned int first);
     void removeType(unsigned int type);
 
     friend void lts_convert(struct ProcessNode * pnp, void * opaque);
@@ -129,10 +128,11 @@ class Lts: public SymbolValue {
     void mergeAlphabetFrom(const set<int>& actions);
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss) const;
+    unsigned int append(const Lts&, unsigned int first);
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const vector<Lts>& ltsv);
     Lts& zeromerge(const Lts& lts);
-    Lts& resolve(const vector<unsigned int>& states);
+    Lts& resolve();
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state);

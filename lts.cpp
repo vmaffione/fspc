@@ -1306,7 +1306,7 @@ void LtsNode::offset(int offset)
     }
 }
 
-/* This private function is used to concatenate 'lts' to *this, without
+/* This function is used to concatenate 'lts' to *this, without
    creating any transitions between the two. This function returns the
    offset that can be used to compute the 'Edge.dest' field of connection
    going from this->nodes[0] to a state in 'lts' after the concatenation.
@@ -1452,7 +1452,6 @@ yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
     assert(state < nodes.size());
-
     nodes[state].priv = val;
 }
 
@@ -1463,7 +1462,7 @@ unsigned int yy::Lts::get_priv(unsigned int state)
     return nodes[state].priv;
 }
 
-yy::Lts& yy::Lts::resolve(const vector<unsigned int>& states)
+yy::Lts& yy::Lts::resolve()
 {
     unsigned int priv;
 
@@ -1475,16 +1474,21 @@ yy::Lts& yy::Lts::resolve(const vector<unsigned int>& states)
 
             if (nodes[e.dest].type == LtsNode::Unresolved) {
                 priv = get_priv(e.dest);
-                assert(priv < states.size());
-                assert(states[priv] != ~0U);
-                /* Replace unresolved node destinations with the
-                   state specified in 'states'. */
-                e.dest = states[priv];
+                assert(priv != ~0U);
+                for (unsigned int k=0; k<nodes.size(); k++) {
+                    if (nodes[k].type != LtsNode::Unresolved
+                                    && get_priv(k) == priv) {
+                        /* Replace the unresolved node destination with the
+                           state 'k'. */
+                        e.dest = k;
+                        break;
+                    }
+                }
             }
         }
     }
 
-    /* Compact the Lts in order to remove incomplete nodes and related
+    /* Compact the Lts in order to remove unresolved nodes and related
        transitions. */
     removeType(LtsNode::Unresolved);
 

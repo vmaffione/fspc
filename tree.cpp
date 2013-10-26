@@ -6,6 +6,7 @@
 #include "tree.hpp"
 #include "driver.hpp"
 #include "utils.hpp"
+#include "unresolved.hpp"
 
 using namespace std;
 using namespace yy;
@@ -524,7 +525,11 @@ bool next_set_indexes(const vector<TreeNode *>& elements,
 {
     unsigned int j = indexes.size() - 1;
 
-    assert(elements.size() && elements.size() == indexes.size());
+    assert(elements.size() == indexes.size());
+
+    if (!elements.size()) {
+        return false;
+    }
 
     for (;;) {
         DTCS(StringTreeNode, strn, elements[j]);
@@ -713,12 +718,12 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         res = Lts(LtsNode::Error, &c.actions);
     } else {
         DTC(ProcessIdNode, in, children[0]);
+        unsigned int ui;
 
         /* TODO process_id indices_OPT. */
         res = Lts(LtsNode::Unresolved, &c.actions);
-        c.unres_names.push_back(in->res);
-        c.resolved_states.push_back(~0U);
-        res.set_priv(0, c.unres_names.size() - 1);
+        ui = c.unres.add(in->res);
+        res.set_priv(0, ui);
         assert(FALSE);
     }
 }
@@ -753,7 +758,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
             res = b->res;
         } else {
             /* TODO all the other cases. */
-            assert(FALSE);
+            res = Lts(LtsNode::Error, &c.actions);
         }
     } else if (children.size() == 3) {
         /* ( choice ) */
@@ -774,6 +779,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
             res = Lts(LtsNode::Normal, &c.actions);
         }
     } else {
+        res = Lts(LtsNode::Error, &c.actions);
         assert(IMPLEMENT);
     }
 }
@@ -949,15 +955,87 @@ void yy::ParameterNode::translate(FspDriver& c)
 
 void yy::IndexRangesNode::translate(FspDriver& c)
 {
-    translate_children(c);
+    translate_children(c); // XXX useless because of deferred translation
 
     res.clear();
 
     for (unsigned int i=0; i<children.size(); i+=3) {
         DTC(ActionRangeNode, arn, children[i+1]);
 
-        res.push_back(arn->res);
+        res.push_back(arn);
     }
+}
+
+void yy::LocalProcessDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ProcessIdNode, in, children[0]);
+    DTC(IndexRangesNode, irn, children[1]);
+    DTC(LocalProcessNode, lp, children[3]);
+
+    const vector<TreeNode *>& elements = irn->res;
+    vector<unsigned int> indexes(elements.size());
+    NewContext ctx = c.ctx;
+    bool first = true;
+
+    /* Initialize the 'indexes' vector, used to iterate over all the
+       possible index combinations. */
+    for (unsigned int j=0; j<elements.size(); j++) {
+        indexes[j] = 0;
+    }
+
+    do {
+        string index_string;
+        unsigned int ui;
+
+        /* Scan the ranges from the left to the right, computing the
+           '[x][y][z]...' string corresponding to 'indexes'. */
+        for (unsigned int j=0; j<elements.size(); j++) {
+            /* Here we do the translation that was deferred in the lower
+               layers. */
+            elements[j]->translate(c);
+            DTC(ActionRangeNode, an, elements[j]);
+
+            if (an) {
+                index_string += "[" + an->res.actions[ indexes[j] ] + "]";
+                if (an->res.hasVariable()) {
+                    if (!c.ctx.insert(an->res.variable,
+                                an->res.actions[ indexes[j] ])) {
+                        cout << "ERROR: ctx.insert()\n";
+                    }
+                }
+            } else {
+                assert(FALSE);
+            }
+        }
+
+        /* Translate the LocalProcess using the current context. */
+        lp->translate(c);
+
+        /* The name of a local process name is the concatenation of
+           'process_id' and the 'index_string', e.g. 'P' + '[3][1]'. */
+        ui = c.unres.add(in->res + index_string);
+        lp->res.set_priv(0, ui);
+
+        if (first) {
+            first = false;
+            res = lp->res;
+        } else {
+            res.append(lp->res, 0);
+        }
+
+        /* Restore the saved context. */
+        c.ctx = ctx;
+
+        /* Increment 'indexes' for the next 'index_string', and exits if
+           there are no more combinations. */
+    } while (next_set_indexes(elements, indexes));
+}
+
+void yy::LocalProcessDefsNode::translate(FspDriver& c)
+{
+    translate_children(c);
 }
 
 void yy::ProcessDefNode::translate(FspDriver& c)
@@ -969,30 +1047,15 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     DTCS(AlphaExtNode, aen, children[4]);
     DTCS(RelabelingNode, rn, children[5]);
     DTCS(HidingInterfNode, hin, children[6]);
+    unsigned int ui;
 
     /* The base is the process body. */
     res = bn->res;
 
-    /* Try to resolve the unresolved names against idn->res. */
-    assert(c.unres_names.size() == c.resolved_states.size());
-    for (unsigned int i=0; i<c.unres_names.size(); i++) {
-        if (c.unres_names[i] == idn->res) {
-            /* Fix unresolved references to the name of the whole
-               process (the state index is zero). */
-            c.resolved_states[i] = 0;
-        }
-    }
+    ui = c.unres.add(idn->res);
+    res.set_priv(0, ui);
 
-    /* Check if there are still unresolved names. */
-    for (unsigned int i=0; i<c.resolved_states.size(); i++) {
-        if (c.resolved_states[i] == ~0U) {
-            cout << "Unresolved name!!\n";
-            // TODO manage the error (fail)
-            c.resolved_states[i] = 0;
-        }
-    }
-
-    res.resolve(c.resolved_states);
+    res.resolve();
 
     /* Extend the alphabet. */
     if (aen) {

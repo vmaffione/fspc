@@ -432,7 +432,7 @@ class SeqCompNode : public PvecTreeNode {
 
 class IndexRangesNode : public SvpVecTreeNode {
     public:
-        vector<SetValue> res;
+        vector<TreeNode *> res;
 
         string getClassName() const { return "IndexRanges"; }
         IndexRangesNode(SvpVec *v) : SvpVecTreeNode(v) { }
@@ -546,14 +546,14 @@ class LocalProcessDefNode : public PvecTreeNode {
     public:
         string getClassName() const { return "LocalProcessDef"; }
         LocalProcessDefNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class LocalProcessDefsNode : public PvecTreeNode {
     public:
         string getClassName() const { return "LocalProcessDefs"; }
         LocalProcessDefsNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ProcessBodyNode : public PvecTreeNode {

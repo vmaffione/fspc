@@ -17,6 +17,7 @@
 #include "utils.hpp"
 #include "parser.hpp"
 #include "interface.hpp"
+#include "unresolved.hpp"
 
 
 using namespace std;
@@ -143,8 +144,8 @@ class FspDriver
 
         /* ========================== New API ======================== */
         NewContext ctx;
-        vector<string> unres_names;
-        vector<unsigned int> resolved_states;
+
+        UnresolvedNames unres;
 
         /* The names of the parameters used in a process definition. */
         vector<string> param_names;
