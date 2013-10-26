@@ -1155,8 +1155,13 @@ indices:
 	if (driver.record_mode_on)
 	    driver.parametric->record.push_back(new Callback_V_VV(&callback__36));
 	ret = callback__36(driver.tr, n1->value, n3->value);
-	$$ = new IndicesNode(ret);
-	$$->addChild($1);
+        if (driver.iterated_tree) {
+            $$ = $1;
+            n1->value = ret;
+        } else {
+            $$ = new IndicesNode(ret);
+            $$->addChild($1);
+        }
 	$$->addChild(new OpenSquareNode());
 	$$->addChild($3);
 	$$->addChild(new CloseSquareNode());

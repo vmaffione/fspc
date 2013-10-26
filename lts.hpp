@@ -135,7 +135,7 @@ class Lts: public SymbolValue {
     Lts& resolve();
 
     void set_priv(unsigned int state, unsigned int val);
-    unsigned int get_priv(unsigned int state);
+    unsigned int get_priv(unsigned int state) const;
 
     /* Methods to implement because of the base class. */
     void print() const;

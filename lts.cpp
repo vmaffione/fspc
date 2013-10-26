@@ -195,7 +195,7 @@ void yy::Lts::print() const {
     atp->print();
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
-	cout << "State " << i << ":\n";
+	cout << "State " << i << "(priv=" << get_priv(i) << "):\n";
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    cout << "    " << ati(atp, nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
@@ -702,6 +702,10 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
     vector<int> frontier(n);
     vector<bool> seen(n);
     int pop, push;
+
+    if (!n) {
+        return;
+    }
 
     pop = 0;
     push = 1;
@@ -1455,7 +1459,7 @@ void yy::Lts::set_priv(unsigned int state, unsigned int val)
     nodes[state].priv = val;
 }
 
-unsigned int yy::Lts::get_priv(unsigned int state)
+unsigned int yy::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
 

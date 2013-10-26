@@ -702,6 +702,19 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
     }
 }
 
+void yy::IndicesNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    res = string();
+
+    for (unsigned int i=0; i<children.size(); i+=3) {
+        DTC(ExpressionNode, en, children[i+1]);
+
+        res += "[" + int2string(en->res) + "]";
+    }
+}
+
 void yy::BaseLocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -718,11 +731,15 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         res = Lts(LtsNode::Error, &c.actions);
     } else {
         DTC(ProcessIdNode, in, children[0]);
+        DTCS(IndicesNode, ixn, children[1]);
         unsigned int ui;
+        string name = in->res;
 
-        /* TODO process_id indices_OPT. */
         res = Lts(LtsNode::Unresolved, &c.actions);
-        ui = c.unres.add(in->res);
+        if (ixn) {
+            name += ixn->res;
+        }
+        ui = c.unres.add(name);
         res.set_priv(0, ui);
         assert(FALSE);
     }
@@ -828,13 +845,15 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    if (children.size() == 1) {
-        DTC(LocalProcessNode, pn, children[0]);
+    DTC(LocalProcessNode, pn, children[0]);
 
+    if (children.size() == 1) {
         res = pn->res;
     } else if (children.size() == 3) {
-        // TODO local process_defs
-        res = Lts(LtsNode::Error, &c.actions);
+        DTC(LocalProcessDefsNode, lpd, children[2]);
+
+        res = pn->res;
+        res.append(lpd->res, 0);
     } else {
         assert(FALSE);
     }
@@ -1036,6 +1055,18 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
 void yy::LocalProcessDefsNode::translate(FspDriver& c)
 {
     translate_children(c);
+
+    do {
+        DTC(LocalProcessDefNode, lpd, children[0]);
+
+        res = lpd->res;
+    } while (0);
+
+    for (unsigned int i=2; i<children.size(); i+=2) {
+        DTC(LocalProcessDefNode, lpd, children[i]);
+
+        res.append(lpd->res, 0);
+    }
 }
 
 void yy::ProcessDefNode::translate(FspDriver& c)

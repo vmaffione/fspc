@@ -451,9 +451,11 @@ class CloseSquareNode : public TreeNode {
 
 class IndicesNode : public SvpVecTreeNode {
     public:
+        string res;
+
         string getClassName() const { return "Indices"; }
         IndicesNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class GuardNode : public SvpVecTreeNode {
