@@ -786,6 +786,49 @@ void yy::ChoiceNode::translate(FspDriver& c)
     }
 }
 
+void yy::ArgumentListNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    res.clear();
+    for (unsigned int i=0; i<children.size(); i++) {
+        DTC(ExpressionNode, en, children[i]);
+
+        res.push_back(en->res);
+    }
+}
+
+void yy::ArgumentsNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ArgumentListNode, al, children[1]);
+
+    res = al->res;
+}
+
+void yy::ProcessRefSeqNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ProcessIdNode, in, children[0]);
+    DTCS(ArgumentsNode, an, children[1]);
+    string ref = in->res;
+
+    if (an) {
+        ref += "(";
+        for (unsigned int i=0; i<an->res.size(); i++) {
+            ref += int2string(an->res[i]);
+            if (i != an->res.size() - 1) {
+                ref += ",";
+            }
+        }
+        ref += ")";
+    }
+
+cout << ref << "\n";
+}
+
 void yy::LocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);

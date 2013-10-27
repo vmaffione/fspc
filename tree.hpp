@@ -392,23 +392,27 @@ class CompositeDefNode : public TreeNode {
 
 class ArgumentListNode : public SvpVecTreeNode {
     public:
+        vector<int> res;
+
         string getClassName() const { return "ArgumentList"; }
         ArgumentListNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ArgumentsNode : public SvpVecTreeNode {
     public:
+        vector<int> res;
+
         string getClassName() const { return "Arguments"; }
         ArgumentsNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ProcessRefSeqNode : public PvecTreeNode {
     public:
         string getClassName() const { return "ProcessRefSeq"; }
         ProcessRefSeqNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class SeqProcessListNode : public PvecTreeNode {
