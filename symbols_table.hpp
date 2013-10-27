@@ -194,6 +194,15 @@ struct PriorityValue: public SymbolValue {
     ~PriorityValue();
 };
 
+struct NewParametricProcess : public SymbolValue {
+    vector<string> names;
+    vector<int> defaults;
+
+    void print() const;
+    int type() const { return SymbolValue::ParametricProcess; }
+    SymbolValue *clone() const;
+};
+
 struct ProcessBase {
     virtual bool unresolved() const = 0;
     virtual bool connected() const { return false; }

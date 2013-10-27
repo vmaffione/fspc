@@ -148,7 +148,7 @@ class FspDriver
         UnresolvedNames unres;
 
         /* The names of the parameters used in a process definition. */
-        vector<string> param_names;
+        NewParametricProcess paramproc;
 
         /* The parsing result. */
         yy::TreeNode *tree;

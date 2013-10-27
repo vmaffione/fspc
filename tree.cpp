@@ -1039,7 +1039,8 @@ void yy::ParameterNode::translate(FspDriver& c)
         delete cvp;
     }
     /* Save the parameter name for subsequent removal. */
-    c.param_names.push_back(in->res);
+    c.paramproc.names.push_back(in->res);
+    c.paramproc.defaults.push_back(en->res);
 }
 
 void yy::IndexRangesNode::translate(FspDriver& c)
@@ -1216,9 +1217,10 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* Do the cleaning up. */
     c.ctx = ctx;
     c.unres.clear();
-    for (unsigned int i=0; i<c.param_names.size(); i++) {
-        c.identifiers.remove(c.param_names[i]);
+    for (unsigned int i=0; i<c.paramproc.names.size(); i++) {
+        c.identifiers.remove(c.paramproc.names[i]);
     }
-    c.param_names.clear();
+    c.paramproc.names.clear();
+    c.paramproc.defaults.clear();
 }
 

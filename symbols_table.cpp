@@ -536,6 +536,26 @@ PriorityValue::~PriorityValue()
 }
 
 
+/* ======================== NewParametricProcess ========================= */
+void NewParametricProcess::print() const
+{
+    cout << "ParametricProcess: ";
+    for (unsigned int i=0; i<names.size(); i++) {
+        cout << "   " << names[i] << " [" << defaults[i] << "]\n";
+    }
+}
+
+SymbolValue * NewParametricProcess::clone() const
+{
+    NewParametricProcess * pp = new NewParametricProcess;
+
+    pp->names = names;
+    pp->defaults = defaults;
+
+    return pp;
+}
+
+
 /* ============================= Pvec =================================== */
 void Pvec::print(struct ActionsTable * atp)
 {
