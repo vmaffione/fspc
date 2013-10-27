@@ -195,7 +195,8 @@ void yy::Lts::print() const {
     atp->print();
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
-	cout << "State " << i << "(priv=" << get_priv(i) << "):\n";
+	cout << "State " << i << "(priv=" << get_priv(i) << ", type=" <<
+            nodes[i].type << "):\n";
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    cout << "    " << ati(atp, nodes[i].children[j].action)
 		    << " --> " << nodes[i].children[j].dest << "\n";
@@ -261,7 +262,7 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
     for (int i=0; i<np; i++)
 	if (map[i] != -1) {
 	    nodes[map[i]].type = unconnected[i].type;
-            nodes[map[i]].priv = ~0U;
+            nodes[map[i]].priv = unconnected[i].priv;
         }
 
     nodes.resize(n);
@@ -1466,7 +1467,7 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
     return nodes[state].priv;
 }
 
-yy::Lts& yy::Lts::resolve()
+unsigned int yy::Lts::resolve()
 {
     unsigned int priv;
 
@@ -1477,6 +1478,8 @@ yy::Lts& yy::Lts::resolve()
             Edge& e = nodes[i].children[j];
 
             if (nodes[e.dest].type == LtsNode::Unresolved) {
+                bool found = false;
+
                 priv = get_priv(e.dest);
                 assert(priv != ~0U);
                 for (unsigned int k=0; k<nodes.size(); k++) {
@@ -1485,8 +1488,12 @@ yy::Lts& yy::Lts::resolve()
                         /* Replace the unresolved node destination with the
                            state 'k'. */
                         e.dest = k;
+                        found = true;
                         break;
                     }
+                }
+                if (!found) {
+                    return priv;
                 }
             }
         }
@@ -1496,9 +1503,19 @@ yy::Lts& yy::Lts::resolve()
        transitions. */
     removeType(LtsNode::Unresolved);
 
-    return *this;
+    return ~0U;
 }
 
+void yy::Lts::check_privs(set<unsigned int>& privs)
+{
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        unsigned int priv = get_priv(i);
+
+        if (privs.count(priv)) {
+            privs.erase(priv);
+        }
+    }
+}
 
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {

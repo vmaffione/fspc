@@ -23,6 +23,18 @@ void int2string(int x, string& s)
     s = oss.str();
 }*/
 
+static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
+{
+    if (lts.get_priv(0) == ~0U) {
+        unsigned int ui;
+
+        ui = unres.add(name);
+        lts.set_priv(0, ui);
+    } else {
+        unres.add(name, lts.get_priv(0));
+    }
+}
+
 yy::TreeNode::~TreeNode()
 {
     for (unsigned int i=0; i<children.size(); i++)
@@ -732,15 +744,13 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     } else {
         DTC(ProcessIdNode, in, children[0]);
         DTCS(IndicesNode, ixn, children[1]);
-        unsigned int ui;
         string name = in->res;
 
         res = Lts(LtsNode::Unresolved, &c.actions);
         if (ixn) {
             name += ixn->res;
         }
-        ui = c.unres.add(name);
-        res.set_priv(0, ui);
+        update_unres(c.unres, name, res);
         assert(FALSE);
     }
 }
@@ -1006,7 +1016,6 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
 
     do {
         string index_string;
-        unsigned int ui;
 
         /* Scan the ranges from the left to the right, computing the
            '[x][y][z]...' string corresponding to 'indexes'. */
@@ -1034,8 +1043,7 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
 
         /* The name of a local process name is the concatenation of
            'process_id' and the 'index_string', e.g. 'P' + '[3][1]'. */
-        ui = c.unres.add(in->res + index_string);
-        lp->res.set_priv(0, ui);
+        update_unres(c.unres, in->res + index_string, lp->res);
 
         if (first) {
             first = false;
@@ -1071,6 +1079,8 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
 
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
+    NewContext ctx = c.ctx;
+
     translate_children(c);
 
     DTC(ProcessIdNode, idn, children[0]);
@@ -1078,15 +1088,35 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     DTCS(AlphaExtNode, aen, children[4]);
     DTCS(RelabelingNode, rn, children[5]);
     DTCS(HidingInterfNode, hin, children[6]);
-    unsigned int ui;
+    unsigned unres;
+    set<unsigned int> uis;
 
     /* The base is the process body. */
     res = bn->res;
 
-    ui = c.unres.add(idn->res);
-    res.set_priv(0, ui);
+    /* Add the main process name to c.unres. */
+    update_unres(c.unres, idn->res, res);
 
-    res.resolve();
+//res.print();
+
+    /* Try to resolve all the unresolved nodes into the LTS. */
+    unres = res.resolve();
+    if (unres != ~0U) {
+        cout << "Unresolved " << unres << "\n";
+        // TODO manage the error
+    }
+
+//cout << "UnresolvedNames:\n";
+    /* Check if there are undefined names. */
+    for (unsigned int i=0; i<c.unres.size(); i++) {
+        uis.insert(c.unres.get_idx(i));
+//cout << "   " << c.unres.get_idx(i) << " " << c.unres.get_name(i) << "\n";
+    }
+    res.check_privs(uis);
+    for (set<unsigned int>::iterator it=uis.begin(); it != uis.end(); it++) {
+        cout << c.unres.lookup(*it) << " undefined\n";
+        //TODO manage the error
+    }
 
     /* Extend the alphabet. */
     if (aen) {
@@ -1115,5 +1145,13 @@ void yy::ProcessDefNode::translate(FspDriver& c)
         res.hiding(hv.setv, hv.interface);
     }
     res.graphvizOutput("temp.lts");
+
+    /* Do the cleaning up. */
+    c.ctx = ctx;
+    c.unres.clear();
+    for (unsigned int i=0; i<c.param_names.size(); i++) {
+        c.identifiers.remove(c.param_names[i]);
+    }
+    c.param_names.clear();
 }
 

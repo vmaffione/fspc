@@ -132,7 +132,8 @@ class Lts: public SymbolValue {
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const vector<Lts>& ltsv);
     Lts& zeromerge(const Lts& lts);
-    Lts& resolve();
+    unsigned int resolve();
+    void check_privs(set<unsigned int>& privs);
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state) const;
