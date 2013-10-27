@@ -1517,6 +1517,15 @@ void yy::Lts::check_privs(set<unsigned int>& privs)
     }
 }
 
+void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
+{
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        if (get_priv(i) == old_priv) {
+            set_priv(i, new_priv);
+        }
+    }
+}
+
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Lts) {

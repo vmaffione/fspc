@@ -14,24 +14,17 @@ using namespace yy;
 
 string int2string(int x);
 int string2int(const string& s);
-/*
-void int2string(int x, string& s)
-{
-    ostringstream oss;
-
-    oss << x;
-    s = oss.str();
-}*/
 
 static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
 {
-    if (lts.get_priv(0) == ~0U) {
-        unsigned int ui;
+    unsigned int ui;
 
+    if (lts.get_priv(0) == ~0U) {
         ui = unres.add(name);
         lts.set_priv(0, ui);
     } else {
-        unres.add(name, lts.get_priv(0));
+        ui = unres.add(name, lts.get_priv(0));
+        lts.replace_priv(lts.get_priv(0), ui);
     }
 }
 
@@ -984,8 +977,7 @@ void yy::ParameterNode::translate(FspDriver& c)
 
 void yy::IndexRangesNode::translate(FspDriver& c)
 {
-    translate_children(c); // XXX useless because of deferred translation
-
+    /* Translation is deferred: Just collect the children. */
     res.clear();
 
     for (unsigned int i=0; i<children.size(); i+=3) {
@@ -997,15 +989,18 @@ void yy::IndexRangesNode::translate(FspDriver& c)
 
 void yy::LocalProcessDefNode::translate(FspDriver& c)
 {
-    translate_children(c);
-
     DTC(ProcessIdNode, in, children[0]);
     DTC(IndexRangesNode, irn, children[1]);
     DTC(LocalProcessNode, lp, children[3]);
 
+    /* Only translate 'process_id' and 'index_ranges', while 'local_process'
+       will be translated in the loop below. */
+    in->translate(c);
+    irn->translate(c);
+
     const vector<TreeNode *>& elements = irn->res;
     vector<unsigned int> indexes(elements.size());
-    NewContext ctx = c.ctx;
+    NewContext ctx = c.ctx;  /* Save the original context. */
     bool first = true;
 
     /* Initialize the 'indexes' vector, used to iterate over all the
@@ -1109,8 +1104,12 @@ void yy::ProcessDefNode::translate(FspDriver& c)
 //cout << "UnresolvedNames:\n";
     /* Check if there are undefined names. */
     for (unsigned int i=0; i<c.unres.size(); i++) {
-        uis.insert(c.unres.get_idx(i));
-//cout << "   " << c.unres.get_idx(i) << " " << c.unres.get_name(i) << "\n";
+        unsigned ui = c.unres.get_idx(i);
+
+        if (ui != ~0U) {
+            uis.insert(ui);
+//            cout << "   " << ui << " " << c.unres.get_name(i) << "\n";
+        }
     }
     res.check_privs(uis);
     for (set<unsigned int>::iterator it=uis.begin(); it != uis.end(); it++) {
