@@ -837,11 +837,16 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     vector<NewContext> ctxcache;
     NewContext saved_ctx = c.ctx;
 
-    translate_children(c);
-
     DTCS(GuardNode, gn, children[0]);
     DTC(PrefixActionsNode, pn, children[1]);
     DTC(LocalProcessNode, lp, children[3]);
+
+    /* Don't translate 'lp', since it will be translated into the loop,
+       with proper context. */
+    if (gn) {
+        gn->translate(c);
+    }
+    pn->translate(c);
 
     if (!gn || gn->res) {
         vector<Lts> processes;
