@@ -1335,7 +1335,7 @@ unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
     return offset;
 }
 
-/* This function extend *this appending 'lts' to the start node
+/* This function extends *this appending 'lts' to the start node
    (nodes[0]). The two Lts object are connected by an edge labeled
    with 'label'.
 */
@@ -1355,8 +1355,8 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
     return *this;
 }
 
-/* Remove incomplete nodes (and related transitions) from *this, compacting the
-   this->nodes vector. */
+/* Remove incomplete nodes (and related transitions) from *this, compacting
+   the this->nodes vector. */
 void yy::Lts::removeType(unsigned int type)
 {
     vector<LtsNode> new_nodes;
@@ -1397,9 +1397,10 @@ void yy::Lts::removeType(unsigned int type)
     nodes = new_nodes;
 }
 
-/* Append the Lts 'lts' to *this, replacing each transition x --> I (where 
-   'x' is a node in *this, and 'I' an incomplete node in *this) with the
-   transition x -> lts[0], where lts[0] is the zero node of 'lts'.
+/* Append the LTS objects contained into 'ltsv' to *this, replacing each
+   transition 'x --> I(k)' (where 'x' is a node in *this, and 'I(k)' an
+   incomplete node in *this whose priv field is 'k') with the transition
+   'x -> ltsv[k][0]', where 'lts[k][0]' is the zero node of 'ltsv[k]'.
    The incomplete nodes in *this are then removed from *this.
 */
 yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
@@ -1408,7 +1409,11 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
     vector<unsigned int> offsets(ltsv.size());
     unsigned int priv;
 
+    /* Prepare the 'offset' array, parallel to 'ltsv'. The entry 'offset[k]'
+       contains the state index of *this corresponding to 'ltsv[k][0]'
+       (after ltsv[k] has been appended to *this, obviously).*/
     for (unsigned int i=0; i<ltsv.size(); i++) {
+        /* '~0U' means that 'ltsv[k]' has not been appended yet to *this. */
         offsets[i] = ~0U;
     }
 
@@ -1432,13 +1437,16 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
         }
     }
 
-    /* Compact the Lts in order to remove incomplete nodes and related
+    /* Compact *this in order to remove incomplete nodes and related
        transitions. */
     removeType(LtsNode::Incomplete);
 
     return *this;
 }
 
+/* Append 'lts' to *this, and then create a connection from *this[0] to
+   lts[0].
+*/
 yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
 {
     unsigned int offset = append(lts, 1);
@@ -1454,12 +1462,14 @@ yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
     return *this;
 }
 
+/* Set the 'priv' field of *this[state] to 'val'. */
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
     assert(state < nodes.size());
     nodes[state].priv = val;
 }
 
+/* Get the 'priv' field of *this[state]. */
 unsigned int yy::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
@@ -1467,6 +1477,16 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
     return nodes[state].priv;
 }
 
+/* Scan the graph looking for transitions towards unresolved nodes. Say
+   'X -> U(p)' is one of those transitions, where U(p) is an unresolved
+   node whose priv field is 'p'. This transition is replaced by the
+   transition 'X -> R(p)', where R(p) is a non-unresolved node with priv 'p'.
+   If R(p) does not exist in the graph, this method returns immediately 'p',
+   reporting to the caller that it has not been possible to resolve the
+   name 'p'.
+   Afterwards, all the unresolved nodes are removed from the graph.
+   TODO add same caching/precomputation to make this function more efficient.
+*/
 unsigned int yy::Lts::resolve()
 {
     unsigned int priv;
@@ -1482,10 +1502,11 @@ unsigned int yy::Lts::resolve()
 
                 priv = get_priv(e.dest);
                 assert(priv != ~0U);
+                /* Look for a non-unresolved node with a matching 'priv'. */
                 for (unsigned int k=0; k<nodes.size(); k++) {
                     if (nodes[k].type != LtsNode::Unresolved
                                     && get_priv(k) == priv) {
-                        /* Replace the unresolved node destination with the
+                        /* Replace the unresolved destination with the
                            state 'k'. */
                         e.dest = k;
                         found = true;
@@ -1506,6 +1527,11 @@ unsigned int yy::Lts::resolve()
     return ~0U;
 }
 
+/* Scan the graph looking for nodes whose 'priv' is contained in the 'privs'
+   set. When an element of 'privs' is matched, is removed from the set, so
+   that when the method returns, the 'privs' set contains the unmatched
+   elements.
+*/
 void yy::Lts::check_privs(set<unsigned int>& privs)
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
@@ -1517,6 +1543,9 @@ void yy::Lts::check_privs(set<unsigned int>& privs)
     }
 }
 
+/* Scan the 'priv' fields, replacing each occurence of 'old_priv' with
+   'new_priv'.
+*/
 void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 {
     for (unsigned int i=0; i<nodes.size(); i++) {

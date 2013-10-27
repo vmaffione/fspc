@@ -15,16 +15,35 @@ using namespace yy;
 string int2string(int x);
 int string2int(const string& s);
 
+/* Helper function used to update the 'unres' table. */
 static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
 {
     unsigned int ui;
 
     if (lts.get_priv(0) == ~0U) {
-        ui = unres.add(name);
-        lts.set_priv(0, ui);
+        /* If 'lts[0]' does not have its 'priv' set, we must be in one of
+           the following two cases:
+                - 'lts[0]' is an unresolved node, and so we have to assign
+                  a new UnresolvedName alias (an 'idx') to it, for subsequent
+                  name resolution (Lts::resolve).
+                - 'lts[0]' is not unresolved and so we have to assign a new
+                   alias (an 'idx') to it, for subsequent name resolution
+                  (Lts::resolve).
+        */
+        ui = unres.insert(name);  /* Create a new entry for 'name' */
+        lts.set_priv(0, ui);  /* Record the alias into the 'lts[0]' priv. */
     } else {
-        ui = unres.add(name, lts.get_priv(0));
-        lts.replace_priv(lts.get_priv(0), ui);
+        /* If 'lts[0]' does have its 'priv' set, it means that 'lts[0]'
+           is not unresolved, and there is already an alias assigned to it.
+
+           Tell 'unres' that the 'lts[0]' priv field must be an alias also
+           for 'name'. */
+        ui = unres.append(name, lts.get_priv(0));
+        /* Update all the 'priv' fields that have the 'idx' previously
+           associated to 'name', if any. */
+        if (ui != ~0U) {
+            lts.replace_priv(lts.get_priv(0), ui);
+        }
     }
 }
 
@@ -1036,8 +1055,9 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
         /* Translate the LocalProcess using the current context. */
         lp->translate(c);
 
-        /* The name of a local process name is the concatenation of
-           'process_id' and the 'index_string', e.g. 'P' + '[3][1]'. */
+        /* Register the local process name (which is the concatenation of
+           'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
+           c.unres. */
         update_unres(c.unres, in->res + index_string, lp->res);
 
         if (first) {
@@ -1089,7 +1109,7 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* The base is the process body. */
     res = bn->res;
 
-    /* Add the main process name to c.unres. */
+    /* Register the process name into c.unres. */
     update_unres(c.unres, idn->res, res);
 
 //res.print();
