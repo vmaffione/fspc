@@ -23,8 +23,6 @@
 
 struct FspTranslator;
 
-void lts_name_extension(const vector<int>& values, string& extension);
-
 namespace yy {
     class Lts;
 }

@@ -26,12 +26,8 @@
 #include <string>
 #include <map>
 
-
 using namespace std;
 
-
-
-string int2string(int x);
 
 struct ActionsTable {
     string name;

@@ -30,6 +30,8 @@
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
+#include "helpers.hpp"
+
 
 //#define DEBUG
 #ifdef DEBUG
@@ -117,7 +119,6 @@ ParametricProcess::~ParametricProcess()
 	    delete record[i];
 }
 
-
 ParametricProcess* err_if_not_parametric(FspDriver& driver, SymbolValue * svp,
 						const yy::location& loc)
 {
@@ -128,22 +129,6 @@ ParametricProcess* err_if_not_parametric(FspDriver& driver, SymbolValue * svp,
     }
 
     return static_cast<ParametricProcess *>(svp);
-}
-
-
-void lts_name_extension(const vector<int>& values, string& extension)
-{
-    extension = "";
-
-    if (values.size()) {
-	unsigned int i = 0;
-
-	extension = "(";
-	for (; i<values.size() - 1; i++) {
-	   extension += int2string(values[i]) + ",";
-	}
-	extension += int2string(values[i]) + ")";
-    }
 }
 
 /* Helper function used with T=string and T=int. */

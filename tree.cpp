@@ -5,15 +5,12 @@
 
 #include "tree.hpp"
 #include "driver.hpp"
-#include "utils.hpp"
 #include "unresolved.hpp"
+#include "helpers.hpp"
 
 using namespace std;
 using namespace yy;
 
-
-string int2string(int x);
-int string2int(const string& s);
 
 /* Helper function used to update the 'unres' table. */
 static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
@@ -1231,8 +1228,8 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     }
 
     /* Compute the LTS name extension, but don't extend res.name (pretty
-       output). TODO */
-    //lts_name_extension(c.paramproc.defaults, extension);
+       output). */
+    lts_name_extension(c.paramproc.defaults, extension);
 
     /* Insert lts into the global 'processes' table. */
     if (!c.processes.insert(res.name + extension, res_clone)) {

@@ -18,8 +18,6 @@
  */
 
 
-#include <cstring>
-#include <cstdlib>
 #include <set>
 #include <sstream>
 #include <fstream>
@@ -27,6 +25,8 @@
 
 /* Symbols tables and symbol types. */
 #include "symbols_table.hpp"
+
+#include "helpers.hpp"
 
 
 
@@ -37,20 +37,6 @@
 #define IFD(x)
 #endif
 
-
-string int2string(int x)
-{
-    stringstream sstr;
-    sstr << x;
-    return sstr.str();
-}
-
-int string2int(const string& s)
-{
-    int ret = atoi(s.c_str());
-
-    return ret;
-}
 
 /* ========================= ActionsTable ================================ */
 int ActionsTable::insert(const string& s)

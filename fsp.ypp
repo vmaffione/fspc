@@ -199,6 +199,8 @@ namespace yy {
 /* TreeNode classes and subclasses. */
 #include "tree.hpp"
 
+#include "helpers.hpp"
+
 using namespace yy;
 
 
