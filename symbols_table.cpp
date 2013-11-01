@@ -124,7 +124,7 @@ void SymbolsTable::clear()
 {
     map<string, SymbolValue*>::iterator it;
 
-    for (it=table.begin(); it!=table.end(); it++) {
+    for (it = table.begin(); it != table.end(); it++) {
 	delete it->second;
     }
     table.clear();
@@ -133,6 +133,35 @@ void SymbolsTable::clear()
 SymbolsTable::~SymbolsTable()
 {
     clear();
+}
+
+void SymbolsTable::copyfrom(const SymbolsTable& st)
+{
+    map<string, SymbolValue*>::const_iterator it;
+
+    for (it = st.table.begin(); it != st.table.end(); it++) {
+        SymbolValue *svp = NULL;
+
+        if (it->second) {
+            // TODO check why this happens
+            svp = it->second->clone();
+        }
+
+        table.insert(pair<string, SymbolValue*>(it->first, svp));
+    }
+}
+
+SymbolsTable::SymbolsTable(const SymbolsTable& st)
+{
+    copyfrom(st);
+}
+
+SymbolsTable& SymbolsTable::operator=(const SymbolsTable& st)
+{
+    clear();
+    copyfrom(st);
+
+    return *this;
 }
 
 void SymbolsTable::print() const
@@ -537,6 +566,20 @@ PriorityValue::~PriorityValue()
 
 
 /* ======================== NewParametricProcess ========================= */
+bool NewParametricProcess::insert(const string& name, int default_value)
+{
+    names.push_back(name);
+    defaults.push_back(default_value);
+
+    return true;
+}
+
+void NewParametricProcess::clear()
+{
+    names.clear();
+    defaults.clear();
+}
+
 void NewParametricProcess::print() const
 {
     cout << "ParametricProcess: ";

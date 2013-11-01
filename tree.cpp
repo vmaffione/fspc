@@ -1039,8 +1039,7 @@ void yy::ParameterNode::translate(FspDriver& c)
         delete cvp;
     }
     /* Save the parameter name for subsequent removal. */
-    c.paramproc.names.push_back(in->res);
-    c.paramproc.defaults.push_back(en->res);
+    c.paramproc.insert(in->res, en->res);
 }
 
 void yy::IndexRangesNode::translate(FspDriver& c)
@@ -1214,13 +1213,42 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     }
     res.graphvizOutput("temp.lts");
 
+    /* TODO The following will go into an helper function. */
+    string extension;
+    SymbolValue *res_clone = res.clone();
+    SymbolValue *pp_clone = c.paramproc.clone();
+
+    res.name = idn->res;
+
+    /* Store c.paramproc in parametric_processes. */
+    if (!c.parametric_processes.insert(res.name, pp_clone)) {
+	stringstream errstream;
+
+        delete pp_clone;
+	errstream << "Parametric process " << res.name
+	    << " already declared";
+	semantic_error(c, errstream, loc);
+    }
+
+    /* Compute the LTS name extension, but don't extend res.name (pretty
+       output). TODO */
+    //lts_name_extension(c.paramproc.defaults, extension);
+
+    /* Insert lts into the global 'processes' table. */
+    if (!c.processes.insert(res.name + extension, res_clone)) {
+	stringstream errstream;
+
+        delete res_clone;
+	errstream << "Process " << res.name << " already declared";
+	semantic_error(c, errstream, loc);
+    }
+
     /* Do the cleaning up. */
     c.ctx = ctx;
     c.unres.clear();
     for (unsigned int i=0; i<c.paramproc.names.size(); i++) {
         c.identifiers.remove(c.paramproc.names[i]);
     }
-    c.paramproc.names.clear();
-    c.paramproc.defaults.clear();
+    c.paramproc.clear();
 }
 

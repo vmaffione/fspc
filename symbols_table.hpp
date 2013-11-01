@@ -198,6 +198,8 @@ struct NewParametricProcess : public SymbolValue {
     vector<string> names;
     vector<int> defaults;
 
+    bool insert(const string& name, int default_value);
+    void clear();
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }
     SymbolValue *clone() const;
@@ -300,6 +302,11 @@ struct ProcnodePairValue: public SymbolValue {
 struct SymbolsTable {
     map<string, SymbolValue*> table;
 
+    void copyfrom(const SymbolsTable& st);
+
+    SymbolsTable() { }
+    SymbolsTable(const SymbolsTable& st);
+    SymbolsTable& operator=(const SymbolsTable& st);
     bool insert(const string& name, SymbolValue *);
     bool lookup(const string& name, SymbolValue*&) const;
     bool remove(const string& name);
