@@ -122,7 +122,6 @@ namespace yy {
 struct NestingContext {
     NewContext ctx;
     UnresolvedNames unres;
-    /* The names of the parameters used in a process definition. */
     NewParametricProcess paramproc;
     bool replay;
 };
@@ -167,10 +166,6 @@ class FspDriver
         vector<NestingContext> nesting_stack;
         void nesting_save(bool replay);
         void nesting_restore();
-
-        /* We keep track of alphabet extension when using sequential
-           processes (see ProcessSeqRefNode::translate). */
-        //set<int> alphabet_extension; // XXX do we need this?
 
         /* The parsing result. */
         yy::TreeNode *tree;

@@ -574,7 +574,7 @@ constant_def:
 	delete n4->value;
 	delete n2->value;
 
-	$$ = new ConstDefNode();
+	$$ = new ConstantDefNode();
 	$$->addChild(new ConstKwdNode());
 	$$->addChild($2);
 	$$->addChild(new AssignNode());

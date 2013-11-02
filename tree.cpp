@@ -303,6 +303,59 @@ void yy::RangeNode::translate(FspDriver& c)
     }
 }
 
+void yy::ConstantDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ConstantIdNode, id, children[1]);
+    DTC(ExpressionNode, en, children[3]);
+    ConstValue *cvp = new ConstValue;
+
+    cvp->value = en->res;
+    if (!c.identifiers.insert(id->res, cvp)) {
+        stringstream errstream;
+        errstream << "const " << id->res << " declared twice";
+        delete cvp;
+        semantic_error(c, errstream, loc);
+    }
+}
+
+void yy::RangeDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(RangeIdNode, id, children[1]);
+    DTC(ExpressionNode, len, children[3]);
+    DTC(ExpressionNode, ren, children[5]);
+    RangeValue *rvp = new RangeValue;
+
+    rvp->low = len->res;
+    rvp->high = ren->res;
+    if (!c.identifiers.insert(id->res, rvp)) {
+        stringstream errstream;
+        errstream << "range " << id->res << " declared twice";
+        delete rvp;
+        semantic_error(c, errstream, loc);
+    }
+}
+
+void yy::SetDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(SetIdNode, id, children[1]);
+    DTC(SetExprNode, sen, children[3]);
+    SetValue *svp = new SetValue;
+
+    *svp = sen->res;
+    if (!c.identifiers.insert(id->res, svp)) {
+        stringstream errstream;
+        errstream << "set " << id->res << " declared twice";
+        delete svp;
+        semantic_error(c, errstream, loc);
+    }
+}
+
 /* This recursive method can be used to compute the set of action defined
    by an arbitrary complex label expression, e.g.
         'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
@@ -911,12 +964,6 @@ cout << "Looking up " << in->res+extension << "\n";
             }
         }
     }
-
-    /* Merge the alphabet into c.alphabet_extension, so that we don't
-       loose the alphabet extension information switching the
-       ProcessNode representation (toProcessNode()). The alphabet
-       extension will be merged into the final LTS in callback__15. */
-    //lts.mergeAlphabetInto(c.alphabet_extension); // XXX do we need this?
 }
 
 void yy::ProcessRefSeqNode::translate(FspDriver& c)

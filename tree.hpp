@@ -620,6 +620,7 @@ class SetElementsNode : public SvpVecTreeNode {
 class SetDefNode : public TreeNode {
     public:
         string getClassName() const { return "SetDef"; }
+        void translate(FspDriver& c);
 };
 
 class SetKwdNode : public TreeNode {
@@ -630,7 +631,7 @@ class SetKwdNode : public TreeNode {
 class RangeDefNode : public TreeNode {
     public:
         string getClassName() const { return "RangeDef"; }
-
+        void translate(FspDriver& c);
 };
 
 class RangeKwdNode : public TreeNode {
@@ -644,10 +645,10 @@ class DotDotNode : public TreeNode {
         string getClassName() const { return ".."; }
 };
 
-class ConstDefNode : public TreeNode {
+class ConstantDefNode : public TreeNode {
     public:
         string getClassName() const { return "ConstDef"; }
-
+        void translate(FspDriver& c);
 };
 
 class ConstKwdNode : public TreeNode {
