@@ -5,4 +5,5 @@
 //P = P[0], P[i:0..1] = (a[i]->P[(i+1)%4]), P[2] = (d[2]->d2->P[3]), P[i:3..4] = (c[i]->c1->P[(i+1)%5]).
 //P(G=1)=(a[G]->b[G]->END).Q(G=3)=P(G);P(G+1);END.T=Q(8);Q;END.
 //P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
-P(K=0)=(a[K]->END). ||C(K=1) = p[i:1..K]:P(K). ||CC = c:C(3).
+//P(K=0)=(a[K]->END). ||C(K=1) = p[i:1..K]:P(K). ||CC = c:C(3).
+P(K=0)=(a[K]->END). ||C = forall [i:1..3] P(i).

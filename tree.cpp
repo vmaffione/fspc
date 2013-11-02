@@ -1192,17 +1192,8 @@ void yy::IndexRangesNode::translate(FspDriver& c)
     }
 }
 
-void yy::LocalProcessDefNode::translate(FspDriver& c)
+void for_each_combination(FspDriver& c, IndexRangesNode *irn, TreeNode *n)
 {
-    DTC(ProcessIdNode, in, children[0]);
-    DTC(IndexRangesNode, irn, children[1]);
-    DTC(LocalProcessNode, lp, children[3]);
-
-    /* Only translate 'process_id' and 'index_ranges', while 'local_process'
-       will be translated in the loop below. */
-    in->translate(c);
-    irn->translate(c);
-
     const vector<TreeNode *>& elements = irn->res;
     vector<unsigned int> indexes(elements.size());
     NewContext ctx = c.ctx;  /* Save the original context. */
@@ -1238,20 +1229,8 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
             }
         }
 
-        /* Translate the LocalProcess using the current context. */
-        lp->translate(c);
-
-        /* Register the local process name (which is the concatenation of
-           'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
-           c.unres. */
-        update_unres(c.unres, in->res + index_string, lp->res);
-
-        if (first) {
-            first = false;
-            res = lp->res;
-        } else {
-            res.append(lp->res, 0);
-        }
+        n->combination(c, index_string, first);
+        first = false;
 
         /* Restore the saved context. */
         c.ctx = ctx;
@@ -1259,6 +1238,40 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
         /* Increment 'indexes' for the next 'index_string', and exits if
            there are no more combinations. */
     } while (next_set_indexes(elements, indexes));
+}
+
+void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
+                                          bool first)
+{
+    DTC(ProcessIdNode, in, children[0]);
+    DTC(LocalProcessNode, lp, children[3]);
+
+    /* Translate the LocalProcess using the current context. */
+    lp->translate(c);
+
+    /* Register the local process name (which is the concatenation of
+       'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
+       c.unres. */
+    update_unres(c.unres, in->res + index, lp->res);
+
+    if (first) {
+        res = lp->res;
+    } else {
+        res.append(lp->res, 0);
+    }
+}
+
+void yy::LocalProcessDefNode::translate(FspDriver& c)
+{
+    DTC(ProcessIdNode, in, children[0]);
+    DTC(IndexRangesNode, irn, children[1]);
+
+    /* Only translate 'process_id' and 'index_ranges', while 'local_process'
+       will be translated in the loop below. */
+    in->translate(c);
+    irn->translate(c);
+
+    for_each_combination(c, irn, this);
 }
 
 void yy::LocalProcessDefsNode::translate(FspDriver& c)
@@ -1425,9 +1438,29 @@ void yy::PriorityNode::translate(FspDriver& c)
     res.setv = sn->res;
 }
 
+void yy::CompositeBodyNode::combination(FspDriver& c, string index,
+                                        bool first)
+{
+    DTC(CompositeBodyNode, cb, children[2]);
+
+    /* Translate the LocalProcess using the current context. */
+    cb->translate(c);
+
+    if (first) {
+        first = false;
+        res = cb->res;
+    } else {
+        res.compose(cb->res);
+    }
+}
+
 void yy::CompositeBodyNode::translate(FspDriver& c)
 {
-    translate_children(c);
+    if (children.size() != 3) {
+        /* When children.size() == 3, we have deferred translation, and so
+           we don't have to do the translation here. */
+        translate_children(c);
+    }
 
     if (children.size() == 4) {
         /* sharing_OPT labeling_OPT process_ref relabel_OPT */
@@ -1502,63 +1535,12 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
     } else if (children.size() == 3) {
         /* FORALL index_ranges composite_body */
         DTC(IndexRangesNode, irn, children[1]);
-        DTC(CompositeBodyNode, cb, children[2]);
 
         /* Only translate 'index_ranges', while 'composite_body'
            will be translated in the loop below. */
         irn->translate(c);
 
-        const vector<TreeNode *>& elements = irn->res;
-        vector<unsigned int> indexes(elements.size());
-        NewContext ctx = c.ctx;  /* Save the original context. */
-        bool first = true;
-
-        /* Initialize the 'indexes' vector, used to iterate over all the
-           possible index combinations. */
-        for (unsigned int j=0; j<elements.size(); j++) {
-            indexes[j] = 0;
-        }
-
-        do {
-            string index_string;
-
-            /* Scan the ranges from the left to the right, computing the
-               '[x][y][z]...' string corresponding to 'indexes'. */
-            for (unsigned int j=0; j<elements.size(); j++) {
-                /* Here we do the translation that was deferred in the lower
-                   layers. */
-                elements[j]->translate(c);
-                DTC(ActionRangeNode, an, elements[j]);
-
-                if (an) {
-                    index_string += "[" + an->res.actions[ indexes[j] ] + "]";
-                    if (an->res.hasVariable()) {
-                        if (!c.ctx.insert(an->res.variable,
-                                    an->res.actions[ indexes[j] ])) {
-                            cout << "ERROR: ctx.insert()\n";
-                        }
-                    }
-                } else {
-                    assert(FALSE);
-                }
-            }
-
-            /* Translate the LocalProcess using the current context. */
-            cb->translate(c);
-
-            if (first) {
-                first = false;
-                res = cb->res;
-            } else {
-                res.compose(cb->res);
-            }
-
-            /* Restore the saved context. */
-            c.ctx = ctx;
-
-            /* Increment 'indexes' for the next 'index_string', and exits if
-               there are no more combinations. */
-        } while (next_set_indexes(elements, indexes));
+        for_each_combination(c, irn, this);
     } else {
         assert(0);
     }

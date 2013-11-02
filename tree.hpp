@@ -44,6 +44,7 @@ class TreeNode : public ParametricTranslator {
         void addChild(unsigned int t);
         void print(ofstream& os);
         virtual void translate(FspDriver& dr);
+        virtual void combination(FspDriver& dr, string index, bool first) { }
         virtual string getClassName() const;
         void translate_children(FspDriver& dr);
 };
@@ -393,6 +394,7 @@ class CompositeBodyNode : public SvpVecTreeNode {
         string getClassName() const { return "CompositeBody"; }
         CompositeBodyNode(SvpVec *v) : SvpVecTreeNode(v) { }
         void translate(FspDriver& c);
+        void combination(FspDriver& dr, string index, bool first);
 };
 
 class IfNode : public TreeNode {
@@ -576,6 +578,7 @@ class LocalProcessDefNode : public PvecTreeNode {
         string getClassName() const { return "LocalProcessDef"; }
         LocalProcessDefNode(Pvec *v) : PvecTreeNode(v) { }
         void translate(FspDriver& c);
+        void combination(FspDriver& dr, string index, bool first);
 };
 
 class LocalProcessDefsNode : public PvecTreeNode {
