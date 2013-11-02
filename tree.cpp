@@ -1147,7 +1147,7 @@ void yy::ParameterNode::translate(FspDriver& c)
     cvp->value = en->res;
     if (!c.identifiers.insert(in->res, cvp)) {
         // TODO manage the error
-        cout << "Whaaat? duplicate again\n";   
+        assert(0);
         delete cvp;
     }
     /* Save the parameter name for subsequent removal. */
@@ -1327,23 +1327,18 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     res.name = idn->res;
 
-    /* Store c.paramproc in parametric_processes. */
-    pp_clone->set_translator(this);
-    if (!c.parametric_processes.insert(res.name, pp_clone)) {
-        /* TODO in futuro, è probabile che qui non bisogni dare errore,
-            perchè se this->translate è stata chiamata per creare una diversa
-            versione di un processo parametrico, bisogna comunque
-            inserire la nuova versione in "processes", ma non registrare
-            di nuovo il processo in "parametric_processes".
-        
-	stringstream errstream;
+    if (!c.replay) {
+        /* Store c.paramproc in parametric_processes. */
+        pp_clone->set_translator(this);
+        if (!c.parametric_processes.insert(res.name, pp_clone)) {
+            stringstream errstream;
 
-        delete pp_clone;
-	errstream << "Parametric process " << res.name
-	    << " already declared";
-	semantic_error(c, errstream, loc);
-        */
-        delete pp_clone;
+            delete pp_clone;
+            errstream << "Parametric process " << res.name
+                << " already declared";
+            semantic_error(c, errstream, loc);
+            delete pp_clone;
+        }
     }
 
     /* Compute the LTS name extension, but don't extend res.name (pretty
