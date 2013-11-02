@@ -261,6 +261,7 @@ class RelabelDefNode : public SvpVecTreeNode {
         string getClassName() const { return "RelabelDef"; }
         RelabelDefNode(SvpVec *v) : SvpVecTreeNode(v) { }
         void translate(FspDriver& c);
+        void combination(FspDriver& dr, string index, bool first);
 };
 
 class SlashNode : public TreeNode {

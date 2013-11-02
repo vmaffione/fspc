@@ -243,29 +243,44 @@ void RangeValue::set(SetValue& s) const
 }
 
 /*============================= SetValue ================================ */
-SetValue& SetValue::dotcat(const string& s)
-{
-    for (unsigned int i=0; i<actions.size(); i++)
-	actions[i] += "." + s;
-
-    return *this;
-}
-
-SetValue& SetValue::dotcat(const SetValue& ss)
+SetValue& SetValue::combine(const SetValue& ss, bool dot)
 {
     int n = actions.size();
     int nss = ss.actions.size();
+    string pre = dot ? "." : "[";
+    string post = dot ? "" : "]";
 
     actions.resize(n * nss);
 
     for (int j=1; j<nss; j++)
 	for (int i=0; i<n; i++)
-	    actions[j*n+i] = actions[i] + "." + ss.actions[j];
+	    actions[j*n+i] = actions[i] + pre + ss.actions[j] + post;
     
     for (int i=0; i<n; i++)
-	actions[i] += "." + ss.actions[0];
+	actions[i] += pre + ss.actions[0] + post;
 
     return *this;
+}
+
+SetValue& SetValue::combine(const string& s, bool dot)
+{
+    string pre = dot ? "." : "[";
+    string post = dot ? "" : "]";
+
+    for (unsigned int i=0; i<actions.size(); i++)
+	actions[i] += pre + s + post;
+
+    return *this;
+}
+
+SetValue& SetValue::dotcat(const string& s)
+{
+    return combine(s, true);
+}
+
+SetValue& SetValue::dotcat(const SetValue& ss)
+{
+    return combine(ss, true);
 }
 
 SetValue& SetValue::indexize(int index)
@@ -282,7 +297,7 @@ SetValue& SetValue::indexize(int index)
 
 SetValue& SetValue::indexize(const SetValue& ss)
 {
-    return dotcat(ss);
+    return combine(ss, true);
 }
 
 SetValue& SetValue::indexize(const string& s)

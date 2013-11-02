@@ -91,6 +91,9 @@ struct SetValue: public SymbolValue {
     virtual int setVariable(const string& s) { variable = s; return 0; }
     bool hasVariable() const { return variable.size(); }
 
+    SetValue& combine(const string&, bool);
+    SetValue& combine(const SetValue&, bool);
+
     SetValue& dotcat(const string&);
     SetValue& dotcat(const SetValue&);
     SetValue& indexize(int index);

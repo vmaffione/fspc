@@ -670,7 +670,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                 } else if (setn) {
                     label += "." + setn->res.actions[ indexes[j] ];
                 } else if (an) {
-                    label += "[" + an->res.actions[ indexes[j] ] + "]";
+                    label += "." + an->res.actions[ indexes[j] ];
                     if (an->res.hasVariable()) {
                         if (!c.ctx.insert(an->res.variable,
                                     an->res.actions[ indexes[j] ])) {
@@ -864,7 +864,7 @@ cout << "Looking up " << in->res+extension << "\n";
 
 	/* If there is a cache miss, we have to compute the requested LTS
 	   using the translate method and save it in the global processes
-           table. TODO why not using DTCS here? */
+           table. */
         pdn = dynamic_cast<ProcessDefNode *>(pp->translator);
         cdn = dynamic_cast<CompositeDefNode *>(pp->translator);
         assert(pdn || cdn);
@@ -1065,10 +1065,69 @@ void yy::AlphaExtNode::translate(FspDriver& c)
     res = sn->res;
 }
 
+void for_each_combination(FspDriver& c, IndexRangesNode *irn, TreeNode *n)
+{
+    const vector<TreeNode *>& elements = irn->res;
+    vector<unsigned int> indexes(elements.size());
+    NewContext ctx = c.ctx;  /* Save the original context. */
+    bool first = true;
+
+    /* Initialize the 'indexes' vector, used to iterate over all the
+       possible index combinations. */
+    for (unsigned int j=0; j<elements.size(); j++) {
+        indexes[j] = 0;
+    }
+
+    do {
+        string index_string;
+
+        /* Scan the ranges from the left to the right, computing the
+           '[x][y][z]...' string corresponding to 'indexes'. */
+        for (unsigned int j=0; j<elements.size(); j++) {
+            /* Here we do the translation that was deferred in the lower
+               layers. */
+            elements[j]->translate(c);
+            DTC(ActionRangeNode, an, elements[j]);
+
+            if (an) {
+                index_string += "." + an->res.actions[ indexes[j] ];
+                if (an->res.hasVariable()) {
+                    if (!c.ctx.insert(an->res.variable,
+                                an->res.actions[ indexes[j] ])) {
+                        cout << "ERROR: ctx.insert()\n";
+                    }
+                }
+            } else {
+                assert(FALSE);
+            }
+        }
+
+        n->combination(c, index_string, first);
+        first = false;
+
+        /* Restore the saved context. */
+        c.ctx = ctx;
+
+        /* Increment 'indexes' for the next 'index_string', and exits if
+           there are no more combinations. */
+    } while (next_set_indexes(elements, indexes));
+}
+
+void yy::RelabelDefNode::combination(FspDriver& c, string index, bool first)
+{
+    DTC(BracesRelabelDefsNode, br, children[2]);
+
+    br->translate(c);
+
+    if (first) {
+        res = br->res;
+    } else {
+        res.merge(br->res);
+    }
+}
+
 void yy::RelabelDefNode::translate(FspDriver& c)
 {
-    translate_children(c);
-
     assert(children.size() == 3);
 
     DTCS(ActionLabelsNode, left, children[0]);
@@ -1079,10 +1138,20 @@ void yy::RelabelDefNode::translate(FspDriver& c)
     if (left) {
         DTC(ActionLabelsNode, right, children[2]);
 
+        /* Translate here, because we don't want to translate everything in
+           the other branch. */
+        translate_children(c);
+
         res.add(computeActionLabels(c, SetValue(), left->res, 0),
                 computeActionLabels(c, SetValue(), right->res, 0));
     } else if (fan) {
-        // TODO FORALL index_ranges braces_relabel_defs
+        /* FORALL index_ranges braces_relabel_defs */
+        DTC(IndexRangesNode, irn, children[1]);
+
+        /* Translate 'index_ranges' only, and rely on deferred translation
+           for 'brace_relabel_defs'. */
+        irn->translate(c);
+        for_each_combination(c, irn, this);
     } else {
         assert(FALSE);
     }
@@ -1190,54 +1259,6 @@ void yy::IndexRangesNode::translate(FspDriver& c)
 
         res.push_back(arn);
     }
-}
-
-void for_each_combination(FspDriver& c, IndexRangesNode *irn, TreeNode *n)
-{
-    const vector<TreeNode *>& elements = irn->res;
-    vector<unsigned int> indexes(elements.size());
-    NewContext ctx = c.ctx;  /* Save the original context. */
-    bool first = true;
-
-    /* Initialize the 'indexes' vector, used to iterate over all the
-       possible index combinations. */
-    for (unsigned int j=0; j<elements.size(); j++) {
-        indexes[j] = 0;
-    }
-
-    do {
-        string index_string;
-
-        /* Scan the ranges from the left to the right, computing the
-           '[x][y][z]...' string corresponding to 'indexes'. */
-        for (unsigned int j=0; j<elements.size(); j++) {
-            /* Here we do the translation that was deferred in the lower
-               layers. */
-            elements[j]->translate(c);
-            DTC(ActionRangeNode, an, elements[j]);
-
-            if (an) {
-                index_string += "[" + an->res.actions[ indexes[j] ] + "]";
-                if (an->res.hasVariable()) {
-                    if (!c.ctx.insert(an->res.variable,
-                                an->res.actions[ indexes[j] ])) {
-                        cout << "ERROR: ctx.insert()\n";
-                    }
-                }
-            } else {
-                assert(FALSE);
-            }
-        }
-
-        n->combination(c, index_string, first);
-        first = false;
-
-        /* Restore the saved context. */
-        c.ctx = ctx;
-
-        /* Increment 'indexes' for the next 'index_string', and exits if
-           there are no more combinations. */
-    } while (next_set_indexes(elements, indexes));
 }
 
 void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
@@ -1385,6 +1406,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
         for (unsigned int i=0; i<rlv.size(); i++) {
             res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
         }
+rlv.print();
     }
 
     /* Apply the hiding/interface operator. */
