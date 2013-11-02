@@ -130,9 +130,6 @@ void yy::TreeNode::translate(FspDriver& c)
 
 /* ========================== Translation methods ======================== */
 
-#define FALSE 3  /* TODO when everything works, switch to "0". */
-#define IMPLEMENT 718  /* TODO when everything works, switch to "0". */
-
 void yy::RootNode::translate(FspDriver& c)
 {
     for (unsigned int i=0; i<children.size(); i++) {
@@ -174,7 +171,7 @@ void yy::ExpressionNode::translate(FspDriver& c)
         } else if (on->sign == "!") {
             res = !en->res;
         } else {
-            assert(FALSE);
+            assert(0);
         }
         
     } else if (children.size() == 3) {
@@ -207,6 +204,8 @@ void yy::ExpressionNode::translate(FspDriver& c)
                 res = (l->res != r->res);
             } else if (o->sign == "<") {
                 res = (l->res < r->res);
+            } else if (o->sign == ">") {
+                res = (l->res > r->res);
             } else if (o->sign == "<=") {
                 res = (l->res <= r->res);
             } else if (o->sign == ">=") {
@@ -226,12 +225,12 @@ void yy::ExpressionNode::translate(FspDriver& c)
             } else if (o->sign == "%") {
                 res = l->res % r->res;
             } else {
-                assert(FALSE);
+                assert(0);
             }
         }
         
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -263,7 +262,7 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
         cvp = err_if_not_const(c, svp, loc);
         res = cvp->value;
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -300,7 +299,7 @@ void yy::RangeNode::translate(FspDriver& c)
         /* Return the range expression. */
         res = re->res;
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -340,7 +339,7 @@ SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
             /* A set of actions. */
             base += setn->res;
         } else {
-            assert(FALSE);
+            assert(0);
         }
     } else {
         /* Here we are in the middle (or the end) of a label expression.
@@ -385,7 +384,7 @@ SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
                 return ret;
             }
         } else {
-            assert(FALSE);
+            assert(0);
         }
     }
 
@@ -447,7 +446,7 @@ void yy::SetNode::translate(FspDriver& c)
         /* Return the set expression. */
         res = se->res;
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -470,7 +469,7 @@ void yy::ActionRangeNode::translate(FspDriver& c)
         } else if (sn) {
             res = sn->res;
         } else {
-            assert(FALSE);
+            assert(0);
         }
     } else if (children.size() == 3) {
         /* Do the same with variable declarations. */
@@ -485,14 +484,14 @@ void yy::ActionRangeNode::translate(FspDriver& c)
             res = sn->res;
             res.variable = vn->res;
         } else {
-            assert(FALSE);
+            assert(0);
         }
 if (res.actions.size() == 0) { // XXX remove a.s.a.p.
     cout << "XXX2\n";
     res += "xxx2";
 }
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -522,7 +521,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             /* A set of actions. */
             res.push_back(setn);
         } else {
-            assert(FALSE);
+            assert(0);
         }
     } while (0);
 
@@ -541,7 +540,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             } else if (setn) {
                 res.push_back(setn);
             } else {
-                assert(FALSE);
+                assert(0);
             }
             i += 2;
         } else if (sqn) {
@@ -551,7 +550,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             res.push_back(an);
             i += 3;
         } else {
-            assert(FALSE);
+            assert(0);
             break;
         }
     }
@@ -596,7 +595,7 @@ bool next_set_indexes(const vector<TreeNode *>& elements,
                 break;
             }
         } else {
-            assert(FALSE);
+            assert(0);
         }
         /* Continue with the next element, unless we are at the very
            last one: In the last case tell the caller that all the
@@ -656,7 +655,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                     /* A set of actions. */
                     label = setn->res.actions[ indexes[j] ];
                 } else {
-                    assert(FALSE);
+                    assert(0);
                 }
             } else {
                 /* Here we are in the middle (or the end) of a label
@@ -678,7 +677,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                         }
                     }
                 } else {
-                    assert(FALSE);
+                    assert(0);
                 }
             }
         }
@@ -776,7 +775,6 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
             name += ixn->res;
         }
         update_unres(c.unres, name, res);
-        assert(FALSE);
     }
 }
 
@@ -967,7 +965,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
         } else if (sc) {
             res = sc->res;
         } else {
-            assert(FALSE);
+            assert(0);
         }
     } else if (children.size() == 3) {
         /* ( choice ) */
@@ -988,8 +986,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
             res = Lts(LtsNode::Normal, &c.actions);
         }
     } else {
-        res = Lts(LtsNode::Error, &c.actions);
-        assert(IMPLEMENT);
+        assert(0);
     }
 }
 
@@ -1052,7 +1049,7 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
         res = pn->res;
         res.append(lpd->res, 0);
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -1098,7 +1095,7 @@ void for_each_combination(FspDriver& c, IndexRangesNode *irn, TreeNode *n)
                     }
                 }
             } else {
-                assert(FALSE);
+                assert(0);
             }
         }
 
@@ -1153,7 +1150,7 @@ void yy::RelabelDefNode::translate(FspDriver& c)
         irn->translate(c);
         for_each_combination(c, irn, this);
     } else {
-        assert(FALSE);
+        assert(0);
     }
 }
 
@@ -1207,7 +1204,7 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     } else if (in) {
         res.interface = true;
     } else {
-        assert(FALSE);
+        assert(0);
     }
 
     res.setv = sn->res;
@@ -1406,7 +1403,6 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
         for (unsigned int i=0; i<rlv.size(); i++) {
             res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
         }
-rlv.print();
     }
 
     /* Apply the hiding/interface operator. */
