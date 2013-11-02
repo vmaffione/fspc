@@ -190,11 +190,19 @@ struct PriorityValue: public SymbolValue {
     ~PriorityValue();
 };
 
+class ParametricTranslator {
+    public:
+        virtual ~ParametricTranslator() {}
+};
+
 struct NewParametricProcess : public SymbolValue {
     vector<string> names;
     vector<int> defaults;
+    ParametricTranslator * translator;
 
+    NewParametricProcess() : translator(NULL) { }
     bool insert(const string& name, int default_value);
+    void set_translator(ParametricTranslator *trans);
     void clear();
     void print() const;
     int type() const { return SymbolValue::ParametricProcess; }

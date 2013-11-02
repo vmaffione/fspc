@@ -292,3 +292,9 @@ bool NewContext::operator!=(const NewContext& c)
     return false;
 }
 
+void NewContext::clear()
+{
+    vars.clear();
+    vals.clear();
+}
+

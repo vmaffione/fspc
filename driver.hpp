@@ -150,6 +150,10 @@ class FspDriver
         /* The names of the parameters used in a process definition. */
         NewParametricProcess paramproc;
 
+        /* We keep track of alphabet extension when using sequential
+           processes (see ProcessSeqRefNode::translate). */
+        //set<int> alphabet_extension; // XXX do we need this?
+
         /* The parsing result. */
         yy::TreeNode *tree;
 
@@ -158,6 +162,15 @@ class FspDriver
         bool iterated_tree; // TODO force iterted_tree=true and remove
 
         /* =========================================================== */
+
+        /* Nesting support for parametric process references. */
+        bool replay;
+        NewContext nesting_ctx;
+        UnresolvedNames nesting_unres;
+        NewParametricProcess nesting_paramproc;
+        bool nesting_replay;
+        void nesting_save(bool replay);
+        void nesting_restore();
 
 	/* The ProcessNode allocator. */
 	ProcessNodeAllocator pna;

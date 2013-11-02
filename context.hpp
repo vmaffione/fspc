@@ -106,6 +106,7 @@ class NewContext {
         bool lookup(const string&, string&);
         bool remove(const string&);
         bool operator!=(const NewContext& ctx);
+        void clear();
 };
 
 #endif

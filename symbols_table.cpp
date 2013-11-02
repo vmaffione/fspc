@@ -566,6 +566,12 @@ void NewParametricProcess::clear()
     defaults.clear();
 }
 
+void NewParametricProcess::set_translator(ParametricTranslator *trans)
+{
+    assert(trans);
+    translator = trans;
+}
+
 void NewParametricProcess::print() const
 {
     cout << "ParametricProcess: ";
@@ -580,6 +586,7 @@ SymbolValue * NewParametricProcess::clone() const
 
     pp->names = names;
     pp->defaults = defaults;
+    pp->translator = translator;
 
     return pp;
 }

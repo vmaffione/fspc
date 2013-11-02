@@ -201,6 +201,7 @@ FspDriver::FspDriver() : actions("Global actions table"), tr(*this)
     parametric = new ParametricProcess;
     tree = NULL;
     iterated_tree = true;
+    replay = false;
 }
 
 FspDriver::~FspDriver()
@@ -379,6 +380,26 @@ int FspDriver::parse(const CompilerOptions& co)
     }
 
     return 0;
+}
+
+void FspDriver::nesting_save(bool r)
+{
+    nesting_ctx = ctx;
+    nesting_unres = unres;
+    nesting_paramproc = paramproc;
+    nesting_replay = replay;
+    ctx.clear();
+    unres.clear();
+    paramproc.clear();
+    replay = r;
+}
+
+void FspDriver::nesting_restore()
+{
+    ctx = nesting_ctx;
+    unres = nesting_unres;
+    paramproc = nesting_paramproc;
+    replay = nesting_replay;
 }
 
 void FspDriver::error(const yy::location& l, const std::string& m)

@@ -55,6 +55,7 @@ struct LtsNode {
     static const int Error = 2;
     static const int Incomplete = 3;
     static const int Unresolved = 4;
+    static const int Zombie = 5;
 
     void offset(int offset);
 };
@@ -133,6 +134,8 @@ class Lts: public SymbolValue {
     Lts& incompcat(const vector<Lts>& ltsv);
     Lts& zeromerge(const Lts& lts);
     unsigned int resolve();
+    Lts& mergeEndNodes();
+    bool endcat(const Lts& lts);
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state) const;

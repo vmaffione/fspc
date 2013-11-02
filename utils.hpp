@@ -118,4 +118,12 @@ inline ProcessNode * is_procnode(ProcessBase * pbp)
     return static_cast<ProcessNode *>(pbp);
 }
 
+inline NewParametricProcess* is_newparametric(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::ParametricProcess);
+
+    return static_cast<NewParametricProcess *>(svp);
+}
+
+
 #endif

@@ -16,8 +16,9 @@ struct FspDriver;
 
 namespace yy {
 
-/* Parse tree node base class. */
-class TreeNode {
+/* Parse tree node base class. It derives from ParametricTranslator,
+   so that a TreeNode* can be used with the NewParametricProcess class. */
+class TreeNode : public ParametricTranslator {
     protected:
         vector<TreeNode *> children;
         location loc;
@@ -419,7 +420,7 @@ class SeqProcessListNode : public PvecTreeNode {
     public:
         string getClassName() const { return "SeqProcessList"; }
         SeqProcessListNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class SemicolonNode : public TreeNode {
@@ -431,7 +432,7 @@ class SeqCompNode : public PvecTreeNode {
     public:
         string getClassName() const { return "SeqComp"; }
         SeqCompNode(Pvec *v) : PvecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class IndexRangesNode : public SvpVecTreeNode {

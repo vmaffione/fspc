@@ -810,20 +810,122 @@ void yy::ProcessRefSeqNode::translate(FspDriver& c)
 
     DTC(ProcessIdNode, in, children[0]);
     DTCS(ArgumentsNode, an, children[1]);
-    string ref = in->res;
+    SymbolValue *svp;
+    NewParametricProcess *pp;
+    vector<int> arguments;
+    string extension;
 
-    if (an) {
-        ref += "(";
-        for (unsigned int i=0; i<an->res.size(); i++) {
-            ref += int2string(an->res[i]);
-            if (i != an->res.size() - 1) {
-                ref += ",";
-            }
-        }
-        ref += ")";
+    /* Lookup 'process_id' in the 'parametric_process' table. */
+    if (!c.parametric_processes.lookup(in->res, svp)) {
+	stringstream errstream;
+	errstream << "Process " << in->res << " undeclared";
+	semantic_error(c, errstream, loc);
+    }
+    pp = is_newparametric(svp);
+
+    /* Find the arguments for the process parameters. */
+    arguments = an ? an->res : pp->defaults;
+
+    if (arguments.size() != pp->defaults.size()) {
+	stringstream errstream;
+	errstream << "Parameters mismatch";
+	semantic_error(c, errstream, loc);  // XXX tr.locations[1]
     }
 
-cout << ref << "\n";
+    lts_name_extension(arguments, extension);
+
+    /* We first lookup the global processes table in order to see if
+       we already have the requested LTS. */
+cout << "Looking up " << in->res+extension << "\n";
+    if (c.processes.lookup(in->res + extension, svp)) {
+	/* If there is a cache hit, use the stored LTS. */
+	res = *(is_lts(svp));
+    } else {
+        ProcessDefNode *tree_node;
+        vector<string> overridden_names;
+        vector<SymbolValue *> overridden_values;
+
+	/* If there is a cache miss, we have to compute the requested LTS
+	   using the translate method and save it in the global processes
+           table. */
+        tree_node = dynamic_cast<ProcessDefNode *>(pp->translator);
+        assert(tree_node);
+        /* Save and reset the compiler context. */
+        c.nesting_save(true);
+        /* Insert the arguments into the identifiers table, taking care
+           of overridden names. */
+        for (unsigned int i=0; i<pp->names.size(); i++) {
+            SymbolValue *svp;
+            ConstValue *cvp = new ConstValue();
+
+            if (c.identifiers.lookup(pp->names[i], svp)) {
+                /* If there is already an identifier with the same name as
+                   the i-th parameter, override temporarly the identifier. */
+                overridden_names.push_back(pp->names[i]);
+                overridden_values.push_back(svp->clone());
+                c.identifiers.remove(pp->names[i]);
+            }
+
+            cvp->value = arguments[i];
+            if (!c.identifiers.insert(pp->names[i], cvp)) {
+                assert(0);
+                delete cvp;
+            }
+            c.paramproc.insert(pp->names[i], arguments[i]);
+        }
+        /* Do the translation an grab the result. The new LTS is
+           stored in the 'processes' table by the translate function. */
+	tree_node->translate(c);
+        res = tree_node->res;
+        /* Restore the previously saved compiler context. */
+        c.nesting_restore();
+        /* Remove the arguments from the identifiers table. */
+        for (unsigned int i=0; i<pp->names.size(); i++) {
+            c.identifiers.remove(pp->names[i]);
+        }
+        /* Restore overridden identifiers. */
+        for (unsigned int i=0; i<overridden_names.size(); i++) {
+            if (!c.identifiers.insert(overridden_names[i],
+                                      overridden_values[i])) {
+                assert(0);
+                delete overridden_values[i];
+            }
+        }
+    }
+
+    /* Merge the alphabet into c.alphabet_extension, so that we don't
+       loose the alphabet extension information switching the
+       ProcessNode representation (toProcessNode()). The alphabet
+       extension will be merged into the final LTS in callback__15. */
+    //lts.mergeAlphabetInto(c.alphabet_extension); // XXX do we need this?
+}
+
+void yy::SeqProcessListNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    do {
+        DTC(ProcessRefSeqNode, pr, children[0]);
+
+        res = pr->res;
+    } while (0);
+
+    for (unsigned int i=2; i<children.size(); i+=2) {
+        DTC(ProcessRefSeqNode, pr, children[i]);
+
+        res.endcat(pr->res);
+    }
+}
+
+void yy::SeqCompNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(SeqProcessListNode, pl, children[0]);
+    DTC(BaseLocalProcessNode, lp, children[2]);
+
+    res = pl->res;
+    res.endcat(lp->res);
 }
 
 void yy::LocalProcessNode::translate(FspDriver& c)
@@ -832,12 +934,14 @@ void yy::LocalProcessNode::translate(FspDriver& c)
 
     if (children.size() == 1) {
         DTCS(BaseLocalProcessNode, b, children[0]);
+        DTCS(SeqCompNode, sc, children[0]);
 
         if (b) {
             res = b->res;
+        } else if (sc) {
+            res = sc->res;
         } else {
-            /* TODO all the other cases. */
-            res = Lts(LtsNode::Error, &c.actions);
+            assert(FALSE);
         }
     } else if (children.size() == 3) {
         /* ( choice ) */
@@ -1016,6 +1120,16 @@ void yy::HidingInterfNode::translate(FspDriver& c)
 
 void yy::ParameterNode::translate(FspDriver& c)
 {
+    if (c.replay) {
+        /* When c.replay is true, it means that we are translating a process
+           because of a process reference (e.g. ProcessRefSeqNode). In
+           this case we don't want to translate the parse tree nodes
+           corresponding to parameters, because the identifiers corresponding
+           to the process arguments have already been inserted into the
+           identifiers table. */
+        return;
+    }
+
     translate_children(c);
 
     DTC(ParameterIdNode, in, children[0]);
@@ -1033,6 +1147,7 @@ void yy::ParameterNode::translate(FspDriver& c)
     cvp->value = en->res;
     if (!c.identifiers.insert(in->res, cvp)) {
         // TODO manage the error
+        cout << "Whaaat? duplicate again\n";   
         delete cvp;
     }
     /* Save the parameter name for subsequent removal. */
@@ -1149,15 +1264,23 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     DTCS(RelabelingNode, rn, children[5]);
     DTCS(HidingInterfNode, hin, children[6]);
     unsigned unres;
-    set<unsigned int> uis;
 
     /* The base is the process body. */
     res = bn->res;
 
+/*
+res.print();
+cout << "UnresolvedNames:\n";
+for (unsigned int i=0; i<c.unres.size(); i++) {
+    unsigned ui = c.unres.get_idx(i);
+
+    if (ui != ~0U) {
+        cout << "   " << ui << " " << c.unres.get_name(i) << "\n";
+    }
+}*/
+
     /* Register the process name into c.unres. */
     update_unres(c.unres, idn->res, res);
-
-//res.print();
 
     /* Try to resolve all the unresolved nodes into the LTS. */
     unres = res.resolve();
@@ -1166,21 +1289,8 @@ void yy::ProcessDefNode::translate(FspDriver& c)
         // TODO manage the error
     }
 
-//cout << "UnresolvedNames:\n";
-    /* Check if there are undefined names. */
-    for (unsigned int i=0; i<c.unres.size(); i++) {
-        unsigned ui = c.unres.get_idx(i);
-
-        if (ui != ~0U) {
-            uis.insert(ui);
-//            cout << "   " << ui << " " << c.unres.get_name(i) << "\n";
-        }
-    }
-    res.check_privs(uis);
-    for (set<unsigned int>::iterator it=uis.begin(); it != uis.end(); it++) {
-        cout << c.unres.lookup(*it) << " undefined\n";
-        //TODO manage the error
-    }
+    /* Merge the End nodes. */
+    res.mergeEndNodes();
 
     /* Extend the alphabet. */
     if (aen) {
@@ -1213,18 +1323,27 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* TODO The following will go into an helper function. */
     string extension;
     SymbolValue *res_clone = res.clone();
-    SymbolValue *pp_clone = c.paramproc.clone();
+    NewParametricProcess *pp_clone = is_newparametric(c.paramproc.clone());
 
     res.name = idn->res;
 
     /* Store c.paramproc in parametric_processes. */
+    pp_clone->set_translator(this);
     if (!c.parametric_processes.insert(res.name, pp_clone)) {
+        /* TODO in futuro, è probabile che qui non bisogni dare errore,
+            perchè se this->translate è stata chiamata per creare una diversa
+            versione di un processo parametrico, bisogna comunque
+            inserire la nuova versione in "processes", ma non registrare
+            di nuovo il processo in "parametric_processes".
+        
 	stringstream errstream;
 
         delete pp_clone;
 	errstream << "Parametric process " << res.name
 	    << " already declared";
 	semantic_error(c, errstream, loc);
+        */
+        delete pp_clone;
     }
 
     /* Compute the LTS name extension, but don't extend res.name (pretty
@@ -1232,11 +1351,13 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     lts_name_extension(c.paramproc.defaults, extension);
 
     /* Insert lts into the global 'processes' table. */
+cout << "Saving " << res.name + extension << "\n";
     if (!c.processes.insert(res.name + extension, res_clone)) {
 	stringstream errstream;
 
         delete res_clone;
-	errstream << "Process " << res.name << " already declared";
+	errstream << "Process " << res.name + extension
+                    << " already declared";
 	semantic_error(c, errstream, loc);
     }
 

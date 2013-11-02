@@ -1314,7 +1314,7 @@ void LtsNode::offset(int offset)
 /* This function is used to concatenate 'lts' to *this, without
    creating any transitions between the two. This function returns the
    offset that can be used to compute the 'Edge.dest' field of connection
-   going from this->nodes[0] to a state in 'lts' after the concatenation.
+   going from this->nodes[k] to a state in 'lts' after the concatenation.
 */
 unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
 {
@@ -1462,6 +1462,78 @@ yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
     return *this;
 }
 
+/* Append 'lts' to *this and connect the End node of this to 'lts[0]'. */
+bool yy::Lts::endcat(const yy::Lts& lts)
+{
+    unsigned int offset;
+    unsigned int x;
+
+    /* Find the End node (well, the first that we run into, but this
+       method should be invoked after the mergeEndNodes method). */
+    for (x=0; x<nodes.size(); x++) {
+        if (nodes[x].type == LtsNode::End) {
+            break;
+        }
+    }
+
+    if (x == nodes.size()) {
+        return false;
+    }
+
+    /* Append everithing but the 'lts[0]'. */
+    offset = append(lts, 1);
+
+    /* Replace the End node with 'lts[0]'. */
+    nodes[x] = lts.nodes[0];
+    /* Offset the transitions of 'lts[0]'. */
+    nodes[x].offset(offset);
+
+    return true;
+}
+
+/* Merge all the End nodes into a single End node, modifying the
+   involved transitions accordingly. */
+yy::Lts& yy::Lts::mergeEndNodes()
+{
+    unsigned int x;
+
+    /* Select the first End node that we run into. */
+    for (x=0; x<nodes.size(); x++) {
+        if (nodes[x].type == LtsNode::End) {
+            break;
+        }
+    }
+
+    if (x < nodes.size()) {
+        bool zombies = false;
+
+        /* Make all the transitions towards an End node point to
+           the selected End node x. */
+        for (unsigned int i=0; i<nodes.size(); i++) {
+            for (unsigned int j=0; j<nodes[i].children.size(); j++) {
+                Edge& e = nodes[i].children[j];
+
+                if (nodes[e.dest].type == LtsNode::End) {
+                    e.dest = x;
+                }
+            }
+        }
+        /* Turn the type of the non-selected End nodes into LtsNode::Zombie,
+           so that the can be removed using the removeType method. */
+        for (unsigned int i=0; i<nodes.size(); i++) {
+            if (nodes[i].type == LtsNode::End && i != x) {
+                nodes[i].type = LtsNode::Zombie;
+                zombies = true;
+            }
+        }
+        if (zombies) {
+            removeType(LtsNode::Zombie);
+        }
+    }
+
+    return *this;
+}
+
 /* Set the 'priv' field of *this[state] to 'val'. */
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
@@ -1520,6 +1592,11 @@ unsigned int yy::Lts::resolve()
         }
     }
 
+    /* Reset the priv fields. */
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        set_priv(i, ~0U);
+    }
+
     /* Compact the Lts in order to remove unresolved nodes and related
        transitions. */
     removeType(LtsNode::Unresolved);
@@ -1531,6 +1608,7 @@ unsigned int yy::Lts::resolve()
    set. When an element of 'privs' is matched, is removed from the set, so
    that when the method returns, the 'privs' set contains the unmatched
    elements.
+   <<<UNUSED>>>
 */
 void yy::Lts::check_privs(set<unsigned int>& privs)
 {

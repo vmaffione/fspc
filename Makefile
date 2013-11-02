@@ -1,10 +1,10 @@
 VER=1.2
 
-# Generated C++ source files.
+# Generated C++ source files (to be updated manually)
 GENERATED=parser.cpp parser.hpp scanner.cpp preproc.cpp location.hh position.hh
 
-# Non-generated C++ source files.
-NONGEN=callbacks.hpp callbacks.cpp context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp driver.cpp driver.hpp tree.cpp tree.hpp preproc.hpp
+# Non-generated C++ source files (to be updated manually).
+NONGEN=callbacks.hpp callbacks.cpp context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp driver.cpp driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp
 
 # All the C++ source files.
 SOURCES=$(NONGEN) $(GENERATED)
@@ -62,12 +62,20 @@ ctags: tags
 clean:
 	-rm *.o fspcc *.out *.orig
 
-# Also remove the generated Makefile.gen
+# Also remove the generated Makefile.gen.
 cleandist: clean cleanaur clc
 	-rm Makefile.gen $(GENERATED)
 
+# Total number of lines of the non-generated source files.
 lines:
 	wc -l $(WCIN)
+
+# Count the number of generated and non-generated C++ source files
+count:
+	echo "Number of C++ source files manually included"
+	echo $(GENERATED) $(NONGEN) | wc -w
+	echo "Number of C++ source files (check against the previous)"
+	ls *.hpp *.cpp *.hh | wc -w
 
 aurlocal: fspcc-$(VER).tar.gz
 	python create_pkgbuild.py local $(VER)
