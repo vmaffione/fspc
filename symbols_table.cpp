@@ -521,6 +521,27 @@ HidingValue::~HidingValue()
 }
 
 
+/* =========================== NewPriorityValue ========================= */
+void NewPriorityValue::print() const
+{
+    cout << "Priority: ";
+    if (low)
+	cout << ">> ";
+    else
+	cout << "<< ";
+    setv.print();
+}
+
+SymbolValue *NewPriorityValue::clone() const
+{
+    NewPriorityValue *pv = new NewPriorityValue;
+
+    pv->low = low;
+    pv->setv = setv;
+
+    return pv;
+}
+
 /* ============================ PriorityValue =========================== */
 void PriorityValue::print() const
 {
@@ -576,7 +597,8 @@ void NewParametricProcess::print() const
 {
     cout << "ParametricProcess: ";
     for (unsigned int i=0; i<names.size(); i++) {
-        cout << "   " << names[i] << " [" << defaults[i] << "]\n";
+        cout << "   " << names[i] << " [" << defaults[i] << "], "
+                << this << "\n";
     }
 }
 

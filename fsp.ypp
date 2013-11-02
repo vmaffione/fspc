@@ -1686,7 +1686,7 @@ priority:
 	    driver.parametric->record.push_back(new Callback_V_V(&callback__87));
 	ret = callback__87(driver.tr, n2->value);
 	$$ = new PriorityNode(ret);
-        $$->addChild(new LeftShiftNode());
+        $$->addChild(new OperatorNode("<<"));
         $$->addChild($2);
         POP(); PUSH($$);
     }

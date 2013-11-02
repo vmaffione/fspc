@@ -1,3 +1,5 @@
+[0] reuse code for all the next_set_indexes()
+[O] with IF-THEN-ELSE constructs, optimize by translating only one branch,a nd    not both
 [O] add "location" to *Node constructors
 [O] in sequential composition, increase efficiency by starting the visit from the first node of the right side process, instead of the first node of the left side process
 [O] fix memory leaks

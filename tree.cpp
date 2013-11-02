@@ -138,14 +138,15 @@ void yy::RootNode::translate(FspDriver& c)
     for (unsigned int i=0; i<children.size(); i++) {
         if (children[i]) {
             DTCS(ProcessDefNode, pdn, children[i]);
+            DTCS(CompositeDefNode, cdn, children[i]);
 
-            if (pdn) {
+            if (pdn || cdn) {
                 /* Save the compiler context (in this case, an empty
                    context). */
                 c.nesting_save(false);
             }
             children[i]->translate(c);
-            if (pdn) {
+            if (pdn || cdn) {
                 /* Restore the saved context (empty). */
                 c.nesting_restore();
             }
@@ -819,7 +820,7 @@ void yy::ArgumentsNode::translate(FspDriver& c)
     res = al->res;
 }
 
-void yy::ProcessRefSeqNode::translate(FspDriver& c)
+void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 {
     translate_children(c);
 
@@ -856,15 +857,17 @@ cout << "Looking up " << in->res+extension << "\n";
 	/* If there is a cache hit, use the stored LTS. */
 	res = *(is_lts(svp));
     } else {
-        ProcessDefNode *tree_node;
+        ProcessDefNode *pdn;
+        CompositeDefNode *cdn;
         vector<string> overridden_names;
         vector<SymbolValue *> overridden_values;
 
 	/* If there is a cache miss, we have to compute the requested LTS
 	   using the translate method and save it in the global processes
-           table. */
-        tree_node = dynamic_cast<ProcessDefNode *>(pp->translator);
-        assert(tree_node);
+           table. TODO why not using DTCS here? */
+        pdn = dynamic_cast<ProcessDefNode *>(pp->translator);
+        cdn = dynamic_cast<CompositeDefNode *>(pp->translator);
+        assert(pdn || cdn);
         /* Save and reset the compiler context. It must be called before
            inserting the parameters into c.paramproc (see the following
            for loop). */
@@ -892,8 +895,13 @@ cout << "Looking up " << in->res+extension << "\n";
         }
         /* Do the translation an grab the result. The new LTS is
            stored in the 'processes' table by the translate function. */
-	tree_node->translate(c);
-        res = tree_node->res;
+        if (pdn) {
+            pdn->translate(c);
+            res = pdn->res;
+        } else {
+            cdn->translate(c);
+            res = cdn->res;
+        }
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
         /* Restore overridden identifiers. */
@@ -911,6 +919,11 @@ cout << "Looking up " << in->res+extension << "\n";
        ProcessNode representation (toProcessNode()). The alphabet
        extension will be merged into the final LTS in callback__15. */
     //lts.mergeAlphabetInto(c.alphabet_extension); // XXX do we need this?
+}
+
+void yy::ProcessRefSeqNode::translate(FspDriver& c)
+{
+    process_ref_translate(c, res);
 }
 
 void yy::SeqProcessListNode::translate(FspDriver& c)
@@ -1265,6 +1278,44 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
     }
 }
 
+void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
+                                           const string& name)
+{
+    string extension;
+    SymbolValue *res_clone = res.clone();
+    NewParametricProcess *pp_clone = is_newparametric(c.paramproc.clone());
+
+    res.name = name;
+
+    if (!c.replay) {
+        /* Store c.paramproc in parametric_processes. */
+        pp_clone->set_translator(this);
+        if (!c.parametric_processes.insert(res.name, pp_clone)) {
+            stringstream errstream;
+
+            delete pp_clone;
+            errstream << "Parametric process " << res.name
+                << " already declared";
+            semantic_error(c, errstream, loc);
+        }
+    }
+
+    /* Compute the LTS name extension, but don't extend res.name (pretty
+       output). */
+    lts_name_extension(c.paramproc.defaults, extension);
+
+    /* Insert lts into the global 'processes' table. */
+cout << "Saving " << res.name + extension << "\n";
+    if (!c.processes.insert(res.name + extension, res_clone)) {
+	stringstream errstream;
+
+        delete res_clone;
+	errstream << "Process " << res.name + extension
+                    << " already declared";
+	semantic_error(c, errstream, loc);
+    }
+}
+
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -1331,40 +1382,239 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     }
     res.graphvizOutput("temp.lts");
 
-    /* TODO The following will go into an helper function. */
-    string extension;
-    SymbolValue *res_clone = res.clone();
-    NewParametricProcess *pp_clone = is_newparametric(c.paramproc.clone());
+    this->post_process_definition(c, res, idn->res);
+}
 
-    res.name = idn->res;
+void yy::ProcessRefNode::translate(FspDriver& c)
+{
+    process_ref_translate(c, res);
+}
 
-    if (!c.replay) {
-        /* Store c.paramproc in parametric_processes. */
-        pp_clone->set_translator(this);
-        if (!c.parametric_processes.insert(res.name, pp_clone)) {
-            stringstream errstream;
+void yy::SharingNode::translate(FspDriver& c)
+{
+    translate_children(c);
 
-            delete pp_clone;
-            errstream << "Parametric process " << res.name
-                << " already declared";
-            semantic_error(c, errstream, loc);
-            delete pp_clone;
+    DTC(ActionLabelsNode, an, children[0]);
+
+    res = computeActionLabels(c, SetValue(), an->res, 0);
+}
+
+void yy::LabelingNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ActionLabelsNode, an, children[0]);
+
+    res = computeActionLabels(c, SetValue(), an->res, 0);
+}
+
+void yy::PriorityNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(OperatorNode, on, children[0]);
+    DTC(SetNode, sn, children[1]);
+
+    if (on->sign == ">>") {
+        res.low = true;
+    } else if (on->sign == "<<") {
+        res.low = false;
+    } else {
+        assert(0);
+    }
+    res.setv = sn->res;
+}
+
+void yy::CompositeBodyNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    if (children.size() == 4) {
+        /* sharing_OPT labeling_OPT process_ref relabel_OPT */
+        DTCS(SharingNode, shn, children[0]);
+        DTCS(LabelingNode, lbn, children[1]);
+        DTC(ProcessRefNode, prn, children[2]);
+        DTCS(RelabelingNode, rln, children[3]);
+
+        res = prn->res;
+
+        /* Apply the process labeling operator. */
+        if (lbn) {
+            res.labeling(lbn->res);
         }
+
+        /* Apply the process sharing operator. */
+        if (shn) {
+            res.sharing(shn->res);
+        }
+
+        /* Apply the relabeling operator. */
+        if (rln) {
+            NewRelabelingValue& rlv = rln->res;
+
+            for (unsigned int i=0; i<rlv.size(); i++) {
+                res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+            }
+        }
+    } else if (children.size() == 5) {
+        /* IF expression THEN composity_body composite_else_OPT */
+        DTC(ExpressionNode, en, children[1]);
+        DTC(CompositeBodyNode, cb, children[3]);
+        DTCS(CompositeElseNode, ce, children[4]);
+
+        if (en->res) {
+            res = cb->res;
+        } else if (ce) {
+            res = ce->res;
+        } else {
+            res = Lts(LtsNode::Normal, &c.actions);
+        }
+    } else if (children.size() == 6) {
+        /* sharing_OPT labeling_OPT ( parallel_composition ) relabeling_OPT
+         */
+        DTCS(SharingNode, shn, children[0]);
+        DTCS(LabelingNode, lbn, children[1]);
+        DTC(ParallelCompNode, pcn, children[3]);
+        DTCS(RelabelingNode, rln, children[5]);
+
+        /* TODO apply relabeling before parallel composition (here
+           parallel composition has already been applied). */
+        res = pcn->res;
+
+        /* Apply the process labeling operator. */
+        if (lbn) {
+            res.labeling(lbn->res);
+        }
+
+        /* Apply the process sharing operator. */
+        if (shn) {
+            res.sharing(shn->res);
+        }
+
+        /* Apply the relabeling operator. */
+        if (rln) {
+            NewRelabelingValue& rlv = rln->res;
+
+            for (unsigned int i=0; i<rlv.size(); i++) {
+                res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+            }
+        }
+    } else if (children.size() == 3) {
+        /* FORALL index_ranges composite_body */
+        DTC(IndexRangesNode, irn, children[1]);
+        DTC(CompositeBodyNode, cb, children[2]);
+
+        /* Only translate 'index_ranges', while 'composite_body'
+           will be translated in the loop below. */
+        irn->translate(c);
+
+        const vector<TreeNode *>& elements = irn->res;
+        vector<unsigned int> indexes(elements.size());
+        NewContext ctx = c.ctx;  /* Save the original context. */
+        bool first = true;
+
+        /* Initialize the 'indexes' vector, used to iterate over all the
+           possible index combinations. */
+        for (unsigned int j=0; j<elements.size(); j++) {
+            indexes[j] = 0;
+        }
+
+        do {
+            string index_string;
+
+            /* Scan the ranges from the left to the right, computing the
+               '[x][y][z]...' string corresponding to 'indexes'. */
+            for (unsigned int j=0; j<elements.size(); j++) {
+                /* Here we do the translation that was deferred in the lower
+                   layers. */
+                elements[j]->translate(c);
+                DTC(ActionRangeNode, an, elements[j]);
+
+                if (an) {
+                    index_string += "[" + an->res.actions[ indexes[j] ] + "]";
+                    if (an->res.hasVariable()) {
+                        if (!c.ctx.insert(an->res.variable,
+                                    an->res.actions[ indexes[j] ])) {
+                            cout << "ERROR: ctx.insert()\n";
+                        }
+                    }
+                } else {
+                    assert(FALSE);
+                }
+            }
+
+            /* Translate the LocalProcess using the current context. */
+            cb->translate(c);
+
+            if (first) {
+                first = false;
+                res = cb->res;
+            } else {
+                res.compose(cb->res);
+            }
+
+            /* Restore the saved context. */
+            c.ctx = ctx;
+
+            /* Increment 'indexes' for the next 'index_string', and exits if
+               there are no more combinations. */
+        } while (next_set_indexes(elements, indexes));
+    } else {
+        assert(0);
+    }
+}
+
+void yy::CompositeElseNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(CompositeBodyNode, cb, children[1]);
+
+    res = cb->res;
+}
+
+void yy::ParallelCompNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    do {
+        DTC(CompositeBodyNode, cb, children[0]);
+
+        res = cb->res;
+    } while (0);
+
+    for (unsigned int i=2; i<children.size(); i+=2) {
+        DTC(CompositeBodyNode, cb, children[i]);
+
+        res.compose(cb->res);
+    }
+}
+
+void yy::CompositeDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ProcessIdNode, idn, children[1]);
+    DTC(CompositeBodyNode, cb, children[4]);
+    DTCS(PriorityNode, pr, children[5]);
+    DTCS(HidingInterfNode, hin, children[6]);
+
+    /* The base is the composite body. */
+    res = cb->res;
+
+    /* Apply the priority operator. */
+    if (pr) {
+        res.priority(pr->res.setv, pr->res.low);
     }
 
-    /* Compute the LTS name extension, but don't extend res.name (pretty
-       output). */
-    lts_name_extension(c.paramproc.defaults, extension);
+    /* Apply the hiding/interface operator. */
+    if (hin) {
+        NewHidingValue& hv = hin->res;
 
-    /* Insert lts into the global 'processes' table. */
-cout << "Saving " << res.name + extension << "\n";
-    if (!c.processes.insert(res.name + extension, res_clone)) {
-	stringstream errstream;
-
-        delete res_clone;
-	errstream << "Process " << res.name + extension
-                    << " already declared";
-	semantic_error(c, errstream, loc);
+        res.hiding(hv.setv, hv.interface);
     }
+    res.graphvizOutput("temp.lts");
+
+    this->post_process_definition(c, res, idn->res);
 }
 

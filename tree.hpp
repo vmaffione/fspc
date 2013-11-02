@@ -30,6 +30,13 @@ class TreeNode : public ParametricTranslator {
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
                                      vector<NewContext>& ctxcache);
+        void post_process_definition(FspDriver& c, Lts& res,
+                                           const string& name);
+        /* TODO when everything will work, remove this method and
+           declare a ProcessRefBase class from which ProcessRefNode an
+           ProcessRefSeq derive, and define the translate method of the
+           base class with the code contained in process_ref_translate. */
+        void process_ref_translate(FspDriver& c, yy::Lts& res);
 
     public:
         virtual ~TreeNode();
@@ -197,6 +204,7 @@ class ExpressionNode : public SvpVecTreeNode {
 class OperatorNode : public TreeNode {
     public:
         string sign;
+
         OperatorNode(const string& s) : sign(s) { }
         string getClassName() const { return sign; }
 };
@@ -325,9 +333,11 @@ class ColonNode : public TreeNode {
 
 class LabelingNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "Labeling"; }
         LabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class DoubleColonNode : public TreeNode {
@@ -337,30 +347,38 @@ class DoubleColonNode : public TreeNode {
 
 class SharingNode : public SvpVecTreeNode {
     public:
+        SetValue res;
+
         string getClassName() const { return "Sharing"; }
         SharingNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ProcessRefNode : public SvpVecTreeNode {
     public:
+        Lts res;
+
         string getClassName() const { return "ProcessRef"; }
         ProcessRefNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ParallelCompNode : public SvpVecTreeNode {
     public:
+        Lts res;
+
         string getClassName() const { return "ParallelComp"; }
         ParallelCompNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class CompositeElseNode : public SvpVecTreeNode {
     public:
+        Lts res;
+
         string getClassName() const { return "CompositeElse"; }
         CompositeElseNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class ElseNode : public TreeNode {
@@ -370,9 +388,11 @@ class ElseNode : public TreeNode {
 
 class CompositeBodyNode : public SvpVecTreeNode {
     public:
+        Lts res;
+
         string getClassName() const { return "CompositeBody"; }
         CompositeBodyNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
+        void translate(FspDriver& c);
 };
 
 class IfNode : public TreeNode {
@@ -387,8 +407,10 @@ class ThenNode : public TreeNode {
 
 class CompositeDefNode : public TreeNode {
     public:
-        string getClassName() const { return "CompositeDef"; }
+        Lts res;
 
+        string getClassName() const { return "CompositeDef"; }
+        void translate(FspDriver& c);
 };
 
 class ArgumentListNode : public SvpVecTreeNode {
@@ -706,14 +728,11 @@ class RootNode : public TreeNode {
 
 class PriorityNode : public SvpVecTreeNode {
     public:
+        NewPriorityValue res;
+
         string getClassName() const { return "Priority"; }
         PriorityNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
-};
-
-class LeftShiftNode : public TreeNode {
-    public:
-        string getClassName() const { return "<<"; }
+        void translate(FspDriver& c);
 };
 
 class RelabelingNode : public SvpVecTreeNode {

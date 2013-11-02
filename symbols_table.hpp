@@ -179,6 +179,16 @@ struct HidingValue: public SymbolValue {
     ~HidingValue();
 };
 
+struct NewPriorityValue: public SymbolValue {
+    SetValue setv;
+    bool low;
+
+    NewPriorityValue() : low(false) { }
+    void print() const;
+    int type() const { return SymbolValue::Priority; }
+    SymbolValue * clone() const;
+};
+
 struct PriorityValue: public SymbolValue {
     SetValue * setvp;
     bool low;
