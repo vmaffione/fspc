@@ -384,10 +384,15 @@ int FspDriver::parse(const CompilerOptions& co)
 
 void FspDriver::nesting_save(bool r)
 {
-    nesting_ctx = ctx;
-    nesting_unres = unres;
-    nesting_paramproc = paramproc;
-    nesting_replay = replay;
+    /* Save the current context and push it on the
+       nesting stack. */
+    nesting_stack.push_back(NestingContext());
+    nesting_stack.back().ctx = ctx;
+    nesting_stack.back().unres = unres;
+    nesting_stack.back().paramproc = paramproc;
+    nesting_stack.back().replay = replay;
+
+    /* Clean the current context. */
     ctx.clear();
     unres.clear();
     paramproc.clear();
@@ -396,10 +401,18 @@ void FspDriver::nesting_save(bool r)
 
 void FspDriver::nesting_restore()
 {
-    ctx = nesting_ctx;
-    unres = nesting_unres;
-    paramproc = nesting_paramproc;
-    replay = nesting_replay;
+    /* Remove the parameters identifiers. */
+    for (unsigned int i=0; i<paramproc.names.size(); i++) {
+        identifiers.remove(paramproc.names[i]);
+    }
+
+    /* Pop the last saved context. */
+    assert(nesting_stack.size());
+    ctx = nesting_stack.back().ctx;
+    unres = nesting_stack.back().unres;
+    paramproc = nesting_stack.back().paramproc;
+    replay = nesting_stack.back().replay;
+    nesting_stack.pop_back();
 }
 
 void FspDriver::error(const yy::location& l, const std::string& m)

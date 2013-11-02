@@ -119,6 +119,14 @@ namespace yy {
     class TreeNode;
 };
 
+struct NestingContext {
+    NewContext ctx;
+    UnresolvedNames unres;
+    /* The names of the parameters used in a process definition. */
+    NewParametricProcess paramproc;
+    bool replay;
+};
+
 /* Conducting the whole scanning and parsing of fspcc. */
 class FspDriver
 {
@@ -139,16 +147,26 @@ class FspDriver
 	ParametricProcess * parametric;
 	struct SymbolsTable parametric_processes;
 
-	/* The main translator. */
+	/* The main translator. TODO will go away */
 	FspTranslator tr;
 
         /* ========================== New API ======================== */
+        /* Current value of variables (e.g. action/process indexes). */
         NewContext ctx;
 
+        /* Keep track of process names to be resolved and their aliases. */
         UnresolvedNames unres;
 
         /* The names of the parameters used in a process definition. */
         NewParametricProcess paramproc;
+
+        /* Are we currently in replay mode? */
+        bool replay;
+
+        /* Nesting support for parametric process references. */
+        vector<NestingContext> nesting_stack;
+        void nesting_save(bool replay);
+        void nesting_restore();
 
         /* We keep track of alphabet extension when using sequential
            processes (see ProcessSeqRefNode::translate). */
@@ -163,16 +181,7 @@ class FspDriver
 
         /* =========================================================== */
 
-        /* Nesting support for parametric process references. */
-        bool replay;
-        NewContext nesting_ctx;
-        UnresolvedNames nesting_unres;
-        NewParametricProcess nesting_paramproc;
-        bool nesting_replay;
-        void nesting_save(bool replay);
-        void nesting_restore();
-
-	/* The ProcessNode allocator. */
+	/* The ProcessNode allocator. TODO will go away*/
 	ProcessNodeAllocator pna;
 
 	string remove_file;

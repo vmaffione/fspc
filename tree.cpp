@@ -135,7 +135,22 @@ void yy::TreeNode::translate(FspDriver& c)
 
 void yy::RootNode::translate(FspDriver& c)
 {
-    translate_children(c);
+    for (unsigned int i=0; i<children.size(); i++) {
+        if (children[i]) {
+            DTCS(ProcessDefNode, pdn, children[i]);
+
+            if (pdn) {
+                /* Save the compiler context (in this case, an empty
+                   context). */
+                c.nesting_save(false);
+            }
+            children[i]->translate(c);
+            if (pdn) {
+                /* Restore the saved context (empty). */
+                c.nesting_restore();
+            }
+        }
+    }
 }
 
 void yy::ExpressionNode::translate(FspDriver& c)
@@ -850,7 +865,9 @@ cout << "Looking up " << in->res+extension << "\n";
            table. */
         tree_node = dynamic_cast<ProcessDefNode *>(pp->translator);
         assert(tree_node);
-        /* Save and reset the compiler context. */
+        /* Save and reset the compiler context. It must be called before
+           inserting the parameters into c.paramproc (see the following
+           for loop). */
         c.nesting_save(true);
         /* Insert the arguments into the identifiers table, taking care
            of overridden names. */
@@ -879,10 +896,6 @@ cout << "Looking up " << in->res+extension << "\n";
         res = tree_node->res;
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
-        /* Remove the arguments from the identifiers table. */
-        for (unsigned int i=0; i<pp->names.size(); i++) {
-            c.identifiers.remove(pp->names[i]);
-        }
         /* Restore overridden identifiers. */
         for (unsigned int i=0; i<overridden_names.size(); i++) {
             if (!c.identifiers.insert(overridden_names[i],
@@ -1254,8 +1267,6 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
 
 void yy::ProcessDefNode::translate(FspDriver& c)
 {
-    NewContext ctx = c.ctx;
-
     translate_children(c);
 
     DTC(ProcessIdNode, idn, children[0]);
@@ -1355,13 +1366,5 @@ cout << "Saving " << res.name + extension << "\n";
                     << " already declared";
 	semantic_error(c, errstream, loc);
     }
-
-    /* Do the cleaning up. */
-    c.ctx = ctx;
-    c.unres.clear();
-    for (unsigned int i=0; i<c.paramproc.names.size(); i++) {
-        c.identifiers.remove(c.paramproc.names[i]);
-    }
-    c.paramproc.clear();
 }
 
