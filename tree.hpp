@@ -133,7 +133,6 @@ class IntegerNode : public IntTreeNode {
     public:
         string getClassName() const { return "Integer"; }
         IntegerNode(int v) : IntTreeNode(v) { }
-
 };
 
 class VariableIdNode : public StringTreeNode {
@@ -146,7 +145,6 @@ class ConstantIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ConstantId"; }
         ConstantIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class RangeIdNode : public StringTreeNode {
@@ -165,7 +163,6 @@ class ConstParameterIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ConstParameterId"; }
         ConstParameterIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class ParameterIdNode : public StringTreeNode {
@@ -369,7 +366,7 @@ class ProcessRefNode : public SvpVecTreeNode {
 
 class ParallelCompNode : public SvpVecTreeNode {
     public:
-        Lts res;
+        vector<Lts> res;
 
         string getClassName() const { return "ParallelComp"; }
         ParallelCompNode(SvpVec *v) : SvpVecTreeNode(v) { }
@@ -496,7 +493,6 @@ class GuardNode : public SvpVecTreeNode {
 
         string getClassName() const { return "Guard"; }
         GuardNode(SvpVec *v) : SvpVecTreeNode(v) { }
-
 };
 
 class WhenNode : public TreeNode {
@@ -639,7 +635,6 @@ class RangeDefNode : public TreeNode {
 class RangeKwdNode : public TreeNode {
     public:
         string getClassName() const { return "RangeKwd"; }
-
 };
 
 class DotDotNode : public TreeNode {
@@ -656,7 +651,6 @@ class ConstantDefNode : public TreeNode {
 class ConstKwdNode : public TreeNode {
     public:
         string getClassName() const { return "ConstKwd"; }
-
 };
 
 class RangeExprNode : public SvpVecTreeNode {
@@ -717,14 +711,12 @@ class LowerCaseIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "LowerCaseId"; }
         LowerCaseIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class UpperCaseIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "UpperCaseId"; }
         UpperCaseIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class RootNode : public TreeNode {

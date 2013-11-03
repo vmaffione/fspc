@@ -1634,9 +1634,25 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         DTC(ParallelCompNode, pcn, children[3]);
         DTCS(RelabelingNode, rln, children[5]);
 
-        /* TODO apply relabeling before parallel composition (here
-           parallel composition has already been applied). */
-        res = pcn->res;
+        /* Apply the relabeling operator to each component process
+           separately, before parallel composition. */
+        if (rln) {
+            NewRelabelingValue& rlv = rln->res;
+
+            for (unsigned int k=0; k<pcn->res.size(); k++) {
+                for (unsigned int i=0; i<rlv.size(); i++) {
+                    pcn->res[k].relabeling(rlv.new_labels[i],
+                                           rlv.old_labels[i]);
+                }
+            }
+        }
+
+        /* Apply parallel composition. */
+        assert(pcn->res.size());
+        res = pcn->res[0];
+        for (unsigned int k=1; k<pcn->res.size(); k++) {
+            res.compose(pcn->res[k]);
+        }
 
         /* Apply the process labeling operator. */
         if (lbn) {
@@ -1648,14 +1664,6 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
             res.sharing(shn->res);
         }
 
-        /* Apply the relabeling operator. */
-        if (rln) {
-            NewRelabelingValue& rlv = rln->res;
-
-            for (unsigned int i=0; i<rlv.size(); i++) {
-                res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
-            }
-        }
     } else if (children.size() == 3) {
         /* FORALL index_ranges composite_body */
         DTC(IndexRangesNode, irn, children[1]);
@@ -1683,16 +1691,12 @@ void yy::ParallelCompNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    do {
-        DTC(CompositeBodyNode, cb, children[0]);
+    res.clear();
 
-        res = cb->res;
-    } while (0);
-
-    for (unsigned int i=2; i<children.size(); i+=2) {
+    for (unsigned int i=0; i<children.size(); i+=2) {
         DTC(CompositeBodyNode, cb, children[i]);
 
-        res.compose(cb->res);
+        res.push_back(cb->res);
     }
 }
 
