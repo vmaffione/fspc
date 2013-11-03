@@ -1021,8 +1021,6 @@ cout << "Looking up " << in->res+extension << "\n";
     } else {
         ProcessDefNode *pdn;
         CompositeDefNode *cdn;
-        vector<string> overridden_names;
-        vector<SymbolValue *> overridden_values;
 
 	/* If there is a cache miss, we have to compute the requested LTS
 	   using the translate method and save it in the global processes
@@ -1043,8 +1041,8 @@ cout << "Looking up " << in->res+extension << "\n";
             if (c.identifiers.lookup(pp->names[i], svp)) {
                 /* If there is already an identifier with the same name as
                    the i-th parameter, override temporarly the identifier. */
-                overridden_names.push_back(pp->names[i]);
-                overridden_values.push_back(svp->clone());
+                c.overridden_names.push_back(pp->names[i]);
+                c.overridden_values.push_back(svp->clone());
                 c.identifiers.remove(pp->names[i]);
             }
 
@@ -1066,14 +1064,6 @@ cout << "Looking up " << in->res+extension << "\n";
         }
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
-        /* Restore overridden identifiers. */
-        for (unsigned int i=0; i<overridden_names.size(); i++) {
-            if (!c.identifiers.insert(overridden_names[i],
-                                      overridden_values[i])) {
-                assert(0);
-                delete overridden_values[i];
-            }
-        }
     }
 }
 
@@ -1336,25 +1326,32 @@ void yy::ParameterNode::translate(FspDriver& c)
 
     DTC(ParameterIdNode, in, children[0]);
     DTC(ExpressionNode, en, children[2]);
-    ConstValue *cvp = new ConstValue;
-
-    /* TODO overriding stuff
+    ConstValue *cvp;
     SymbolValue *svp;
-    if (c.identifiers.lookup(in->res, svp)) {
-        c.overridden_names.push_back(in->res);
-        c.overridden_values.push_back();
-    } */
 
-    /* Insert the parameter into the identifiers table. */
-    cvp->value = en->res;
-    if (!c.identifiers.insert(in->res, cvp)) {
+    /* Save the parameter name for subsequent removal. If there is
+       already a parameter with the same name we report an error. */
+    if (!c.paramproc.insert(in->res, en->res)) {
         stringstream errstream;
         errstream << "parameter " << in->res << " declared twice";
-        delete cvp;
         semantic_error(c, errstream, loc);
     }
-    /* Save the parameter name for subsequent removal. */
-    c.paramproc.insert(in->res, en->res);
+
+    if (c.identifiers.lookup(in->res, svp)) {
+        /* If there is already an identifier with the same name as
+           this parameter, override temporarly the identifier. */
+        c.overridden_names.push_back(in->res);
+        c.overridden_values.push_back(svp->clone());
+        c.identifiers.remove(in->res);
+    }
+
+    /* Insert the parameter into the identifiers table. Here we cannot
+       fail because of of the previous two operations. */
+    cvp = new ConstValue;
+    cvp->value = en->res;
+    if (!c.identifiers.insert(in->res, cvp)) {
+        assert(0);
+    }
 }
 
 void yy::IndexRangesNode::translate(FspDriver& c)

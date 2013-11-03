@@ -123,6 +123,8 @@ struct NestingContext {
     NewContext ctx;
     UnresolvedNames unres;
     NewParametricProcess paramproc;
+    vector<string> overridden_names;
+    vector<SymbolValue *> overridden_values;
     bool replay;
 };
 
@@ -158,6 +160,10 @@ class FspDriver
 
         /* The names of the parameters used in a process definition. */
         NewParametricProcess paramproc;
+
+        /* Overridden names support. */
+        vector<string> overridden_names;
+        vector<SymbolValue *> overridden_values;
 
         /* Are we currently in replay mode? */
         bool replay;

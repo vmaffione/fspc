@@ -396,12 +396,16 @@ void FspDriver::nesting_save(bool r)
     nesting_stack.back().ctx = ctx;
     nesting_stack.back().unres = unres;
     nesting_stack.back().paramproc = paramproc;
+    nesting_stack.back().overridden_names = overridden_names;
+    nesting_stack.back().overridden_values = overridden_values;
     nesting_stack.back().replay = replay;
 
     /* Clean the current context. */
     ctx.clear();
     unres.clear();
     paramproc.clear();
+    overridden_names.clear();
+    overridden_values.clear();
     replay = r;
 }
 
@@ -411,12 +415,22 @@ void FspDriver::nesting_restore()
     for (unsigned int i=0; i<paramproc.names.size(); i++) {
         identifiers.remove(paramproc.names[i]);
     }
+    /* Restore overridden identifiers. */
+    for (unsigned int i=0; i<overridden_names.size(); i++) {
+        if (!identifiers.insert(overridden_names[i],
+                    overridden_values[i])) {
+            assert(0);
+            delete overridden_values[i];
+        }
+    }
 
     /* Pop the last saved context. */
     assert(nesting_stack.size());
     ctx = nesting_stack.back().ctx;
     unres = nesting_stack.back().unres;
     paramproc = nesting_stack.back().paramproc;
+    overridden_names = nesting_stack.back().overridden_names;
+    overridden_values = nesting_stack.back().overridden_values;
     replay = nesting_stack.back().replay;
     nesting_stack.pop_back();
 }

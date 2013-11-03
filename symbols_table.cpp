@@ -590,6 +590,12 @@ PriorityValue::~PriorityValue()
 /* ======================== NewParametricProcess ========================= */
 bool NewParametricProcess::insert(const string& name, int default_value)
 {
+    for (unsigned int i=0; i<names.size(); i++) {
+        if (names[i] == name) {
+            return false;
+        }
+    }
+
     names.push_back(name);
     defaults.push_back(default_value);
 
