@@ -200,7 +200,6 @@ FspDriver::FspDriver() : actions("Global actions table"), tr(*this)
     record_mode_on = 0;
     parametric = new ParametricProcess;
     tree = NULL;
-    iterated_tree = true;
     replay = false;
 }
 

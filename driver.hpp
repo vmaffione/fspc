@@ -175,11 +175,6 @@ class FspDriver
 
         /* The parsing result. */
         yy::TreeNode *tree;
-
-        /* If true the parse tree will be built in a "less" recursive way,
-           meaning that left recursive grammar rules will be "unrolled". */
-        bool iterated_tree; // TODO force iterted_tree=true and remove
-
         /* =========================================================== */
 
 	/* The ProcessNode allocator. TODO will go away*/
