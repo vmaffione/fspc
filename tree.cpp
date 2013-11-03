@@ -248,8 +248,9 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
         string val;
 
         if (!c.ctx.lookup(vn->res, val)) {
-            res = -1;
-            return; // TODO error
+            stringstream errstream;
+            errstream << "variable " << vn->res << " undeclared";
+            semantic_error(c, errstream, loc);
         }
         res = string2int(val);
     } else if (cn) {
@@ -257,7 +258,9 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
         ConstValue *cvp;
 
         if (!c.identifiers.lookup(cn->res, svp)) {
-            return; // TODO
+            stringstream errstream;
+            errstream << "const/parameter " << cn->res << " undeclared";
+            semantic_error(c, errstream, loc);
         }
         cvp = err_if_not_const(c, svp, loc);
         res = cvp->value;
@@ -291,7 +294,9 @@ void yy::RangeNode::translate(FspDriver& c)
         RangeValue *rvp;
 
         if (!c.identifiers.lookup(ri->res, svp)) {
-            return; //TODO
+            stringstream errstream;
+            errstream << "range " << ri->res << " undeclared";
+            semantic_error(c, errstream, loc);
         }
         rvp = err_if_not_range(c, svp, loc);
         res = *rvp;
@@ -354,6 +359,164 @@ void yy::SetDefNode::translate(FspDriver& c)
         delete svp;
         semantic_error(c, errstream, loc);
     }
+}
+
+void yy::PropertyDefNode::translate(FspDriver& c)
+{
+    translate_children(c);
+
+    DTC(ProcessDefNode, pdn, children[1]);
+    SymbolValue *svp;
+    yy::Lts *lts;
+
+    /* Lookup the process name that has just been inserted by
+       ProcessDefNode::translate. */
+    if (!c.processes.lookup(pdn->res.name, svp)) {
+        assert(0);
+    }
+
+    lts = is_lts(svp);
+    /* Apply the property operator, if possible. */
+    if (lts->isDeterministic()) {
+        lts->property();
+    } else {
+        stringstream errstream;
+        errstream << "Cannot apply the 'property' keyword since "
+            << lts->name << " is a non-deterministic process";
+        semantic_error(c, errstream, loc);
+    }
+}
+
+void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
+{
+    DTC(ProgressIdNode, id, children[1]);
+    DTC(SetNode, sn, children[4]);
+    SymbolValue *svp;
+    string name = id->res + index;
+
+    /* Do the set translation here. */
+    sn->translate(c);
+    svp = sn->res.clone();
+
+    if (!c.progresses.insert(name, svp)) {
+        stringstream errstream;
+        errstream << "progress " << name << " declared twice";
+        semantic_error(c, errstream, loc);
+    }
+}
+
+static bool next_set_indexes(const vector<TreeNode *>& elements,
+                             vector<unsigned int>& indexes)
+{
+    unsigned int j = indexes.size() - 1;
+
+    assert(elements.size() == indexes.size());
+
+    if (!elements.size()) {
+        return false;
+    }
+
+    for (;;) {
+        DTCS(StringTreeNode, strn, elements[j]);
+        DTCS(SetNode, setn, elements[j]);
+        DTCS(ActionRangeNode, an, elements[j]);
+
+        if (strn) {
+            /* This element contains just one action, and so there is
+               noting to iterate over. In other words, we always wraparound.
+               Just pass to the next element. */
+        } else if (setn) {
+            indexes[j]++;
+            if (indexes[j] == setn->res.actions.size()) {
+                /* Wraparaund: continue with the next element. */
+                indexes[j] = 0;
+            } else {
+                /* No wraparound: stop here. */
+                break;
+            }
+        } else if (an) {
+            indexes[j]++;
+            if (indexes[j] == an->res.actions.size()) {
+                /* Wraparaund: continue with the next element. */
+                indexes[j] = 0;
+            } else {
+                /* No wraparound: stop here. */
+                break;
+            }
+        } else {
+            assert(0);
+        }
+        /* Continue with the next element, unless we are at the very
+           last one: In the last case tell the caller that all the
+           element combinations have been scanned. At this point
+           'indexes' contain all zeroes. */
+        if (j == 0) {
+            return false;
+        }
+        j--;
+    }
+
+    return true; /* There are more combinations. */
+}
+
+static void for_each_combination(FspDriver& c, IndexRangesNode *irn,
+                                 TreeNode *n)
+{
+    const vector<TreeNode *>& elements = irn->res;
+    vector<unsigned int> indexes(elements.size());
+    NewContext ctx = c.ctx;  /* Save the original context. */
+    bool first = true;
+
+    /* Initialize the 'indexes' vector, used to iterate over all the
+       possible index combinations. */
+    for (unsigned int j=0; j<elements.size(); j++) {
+        indexes[j] = 0;
+    }
+
+    do {
+        string index_string;
+
+        /* Scan the ranges from the left to the right, computing the
+           '[x][y][z]...' string corresponding to 'indexes'. */
+        for (unsigned int j=0; j<elements.size(); j++) {
+            /* Here we do the translation that was deferred in the lower
+               layers. */
+            elements[j]->translate(c);
+            DTC(ActionRangeNode, an, elements[j]);
+
+            if (an) {
+                index_string += "." + an->res.actions[ indexes[j] ];
+                if (an->res.hasVariable()) {
+                    if (!c.ctx.insert(an->res.variable,
+                                an->res.actions[ indexes[j] ])) {
+                        cout << "ERROR: ctx.insert()\n";
+                    }
+                }
+            } else {
+                assert(0);
+            }
+        }
+
+        n->combination(c, index_string, first);
+        first = false;
+
+        /* Restore the saved context. */
+        c.ctx = ctx;
+
+        /* Increment 'indexes' for the next 'index_string', and exits if
+           there are no more combinations. */
+    } while (next_set_indexes(elements, indexes));
+}
+
+void yy::ProgressDefNode::translate(FspDriver& c)
+{
+    DTC(ProgressIdNode, id, children[1]);
+    DTCS(IndexRangesNode, irn, children[2]);
+
+    id->translate(c);
+    irn->translate(c);
+
+    for_each_combination(c, irn, this);
 }
 
 /* This recursive method can be used to compute the set of action defined
@@ -491,7 +654,9 @@ void yy::SetNode::translate(FspDriver& c)
         SetValue *setvp;
 
         if (!c.identifiers.lookup(si->res, svp)) {
-            return; //TODO
+            stringstream errstream;
+            errstream << "set " << si->res << " undeclared";
+            semantic_error(c, errstream, loc);
         }
         setvp = err_if_not_set(c, svp, loc);
         res = *setvp;
@@ -607,60 +772,6 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             break;
         }
     }
-}
-
-bool next_set_indexes(const vector<TreeNode *>& elements,
-                      vector<unsigned int>& indexes)
-{
-    unsigned int j = indexes.size() - 1;
-
-    assert(elements.size() == indexes.size());
-
-    if (!elements.size()) {
-        return false;
-    }
-
-    for (;;) {
-        DTCS(StringTreeNode, strn, elements[j]);
-        DTCS(SetNode, setn, elements[j]);
-        DTCS(ActionRangeNode, an, elements[j]);
-
-        if (strn) {
-            /* This element contains just one action, and so there is
-               noting to iterate over. In other words, we always wraparound.
-               Just pass to the next element. */
-        } else if (setn) {
-            indexes[j]++;
-            if (indexes[j] == setn->res.actions.size()) {
-                /* Wraparaund: continue with the next element. */
-                indexes[j] = 0;
-            } else {
-                /* No wraparound: stop here. */
-                break;
-            }
-        } else if (an) {
-            indexes[j]++;
-            if (indexes[j] == an->res.actions.size()) {
-                /* Wraparaund: continue with the next element. */
-                indexes[j] = 0;
-            } else {
-                /* No wraparound: stop here. */
-                break;
-            }
-        } else {
-            assert(0);
-        }
-        /* Continue with the next element, unless we are at the very
-           last one: In the last case tell the caller that all the
-           element combinations have been scanned. At this point
-           'indexes' contain all zeroes. */
-        if (j == 0) {
-            return false;
-        }
-        j--;
-    }
-
-    return true; /* There are more combinations. */
 }
 
 yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
@@ -800,7 +911,7 @@ void yy::IndicesNode::translate(FspDriver& c)
     for (unsigned int i=0; i<children.size(); i+=3) {
         DTC(ExpressionNode, en, children[i+1]);
 
-        res += "[" + int2string(en->res) + "]";
+        res += "." + int2string(en->res);
     }
 }
 
@@ -1109,54 +1220,6 @@ void yy::AlphaExtNode::translate(FspDriver& c)
     res = sn->res;
 }
 
-void for_each_combination(FspDriver& c, IndexRangesNode *irn, TreeNode *n)
-{
-    const vector<TreeNode *>& elements = irn->res;
-    vector<unsigned int> indexes(elements.size());
-    NewContext ctx = c.ctx;  /* Save the original context. */
-    bool first = true;
-
-    /* Initialize the 'indexes' vector, used to iterate over all the
-       possible index combinations. */
-    for (unsigned int j=0; j<elements.size(); j++) {
-        indexes[j] = 0;
-    }
-
-    do {
-        string index_string;
-
-        /* Scan the ranges from the left to the right, computing the
-           '[x][y][z]...' string corresponding to 'indexes'. */
-        for (unsigned int j=0; j<elements.size(); j++) {
-            /* Here we do the translation that was deferred in the lower
-               layers. */
-            elements[j]->translate(c);
-            DTC(ActionRangeNode, an, elements[j]);
-
-            if (an) {
-                index_string += "." + an->res.actions[ indexes[j] ];
-                if (an->res.hasVariable()) {
-                    if (!c.ctx.insert(an->res.variable,
-                                an->res.actions[ indexes[j] ])) {
-                        cout << "ERROR: ctx.insert()\n";
-                    }
-                }
-            } else {
-                assert(0);
-            }
-        }
-
-        n->combination(c, index_string, first);
-        first = false;
-
-        /* Restore the saved context. */
-        c.ctx = ctx;
-
-        /* Increment 'indexes' for the next 'index_string', and exits if
-           there are no more combinations. */
-    } while (next_set_indexes(elements, indexes));
-}
-
 void yy::RelabelDefNode::combination(FspDriver& c, string index, bool first)
 {
     DTC(BracesRelabelDefsNode, br, children[2]);
@@ -1285,9 +1348,10 @@ void yy::ParameterNode::translate(FspDriver& c)
     /* Insert the parameter into the identifiers table. */
     cvp->value = en->res;
     if (!c.identifiers.insert(in->res, cvp)) {
-        // TODO manage the error
-        assert(0);
+        stringstream errstream;
+        errstream << "parameter " << in->res << " declared twice";
         delete cvp;
+        semantic_error(c, errstream, loc);
     }
     /* Save the parameter name for subsequent removal. */
     c.paramproc.insert(in->res, en->res);
@@ -1408,8 +1472,7 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* The base is the process body. */
     res = bn->res;
 
-/*
-res.print();
+/*res.print();
 cout << "UnresolvedNames:\n";
 for (unsigned int i=0; i<c.unres.size(); i++) {
     unsigned ui = c.unres.get_idx(i);
@@ -1425,8 +1488,9 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     /* Try to resolve all the unresolved nodes into the LTS. */
     unres = res.resolve();
     if (unres != ~0U) {
-        cout << "Unresolved " << unres << "\n";
-        // TODO manage the error
+        stringstream errstream;
+        errstream << "process reference " << unres << " unresolved";
+        semantic_error(c, errstream, loc);
     }
 
     /* Merge the End nodes. */
@@ -1440,8 +1504,6 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
             res.updateAlphabet(c.actions.insert(sv.actions[i]));
         }
     }
-
-    /* TODO Merge sequential processes actions into the alphabet. */
 
     /* Apply the relabeling operator. */
     if (rn) {

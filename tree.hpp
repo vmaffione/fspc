@@ -184,7 +184,6 @@ class ProgressIdNode : public StringTreeNode {
     public:
         string getClassName() const { return "ProgressId"; }
         ProgressIdNode(string *v) : StringTreeNode(v) { }
-
 };
 
 class VariableNode : public SvpVecTreeNode {
@@ -223,11 +222,14 @@ class CloseParenNode : public TreeNode {
 class ProgressDefNode : public TreeNode {
     public:
         string getClassName() const { return "ProgressDef"; }
+        void translate(FspDriver& c);
+        void combination(FspDriver& c, string index, bool first);
 };
 
 class PropertyDefNode : public TreeNode {
     public:
         string getClassName() const { return "PropertyDef"; }
+        void translate(FspDriver& c);
 };
 
 class PropertyNode : public TreeNode {

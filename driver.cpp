@@ -256,9 +256,11 @@ int FspDriver::parse(const CompilerOptions& co)
         SymbolsTable tmp_pp = parametric_processes;
         SymbolsTable tmp_p = processes;
         SymbolsTable tmp_id = identifiers;
+        SymbolsTable tmp_prog = progresses;
         parametric_processes.clear();
         processes.clear();
         identifiers.clear();
+        progresses.clear();
         assert(tree);
         ofstream treef("tree.gv");
         tree->print(treef);
@@ -270,6 +272,7 @@ int FspDriver::parse(const CompilerOptions& co)
         parametric_processes = tmp_pp;
         processes = tmp_p;
         identifiers = tmp_id;
+        progresses = tmp_prog;
 
 	serp = new Serializer(co.output_file);
     } else { /* Load the processes table from an LTS file. */
