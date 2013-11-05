@@ -87,9 +87,9 @@ class Lts: public SymbolValue {
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
-    void removeType(unsigned int type);
+    void removeType(unsigned int type, unsigned int zero_idx,
+                    bool call_reduce);
 
-    friend void lts_convert(struct ProcessNode * pnp, void * opaque);
     friend class ::Serializer;
     friend class ::Deserializer;
 
@@ -99,7 +99,6 @@ class Lts: public SymbolValue {
 
     Lts() { atp = NULL; } /* Invalid instance, used by tree. */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
-    Lts(const struct ProcessNode *, struct ActionsTable *);
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
     int numTransitions() const;
@@ -118,7 +117,6 @@ class Lts: public SymbolValue {
     int progress(const string& progress_name, const SetValue& s,
 		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
-    ProcessNode* toProcessNode(ProcessNodeAllocator&) const;
     void graphvizOutput(const char * filename) const;
     void simulate(Shell& sh) const;
     void basic(const string& outfile, stringstream& ss) const;

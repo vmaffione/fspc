@@ -13,9 +13,17 @@ using namespace yy;
 
 
 /* Helper function used to update the 'unres' table. */
-static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
+static void update_unres(FspDriver& c, const string& name,
+                         Lts& lts, bool define)
 {
     unsigned int ui;
+    location loc;  //TODO receive as parameter
+
+    if (define && c.unres.defined(name)) {
+        stringstream errstream;
+        errstream << "Process " << name << " defined twice";
+        semantic_error(c, errstream, loc);
+    }
 
     if (lts.get_priv(0) == ~0U) {
         /* If 'lts[0]' does not have its 'priv' set, we must be in one of
@@ -27,7 +35,7 @@ static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
                    alias (an 'idx') to it, for subsequent name resolution
                   (Lts::resolve).
         */
-        ui = unres.insert(name);  /* Create a new entry for 'name' */
+        ui = c.unres.insert(name, define); /* Create a new entry for 'name' */
         lts.set_priv(0, ui);  /* Record the alias into the 'lts[0]' priv. */
     } else {
         /* If 'lts[0]' does have its 'priv' set, it means that 'lts[0]'
@@ -35,7 +43,7 @@ static void update_unres(UnresolvedNames& unres, const string& name, Lts& lts)
 
            Tell 'unres' that the 'lts[0]' priv field must be an alias also
            for 'name'. */
-        ui = unres.append(name, lts.get_priv(0));
+        ui = c.unres.append(name, lts.get_priv(0), define);
         /* Update all the 'priv' fields that have the 'idx' previously
            associated to 'name', if any. */
         if (ui != ~0U) {
@@ -61,10 +69,10 @@ void yy::TreeNode::addChild(yy::TreeNode *n)
     children.push_back(n);
 }
 
-void yy::TreeNode::addChild(unsigned int t)
+/*void yy::TreeNode::addChild(unsigned int t)
 {
     children.push_back(new yy::TreeNode());
-}
+}*/
 
 void yy::TreeNode::print(ofstream& os)
 {
@@ -88,14 +96,14 @@ void yy::TreeNode::print(ofstream& os)
             label = current->getClassName();
             ln = tree_downcast_safe<LowerCaseIdNode>(current);
             un = tree_downcast_safe<UpperCaseIdNode>(current);
-            in = tree_downcast_safe<IntTreeNode>(current);
+            in = tree_downcast_safe<IntegerNode>(current);
             assert(!(in && ln) && !(ln && un) && !(un && in));
-            if (ln) {
-                label = ln->saved;
-            } else if (un) {
-                label = un->saved;
+            if (ln && label == "LowerCaseId") {
+                label = ln->res;
+            } else if (un && label == "UpperCaseId") {
+                label = un->res;
             } else if (in) {
-                label = int2string(in->value);
+                label = int2string(in->res);
             }
         }
         if (current || print_nulls)
@@ -149,6 +157,62 @@ void yy::RootNode::translate(FspDriver& c)
             }
         }
     }
+}
+
+void yy::VariableIdNode::translate(FspDriver& c)
+{
+    DTC(LowerCaseIdNode, lc, children[0]);
+
+    res = lc->res;
+}
+
+void yy::ConstantIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::RangeIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::SetIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::ConstParameterIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::ParameterIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::ProcessIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
+void yy::ProgressIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
 }
 
 void yy::ExpressionNode::translate(FspDriver& c)
@@ -238,7 +302,7 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    DTCS(IntTreeNode, in, children[0]);
+    DTCS(IntegerNode, in, children[0]);
     DTCS(VariableIdNode, vn, children[0]);
     DTCS(ConstParameterIdNode, cn, children[0]);
 
@@ -464,7 +528,7 @@ static void for_each_combination(FspDriver& c, IndexRangesNode *irn,
 {
     const vector<TreeNode *>& elements = irn->res;
     vector<unsigned int> indexes(elements.size());
-    NewContext ctx = c.ctx;  /* Save the original context. */
+    Context ctx = c.ctx;  /* Save the original context. */
     bool first = true;
 
     /* Initialize the 'indexes' vector, used to iterate over all the
@@ -777,14 +841,14 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
 yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
                                            unsigned int idx,
-                                           vector<NewContext>& ctxcache)
+                                           vector<Context>& ctxcache)
 {
     assert(idx < als.size());
     DTC(ActionLabelsNode, an, als[idx]);
     const vector<TreeNode *>& elements = an->res;
     vector<unsigned int> indexes(elements.size());
     Lts lts(LtsNode::Normal, &c.actions);
-    NewContext ctx = c.ctx;
+    Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
     for (unsigned int j=0; j<elements.size(); j++) {
@@ -938,7 +1002,7 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         if (ixn) {
             name += ixn->res;
         }
-        update_unres(c.unres, name, res);
+        update_unres(c, name, res, false);
     }
 }
 
@@ -989,7 +1053,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
     DTC(ProcessIdNode, in, children[0]);
     DTCS(ArgumentsNode, an, children[1]);
     SymbolValue *svp;
-    NewParametricProcess *pp;
+    ParametricProcess *pp;
     vector<int> arguments;
     string extension;
 
@@ -999,7 +1063,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 	errstream << "Process " << in->res << " undeclared";
 	semantic_error(c, errstream, loc);
     }
-    pp = is_newparametric(svp);
+    pp = is_parametric(svp);
 
     /* Find the arguments for the process parameters. */
     arguments = an ? an->res : pp->defaults;
@@ -1149,8 +1213,8 @@ void yy::ProcessElseNode::translate(FspDriver& c)
 
 void yy::ActionPrefixNode::translate(FspDriver& c)
 {
-    vector<NewContext> ctxcache;
-    NewContext saved_ctx = c.ctx;
+    vector<Context> ctxcache;
+    Context saved_ctx = c.ctx;
 
     DTCS(GuardNode, gn, children[0]);
     DTC(PrefixActionsNode, pn, children[1]);
@@ -1230,7 +1294,7 @@ void yy::RelabelDefNode::translate(FspDriver& c)
     DTCS(ActionLabelsNode, left, children[0]);
     DTCS(ForallNode, fan, children[0]);
 
-    res = NewRelabelingValue();
+    res = RelabelingValue();
 
     if (left) {
         DTC(ActionLabelsNode, right, children[2]);
@@ -1297,7 +1361,7 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     DTCS(InterfNode, in, children[0]);
     DTC(SetNode, sn, children[1]);
 
-    res = NewHidingValue();
+    res = HidingValue();
 
     if (hn) {
         res.interface = false;
@@ -1378,7 +1442,7 @@ void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
     /* Register the local process name (which is the concatenation of
        'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
        c.unres. */
-    update_unres(c.unres, in->res + index, lp->res);
+    update_unres(c, in->res + index, lp->res, true);
 
     if (first) {
         res = lp->res;
@@ -1422,7 +1486,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
 {
     string extension;
     SymbolValue *res_clone = res.clone();
-    NewParametricProcess *pp_clone = is_newparametric(c.paramproc.clone());
+    ParametricProcess *pp_clone = is_parametric(c.paramproc.clone());
 
     res.name = name;
 
@@ -1469,7 +1533,9 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* The base is the process body. */
     res = bn->res;
 
-/*res.print();
+    /* Register the process name into c.unres. */
+    update_unres(c, idn->res, res, true);
+#if 0
 cout << "UnresolvedNames:\n";
 for (unsigned int i=0; i<c.unres.size(); i++) {
     unsigned ui = c.unres.get_idx(i);
@@ -1477,10 +1543,8 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     if (ui != ~0U) {
         cout << "   " << ui << " " << c.unres.get_name(i) << "\n";
     }
-}*/
-
-    /* Register the process name into c.unres. */
-    update_unres(c.unres, idn->res, res);
+}
+#endif
 
     /* Try to resolve all the unresolved nodes into the LTS. */
     unres = res.resolve();
@@ -1504,7 +1568,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Apply the relabeling operator. */
     if (rn) {
-        NewRelabelingValue& rlv = rn->res;
+        RelabelingValue& rlv = rn->res;
 
         for (unsigned int i=0; i<rlv.size(); i++) {
             res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
@@ -1513,7 +1577,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        NewHidingValue& hv = hin->res;
+        HidingValue& hv = hin->res;
 
         res.hiding(hv.setv, hv.interface);
     }
@@ -1607,7 +1671,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
 
         /* Apply the relabeling operator. */
         if (rln) {
-            NewRelabelingValue& rlv = rln->res;
+            RelabelingValue& rlv = rln->res;
 
             for (unsigned int i=0; i<rlv.size(); i++) {
                 res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
@@ -1634,10 +1698,23 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         DTC(ParallelCompNode, pcn, children[3]);
         DTCS(RelabelingNode, rln, children[5]);
 
-        /* Apply the relabeling operator to each component process
+        /* Apply the process labeling operator to each component process
            separately, before parallel composition. */
+        if (lbn) {
+            for (unsigned int k=0; k<pcn->res.size(); k++) {
+                pcn->res[k].labeling(lbn->res);
+            }
+        }
+
+        /* Apply the process sharing operator (same way). */
+        if (shn) {
+            for (unsigned int k=0; k<pcn->res.size(); k++) {
+                pcn->res[k].sharing(shn->res);
+            }
+        }
+        /* Apply the relabeling operator (same way). */
         if (rln) {
-            NewRelabelingValue& rlv = rln->res;
+            RelabelingValue& rlv = rln->res;
 
             for (unsigned int k=0; k<pcn->res.size(); k++) {
                 for (unsigned int i=0; i<rlv.size(); i++) {
@@ -1652,16 +1729,6 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         res = pcn->res[0];
         for (unsigned int k=1; k<pcn->res.size(); k++) {
             res.compose(pcn->res[k]);
-        }
-
-        /* Apply the process labeling operator. */
-        if (lbn) {
-            res.labeling(lbn->res);
-        }
-
-        /* Apply the process sharing operator. */
-        if (shn) {
-            res.sharing(shn->res);
         }
 
     } else if (children.size() == 3) {
@@ -1719,7 +1786,7 @@ void yy::CompositeDefNode::translate(FspDriver& c)
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        NewHidingValue& hv = hin->res;
+        HidingValue& hv = hin->res;
 
         res.hiding(hv.setv, hv.interface);
     }

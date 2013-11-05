@@ -27,63 +27,13 @@
 using namespace std;
 
 
-class Context {
-  public:
-    vector<string> names;
-    vector<SymbolValue *> values;
-    bool ruled_out;
-
-    Context() { ruled_out = 0; }
-    Context(const Context&);
-    bool lookup(const string& s, SymbolValue*& ret);
-    bool insert(const string& s, int value);
-    bool insert(const string& s, const string& value);
-    void print() const;
-    ~Context();
-};
-
-struct FrontierElement {
-    ProcessNode * pnp;
-    int child;
-};
-
-struct ContextsSet {
-    vector<Context *> s;
-    vector<FrontierElement> frontier;
-
-    ContextsSet() { }
-    ContextsSet(const ContextsSet&);
-    unsigned int size() const { return s.size(); }
-    Context*& operator[](int i) { return s[i]; }
-    void append(Context * ctx);
-    void rule_out(int c);
-    bool is_ruled_out(int c) const;
-    void print() const;
-    ~ContextsSet();
-};
-
-
-/* Stack of contexts sets. */
-struct ContextsSetStack {
-    vector<ContextsSet *> stack;
-
-    void push(ContextsSet * ctxset);
-    void push_clone();
-    bool update(ContextsSet * ctxset);
-    bool pop();
-    ContextsSet& top();
-    ~ContextsSetStack();
-};
-
-/* =========================== New API. ==================== */
-
 /* This object mantains a list of action sets, with
    associated variable names. Therefore, it represents a set of "contexts",
    where each context is a different combination of value assignment to
    the variables. Using the select_next() method is possible to iterate
    over the contexts. The lookup methods return the values relative to
    the currently selected context. */
-class NewContextSet {
+class ContextSet {
     vector<string> vars;
     vector<SetValue> sets;
     vector<unsigned int> indexes;
@@ -97,7 +47,7 @@ public:
 };
 
 
-class NewContext {
+class Context {
         vector<string> vars;
         vector<string> vals;
 
@@ -105,7 +55,7 @@ class NewContext {
         bool insert(const string&, const string&);
         bool lookup(const string&, string&);
         bool remove(const string&);
-        bool operator!=(const NewContext& ctx);
+        bool operator!=(const Context& ctx);
         void clear();
 };
 

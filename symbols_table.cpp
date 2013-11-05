@@ -162,52 +162,6 @@ void SymbolsTable::print() const
     }
 }
 
-/* ================================ SvpVec ==============================*/
-SvpVec::SvpVec(): shared(false) {
-}
-
-SymbolValue * SvpVec::detach(unsigned int i) {
-    SymbolValue* ret;
-    if (i < v.size()) {
-	ret = v[i];
-	v[i] = NULL;
-    } else {
-	cerr << "Internal error: tried to detach out of bounds\n";
-	return NULL;
-    }
-    return ret;
-}
-
-void SvpVec::detach_all() {
-    for (unsigned int i=0; i<v.size(); i++)
-	v[i] = NULL;
-}
-
-void SvpVec::print() {
-    cout << "{";
-    for (unsigned int i=0; i<v.size(); i++)
-	if (v[i]) {
-	    v[i]->print();
-	    cout << ", ";
-	}
-    cout << "}\n";
-}
-
-SvpVec::~SvpVec() {
-    if (shared) {
-	for (unsigned int i=0; i<v.size(); i++) {
-	    if (v[i]) {
-		delete v[i];
-		break;
-	    }
-	}
-    } else {
-	for (unsigned int i=0; i<v.size(); i++)
-	    if (v[i])
-		delete v[i];
-    }
-}
-
 /* ============================= ConstValue =============================*/
 SymbolValue * ConstValue::clone() const
 {
@@ -223,7 +177,7 @@ void ConstValue::set(SetValue& s) const
     s += int2string(value);
 }
 
-/*============================= RangeValue =============================*/
+/* ============================= RangeValue =============================*/
 SymbolValue * RangeValue::clone() const
 {
     RangeValue * rv = new RangeValue;
@@ -242,7 +196,7 @@ void RangeValue::set(SetValue& s) const
     }
 }
 
-/*============================= SetValue ================================ */
+/* ============================= SetValue ================================ */
 SetValue& SetValue::combine(const SetValue& ss, bool dot)
 {
     int n = actions.size();
@@ -365,32 +319,9 @@ void SetValue::print() const
     cout << "}\n";
 }
 
-/* ========================= ProcnodePairValue =========================*/
-SymbolValue * ProcnodePairValue::clone() const
-{
-    return new ProcnodePairValue(*this);
-}
 
-
-/* =========================== ArgumentsValue =============================*/
-void ArgumentsValue::print() const
-{
-    cout << "(";
-    for (unsigned int i=0; i<args.size(); i++)
-	cout << args[i] << ", ";
-    cout << ")\n";
-}
-
-SymbolValue * ArgumentsValue::clone() const
-{
-    ArgumentsValue * av = new ArgumentsValue(*this);
-
-    return av;
-}
-
-
-/* =========================== NewRelabelingValue =========================*/
-void NewRelabelingValue::print() const
+/* =========================== RelabelingValue =========================*/
+void RelabelingValue::print() const
 {
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	new_labels[i].print();
@@ -400,9 +331,9 @@ void NewRelabelingValue::print() const
     }
 }
 
-SymbolValue * NewRelabelingValue::clone() const
+SymbolValue * RelabelingValue::clone() const
 {
-    NewRelabelingValue * rlv = new NewRelabelingValue;
+    RelabelingValue * rlv = new RelabelingValue;
 
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	rlv->old_labels.push_back(old_labels[i]);
@@ -412,14 +343,14 @@ SymbolValue * NewRelabelingValue::clone() const
     return rlv;
 }
 
-void NewRelabelingValue::add(const SetValue& new_setvp,
+void RelabelingValue::add(const SetValue& new_setvp,
                              const SetValue& old_setvp)
 {
     old_labels.push_back(old_setvp);
     new_labels.push_back(new_setvp);
 }
 
-void NewRelabelingValue::merge(NewRelabelingValue& rlv)
+void RelabelingValue::merge(RelabelingValue& rlv)
 {
     for (unsigned int i=0; i<rlv.old_labels.size(); i++) {
         add(rlv.new_labels[i], rlv.old_labels[i]);
@@ -427,86 +358,7 @@ void NewRelabelingValue::merge(NewRelabelingValue& rlv)
 }
 
 
-/* ============================ RelabelingValue ===========================*/
-void RelabelingValue::print() const
-{
-    for (unsigned int i=0; i<old_labels.size(); i++) {
-	new_labels[i]->print();
-	cout << " / ";
-	old_labels[i]->print();
-	cout << "\n";
-    }
-}
-
-SymbolValue * RelabelingValue::clone() const
-{
-    RelabelingValue * rlv = new RelabelingValue;
-
-    for (unsigned int i=0; i<old_labels.size(); i++) {
-	rlv->old_labels.push_back(
-			    static_cast<SetValue *>(old_labels[i]->clone()));
-	rlv->new_labels.push_back(
-			    static_cast<SetValue *>(new_labels[i]->clone()));
-    }
-
-    return rlv;
-}
-
-void RelabelingValue::add(SetValue * new_setvp, SetValue * old_setvp)
-{
-    assert(new_setvp && old_setvp);
-    old_labels.push_back(old_setvp);
-    new_labels.push_back(new_setvp);
-}
-
-void RelabelingValue::merge(RelabelingValue& rlv)
-{
-    for (unsigned int i=0; i<rlv.old_labels.size(); i++)
-	if (rlv.old_labels[i] && rlv.new_labels[i]) {
-	    add(rlv.new_labels[i], rlv.old_labels[i]);
-	}
-    rlv.detach_all();
-}
-
-void RelabelingValue::detach_all()
-{
-    for (unsigned int i=0; i<old_labels.size(); i++)
-	old_labels[i] = new_labels[i] = NULL;
-}
-
-RelabelingValue::~RelabelingValue()
-{
-    for (unsigned int i=0; i<old_labels.size(); i++) {
-	if (old_labels[i])
-	    delete old_labels[i];
-	if (new_labels[i])
-	    delete new_labels[i];
-    }
-}
-
-
-/* ============================ NewHidingValue ===========================*/
-void NewHidingValue::print() const
-{
-    cout << "Hiding: ";
-    if (interface)
-	cout << "@ ";
-    else
-	cout << "\\ ";
-    setv.print();
-}
-
-SymbolValue * NewHidingValue::clone() const
-{
-    NewHidingValue * hv = new NewHidingValue;
-
-    hv->interface = interface;
-    hv->setv = setv;
-
-    return hv;
-}
-
-/* ============================= HidingValue =============================*/
+/* ============================ HidingValue ===========================*/
 void HidingValue::print() const
 {
     cout << "Hiding: ";
@@ -514,8 +366,7 @@ void HidingValue::print() const
 	cout << "@ ";
     else
 	cout << "\\ ";
-    if (setvp)
-	setvp->print();
+    setv.print();
 }
 
 SymbolValue * HidingValue::clone() const
@@ -523,21 +374,14 @@ SymbolValue * HidingValue::clone() const
     HidingValue * hv = new HidingValue;
 
     hv->interface = interface;
-    if (setvp)
-	hv->setvp = static_cast<SetValue *>(setvp->clone());
+    hv->setv = setv;
 
     return hv;
 }
 
-HidingValue::~HidingValue()
-{
-    if (setvp)
-	delete setvp;
-}
 
-
-/* =========================== NewPriorityValue ========================= */
-void NewPriorityValue::print() const
+/* =========================== PriorityValue ========================= */
+void PriorityValue::print() const
 {
     cout << "Priority: ";
     if (low)
@@ -547,9 +391,9 @@ void NewPriorityValue::print() const
     setv.print();
 }
 
-SymbolValue *NewPriorityValue::clone() const
+SymbolValue *PriorityValue::clone() const
 {
-    NewPriorityValue *pv = new NewPriorityValue;
+    PriorityValue *pv = new PriorityValue;
 
     pv->low = low;
     pv->setv = setv;
@@ -557,38 +401,9 @@ SymbolValue *NewPriorityValue::clone() const
     return pv;
 }
 
-/* ============================ PriorityValue =========================== */
-void PriorityValue::print() const
-{
-    cout << "Priority: ";
-    if (low)
-	cout << ">> ";
-    else
-	cout << "<< ";
-    if (setvp)
-	setvp->print();
-}
 
-SymbolValue * PriorityValue::clone() const
-{
-    PriorityValue * pv = new PriorityValue;
-
-    pv->low = low;
-    if (setvp)
-	pv->setvp = static_cast<SetValue *>(setvp->clone());
-
-    return pv;
-}
-
-PriorityValue::~PriorityValue()
-{
-    if (setvp)
-	delete setvp;
-}
-
-
-/* ======================== NewParametricProcess ========================= */
-bool NewParametricProcess::insert(const string& name, int default_value)
+/* ======================== ParametricProcess ========================= */
+bool ParametricProcess::insert(const string& name, int default_value)
 {
     for (unsigned int i=0; i<names.size(); i++) {
         if (names[i] == name) {
@@ -602,19 +417,19 @@ bool NewParametricProcess::insert(const string& name, int default_value)
     return true;
 }
 
-void NewParametricProcess::clear()
+void ParametricProcess::clear()
 {
     names.clear();
     defaults.clear();
 }
 
-void NewParametricProcess::set_translator(ParametricTranslator *trans)
+void ParametricProcess::set_translator(ParametricTranslator *trans)
 {
     assert(trans);
     translator = trans;
 }
 
-void NewParametricProcess::print() const
+void ParametricProcess::print() const
 {
     cout << "ParametricProcess: ";
     for (unsigned int i=0; i<names.size(); i++) {
@@ -623,201 +438,14 @@ void NewParametricProcess::print() const
     }
 }
 
-SymbolValue * NewParametricProcess::clone() const
+SymbolValue * ParametricProcess::clone() const
 {
-    NewParametricProcess * pp = new NewParametricProcess;
+    ParametricProcess * pp = new ParametricProcess;
 
     pp->names = names;
     pp->defaults = defaults;
     pp->translator = translator;
 
     return pp;
-}
-
-
-/* ============================= Pvec =================================== */
-void Pvec::print(struct ActionsTable * atp)
-{
-    cout << "Pvec:\n";
-    for (unsigned int i=0; i<v.size(); i++)
-	v[i]->print(atp);
-}
-
-
-/*======================= ProcessNode & Process Value =====================*/
-
-string processNodeTypeString(int type)
-{
-    switch (type) {
-	case ProcessNode::Normal:
-	    return "normal";
-	case ProcessNode::End:
-	    return "END";
-	case ProcessNode::Error:
-	    return "ERROR";
-	default:
-	    return "";
-    }
-}
-
-void printVisitFunction(ProcessNode * pnp, void * opaque)
-{
-    ActionsTable * atp = (ActionsTable *)opaque;
-
-    cout << pnp << "(" << processNodeTypeString(pnp->type) << "):\n";
-    for (unsigned int i=0; i<pnp->children.size(); i++) {
-	ProcessEdge e = pnp->children[i];
-	cout << atp->reverse[e.action] << " -> " << e.dest << "\n";
-    }
-}
-
-void ProcessNode::print(ActionsTable * atp)
-{
-    struct ProcessVisitObject f;
-
-    f.vfp = &printVisitFunction;
-    f.opaque = atp;
-    visit(f, true);
-}
-
-void ProcessNode::visit(ProcessVisitObject f, bool before)
-{
-    set<ProcessNode*> visited;
-    vector<ProcessNode*> frontier(1);
-    int pop, push;
-    ProcessNode * current;
-
-    pop = 0;
-    push = 1;
-    frontier[0] = this;
-    visited.insert(this);
-
-    while (pop != push) {
-	current = frontier[pop++];
-	if (before)
-	    /* Invoke the specific visit function before. */
-	    f.vfp(current, f.opaque);  
-	for (unsigned int i=0; i<current->children.size(); i++) {
-	    ProcessEdge e = current->children[i];
-	    if (e.dest && visited.count(e.dest) == 0) {
-		visited.insert(e.dest);
-		frontier.push_back(e.dest);
-		push++;
-	    }
-	}
-	if (!before)
-	    /* Invoke the specific visit function after. */
-	    f.vfp(current, f.opaque);  
-    }
-}
-
-ProcessNode * ProcessNode::clone() const
-{
-    int nc;
-    int pop, push;
-    //XXX visited: Now it does not handle loops
-    vector<const ProcessNode *> frontier(1);
-    vector<ProcessNode*> cloned_frontier(1);
-    const ProcessNode * current;
-    ProcessNode * cloned;
-
-    pop = 0;
-    push = 1;
-    frontier[0] = this;
-    cloned_frontier[0] = new ProcessNode;
-
-    while (pop != push) {
-	current = frontier[pop];
-	cloned = cloned_frontier[pop];
-	pop++;
-
-	cloned->type = current->type;
-	nc = current->children.size();
-	cloned->children.resize(nc);
-	for (int i=0; i<nc; i++) {
-	    cloned->children[i].action = current->children[i].action;
-	    cloned->children[i].unresolved_reference =
-		current->children[i].unresolved_reference;
-	    if (current->children[i].dest) {
-		frontier.push_back(current->children[i].dest);
-		cloned->children[i].dest = new ProcessNode;
-		cloned_frontier.push_back(cloned->children[i].dest);
-		push++;
-	    } else
-		cloned->children[i].dest = NULL;
-	}
-    }
-
-    return cloned_frontier[0];
-}
-
-
-void freeVisitFunction(struct ProcessNode * pnp, void * opaque)
-{
-    vector<ProcessNode *> * nodes_ptr = (vector<ProcessNode *> *)opaque;
-    nodes_ptr->push_back(pnp);
-}
-
-void freeProcessNodeGraph(struct ProcessNode * pnp)
-{
-    struct ProcessVisitObject f;
-    vector<ProcessNode *> nodes;
-
-    /* Collect all the nodes reachable from 'pnp'. */
-    f.vfp = &freeVisitFunction;
-    f.opaque = &nodes;
-    pnp->visit(f, true);
-
-    /* Free them. */
-    for (unsigned int i=0; i<nodes.size(); i++)
-	delete nodes[i];
-}
-
-
-SymbolValue * ProcessValue::clone() const
-{
-    ProcessValue * pvp = new ProcessValue;
-
-    pvp->pnp = this->pnp->clone();
-
-    return pvp;
-}
-
-/* =========================== ProcessNodeAllocator ===================== */
-ProcessNode * ProcessNodeAllocator::allocate(int type)
-{
-    ProcessNode * pnp = new ProcessNode(type);
-
-    assert(type == ProcessNode::Normal || type == ProcessNode::End ||
-						type == ProcessNode::Error);
-    nodes.push_back(pnp);
-
-    return pnp;
-}
-
-ConnectedProcess * ProcessNodeAllocator::allocate_connected()
-{
-    ConnectedProcess * cpp = new ConnectedProcess;
-
-    nodes.push_back(cpp);
-
-    return cpp;
-}
-
-UnresolvedProcess * ProcessNodeAllocator::allocate_unresolved(const string&
-								    name)
-{
-    UnresolvedProcess * upp = new UnresolvedProcess(name);
-
-    nodes.push_back(upp);
-
-    return upp;
-}
-
-void ProcessNodeAllocator::clear()
-{
-    for (unsigned int i=0; i<nodes.size(); i++)
-	delete nodes[i];
-    nodes.clear();
 }
 

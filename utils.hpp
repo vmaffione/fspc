@@ -36,16 +36,9 @@ void semantic_error(FspDriver& driver, const stringstream& ss, const yy::locatio
 ConstValue* err_if_not_const(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 RangeValue* err_if_not_range(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 SetValue* err_if_not_set(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
-ProcessValue* err_if_not_process(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
-ProcnodePairValue* err_if_not_procnodepair(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
-ArgumentsValue* err_if_not_arguments(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 RelabelingValue* err_if_not_relabeling(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 HidingValue* err_if_not_hiding(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 PriorityValue* err_if_not_priority(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
-ProcessNode * err_if_not_procnode(FspDriver& driver, ProcessBase * pbp, const yy::location& loc);
-
-void err_if_not_const_svpvec(SvpVec * vp, const yy::location& loc);
-
 
 
 inline ConstValue* is_const(SymbolValue * svp)
@@ -69,27 +62,6 @@ inline SetValue* is_set(SymbolValue * svp)
     return static_cast<SetValue *>(svp);
 }
 
-inline ProcessValue* is_process(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Process);
-
-    return static_cast<ProcessValue *>(svp);
-}
-
-inline ProcnodePairValue* is_procnodepair(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::ProcnodePair);
-
-    return static_cast<ProcnodePairValue *>(svp);
-}
-
-inline ArgumentsValue* is_arguments(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Arguments);
-
-    return static_cast<ArgumentsValue *>(svp);
-}
-
 inline RelabelingValue* is_relabeling(SymbolValue * svp)
 {
     assert(svp->type() == SymbolValue::Relabeling);
@@ -111,19 +83,11 @@ inline PriorityValue* is_priority(SymbolValue * svp)
     return static_cast<PriorityValue *>(svp);
 }
 
-inline ProcessNode * is_procnode(ProcessBase * pbp)
-{
-    assert(!(pbp->unresolved() || pbp->connected()));
-
-    return static_cast<ProcessNode *>(pbp);
-}
-
-inline NewParametricProcess* is_newparametric(SymbolValue * svp)
+inline ParametricProcess* is_parametric(SymbolValue * svp)
 {
     assert(svp->type() == SymbolValue::ParametricProcess);
 
-    return static_cast<NewParametricProcess *>(svp);
+    return static_cast<ParametricProcess *>(svp);
 }
-
 
 #endif

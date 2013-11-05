@@ -83,39 +83,6 @@ SetValue* err_if_not_set(FspDriver& driver, SymbolValue * svp, const yy::locatio
     return static_cast<SetValue *>(svp);
 }
 
-ProcessValue* err_if_not_process(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
-{
-    if (svp->type() != SymbolValue::Process) {
-	stringstream errstream;
-	errstream << "Process expected";
-	semantic_error(driver, errstream, loc);
-    }
-
-    return static_cast<ProcessValue *>(svp);
-}
-
-ProcnodePairValue* err_if_not_procnodepair(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
-{
-    if (svp->type() != SymbolValue::ProcnodePair) {
-	stringstream errstream;
-	errstream << "ProcnodePair expected";
-	semantic_error(driver, errstream, loc);
-    }
-
-    return static_cast<ProcnodePairValue *>(svp);
-}
-
-ArgumentsValue* err_if_not_arguments(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
-{
-    if (svp->type() != SymbolValue::Arguments) {
-	stringstream errstream;
-	errstream << "Arguments expected";
-	semantic_error(driver, errstream, loc);
-    }
-
-    return static_cast<ArgumentsValue *>(svp);
-}
-
 RelabelingValue* err_if_not_relabeling(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
 {
     if (svp->type() != SymbolValue::Relabeling) {
@@ -149,19 +116,3 @@ PriorityValue* err_if_not_priority(FspDriver& driver, SymbolValue * svp, const y
     return static_cast<PriorityValue *>(svp);
 }
 
-ProcessNode * err_if_not_procnode(FspDriver& driver, ProcessBase * pbp, const yy::location& loc)
-{
-    if (pbp->unresolved() || pbp->connected()) {
-	stringstream errstream;
-	errstream << "ProcessNode expected";
-	semantic_error(driver, errstream, loc);
-    }
-    return static_cast<ProcessNode *>(pbp);
-}
-
-
-void err_if_not_const_svpvec(FspDriver& driver, SvpVec * vp, const yy::location& loc)
-{
-    for (unsigned int c=0; c<vp->v.size(); c++)
-	err_if_not_const(driver, vp->v[c], loc);
-}

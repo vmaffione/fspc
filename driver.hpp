@@ -23,89 +23,6 @@
 using namespace std;
 
 
-struct FspTranslator;
-
-struct AliasElement {
-    /* Process name */
-    string name;
-    /* True if the process have ever been assigned an alias
-       (eg. P[3] = T[12][18]). */
-    bool assigned;
-
-    AliasElement(const string& nm, bool l) : name(nm), assigned(l) { }
-};
-
-/* The purpose of this data structure is to store a list of sets. Each
-   sets must contain all the process names that are aliases with each
-   other. */
-struct Aliases {
-    vector< vector<AliasElement> > groups;
-    FspTranslator& tr;
-
-    Aliases(FspTranslator& r) : tr(r) { }
-
-    /* When calling insert(left, right), the translator wants to say: Ehy,
-       I've found something like 'left = right', where both left and right
-       are process names (e.g. when parsing "P = P[0], P[i:R] = (...).", the
-       translator will call insert("P","P[0]") ). */
-    void insert(const string& left, const string& right);
-    /* Tell the data structure to insert all the aliases in the SymbolsTable
-       'pt'. The translator will call this function when it wants to move
-       the aliases collected during the translation into a process symbols
-       table. */
-    void fill_process_table(SymbolsTable& pt);
-    void clear();
-    void print();
-};
-
-
-#include "callbacks.hpp"
-
-class FspDriver;
-
-struct FspTranslator {
-    FspDriver& dr;
-
-    /* Names of local processes. */
-    struct SymbolsTable local_processes;
-
-    /* A stack of contexts set for translating a process_def. */
-    struct ContextsSetStack css;
-
-    struct ProcessNode fakenode;
-
-    struct Aliases aliases;
-
-    vector<string> overridden_names;
-    vector<struct SymbolValue *> overridden_values;
-
-    /* We keep track of alphabet extension when using sequential
-       process (see toProcessNode in callback__66. */
-    set<int> alphabet_extension;
-
-    yy::location locations[8];
-
-
-    FspTranslator(struct FspDriver& r) : dr(r), aliases(*this) {
-	/* Initialize shared data structures: A stack containing a single
-	   ContextsSet. This set contains a single empty Context and an
-	   empty frontier. */
-	ContextsSet * csp = new ContextsSet;
-	csp->append(new Context);
-	css.push(csp);
-    }
-
-    ContextsSet& current_contexts() { return css.top(); }
-
-    void init_fakenode();
-
-    void print_fakenode_forest();
-
-    ~FspTranslator() {
-    }
-};
-
-
 /* Tell Flex the lexer's prototype... */
 #define YY_DECL                                        \
   yy::FspParser::token_type                         \
@@ -120,9 +37,9 @@ namespace yy {
 };
 
 struct NestingContext {
-    NewContext ctx;
+    Context ctx;
     UnresolvedNames unres;
-    NewParametricProcess paramproc;
+    ParametricProcess paramproc;
     vector<string> overridden_names;
     vector<SymbolValue *> overridden_values;
     bool replay;
@@ -144,22 +61,16 @@ class FspDriver
 	/* Progress properties. */
 	struct SymbolsTable progresses;
 
-	int record_mode_on;
-	ParametricProcess * parametric;
 	struct SymbolsTable parametric_processes;
 
-	/* The main translator. TODO will go away */
-	FspTranslator tr;
-
-        /* ========================== New API ======================== */
         /* Current value of variables (e.g. action/process indexes). */
-        NewContext ctx;
+        Context ctx;
 
         /* Keep track of process names to be resolved and their aliases. */
         UnresolvedNames unres;
 
         /* The names of the parameters used in a process definition. */
-        NewParametricProcess paramproc;
+        ParametricProcess paramproc;
 
         /* Overridden names support. */
         vector<string> overridden_names;
@@ -176,9 +87,6 @@ class FspDriver
         /* The parsing result. */
         yy::TreeNode *tree;
         /* =========================================================== */
-
-	/* The ProcessNode allocator. TODO will go away*/
-	ProcessNodeAllocator pna;
 
 	string remove_file;
 	string current_file;

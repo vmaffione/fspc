@@ -17,7 +17,7 @@ struct FspDriver;
 namespace yy {
 
 /* Parse tree node base class. It derives from ParametricTranslator,
-   so that a TreeNode* can be used with the NewParametricProcess class. */
+   so that a TreeNode* can be used with the ParametricProcess class. */
 class TreeNode : public ParametricTranslator {
     protected:
         vector<TreeNode *> children;
@@ -29,7 +29,7 @@ class TreeNode : public ParametricTranslator {
         yy::Lts computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
-                                     vector<NewContext>& ctxcache);
+                                     vector<Context>& ctxcache);
         void post_process_definition(FspDriver& c, Lts& res,
                                            const string& name);
         /* TODO when everything will work, remove this method and
@@ -39,9 +39,10 @@ class TreeNode : public ParametricTranslator {
         void process_ref_translate(FspDriver& c, yy::Lts& res);
 
     public:
+        TreeNode(const location& l) : loc(l) { }
         virtual ~TreeNode();
         void addChild(TreeNode *n);
-        void addChild(unsigned int t);
+ //       void addChild(unsigned int t);
         void print(ofstream& os);
         virtual void translate(FspDriver& dr);
         virtual void combination(FspDriver& dr, string index, bool first) { }
@@ -50,151 +51,130 @@ class TreeNode : public ParametricTranslator {
 };
 
 
-/* ============================= FIRST DERIVATION LEVEL ==============================
-   The first derivation level adds the content to a parse tree node. This content can be
-   an integer, a string, or other object types. */
+/* ======================== FIRST DERIVATION LEVEL =========================
+   The first derivation level adds the content to a parse tree node. This
+   content can be an integer, a string, or other object types. */
 
 class IntTreeNode : public TreeNode {
     public:
-        int value;
         int res;
 
-        IntTreeNode(int v) : value(v), res(v) { }
+        IntTreeNode(const location& l) : TreeNode(l) { }
 };
 
 class FloatTreeNode : public TreeNode {
     public:
-        float value;
         float res;
 
-        FloatTreeNode(float v) : value(v), res(v) { }
+        FloatTreeNode(const location& l) : TreeNode(l) { }
 };
 
 class StringTreeNode : public TreeNode {
     public:
-        std::string *value;
-        /* The memory pointed by "value" is freed during the parsing. We therefore use the
-           "saved" field to retrieve the string after the parsing (e.g. when printing the
-           parse tree. */
-        std::string saved;
         std::string res;
 
-        StringTreeNode(std::string *v) : value(v), saved(*v), res(*v) { }
-};
-
-/* XXX unused */
-class SymbolTreeNode : public TreeNode {
-    public:
-        class SymbolValue *value;
-
-        SymbolTreeNode(class SymbolValue *v) : value(v) { }
-};
-
-class SvpVecTreeNode : public TreeNode {
-    public:
-        class SvpVec *value;
-
-        SvpVecTreeNode(class SvpVec *v) : value(v) { }
-};
-
-class PvecTreeNode : public TreeNode {
-    public:
-        yy::Lts res;
-        class Pvec *value;
-
-        PvecTreeNode(class Pvec *v) : value(v) { }
+        StringTreeNode(const location& l) : TreeNode(l) { }
 };
 
 class LtsTreeNode : public TreeNode {
     public:
         yy::Lts res;
-        yy::Lts *value;
 
-        LtsTreeNode(yy::Lts *v) : value(v) { }
+        LtsTreeNode(const location& l) : TreeNode(l) { }
 };
 
 
-/* ============================= SECOND DERIVATION LEVEL =============================
-   The second level of derivation adds a syntax meaning to a parse tree node: this means
-   that the node corresponds to a terminal or non-terminal symbol in the FSP grammar.
-   Each node is able to "translate" (towards LTS) the subtree rooted in itself. */
+/* ======================== SECOND DERIVATION LEVEL ========================
+   The second level of derivation adds a syntax meaning to a parse tree node:
+   this means that the node corresponds to a terminal or non-terminal symbol
+   in the FSP grammar. Each node is able to "translate" (towards LTS) the
+   subtree rooted in itself. */
 
-class BaseExpressionNode : public SvpVecTreeNode {
+class BaseExpressionNode : public IntTreeNode {
     public:
-        int res;
-
         string getClassName() const { return "BaseExpression"; }
-        BaseExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        BaseExpressionNode(const location& l) : IntTreeNode(l) { }
         void translate(FspDriver &dr);
 };
 
-/* XXX unused */
 class IntegerNode : public IntTreeNode {
     public:
         string getClassName() const { return "Integer"; }
-        IntegerNode(int v) : IntTreeNode(v) { }
+        IntegerNode(const location& l) : IntTreeNode(l) { }
 };
 
-class VariableIdNode : public StringTreeNode {
+class LowerCaseIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "LowerCaseId"; }
+        LowerCaseIdNode(const location& l) : StringTreeNode(l) { }
+};
+
+class UpperCaseIdNode : public StringTreeNode {
+    public:
+        string getClassName() const { return "UpperCaseId"; }
+        UpperCaseIdNode(const location& l) : StringTreeNode(l) { }
+};
+
+class VariableIdNode : public LowerCaseIdNode {
     public:
         string getClassName() const { return "VariableId"; }
-        VariableIdNode(string *v) : StringTreeNode(v) { }
+        VariableIdNode(const location& l) : LowerCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class ConstantIdNode : public StringTreeNode {
+class ConstantIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "ConstantId"; }
-        ConstantIdNode(string *v) : StringTreeNode(v) { }
+        ConstantIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class RangeIdNode : public StringTreeNode {
+class RangeIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "RangeId"; }
-        RangeIdNode(string *v) : StringTreeNode(v) { }
+        RangeIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class SetIdNode : public StringTreeNode {
+class SetIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "SetId"; }
-        SetIdNode(string *v) : StringTreeNode(v) { }
+        SetIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class ConstParameterIdNode : public StringTreeNode {
+class ConstParameterIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "ConstParameterId"; }
-        ConstParameterIdNode(string *v) : StringTreeNode(v) { }
+        ConstParameterIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class ParameterIdNode : public StringTreeNode {
+class ParameterIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "ParameterId"; }
-        ParameterIdNode(string *v) : StringTreeNode(v) { }
+        ParameterIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class ProcessIdNode : public StringTreeNode {
+class ProcessIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "ProcessId"; }
-        ProcessIdNode(string *v) : StringTreeNode(v) { }
+        ProcessIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class ProgressIdNode : public StringTreeNode {
+class ProgressIdNode : public UpperCaseIdNode {
     public:
         string getClassName() const { return "ProgressId"; }
-        ProgressIdNode(string *v) : StringTreeNode(v) { }
+        ProgressIdNode(const location& l) : UpperCaseIdNode(l) { }
+        void translate(FspDriver &dr);
 };
 
-class VariableNode : public SvpVecTreeNode {
+class ExpressionNode : public IntTreeNode {
     public:
-        string getClassName() const { return "Variable"; }
-        VariableNode(SvpVec *v) : SvpVecTreeNode(v) { }
-};
-
-class ExpressionNode : public SvpVecTreeNode {
-    public:
-        int res;
-
         string getClassName() const { return "Expression"; }
-        ExpressionNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ExpressionNode(const location& l) : IntTreeNode(l) { }
         void translate(FspDriver&);
 };
 
@@ -202,18 +182,20 @@ class OperatorNode : public TreeNode {
     public:
         string sign;
 
-        OperatorNode(const string& s) : sign(s) { }
+        OperatorNode(const location& l, const string& s) : TreeNode(l), sign(s) { }
         string getClassName() const { return sign; }
 };
 
 class OpenParenNode : public TreeNode {
     public:
         string getClassName() const { return "("; }
+        OpenParenNode(const location& l) : TreeNode(l) { }
 };
 
 class CloseParenNode : public TreeNode {
     public:
         string getClassName() const { return ")"; }
+        CloseParenNode(const location& l) : TreeNode(l) { }
 };
 
 class ProgressDefNode : public TreeNode {
@@ -221,530 +203,545 @@ class ProgressDefNode : public TreeNode {
         string getClassName() const { return "ProgressDef"; }
         void translate(FspDriver& c);
         void combination(FspDriver& c, string index, bool first);
+        ProgressDefNode(const location& l) : TreeNode(l) { }
 };
 
 class PropertyDefNode : public TreeNode {
     public:
         string getClassName() const { return "PropertyDef"; }
         void translate(FspDriver& c);
+        PropertyDefNode(const location& l) : TreeNode(l) { }
 };
 
 class PropertyNode : public TreeNode {
     public:
         string getClassName() const { return "property"; }
+        PropertyNode(const location& l) : TreeNode(l) { }
 };
 
-class HidingInterfNode : public SvpVecTreeNode {
+class HidingInterfNode : public TreeNode {
     public:
-        NewHidingValue res;
+        HidingValue res;
 
         string getClassName() const { return "HidingInterf"; }
-        HidingInterfNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        HidingInterfNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class HidingNode : public TreeNode {
     public:
+        HidingNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "Hiding"; }
 };
 
 class InterfNode : public TreeNode {
     public:
+        InterfNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "Interf"; }
 };
 
-class RelabelDefNode : public SvpVecTreeNode {
+class RelabelDefNode : public TreeNode {
     public:
-        NewRelabelingValue res;
+        RelabelingValue res;
 
         string getClassName() const { return "RelabelDef"; }
-        RelabelDefNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        RelabelDefNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
 class SlashNode : public TreeNode {
     public:
+        SlashNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "Slash"; }
 };
 
 class ForallNode : public TreeNode {
     public:
+        ForallNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "forall"; }
 };
 
-class RelabelDefsNode : public SvpVecTreeNode {
+class RelabelDefsNode : public TreeNode {
     public:
-        NewRelabelingValue res;
+        RelabelingValue res;
 
+        RelabelDefsNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "RelabelDefs"; }
-        RelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
         void translate(FspDriver& c);
 };
 
 class CommaNode : public TreeNode {
     public:
+        CommaNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return ","; }
 };
 
 class OpenCurlyNode : public TreeNode {
     public:
+        OpenCurlyNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "{"; }
 };
 
 class CloseCurlyNode : public TreeNode {
     public:
+        CloseCurlyNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "}"; }
 };
 
-class BracesRelabelDefsNode : public SvpVecTreeNode {
+class BracesRelabelDefsNode : public TreeNode {
     public:
-        NewRelabelingValue res;
+        RelabelingValue res;
 
         string getClassName() const { return "BracesRelabelDefs"; }
-        BracesRelabelDefsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        BracesRelabelDefsNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class ParameterNode : public TreeNode {
     public:
+        ParameterNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "Parameter"; }
         void translate(FspDriver& c);
 };
 
 class AssignNode : public TreeNode {
     public:
+        AssignNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "="; }
 };
 
 class ParameterListNode : public TreeNode {
     public:
+        ParameterListNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "ParameterList"; }
 };
 
 class ParamNode : public TreeNode {
     public:
+        ParamNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "Param"; }
 };
 
 class ColonNode : public TreeNode {
     public:
+        ColonNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return ":"; }
 };
 
-class LabelingNode : public SvpVecTreeNode {
+class LabelingNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "Labeling"; }
-        LabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        LabelingNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class DoubleColonNode : public TreeNode {
     public:
+        DoubleColonNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "::"; }
 };
 
-class SharingNode : public SvpVecTreeNode {
+class SharingNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "Sharing"; }
-        SharingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        SharingNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class ProcessRefNode : public SvpVecTreeNode {
+class ProcessRefNode : public LtsTreeNode {
     public:
-        Lts res;
-
         string getClassName() const { return "ProcessRef"; }
-        ProcessRefNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ProcessRefNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class ParallelCompNode : public SvpVecTreeNode {
+class ParallelCompNode : public TreeNode {
     public:
         vector<Lts> res;
 
         string getClassName() const { return "ParallelComp"; }
-        ParallelCompNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ParallelCompNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class CompositeElseNode : public SvpVecTreeNode {
+class CompositeElseNode : public LtsTreeNode {
     public:
-        Lts res;
-
         string getClassName() const { return "CompositeElse"; }
-        CompositeElseNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        CompositeElseNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class ElseNode : public TreeNode {
     public:
+        ElseNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "else"; }
 };
 
-class CompositeBodyNode : public SvpVecTreeNode {
+class CompositeBodyNode : public LtsTreeNode {
     public:
-        Lts res;
-
         string getClassName() const { return "CompositeBody"; }
-        CompositeBodyNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        CompositeBodyNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
 class IfNode : public TreeNode {
     public:
+        IfNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "if"; }
 };
 
 class ThenNode : public TreeNode {
     public:
+        ThenNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "Then"; }
 };
 
-class CompositeDefNode : public TreeNode {
+class CompositeDefNode : public LtsTreeNode {
     public:
-        Lts res;
-
+        CompositeDefNode(const location& l) : LtsTreeNode(l) { }
         string getClassName() const { return "CompositeDef"; }
         void translate(FspDriver& c);
 };
 
-class ArgumentListNode : public SvpVecTreeNode {
+class ArgumentListNode : public TreeNode {
     public:
         vector<int> res;
 
         string getClassName() const { return "ArgumentList"; }
-        ArgumentListNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ArgumentListNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class ArgumentsNode : public SvpVecTreeNode {
+class ArgumentsNode : public TreeNode {
     public:
         vector<int> res;
 
         string getClassName() const { return "Arguments"; }
-        ArgumentsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ArgumentsNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class ProcessRefSeqNode : public PvecTreeNode {
+class ProcessRefSeqNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessRefSeq"; }
-        ProcessRefSeqNode(Pvec *v) : PvecTreeNode(v) { }
+        ProcessRefSeqNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class SeqProcessListNode : public PvecTreeNode {
+class SeqProcessListNode : public LtsTreeNode {
     public:
         string getClassName() const { return "SeqProcessList"; }
-        SeqProcessListNode(Pvec *v) : PvecTreeNode(v) { }
+        SeqProcessListNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class SemicolonNode : public TreeNode {
     public:
+        SemicolonNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return ";"; }
 };
 
-class SeqCompNode : public PvecTreeNode {
+class SeqCompNode : public LtsTreeNode {
     public:
         string getClassName() const { return "SeqComp"; }
-        SeqCompNode(Pvec *v) : PvecTreeNode(v) { }
+        SeqCompNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class IndexRangesNode : public SvpVecTreeNode {
+class IndexRangesNode : public TreeNode {
     public:
         vector<TreeNode *> res;
 
         string getClassName() const { return "IndexRanges"; }
-        IndexRangesNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        IndexRangesNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class OpenSquareNode : public TreeNode {
     public:
+        OpenSquareNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "["; }
 };
 
 class CloseSquareNode : public TreeNode {
     public:
+        CloseSquareNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "]"; }
 };
 
-class IndicesNode : public SvpVecTreeNode {
+class IndicesNode : public StringTreeNode {
     public:
-        string res;
-
         string getClassName() const { return "Indices"; }
-        IndicesNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        IndicesNode(const location& l) : StringTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class GuardNode : public SvpVecTreeNode {
+class GuardNode : public IntTreeNode {
     public:
-        int res;
-
         string getClassName() const { return "Guard"; }
-        GuardNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        GuardNode(const location& l) : IntTreeNode(l) { }
 };
 
 class WhenNode : public TreeNode {
     public:
+        WhenNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "when"; }
 };
 
-class PrefixActionsNode : public PvecTreeNode {
+class PrefixActionsNode : public TreeNode {
     public:
         vector<TreeNode *> res;
+
         string getClassName() const { return "PrefixActions"; }
-        PrefixActionsNode(Pvec *v) : PvecTreeNode(v) { }
+        PrefixActionsNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
 class ArrowNode : public TreeNode {
     public:
+        ArrowNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "->"; }
 };
 
-class ActionPrefixNode : public PvecTreeNode {
+class ActionPrefixNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ActionPrefix"; }
-        ActionPrefixNode(Pvec *v) : PvecTreeNode(v) { }
+        ActionPrefixNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
-class ChoiceNode : public PvecTreeNode {
+class ChoiceNode : public LtsTreeNode {
     public:
         string getClassName() const { return "Choice"; }
-        ChoiceNode(Pvec *v) : PvecTreeNode(v) { }
+        ChoiceNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
-class BaseLocalProcessNode : public PvecTreeNode {
+class BaseLocalProcessNode : public LtsTreeNode {
     public:
         string getClassName() const { return "BaseLocalProcess"; }
-        BaseLocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
+        BaseLocalProcessNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
 class EndNode : public TreeNode {
     public:
+        EndNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "END"; }
 };
 
 class StopNode : public TreeNode {
     public:
+        StopNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "STOP"; }
 };
 
 class ErrorNode : public TreeNode {
     public:
+        ErrorNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "ERROR"; }
 };
 
-class ProcessElseNode : public PvecTreeNode {
+class ProcessElseNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessElse"; }
-        ProcessElseNode(Pvec *v) : PvecTreeNode(v) { }
+        ProcessElseNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
-class LocalProcessNode : public PvecTreeNode {
+class LocalProcessNode : public LtsTreeNode {
     public:
         string getClassName() const { return "LocalProcess"; }
-        LocalProcessNode(Pvec *v) : PvecTreeNode(v) { }
+        LocalProcessNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
-class AlphaExtNode : public SvpVecTreeNode {
+class AlphaExtNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "AlphaExt"; }
-        AlphaExtNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        AlphaExtNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
-class LocalProcessDefNode : public PvecTreeNode {
+class LocalProcessDefNode : public LtsTreeNode {
     public:
         string getClassName() const { return "LocalProcessDef"; }
-        LocalProcessDefNode(Pvec *v) : PvecTreeNode(v) { }
+        LocalProcessDefNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
-class LocalProcessDefsNode : public PvecTreeNode {
+class LocalProcessDefsNode : public LtsTreeNode {
     public:
         string getClassName() const { return "LocalProcessDefs"; }
-        LocalProcessDefsNode(Pvec *v) : PvecTreeNode(v) { }
+        LocalProcessDefsNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class ProcessBodyNode : public PvecTreeNode {
+class ProcessBodyNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessBody"; }
-        ProcessBodyNode(Pvec *v) : PvecTreeNode(v) { }
+        ProcessBodyNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
 class ProcessDefNode : public LtsTreeNode {
     public:
         string getClassName() const { return "ProcessDef"; }
-        ProcessDefNode(Lts *v) : LtsTreeNode(v) { }
+        ProcessDefNode(const location& l) : LtsTreeNode(l) { }
         void translate(FspDriver& dr);
 };
 
 class PeriodNode : public TreeNode {
     public:
+        PeriodNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "."; }
 };
 
-class SetElementsNode : public SvpVecTreeNode {
+class SetElementsNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "SetElements"; }
-        SetElementsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        SetElementsNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
 class SetDefNode : public TreeNode {
     public:
+        SetDefNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "SetDef"; }
         void translate(FspDriver& c);
 };
 
 class SetKwdNode : public TreeNode {
     public:
+        SetKwdNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "SetKwd"; }
 };
 
 class RangeDefNode : public TreeNode {
     public:
+        RangeDefNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "RangeDef"; }
         void translate(FspDriver& c);
 };
 
 class RangeKwdNode : public TreeNode {
     public:
+        RangeKwdNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "RangeKwd"; }
 };
 
 class DotDotNode : public TreeNode {
     public:
+        DotDotNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return ".."; }
 };
 
 class ConstantDefNode : public TreeNode {
     public:
+        ConstantDefNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "ConstDef"; }
         void translate(FspDriver& c);
 };
 
 class ConstKwdNode : public TreeNode {
     public:
+        ConstKwdNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "ConstKwd"; }
 };
 
-class RangeExprNode : public SvpVecTreeNode {
+class RangeExprNode : public TreeNode {
     public:
         RangeValue res;
 
         string getClassName() const { return "RangeExpr"; }
-        RangeExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        RangeExprNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
-class ActionRangeNode : public SvpVecTreeNode {
+class ActionRangeNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "ActionRange"; }
-        ActionRangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ActionRangeNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
-class RangeNode : public SvpVecTreeNode {
+class RangeNode : public TreeNode {
     public:
         RangeValue res;
 
         string getClassName() const { return "Range"; }
-        RangeNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        RangeNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
-class SetExprNode : public SvpVecTreeNode {
+class SetExprNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "SetExpr"; }
-        SetExprNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        SetExprNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
-class SetNode : public SvpVecTreeNode {
+class SetNode : public TreeNode {
     public:
         SetValue res;
 
         string getClassName() const { return "Set"; }
-        SetNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        SetNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver&);
 };
 
-class ActionLabelsNode : public SvpVecTreeNode {
+class ActionLabelsNode : public TreeNode {
     public:
         vector<TreeNode *> res;
 
         string getClassName() const { return "ActionLabels"; }
-        ActionLabelsNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        ActionLabelsNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& dr);
-};
-
-class LowerCaseIdNode : public StringTreeNode {
-    public:
-        string getClassName() const { return "LowerCaseId"; }
-        LowerCaseIdNode(string *v) : StringTreeNode(v) { }
-};
-
-class UpperCaseIdNode : public StringTreeNode {
-    public:
-        string getClassName() const { return "UpperCaseId"; }
-        UpperCaseIdNode(string *v) : StringTreeNode(v) { }
 };
 
 class RootNode : public TreeNode {
     public:
+        RootNode(const location& l) : TreeNode(l) { }
         string getClassName() const { return "Root"; }
         void translate(FspDriver& dr);
 };
 
-class PriorityNode : public SvpVecTreeNode {
+class PriorityNode : public TreeNode {
     public:
-        NewPriorityValue res;
+        PriorityValue res;
 
         string getClassName() const { return "Priority"; }
-        PriorityNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        PriorityNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
-class RelabelingNode : public SvpVecTreeNode {
+class RelabelingNode : public TreeNode {
     public:
-        NewRelabelingValue res;
+        RelabelingValue res;
 
         string getClassName() const { return "Relabeling"; }
-        RelabelingNode(SvpVec *v) : SvpVecTreeNode(v) { }
+        RelabelingNode(const location& l) : TreeNode(l) { }
         void translate(FspDriver& c);
 };
 
 class ProgressKwdNode : public TreeNode {
     public:
+        ProgressKwdNode(const location& l) : TreeNode(l) { } 
         string getClassName() const { return "ProgressKwd"; }
 };
 

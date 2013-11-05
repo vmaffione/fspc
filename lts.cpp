@@ -113,80 +113,6 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     terminal_sets_computed = false;
 }
 
-struct LtsConvertData {
-    yy::Lts * ltsp;
-    map<ProcessNode *, int> * mapp;
-};
-
-namespace yy {
-
-void lts_convert(struct ProcessNode * pnp, void * opaque)
-{
-    yy::Lts * ltsp = ((LtsConvertData *)opaque)->ltsp;
-    map<ProcessNode *, int> * mapp = ((LtsConvertData *)opaque)->mapp;
-    int state = (mapp->find(pnp))->second;
-
-    IFD(cout << "Converting " << pnp << " into " << state << "\n");
-    
-    switch (pnp->type) {
-	case ProcessNode::Normal:
-	    ltsp->nodes[state].type = LtsNode::Normal;
-	    break;
-	case ProcessNode::End:
-	    ltsp->nodes[state].type = LtsNode::End;
-	    break;
-	case ProcessNode::Error:
-	    ltsp->nodes[state].type = LtsNode::Error;
-	    break;
-    }
-
-    Edge e;
-    pair< map<ProcessNode*, int>::iterator, bool> ret;
-
-    for (unsigned int i=0; i<pnp->children.size(); i++) {
-	int next = mapp->size();
-	ret = mapp->insert(make_pair(pnp->children[i].dest, next));
-	if (ret.second) {
-	    ltsp->nodes.push_back(LtsNode());
-	    IFD(cout << "(" << pnp->children[i].dest << "," << next << ")\n");
-	}
-	e.dest = ret.first->second;
-	e.action = pnp->children[i].action;
-	IFD(cout << "Adding " << e.action << ", " << e.dest << "\n");
-	ltsp->nodes[state].children.push_back(e);
-	ltsp->updateAlphabet(e.action);
-    }
-}
-
-} /* namespace yy */
-
-yy::Lts::Lts(const struct ProcessNode * cpnp, struct ActionsTable * p) : atp(p)
-{
-    ProcessNode * pnp;
-    ProcessVisitObject f;
-    LtsConvertData lcd;
-    map<ProcessNode *, int> index_map;
-
-    terminal_sets_computed = false;
-
-    /* We use const_cast<> to remove 'const' from pnp: we are sure that the 
-       visit function won't modify the graph. */
-    pnp = const_cast<ProcessNode *>(cpnp);
-
-    /* The index_map maps each ProcessNode* in the graph to an index in
-       Lts::nodes. The map is build and used during the visit, but we must
-       initialize it with respect to the first node. */
-    index_map.insert(make_pair(pnp, 0));
-    nodes.push_back(LtsNode());
-
-    lcd.ltsp = this;
-    lcd.mapp = &index_map;
-    f.vfp = &yy::lts_convert;
-    f.opaque = &lcd;
-
-    pnp->visit(f, true);
-}
-
 void yy::Lts::print() const {
     stringstream ss;
 
@@ -231,6 +157,10 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
     /* We make sure that 'nodes' is empty. */
     nodes.clear();
     terminal_sets_computed = false;
+
+    if (!np) {
+        return;
+    }
 
     /* Overestimation */
     nodes.resize(np);
@@ -729,27 +659,6 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
-/* Convert an Lts to a ProcessNode*. */
-ProcessNode * yy::Lts::toProcessNode(ProcessNodeAllocator& pna) const
-{
-    vector<ProcessNode *> pnodes(nodes.size());
-
-    for (unsigned int i=0; i<nodes.size(); i++)
-	pnodes[i] = pna.allocate(nodes[i].type);
-
-    for (unsigned int i=0; i<nodes.size(); i++)
-	for (unsigned int j=0; j<nodes[i].children.size(); j++) {
-	    ProcessEdge e;
-
-	    e.dest = pnodes[nodes[i].children[j].dest];
-	    e.action = nodes[i].children[j].action;
-	    e.rank = 0; //XXX ???
-	    pnodes[i]->children.push_back(e);
-	}
-
-    return pnodes[0];
-}
-
 yy::Lts& yy::Lts::labeling(const SetValue& labels)
 {
     if (!labels.actions.size())
@@ -1106,27 +1015,13 @@ int yy::Lts::progress(const string& progress_name, const SetValue& s,
     return 0;
 }
 
-
 struct OutputData {
     fstream * fsptr;
     ActionsTable * atp;
 };
 
-static void graphvizVisitFunction(int state, const struct LtsNode& node,
-				void * opaque)
-{
-    OutputData * gvdp = static_cast<OutputData *>(opaque);
-    ActionsTable * atp = gvdp->atp;
-
-    for (unsigned int i=0; i<node.children.size(); i++)
-	(*(gvdp->fsptr)) << state << " -> " << node.children[i].dest
-	    << " [label = \"" << ati(atp, node.children[i].action) << "\"];\n";
-}
-
 void yy::Lts::graphvizOutput(const char * filename) const
 {
-    LtsVisitObject lvo;
-    OutputData gvd;
     fstream fout;
 
     CHECKATP();
@@ -1149,14 +1044,20 @@ void yy::Lts::graphvizOutput(const char * filename) const
 		fout << i
 		    << " [shape=circle,style=filled, fillcolor=red];\n";
 		break;
+            case LtsNode::Unresolved:
+		fout << i
+		    << " [shape=circle,style=filled, fillcolor=green];\n";
 	}
     }
 
-    lvo.vfp = &graphvizVisitFunction;
-    gvd.fsptr = &fout;
-    gvd.atp = atp;
-    lvo.opaque = &gvd;
-    visit(lvo);
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        for (unsigned int j=0; j<nodes[i].children.size(); j++) {
+            const Edge& e = nodes[i].children[j];
+
+	    fout << i << " -> " << e.dest
+	            << " [label = \"" << ati(atp, e.action) << "\"];\n";
+        }
+    }
 
     fout << "}\n";
     fout.close();
@@ -1357,44 +1258,54 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
 
 /* Remove incomplete nodes (and related transitions) from *this, compacting
    the this->nodes vector. */
-void yy::Lts::removeType(unsigned int type)
+void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
+                         bool call_reduce)
 {
-    vector<LtsNode> new_nodes;
     vector<unsigned int> remap(nodes.size());
     unsigned int cnt = 0;
 
     /* Create the mapping from the original state names (indexes) to the names after
        compacting. */
+    if (zero_idx != ~0U) {
+        assert(zero_idx < nodes.size());
+        remap[zero_idx] = cnt++;
+    }
     for (unsigned int i=0; i<nodes.size(); i++) {
         if (nodes[i].type == type) {
             remap[i] = ~0U;  /* Undefined remapping. */
-        } else {
+        } else if (i != zero_idx) {
             remap[i] = cnt++;
         }
     }
 
+    vector<LtsNode> new_nodes(cnt);
+
     /* Regenerate this->nodes using the mapping. */
     for (unsigned int i=0; i<nodes.size(); i++) {
         const LtsNode& n = nodes[i];
+        unsigned k = remap[i];
 
-        if (remap[i] != ~0U) {
+        if (k != ~0U) {
             /* Rule out incomplete nodes. */
-            new_nodes.push_back(LtsNode());
-            new_nodes.back().type = n.type;
-            new_nodes.back().priv = n.priv;
+            new_nodes[k].type = n.type;
+            new_nodes[k].priv = n.priv;
             for (unsigned int j=0; j<n.children.size(); j++) {
                 Edge e = n.children[j];
 
                 if (remap[e.dest] != ~0U) {
                     /* Rule out transitions towards incomplete nodes. */
                     e.dest = remap[e.dest];
-                    new_nodes.back().children.push_back(e);
+                    new_nodes[k].children.push_back(e);
                 }
             }
         }
     }
 
-    nodes = new_nodes;
+    if (call_reduce) {
+        reduce(new_nodes);
+    } else {
+        nodes = new_nodes;
+    }
 }
 
 /* Append the LTS objects contained into 'ltsv' to *this, replacing each
@@ -1439,7 +1350,7 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
 
     /* Compact *this in order to remove incomplete nodes and related
        transitions. */
-    removeType(LtsNode::Incomplete);
+    removeType(LtsNode::Incomplete, ~0U, false);
 
     return *this;
 }
@@ -1527,7 +1438,7 @@ yy::Lts& yy::Lts::mergeEndNodes()
             }
         }
         if (zombies) {
-            removeType(LtsNode::Zombie);
+            removeType(LtsNode::Zombie, ~0U, false);
         }
     }
 
@@ -1562,10 +1473,18 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
 unsigned int yy::Lts::resolve()
 {
     unsigned int priv;
+    unsigned int zero_idx = ~0U;
 
     for (unsigned int i=0; i<nodes.size(); i++) {
         unsigned int sz = nodes[i].children.size();
 
+        if (nodes[i].type != LtsNode::Unresolved
+                    && get_priv(i) == get_priv(0)) {
+            /* Look for a non-unresolved node with the same priv as the zero
+               node, which may be an unresolved nodes (this happens with definitions
+               in the form 'P = Q, [...], Q = ... .') */
+            zero_idx = i;
+        }
         for (unsigned int j=0; j<sz; j++) {
             Edge& e = nodes[i].children[j];
 
@@ -1592,14 +1511,17 @@ unsigned int yy::Lts::resolve()
         }
     }
 
+    /* Compact the Lts in order to remove unresolved nodes and related
+       transitions. Using the 'zero_idx' argument, we specify what node
+       we want to be remapped to the zero node. With complex local
+       process definitions you get an aribitrary graph, and so
+       it is necessary to specify this. */
+    removeType(LtsNode::Unresolved, zero_idx, true);
+
     /* Reset the priv fields. */
     for (unsigned int i=0; i<nodes.size(); i++) {
         set_priv(i, ~0U);
     }
-
-    /* Compact the Lts in order to remove unresolved nodes and related
-       transitions. */
-    removeType(LtsNode::Unresolved);
 
     return ~0U;
 }

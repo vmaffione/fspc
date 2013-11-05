@@ -5,12 +5,12 @@
 
 #define FUNNY   44  /* Magic number used to generate indexes. */
 
-static string merge_string_vector(const vector<string>& sv)
+static string merge_string_vector(const vector<UnresolvedElem>& sv)
 {
     string ret;
 
     for (unsigned int i=0; i<sv.size(); i++) {
-        ret += sv[i] + ", ";
+        ret += sv[i].name + ", ";
     }
 
     return ret;
@@ -18,19 +18,20 @@ static string merge_string_vector(const vector<string>& sv)
 
 /* Insert a new entry into the table, if it does not exist already.
    Return the index associated to the new entry or the existing entry. */
-unsigned int UnresolvedNames::insert(const string& name)
+unsigned int UnresolvedNames::insert(const string& name, bool defined)
 {
     for (unsigned int i=0; i<names.size(); i++) {
         for (unsigned int j=0; j<names[i].size(); j++) {
-            if (names[i][j] == name) {
+            if (names[i][j].name == name) {
                 return i + FUNNY;
             }
         }
     }
 
-    vector<string> sv(1);
+    vector<UnresolvedElem> sv(1);
 
-    sv[0] = name;
+    sv.back().name = name;
+    sv.back().defined = defined;
     names.push_back(sv);
 
     return names.size() - 1 + FUNNY;
@@ -44,20 +45,21 @@ unsigned int UnresolvedNames::insert(const string& name)
    When a conflicting entry exists, its index is returned. Otherwise,
    this method returns ~0U.
  */
-unsigned int UnresolvedNames::append(const string& name, unsigned int idx)
+unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
+                                     bool defined)
 {
     unsigned int i = idx - FUNNY;
+    UnresolvedElem elem;
 
     assert(i < size());
-
-    names[i].push_back(name);
 
     /* Look for 'name' in the other entries and remove it, because 'name'
        has been merged to the 'idx' entry.  */
     for (unsigned int k=0; k<names.size(); k++) {
         if (k != i) {
             for (unsigned int j=0; j<names[k].size(); j++) {
-                if (name == names[k][j]) {
+                if (name == names[k][j].name) {
+                    defined = defined || names[k][j].defined;
                     names[k].erase(names[k].begin() + j);
                     /* Return the matching 'idx', so that the caller can
                        merge the 'priv' fields. */
@@ -66,6 +68,10 @@ unsigned int UnresolvedNames::append(const string& name, unsigned int idx)
             }
         }
     }
+
+    elem.name = name;
+    elem.defined = defined;
+    names[i].push_back(elem);
 
     return ~0U;
 }
@@ -107,5 +113,18 @@ string UnresolvedNames::lookup(unsigned int idx) const
     }
 
     return merge_string_vector(names[i]);
+}
+
+bool UnresolvedNames::defined(const string& s) const
+{
+    for (unsigned int i=0; i<names.size(); i++) {
+        for (unsigned int j=0; j<names[i].size(); j++) {
+            if (names[i][j].name == s) {
+                return names[i][j].defined;
+            }
+        }
+    }
+
+    return false;
 }
 

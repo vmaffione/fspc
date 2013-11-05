@@ -7,6 +7,11 @@
 using namespace std;
 
 
+struct UnresolvedElem {
+    string name;
+    bool defined;
+};
+
 /* This class contains a table representing unresolved names (in our case FSP
    names). Each entry is used to store the relationship between a numeric
    index (idx) and one or more names.
@@ -27,15 +32,17 @@ using namespace std;
    only provides the names.
  */
 class UnresolvedNames {
-        vector< vector<string> > names;
+        vector< vector<UnresolvedElem> > names;
 
     public:
-        unsigned int insert(const string& name);
-        unsigned int append(const string& name, unsigned int idx);
+        unsigned int insert(const string& name, bool defined);
+        unsigned int append(const string& name, unsigned int idx,
+                            bool defined);
         unsigned int size() const { return names.size(); }
         unsigned int get_idx(unsigned int i) const;
         string get_name(unsigned int i) const;
         string lookup(unsigned int idx) const;
+        bool defined(const string& s) const;
         void clear();
 };
 
