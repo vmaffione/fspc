@@ -32,7 +32,7 @@
 CircularBuffer last_tokens;
 
 
-void print_error_location(const yy::location& loc, int col)
+static void print_error_location(const yy::location& loc, int col)
 {
     cout << "@ line " << loc.begin.line << ", col " << loc.begin.column
 	    << ":\n";
@@ -42,9 +42,14 @@ void print_error_location(const yy::location& loc, int col)
 	last_tokens.print(col);
 }
 
-void semantic_error(FspDriver& driver, const stringstream& ss, const yy::location& loc)
+void print_error_location_pretty(const yy::location& loc)
 {
     print_error_location(loc, loc.begin.column);
+}
+
+void semantic_error(FspDriver& driver, const stringstream& ss, const yy::location& loc)
+{
+    print_error_location_pretty(loc);
     cout << "Semantic error: " << ss.str() << "\n";
     driver.clear();
     exit(-1);

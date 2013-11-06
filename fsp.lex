@@ -63,7 +63,6 @@ using namespace std;
 /* The following is executed before each rule's action. */
 #define YY_USER_ACTION \
     do { \
-	/*last_tokens.location_extend(yylloc, yyleng);*/ \
 	yylloc->columns(yyleng); \
 	last_tokens.insert(yytext, yyleng); \
     } while (0);
@@ -97,7 +96,6 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
     /* Shortcut typedef. */
     typedef yy::FspParser::token token;
 
-    /*last_tokens.location_step(yylloc);*/
     yylloc->step ();
 %}
 
@@ -112,8 +110,6 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <COMMENTS>[\n]+ {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    /*last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc); */
     yylloc->lines(yyleng);
     yylloc->step();
 
@@ -122,7 +118,6 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 }
 
 <COMMENTS>. {
-    /* last_tokens.location_step(yylloc); */
     yylloc->step();
 }
 
@@ -133,8 +128,6 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <INLINECOMMENTS>[\n] {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    /*last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc);*/
     yylloc->lines(yyleng);
     yylloc->step();
 
@@ -268,8 +261,6 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 [\n]+ {
     /* Update the line counter and step forward. */
-    /*last_tokens.location_lines(yylloc, yyleng);
-    last_tokens.location_step(yylloc);*/
     yylloc->lines(yyleng);
     yylloc->step();
 

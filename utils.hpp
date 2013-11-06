@@ -29,7 +29,9 @@ using namespace std;
 #include "symbols_table.hpp"
 #include "parser.hpp"
 
+
 void semantic_error(FspDriver& driver, const stringstream& ss, const yy::location& loc);
+void print_error_location_pretty(const yy::location& loc);
 
 /* Helper function used to get a ConstValue* from a SymbolValue*. If the
    object pointed is not a constant, a semantic error is issued. */

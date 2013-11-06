@@ -12,6 +12,14 @@ using namespace std;
 using namespace yy;
 
 
+//#define DEBUG
+#ifdef DEBUG
+#define IFD(x) x
+#else
+#define IFD(x)
+#endif
+
+
 /* Helper function used to update the 'unres' table.
    name: the name of the (possibly local) process to assign
          an alias
@@ -1090,7 +1098,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 
     /* We first lookup the global processes table in order to see if
        we already have the requested LTS. */
-cout << "Looking up " << in->res+extension << "\n";
+    IFD(cout << "Looking up " << in->res+extension << "\n");
     if (c.processes.lookup(in->res + extension, svp)) {
 	/* If there is a cache hit, use the stored LTS. */
 	res = *(is_lts(svp));
@@ -1521,7 +1529,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
     lts_name_extension(c.paramproc.defaults, extension);
 
     /* Insert lts into the global 'processes' table. */
-cout << "Saving " << res.name + extension << "\n";
+    IFD(cout << "Saving " << res.name + extension << "\n");
     if (!c.processes.insert(res.name + extension, res_clone)) {
 	stringstream errstream;
 

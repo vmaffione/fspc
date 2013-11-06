@@ -1151,7 +1151,7 @@ progress_id: upper_case_id {
 %%
 
 void yy::FspParser::error (const yy::FspParser::location_type& l,
-	const std::string& m)
+	                   const std::string& m)
 {
     driver.error(l, m);
 }

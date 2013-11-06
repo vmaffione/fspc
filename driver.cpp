@@ -65,6 +65,7 @@ int FspDriver::parse(const CompilerOptions& co)
     if (co.input_type == CompilerOptions::InputTypeFsp) {
 	string orig(co.input_file);
 	string temp = ".fspcc." + orig;
+        int ret;
 
 	for (unsigned int i=0; i<temp.size(); i++)
 	    if (temp[i] == '\\' || temp[i] == '/')
@@ -79,12 +80,17 @@ int FspDriver::parse(const CompilerOptions& co)
 	yy::FspParser parser(*this);
 	parser.set_debug_level(trace_parsing);
 	this->current_file = orig; /* TODO redundant (remove_file)*/
-	parser.parse();
+	ret = parser.parse();
 	scan_end();
 
 	/* Remove the temporary file. */
 	remove(temp.c_str());
 	this->remove_file = "";
+
+        if (ret) {
+            /* On error, the parser returns 1. */
+            return ret;
+        }
 
         /* Output a GraphViz representation of the parse tree. */
         assert(tree);
@@ -258,7 +264,8 @@ void FspDriver::nesting_restore()
 
 void FspDriver::error(const yy::location& l, const std::string& m)
 {
-    cerr << l << ": " << m << endl;
+    print_error_location_pretty(l);
+    cerr << m << endl;
 }
 
 void FspDriver::error(const std::string& m)
