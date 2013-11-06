@@ -72,15 +72,13 @@ string yy::TreeNode::getClassName() const
     return "TreeNode";
 }
 
-void yy::TreeNode::addChild(yy::TreeNode *n)
+void yy::TreeNode::addChild(yy::TreeNode *n, const yy::location& loc)
 {
     children.push_back(n);
+    if (n) {
+        n->loc = loc;
+    }
 }
-
-/*void yy::TreeNode::addChild(unsigned int t)
-{
-    children.push_back(new yy::TreeNode());
-}*/
 
 void yy::TreeNode::print(ofstream& os)
 {

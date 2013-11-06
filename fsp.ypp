@@ -225,11 +225,11 @@ using namespace yy;
 /* Start symbol: an arbitrary long list of fsp_definitions */
 fsp_description:
     fsp_definition {
-        driver.tree = $$ = new RootNode(@1);
-        $$->addChild($1);
+        driver.tree = $$ = new RootNode();
+        $$->addChild($1, @1);
     }
     | fsp_description fsp_definition {
-        $1->addChild($2);
+        $1->addChild($2, @2);
         driver.tree = $$ = $1;
     }
     ;
@@ -250,95 +250,95 @@ fsp_definition:
 /* Action labels TODO: fix */
 action_labels:
     lower_case_id {
-	$$ = new ActionLabelsNode(@1);
-        $$->addChild($1);
+	$$ = new ActionLabelsNode();
+        $$->addChild($1, @1);
     }
     | set {
-	$$ = new ActionLabelsNode(@1);
-        $$->addChild($1);
+	$$ = new ActionLabelsNode();
+        $$->addChild($1, @1);
     }
     | action_labels '.' lower_case_id {
         $$ = $1;
-        $$->addChild(new PeriodNode(@1));
-        $$->addChild($3);
+        $$->addChild(new PeriodNode(), @2);
+        $$->addChild($3, @3);
     }
     | action_labels '.' set {
         $$ = $1;
-        $$->addChild(new PeriodNode(@1));
-        $$->addChild($3);
+        $$->addChild(new PeriodNode(), @2);
+        $$->addChild($3, @3);
     }
     | action_labels '[' action_range ']' {
         $$ = $1;
-        $$->addChild(new OpenSquareNode(@1));
-        $$->addChild($3);
-        $$->addChild(new CloseSquareNode(@1));
+        $$->addChild(new OpenSquareNode(), @2);
+        $$->addChild($3, @3);
+        $$->addChild(new CloseSquareNode(), @4);
     }
     ;
 
 set:
     EXPECT_SET set_id {
-	$$ = new SetNode(@1);
-	$$->addChild($2);
+	$$ = new SetNode();
+	$$->addChild($2, @2);
     }
     | set_expr {
-	$$ = new SetNode(@1);
-	$$->addChild($1);
+	$$ = new SetNode();
+	$$->addChild($1, @1);
     }
     ;
 
 set_expr:
     '{' set_elements '}' {
-	$$ = new SetExprNode(@1);
-	$$->addChild(new OpenCurlyNode(@1));
-	$$->addChild($2);
-	$$->addChild(new CloseCurlyNode(@1));
+	$$ = new SetExprNode();
+	$$->addChild(new OpenCurlyNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new CloseCurlyNode(), @3);
     }
     ;
 
 range:
     EXPECT_RANGE range_id {
-	$$ = new RangeNode(@1);
-	$$->addChild($2);
+	$$ = new RangeNode();
+	$$->addChild($2, @2);
     }
     | range_expr {
-	$$ = new RangeNode(@1);
-	$$->addChild($1);
+	$$ = new RangeNode();
+	$$->addChild($1, @1);
     }
     ;
 
 action_range:
     expression {
-	$$ = new ActionRangeNode(@1);
-	$$->addChild($1);
+	$$ = new ActionRangeNode();
+	$$->addChild($1, @1);
     }
     | range {
-	$$ = new ActionRangeNode(@1);
-	$$->addChild($1);
+	$$ = new ActionRangeNode();
+	$$->addChild($1, @1);
     }
     | set {
-	$$ = new ActionRangeNode(@1);
-	$$->addChild($1);
+	$$ = new ActionRangeNode();
+	$$->addChild($1, @1);
     }
     | variable ':' range {
-	$$ = new ActionRangeNode(@1);
-	$$->addChild($1);
-	$$->addChild(new ColonNode(@1));
-	$$->addChild($3);
+	$$ = new ActionRangeNode();
+	$$->addChild($1, @1);
+	$$->addChild(new ColonNode(), @2);
+	$$->addChild($3, @3);
     }
     | variable ':' set {
-	$$ = new ActionRangeNode(@1);
-	$$->addChild($1);
-	$$->addChild(new ColonNode(@1));
-	$$->addChild($3);
+	$$ = new ActionRangeNode();
+	$$->addChild($1, @1);
+	$$->addChild(new ColonNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
 range_expr:
     expression DOTDOT expression {
-	$$ = new RangeExprNode(@1);
-	$$->addChild($1);
-	$$->addChild(new DotDotNode(@1));
-	$$->addChild($3);
+	$$ = new RangeExprNode();
+	$$->addChild($1, @1);
+	$$->addChild(new DotDotNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
@@ -346,45 +346,44 @@ range_expr:
 /* Const, Range, Set */
 constant_def:
     CONST constant_id '=' expression {
-        /* @2 */
-	$$ = new ConstantDefNode(@1);
-	$$->addChild(new ConstKwdNode(@1));
-	$$->addChild($2);
-	$$->addChild(new AssignNode(@1));
-	$$->addChild($4);
+	$$ = new ConstantDefNode();
+	$$->addChild(new ConstKwdNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new AssignNode(), @3);
+	$$->addChild($4, @4);
     };
 
 range_def:
     RANGE EXPECT_RANGE range_id '=' expression DOTDOT expression {
         /* @3 */
-	$$ = new RangeDefNode(@1);
-	$$->addChild(new RangeKwdNode(@1));
-	$$->addChild($3);
-	$$->addChild(new AssignNode(@1));
-	$$->addChild($5);
-	$$->addChild(new DotDotNode(@1));
-	$$->addChild($7);
+	$$ = new RangeDefNode();
+	$$->addChild(new RangeKwdNode(), @1);
+	$$->addChild($3, @3);
+	$$->addChild(new AssignNode(), @4);
+	$$->addChild($5, @5);
+	$$->addChild(new DotDotNode(), @6);
+	$$->addChild($7, @7);
     };
 
 set_def:
     SET EXPECT_SET set_id '=' set_expr {
         /* @3 */
-	$$ = new SetDefNode(@1);
-	$$->addChild(new SetKwdNode(@1));
-	$$->addChild($3);
-	$$->addChild(new AssignNode(@1));
-	$$->addChild($5);
+	$$ = new SetDefNode();
+	$$->addChild(new SetKwdNode(), @1);
+	$$->addChild($3, @3);
+	$$->addChild(new AssignNode(), @4);
+	$$->addChild($5, @5);
     };
 
 set_elements:
     action_labels {
-	$$ = new SetElementsNode(@1);
-	$$->addChild($1);
+	$$ = new SetElementsNode();
+	$$->addChild($1, @1);
     }
     | set_elements ',' action_labels {
         $$ = $1;
-	$$->addChild(new CommaNode(@1));
-	$$->addChild($3);
+	$$->addChild(new CommaNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
@@ -392,50 +391,50 @@ set_elements:
 /* Processes */
 process_def:
     process_id param_OPT '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
-	$$ = new ProcessDefNode(@1);
-	$$->addChild($1);
-	$$->addChild($2);
-	$$->addChild(new AssignNode(@1));
-	$$->addChild($4);
-	$$->addChild($5);
-	$$->addChild($6);
-	$$->addChild($7);
-	$$->addChild(new PeriodNode(@1));
+	$$ = new ProcessDefNode();
+	$$->addChild($1, @1);
+	$$->addChild($2, @2);
+	$$->addChild(new AssignNode(), @3);
+	$$->addChild($4, @4);
+	$$->addChild($5, @5);
+	$$->addChild($6, @6);
+	$$->addChild($7, @7);
+	$$->addChild(new PeriodNode(), @8);
     }
     ;
 
 process_body:
     local_process {
-	$$ = new ProcessBodyNode(@1);
-	$$->addChild($1);
+	$$ = new ProcessBodyNode();
+	$$->addChild($1, @1);
     }
     | local_process ',' local_process_defs {
-	$$ = new ProcessBodyNode(@1);
-	$$->addChild($1);
-	$$->addChild(new CommaNode(@1));
-	$$->addChild($3);
+	$$ = new ProcessBodyNode();
+	$$->addChild($1, @1);
+	$$->addChild(new CommaNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
 local_process_defs:
     local_process_def {
-	$$ = new LocalProcessDefsNode(@1);
-	$$->addChild($1);
+	$$ = new LocalProcessDefsNode();
+	$$->addChild($1, @1);
     }
     | local_process_defs ',' local_process_def {
         $$ = $1;
-	$$->addChild(new CommaNode(@1));
-	$$->addChild($3);
+	$$->addChild(new CommaNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
 local_process_def:
     process_id index_ranges_OPT '=' local_process {
-	$$ = new LocalProcessDefNode(@1);
-	$$->addChild($1);
-	$$->addChild($2);
-	$$->addChild(new AssignNode(@1));
-	$$->addChild($4);
+	$$ = new LocalProcessDefNode();
+	$$->addChild($1, @1);
+	$$->addChild($2, @2);
+	$$->addChild(new AssignNode(), @3);
+	$$->addChild($4, @4);
     }
     ;
 
@@ -444,34 +443,34 @@ alphabet_extension_OPT:
 	$$ = NULL;
     }
     | '+' set {
-	$$ = new AlphaExtNode(@1);
-	$$->addChild(new OperatorNode(@1, "+"));
-	$$->addChild($2);
+	$$ = new AlphaExtNode();
+	$$->addChild(new OperatorNode("+"), @1);
+	$$->addChild($2, @2);
     }
     ;
 
 local_process:
     base_local_process {
-	$$ = new LocalProcessNode(@1);
-	$$->addChild($1);
+	$$ = new LocalProcessNode();
+	$$->addChild($1, @1);
     }
     | sequential_composition {
-	$$ = new LocalProcessNode(@1);
-	$$->addChild($1);
+	$$ = new LocalProcessNode();
+	$$->addChild($1, @1);
     }
     | IF expression THEN local_process else_OPT {
-	$$ = new LocalProcessNode(@1);
-	$$->addChild(new IfNode(@1));
-	$$->addChild($2);
-	$$->addChild(new ThenNode(@1));
-	$$->addChild($4);
-	$$->addChild($5);
+	$$ = new LocalProcessNode();
+	$$->addChild(new IfNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new ThenNode(), @3);
+	$$->addChild($4, @4);
+	$$->addChild($5, @5);
     }
     | '(' choice ')' {
-	$$ = new LocalProcessNode(@1);
-	$$->addChild(new OpenParenNode(@1));
-	$$->addChild($2);
-	$$->addChild(new CloseParenNode(@1));
+	$$ = new LocalProcessNode();
+	$$->addChild(new OpenParenNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new CloseParenNode(), @3);
     }
     ;
 
@@ -480,62 +479,62 @@ else_OPT:
 	$$ = NULL;
     }
     | ELSE local_process {
-	$$ = new ProcessElseNode(@1);
-	$$->addChild(new ElseNode(@1));
-	$$->addChild($2);
+	$$ = new ProcessElseNode();
+	$$->addChild(new ElseNode(), @1);
+	$$->addChild($2, @2);
     }
 
 base_local_process:
     END {
-	$$ = new BaseLocalProcessNode(@1);
-	$$->addChild(new EndNode(@1));
+	$$ = new BaseLocalProcessNode();
+	$$->addChild(new EndNode(), @1);
     }
     | STOP {
-	$$ = new BaseLocalProcessNode(@1);
-	$$->addChild(new StopNode(@1));
+	$$ = new BaseLocalProcessNode();
+	$$->addChild(new StopNode(), @1);
     }
     | ERROR {
-	$$ = new BaseLocalProcessNode(@1);
-	$$->addChild(new ErrorNode(@1));
+	$$ = new BaseLocalProcessNode();
+	$$->addChild(new ErrorNode(), @1);
     }
     | process_id indices_OPT {
-	$$ = new BaseLocalProcessNode(@1);
-	$$->addChild($1);
-	$$->addChild($2);
+	$$ = new BaseLocalProcessNode();
+	$$->addChild($1, @1);
+	$$->addChild($2, @2);
     }
     ;
 
 choice:
     action_prefix {
-	$$ = new ChoiceNode(@1);
-	$$->addChild($1);
+	$$ = new ChoiceNode();
+	$$->addChild($1, @1);
     }
     | choice '|' action_prefix {
         $$ = $1;
-	$$->addChild(new OperatorNode(@1, "|"));
-	$$->addChild($3);
+	$$->addChild(new OperatorNode("|"), @2);
+	$$->addChild($3, @3);
     }
     ;
 
 action_prefix:
     guard_OPT prefix_actions ARROW local_process {
-	$$ = new ActionPrefixNode(@1);
-	$$->addChild($1);
-	$$->addChild($2);
-	$$->addChild(new ArrowNode(@1));
-	$$->addChild($4);
+	$$ = new ActionPrefixNode();
+	$$->addChild($1, @1);
+	$$->addChild($2, @2);
+	$$->addChild(new ArrowNode(), @3);
+	$$->addChild($4, @4);
     }
     ;
 
 prefix_actions:
     action_labels {
-	$$ = new PrefixActionsNode(@1);
-	$$->addChild($1);
+	$$ = new PrefixActionsNode();
+	$$->addChild($1, @1);
     }
     | prefix_actions ARROW action_labels {
         $$ = $1;
-	$$->addChild(new ArrowNode(@1));
-	$$->addChild($3);
+	$$->addChild(new ArrowNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
@@ -544,15 +543,15 @@ guard_OPT:
 	$$ = NULL;
     }
     | WHEN expression {
-	$$ = new GuardNode(@1);
-	$$->addChild(new WhenNode(@1));
-	$$->addChild($2);
+	$$ = new GuardNode();
+	$$->addChild(new WhenNode(), @1);
+	$$->addChild($2, @2);
     }
     ;
 
 indices_OPT:
     {
-        $$ = new IndicesNode(@0);
+        $$ = new IndicesNode();
     }
     | indices {
         $$ = $1;
@@ -561,22 +560,22 @@ indices_OPT:
 
 indices:
     '[' expression ']' {
-	$$ = new IndicesNode(@1);
-	$$->addChild(new OpenSquareNode(@1));
-	$$->addChild($2);
-	$$->addChild(new CloseSquareNode(@1));
+	$$ = new IndicesNode();
+	$$->addChild(new OpenSquareNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new CloseSquareNode(), @2);
     }
     | indices '[' expression ']' {
         $$ = $1;
-	$$->addChild(new OpenSquareNode(@1));
-	$$->addChild($3);
-	$$->addChild(new CloseSquareNode(@1));
+	$$->addChild(new OpenSquareNode(), @2);
+	$$->addChild($3, @3);
+	$$->addChild(new CloseSquareNode(), @4);
     }
     ;
 
 index_ranges_OPT:
     {
-        $$ = new IndexRangesNode(@0);
+        $$ = new IndexRangesNode();
     }
     | index_ranges {
         $$ = $1;
@@ -585,45 +584,45 @@ index_ranges_OPT:
 
 index_ranges:
     '[' action_range ']' {
-	$$ = new IndexRangesNode(@1);
-	$$->addChild(new OpenSquareNode(@1));
-	$$->addChild($2);
-	$$->addChild(new CloseSquareNode(@1));
+	$$ = new IndexRangesNode();
+	$$->addChild(new OpenSquareNode(), @1);
+	$$->addChild($2, @2);
+	$$->addChild(new CloseSquareNode(), @3);
     }
     | index_ranges '[' action_range ']' {
         $$ = $1;
-	$$->addChild(new OpenSquareNode(@1));
-	$$->addChild($3);
-	$$->addChild(new CloseSquareNode(@1));
+	$$->addChild(new OpenSquareNode(), @2);
+	$$->addChild($3, @3);
+	$$->addChild(new CloseSquareNode(), @4);
     }
     ;
 
 sequential_composition:
     seq_process_list ';' base_local_process {
-	$$ = new SeqCompNode(@1);
-	$$->addChild($1);
-	$$->addChild(new SemicolonNode(@1));
-	$$->addChild($3);
+	$$ = new SeqCompNode();
+	$$->addChild($1, @1);
+	$$->addChild(new SemicolonNode(), @2);
+	$$->addChild($3, @3);
     }
     ;
 
 seq_process_list:
     process_ref_seq {
-	$$ = new SeqProcessListNode(@1);
-	$$->addChild($1);
+	$$ = new SeqProcessListNode();
+	$$->addChild($1, @1);
     }
     | seq_process_list ';' process_ref_seq {
         $$ = $1;
-        $$->addChild(new SemicolonNode(@1));
-        $$->addChild($3);
+        $$->addChild(new SemicolonNode(), @2);
+        $$->addChild($3, @3);
     }
     ;
 
 process_ref_seq:
     process_id argument_OPT {
-	$$ = new ProcessRefSeqNode(@1);
-        $$->addChild($1);
-        $$->addChild($2);
+	$$ = new ProcessRefSeqNode();
+        $$->addChild($1, @1);
+        $$->addChild($2, @2);
     }
     ;
 
@@ -633,22 +632,22 @@ argument_OPT:
     }
     |'(' argument_list ')' {
 	@$ = @2;
-	$$ = new ArgumentsNode(@2);
-        $$->addChild(new OpenParenNode(@1));
-        $$->addChild($2);
-        $$->addChild(new CloseParenNode(@1));
+	$$ = new ArgumentsNode();
+        $$->addChild(new OpenParenNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new CloseParenNode(), @3);
     }
     ;
 
 argument_list:
     expression {
-	$$ = new ArgumentListNode(@1);
-        $$->addChild($1);
+	$$ = new ArgumentListNode();
+        $$->addChild($1, @1);
     }
     | argument_list ',' expression {
         $$ = $1;
-        $$->addChild(new CommaNode(@1));
-        $$->addChild($3);
+        $$->addChild(new CommaNode(), @2);
+        $$->addChild($3, @3);
     }
     ;
 
@@ -656,50 +655,49 @@ argument_list:
 /* Composite processes */
 composite_def:
     OR process_id param_OPT '=' composite_body priority_OPT hiding_OPT '.' {
-        /* @2 */
-	$$ = new CompositeDefNode(@1);
-        $$->addChild(new OperatorNode(@1, "||"));
-        $$->addChild($2);
-        $$->addChild($3);
-        $$->addChild(new AssignNode(@1));
-        $$->addChild($5);
-        $$->addChild($6);
-        $$->addChild($7);
+	$$ = new CompositeDefNode();
+        $$->addChild(new OperatorNode("||"), @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
+        $$->addChild(new AssignNode(), @4);
+        $$->addChild($5, @5);
+        $$->addChild($6, @6);
+        $$->addChild($7, @7);
     }
     ;
 
 composite_body:
     sharing_OPT labeling_OPT process_ref relabel_OPT {
-	$$ = new CompositeBodyNode(@1);
-        $$->addChild($1);
-        $$->addChild($2);
-        $$->addChild($3);
-        $$->addChild($4);
+	$$ = new CompositeBodyNode();
+        $$->addChild($1, @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
+        $$->addChild($4, @4);
     }
     | sharing_OPT labeling_OPT '(' parallel_composition ')' relabel_OPT {
-	$$ = new CompositeBodyNode(@1);
-        $$->addChild($1);
-        $$->addChild($2);
-        $$->addChild(new OpenParenNode(@1));
-        $$->addChild($4);
-        $$->addChild(new CloseParenNode(@1));
-        $$->addChild($6);
+	$$ = new CompositeBodyNode();
+        $$->addChild($1, @1);
+        $$->addChild($2, @2);
+        $$->addChild(new OpenParenNode(), @3);
+        $$->addChild($4, @4);
+        $$->addChild(new CloseParenNode(), @5);
+        $$->addChild($6, @6);
     }
     | FORALL index_ranges composite_body {
 	/* Here there is an extension to the original grammar, since
 	   we should have 'ranges' and not 'index_ranges'. */
-	$$ = new CompositeBodyNode(@1);
-        $$->addChild(new ForallNode(@1));
-        $$->addChild($2);
-        $$->addChild($3);
+	$$ = new CompositeBodyNode();
+        $$->addChild(new ForallNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
     }
     | IF expression THEN composite_body composite_else_OPT {
-	$$ = new CompositeBodyNode(@1);
-        $$->addChild(new IfNode(@1));
-        $$->addChild($2);
-        $$->addChild(new ThenNode(@1));
-        $$->addChild($4);
-        $$->addChild($5);
+	$$ = new CompositeBodyNode();
+        $$->addChild(new IfNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new ThenNode(), @3);
+        $$->addChild($4, @4);
+        $$->addChild($5, @5);
     }
     ;
 
@@ -708,29 +706,29 @@ composite_else_OPT:
 	$$ = NULL;
     }
     | ELSE composite_body {
-	$$ = new CompositeElseNode(@1);
-        $$->addChild(new ElseNode(@1));
-        $$->addChild($2);
+	$$ = new CompositeElseNode();
+        $$->addChild(new ElseNode(), @1);
+        $$->addChild($2, @2);
     }
     ;
 
 parallel_composition:
     composite_body {
-	$$ = new ParallelCompNode(@1);
-        $$->addChild($1);
+	$$ = new ParallelCompNode();
+        $$->addChild($1, @1);
     }
     | parallel_composition OR composite_body {
         $$ = $1;
-        $$->addChild(new OperatorNode(@1, "||"));
-        $$->addChild($3);
+        $$->addChild(new OperatorNode("||"), @2);
+        $$->addChild($3, @3);
     }
     ;
 
 process_ref:
     process_id argument_OPT {
-	$$ = new ProcessRefNode(@1);
-        $$->addChild($1);
-        $$->addChild($2);
+	$$ = new ProcessRefNode();
+        $$->addChild($1, @1);
+        $$->addChild($2, @2);
     }
     ;
 
@@ -739,9 +737,9 @@ sharing_OPT:
 	$$ = NULL;
     }
     | action_labels SHARING {
-	$$ = new SharingNode(@1);
-        $$->addChild($1);
-        $$->addChild(new DoubleColonNode(@1));
+	$$ = new SharingNode();
+        $$->addChild($1, @1);
+        $$->addChild(new DoubleColonNode(), @2);
     }
     ;
 
@@ -750,9 +748,9 @@ labeling_OPT:
 	$$ = NULL;
     }
     | action_labels ':' {
-	$$ = new LabelingNode(@1);
-        $$->addChild($1);
-        $$->addChild(new ColonNode(@1));
+	$$ = new LabelingNode();
+        $$->addChild($1, @1);
+        $$->addChild(new ColonNode(), @2);
     }
     ;
 
@@ -767,14 +765,14 @@ priority_OPT:
 
 priority:
     RSHIFT set {
-	$$ = new PriorityNode(@1);
-        $$->addChild(new OperatorNode(@1, ">>"));
-        $$->addChild($2);
+	$$ = new PriorityNode();
+        $$->addChild(new OperatorNode(">>"), @1);
+        $$->addChild($2, @2);
     }
     | LSHIFT set {
-	$$ = new PriorityNode(@1);
-        $$->addChild(new OperatorNode(@1, "<<"));
-        $$->addChild($2);
+	$$ = new PriorityNode();
+        $$->addChild(new OperatorNode("<<"), @1);
+        $$->addChild($2, @2);
     }
     ;
 
@@ -791,32 +789,32 @@ param_OPT:
 
 param:
     '(' parameter_list ')' {
-        $$ = new ParamNode(@1);
-        $$->addChild(new OpenParenNode(@1));
-        $$->addChild($2);
-        $$->addChild(new CloseParenNode(@1));
+        $$ = new ParamNode();
+        $$->addChild(new OpenParenNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new CloseParenNode(), @3);
     }
     ;
 
 parameter_list:
     parameter {
-        $$ = new ParameterListNode(@1);
-        $$->addChild($1);
+        $$ = new ParameterListNode();
+        $$->addChild($1, @1);
     }
     | parameter_list ',' parameter {
         $$ = $1;
-        $$->addChild(new CommaNode(@1));
-        $$->addChild($3);
+        $$->addChild(new CommaNode(), @2);
+        $$->addChild($3, @3);
     }
     ;
 
 parameter:
     parameter_id '=' expression {
         /* @1 @3 */
-        $$ = new ParameterNode(@1);
-        $$->addChild($1);
-        $$->addChild(new AssignNode(@1));
-        $$->addChild($3);
+        $$ = new ParameterNode();
+        $$->addChild($1, @1);
+        $$->addChild(new AssignNode(), @2);
+        $$->addChild($3, @3);
     }	
     ;
 
@@ -826,45 +824,45 @@ relabel_OPT: {
 	$$ = NULL;
     }
     | '/' braces_relabel_defs {
-	$$ = new RelabelingNode(@1);
-        $$->addChild(new SlashNode(@1));
-        $$->addChild($2);
+	$$ = new RelabelingNode();
+        $$->addChild(new SlashNode(), @1);
+        $$->addChild($2, @2);
     }
     ;
 
 braces_relabel_defs:
     '{' relabel_defs '}' {
-	$$ = new BracesRelabelDefsNode(@1);
-        $$->addChild(new OpenCurlyNode(@1));
-        $$->addChild($2);
-        $$->addChild(new CloseCurlyNode(@1));
+	$$ = new BracesRelabelDefsNode();
+        $$->addChild(new OpenCurlyNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new CloseCurlyNode(), @3);
     }
     ;
 
 relabel_defs:
     relabel_def {
-	$$ = new RelabelDefsNode(@1);
-        $$->addChild($1);
+	$$ = new RelabelDefsNode();
+        $$->addChild($1, @1);
     }
     | relabel_defs ',' relabel_def {
         $$ = $1;
-        $$->addChild(new CommaNode(@1));
-        $$->addChild($3);
+        $$->addChild(new CommaNode(), @2);
+        $$->addChild($3, @3);
     }
     ;
 
 relabel_def:
     action_labels '/' action_labels {
-        $$ = new RelabelDefNode(@1);
-        $$->addChild($1);
-        $$->addChild(new SlashNode(@1));
-        $$->addChild($3);
+        $$ = new RelabelDefNode();
+        $$->addChild($1, @1);
+        $$->addChild(new SlashNode(), @2);
+        $$->addChild($3, @3);
     }
     | FORALL index_ranges braces_relabel_defs {
-        $$ = new RelabelDefNode(@1);
-        $$->addChild(new ForallNode(@1));
-        $$->addChild($2);
-        $$->addChild($3);
+        $$ = new RelabelDefNode();
+        $$->addChild(new ForallNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
     }
     ;
 
@@ -879,14 +877,14 @@ hiding_OPT:
 
 hiding:
     '\\' set {
-        $$ = new HidingInterfNode(@1);
-        $$->addChild(new HidingNode(@1));
-        $$->addChild($2);
+        $$ = new HidingInterfNode();
+        $$->addChild(new HidingNode(), @1);
+        $$->addChild($2, @2);
     }
     | '@' set {
-        $$ = new HidingInterfNode(@1);
-        $$->addChild(new InterfNode(@1));
-        $$->addChild($2);
+        $$ = new HidingInterfNode();
+        $$->addChild(new InterfNode(), @1);
+        $$->addChild($2, @2);
     }
     ;
 
@@ -896,21 +894,21 @@ hiding:
 property_def:
     PROPERTY process_def {
         /* @2 */
-        $$ = new PropertyDefNode(@1);
-        $$->addChild(new PropertyNode(@1));
-        $$->addChild($2);
+        $$ = new PropertyDefNode();
+        $$->addChild(new PropertyNode(), @1);
+        $$->addChild($2, @2);
     }
     ;
 
 progress_def:
     PROGRESS progress_id index_ranges_OPT '=' set {
         /* @2 */
-        $$ = new ProgressDefNode(@1);
-        $$->addChild(new ProgressKwdNode(@1));
-        $$->addChild($2);
-        $$->addChild($3);
-        $$->addChild(new AssignNode(@1));
-        $$->addChild($5);
+        $$ = new ProgressDefNode();
+        $$->addChild(new ProgressKwdNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
+        $$->addChild(new AssignNode(), @4);
+        $$->addChild($5, @5);
     }
     ;
 
@@ -935,158 +933,158 @@ menu_def:
 /* An expression: standard operators and priorities. */
 expression:
     '(' expression ')' {
-	$$ = new ExpressionNode(@1);
-        $$->addChild(new OpenParenNode(@1));
-        $$->addChild($2);
-        $$->addChild(new CloseParenNode(@1));
+	$$ = new ExpressionNode();
+        $$->addChild(new OpenParenNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new CloseParenNode(), @3);
     }
     | expression OR expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "||"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("||"), @2);
+        $$->addChild($3, @3);
     }
     | expression AND expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "&&"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("&&"), @2);
+        $$->addChild($3, @3);
     }
     | expression '|' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "|"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("|"), @2);
+        $$->addChild($3, @3);
     }
     | expression '^' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "^"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("^"), @2);
+        $$->addChild($3, @3);
     }
     | expression '&' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "&"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("&"), @2);
+        $$->addChild($3, @3);
     }
     | expression EQUAL expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "=="));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("=="), @2);
+        $$->addChild($3, @3);
     }
     | expression NOTEQUAL expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "!="));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("!="), @2);
+        $$->addChild($3, @3);
     }
     | expression '<' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "<"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("<"), @2);
+        $$->addChild($3, @3);
     }
     | expression '>' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, ">"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode(">"), @2);
+        $$->addChild($3, @3);
     }
     | expression LOE expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "<="));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("<="), @2);
+        $$->addChild($3, @3);
     }
     | expression GOE expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, ">="));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode(">="), @2);
+        $$->addChild($3, @3);
     }
     | expression LSHIFT expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "<<"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("<<"), @2);
+        $$->addChild($3, @3);
     }
     | expression RSHIFT expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, ">>"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode(">>"), @2);
+        $$->addChild($3, @3);
     }
     | expression '+' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "+"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("+"), @2);
+        $$->addChild($3, @3);
     }
     | expression '-' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "-"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("-"), @2);
+        $$->addChild($3, @3);
     }
     | expression '*' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "*"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("*"), @2);
+        $$->addChild($3, @3);
     }
     | expression '/' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "/"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("/"), @2);
+        $$->addChild($3, @3);
     }
     | expression '%' expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
-        $$->addChild(new OperatorNode(@1, "%"));
-        $$->addChild($3);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
+        $$->addChild(new OperatorNode("%"), @2);
+        $$->addChild($3, @3);
     }
     | base_expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild($1);
+        $$ = new ExpressionNode();
+        $$->addChild($1, @1);
     }
     | '+' base_expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild(new OperatorNode(@1, "+"));
-        $$->addChild($2);
+        $$ = new ExpressionNode();
+        $$->addChild(new OperatorNode("+"), @2);
+        $$->addChild($2, @2);
     }
     | '-' base_expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild(new OperatorNode(@1, "-"));
-        $$->addChild($2);
+        $$ = new ExpressionNode();
+        $$->addChild(new OperatorNode("-"), @2);
+        $$->addChild($2, @2);
     }
     | '!' base_expression {
-        $$ = new ExpressionNode(@1);
-        $$->addChild(new OperatorNode(@1, "!"));
-        $$->addChild($2);
+        $$ = new ExpressionNode();
+        $$->addChild(new OperatorNode("!"), @2);
+        $$->addChild($2, @2);
     }
     ;
 
 base_expression:
     integer {
-        $$ = new BaseExpressionNode(@1);
-        $$->addChild($1);
+        $$ = new BaseExpressionNode();
+        $$->addChild($1, @1);
     }
     | variable {
-        $$ = new BaseExpressionNode(@1);
-        $$->addChild($1);
+        $$ = new BaseExpressionNode();
+        $$->addChild($1, @1);
     }
     | const_parameter_id {
-        $$ = new BaseExpressionNode(@1);
-        $$->addChild($1);
+        $$ = new BaseExpressionNode();
+        $$->addChild($1, @1);
     }
     ;
 
 /* Integer token. */
 integer: INTEGER {
-        IntegerNode *in = new IntegerNode(@1);
+        IntegerNode *in = new IntegerNode();
 
         in->res = $1;
         $$ = in;
@@ -1094,7 +1092,7 @@ integer: INTEGER {
 
 /* Lower case id token. */
 lower_case_id: LowerCaseID {
-        LowerCaseIdNode *lc = new LowerCaseIdNode(@1);
+        LowerCaseIdNode *lc = new LowerCaseIdNode();
 
         lc->res = *$1;
         $$ = lc;
@@ -1102,7 +1100,7 @@ lower_case_id: LowerCaseID {
 
 /* Upper case id token. */
 upper_case_id: UpperCaseID {
-        UpperCaseIdNode *uc = new UpperCaseIdNode(@1);
+        UpperCaseIdNode *uc = new UpperCaseIdNode();
 
         uc->res = *$1;
         $$ = uc;
@@ -1110,43 +1108,43 @@ upper_case_id: UpperCaseID {
 
 /* Some useful alias for LowerCaseID and UpperCaseID. */
 variable: lower_case_id {
-        $$ = new VariableIdNode(@1);
-        $$->addChild($1);
+        $$ = new VariableIdNode();
+        $$->addChild($1, @1);
     };
 
 constant_id: upper_case_id {
-        $$ = new ConstantIdNode(@1);
-        $$->addChild($1);
+        $$ = new ConstantIdNode();
+        $$->addChild($1, @1);
     };
 
 range_id: upper_case_id {
-        $$ = new RangeIdNode(@1);
-        $$->addChild($1);
+        $$ = new RangeIdNode();
+        $$->addChild($1, @1);
     };
 
 set_id: upper_case_id {
-        $$ = new SetIdNode(@1);
-        $$->addChild($1);
+        $$ = new SetIdNode();
+        $$->addChild($1, @1);
     };
 
 const_parameter_id: upper_case_id {
-        $$ = new ConstParameterIdNode(@1);
-        $$->addChild($1);
+        $$ = new ConstParameterIdNode();
+        $$->addChild($1, @1);
     };
 
 parameter_id: upper_case_id {
-        $$ = new ParameterIdNode(@1);
-        $$->addChild($1);
+        $$ = new ParameterIdNode();
+        $$->addChild($1, @1);
     };
 
 process_id: upper_case_id {
-        $$ = new ProcessIdNode(@1);
-        $$->addChild($1);
+        $$ = new ProcessIdNode();
+        $$->addChild($1, @1);
     };
 
 progress_id: upper_case_id {
-        $$ = new ProgressIdNode(@1);
-        $$->addChild($1);
+        $$ = new ProgressIdNode();
+        $$->addChild($1, @1);
     };
 //menu_id: UpperCaseID { ps.push_back($1); $$ = $1;};
 
