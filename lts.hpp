@@ -149,19 +149,6 @@ class Lts: public SymbolValue {
 
 yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 
-/* A list of Lts. */
-struct LtsComposition: public SymbolValue {
-    vector<class Lts *> lts;
-    int rank;
-
-    void print() const;
-    int type() const { return SymbolValue::LtsComposition; }
-    SymbolValue * clone() const;
-};
-
-LtsComposition * err_if_not_ltscomposition(FspDriver& driver, SymbolValue * svp,
-					    const yy::location& loc);
-
 } /* namespace yy */
 
 
@@ -170,14 +157,6 @@ inline yy::Lts * is_lts(SymbolValue * svp)
     assert(svp->type() == SymbolValue::Lts);
 
     return static_cast<yy::Lts *>(svp);
-}
-
-
-inline yy::LtsComposition * is_ltscomposition(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::LtsComposition);
-
-    return static_cast<yy::LtsComposition *>(svp);
 }
 
 #endif

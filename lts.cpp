@@ -997,17 +997,17 @@ int yy::Lts::progress(const string& progress_name, const SetValue& s,
 	    }
 
 	if (violation) {
-	    cout << "Progress violation detected for process " << name
+	    ss << "Progress violation detected for process " << name
 		<< " and progress property " << progress_name << ":\n";
-	    cout << "	Trace to violation: ";
+	    ss << "	Trace to violation: ";
 	    for (unsigned int j=0; j<ts.trace.size(); j++)
-		cout << ati(atp, ts.trace[j]) << "-> ";
-	    cout << "\n";
-	    cout << "	Actions in terminal set: {";
+		ss << ati(atp, ts.trace[j]) << "-> ";
+	    ss << "\n";
+	    ss << "	Actions in terminal set: {";
 	    for (set<int>::iterator it=ts.actions.begin();
 		    it!=ts.actions.end(); it++)
-		cout << ati(atp, *it) << ", ";
-	    cout << "}\n\n";
+		ss << ati(atp, *it) << ", ";
+	    ss << "}\n\n";
 	    
 	}
     }
@@ -1566,38 +1566,3 @@ yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::locatio
     return static_cast<yy::Lts *>(svp);
 }
 
-/* =========================  LtsComposition ============================= */
-void yy::LtsComposition::print() const
-{
-    cout << "LtsComposition {\n";
-    for (unsigned int i=0; i<lts.size(); i++)
-	if (lts[i])
-	    lts[i]->print();
-    cout << "}\n";
-}
-
-SymbolValue * yy::LtsComposition::clone() const
-{
-    yy::LtsComposition * lc = new yy::LtsComposition;
-
-    lc->lts.resize(lts.size());
-    for (unsigned int i=0; i<lts.size(); i++)
-	if (lts[i])
-	    lc->lts[i] = static_cast<yy::Lts *>(lts[i]->clone());
-	else
-	    lc->lts[i] = NULL;
-
-    return lc;
-}
-
-yy::LtsComposition * err_if_not_ltscomposition(FspDriver& driver, SymbolValue * svp,
-						const yy::location& loc)
-{
-    if (svp->type() != SymbolValue::LtsComposition) {
-	stringstream errstream;
-	errstream << "LtsComposition expected";
-	semantic_error(driver, errstream, loc);
-    }
-
-    return static_cast<yy::LtsComposition *>(svp);
-}
