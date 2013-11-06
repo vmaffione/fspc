@@ -7,8 +7,12 @@
 using namespace std;
 
 
+/* An element of the UnresolveNames table. */
 struct UnresolvedElem {
+    /* An FSP name. */
     string name;
+    /* True if the name has been defined, false if the name has
+       never been defined (only referenced). */
     bool defined;
 };
 

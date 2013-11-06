@@ -12,14 +12,21 @@ using namespace std;
 using namespace yy;
 
 
-/* Helper function used to update the 'unres' table. */
+/* Helper function used to update the 'unres' table.
+   name: the name of the (possibly local) process to assign
+         an alias
+   lts:  the LTS corresponding the the (possibly local) process,
+         which can also be a LTS containing a single unresolved
+         node
+   define: true if 'name' is on the left side of an FSP assignement
+*/
 static void update_unres(FspDriver& c, const string& name,
-                         Lts& lts, bool define)
+                         Lts& lts, bool define, const yy::location& loc)
 {
     unsigned int ui;
-    location loc;  //TODO receive as parameter
 
     if (define && c.unres.defined(name)) {
+        /* A process name cannot be defined twice. */
         stringstream errstream;
         errstream << "Process " << name << " defined twice";
         semantic_error(c, errstream, loc);
@@ -30,10 +37,11 @@ static void update_unres(FspDriver& c, const string& name,
            the following two cases:
                 - 'lts[0]' is an unresolved node, and so we have to assign
                   a new UnresolvedName alias (an 'idx') to it, for subsequent
-                  name resolution (Lts::resolve).
+                  name resolution (Lts::resolve). In this case 'define' is
+                  false.
                 - 'lts[0]' is not unresolved and so we have to assign a new
                    alias (an 'idx') to it, for subsequent name resolution
-                  (Lts::resolve).
+                  (Lts::resolve). In this case 'define' is true.
         */
         ui = c.unres.insert(name, define); /* Create a new entry for 'name' */
         lts.set_priv(0, ui);  /* Record the alias into the 'lts[0]' priv. */
@@ -998,11 +1006,17 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
         DTCS(IndicesNode, ixn, children[1]);
         string name = in->res;
 
+        /* Create an LTS containing a single unresolved
+           node. */
         res = Lts(LtsNode::Unresolved, &c.actions);
         if (ixn) {
             name += ixn->res;
         }
-        update_unres(c, name, res, false);
+        /* Tell the unresolved names table that there
+           is a new unresolved name (define is false
+           because this is not a process definition,
+           the process name is only referenced). */
+        update_unres(c, name, res, false, loc);
     }
 }
 
@@ -1441,8 +1455,9 @@ void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
 
     /* Register the local process name (which is the concatenation of
        'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
-       c.unres. */
-    update_unres(c, in->res + index, lp->res, true);
+       c.unres. The 'define' parameter is true since this is a (local)
+       process definition. */
+    update_unres(c, in->res + index, lp->res, true, loc);
 
     if (first) {
         res = lp->res;
@@ -1533,8 +1548,9 @@ void yy::ProcessDefNode::translate(FspDriver& c)
     /* The base is the process body. */
     res = bn->res;
 
-    /* Register the process name into c.unres. */
-    update_unres(c, idn->res, res, true);
+    /* Register the process name into c.unres (define is true since
+       this is a process definition. */
+    update_unres(c, idn->res, res, true, loc);
 #if 0
 cout << "UnresolvedNames:\n";
 for (unsigned int i=0; i<c.unres.size(); i++) {

@@ -40,7 +40,7 @@ unsigned int UnresolvedNames::insert(const string& name, bool defined)
 /* Add the name 'name' to the entry associated to the index 'idx', which
    must exist (otherwise an assertion fails).
    It may be that there is already an entry in the table which contains
-   'name'. In such a case we must remove 'name' from this confilcting entry,
+   'name'. In such a case we must remove 'name' from this conflicting entry,
    merging the conflicting entry into the entry 'idx'.
    When a conflicting entry exists, its index is returned. Otherwise,
    this method returns ~0U.
@@ -59,7 +59,7 @@ unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
         if (k != i) {
             for (unsigned int j=0; j<names[k].size(); j++) {
                 if (name == names[k][j].name) {
-                    defined = defined || names[k][j].defined;
+                    defined = (defined || names[k][j].defined);
                     names[k].erase(names[k].begin() + j);
                     /* Return the matching 'idx', so that the caller can
                        merge the 'priv' fields. */
@@ -115,6 +115,8 @@ string UnresolvedNames::lookup(unsigned int idx) const
     return merge_string_vector(names[i]);
 }
 
+/* Given a name, returns true if that name exists in the
+   table and has been defined, false otherwise. */
 bool UnresolvedNames::defined(const string& s) const
 {
     for (unsigned int i=0; i<names.size(); i++) {
