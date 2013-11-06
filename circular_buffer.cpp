@@ -117,7 +117,9 @@ void CircularBuffer::print(int col) const
        by default. */
     spaces -= column - col;
 
-    for (i=0; i<spaces; i++) cout << " "; cout << "^\n";
-    cout << "COLUMN=" << column << endl;
+    /* Print the pointer character '^'. */
+    for (i=0; i<spaces; i++)
+        cout << " ";
+    cout << "^\n";
 }
 
