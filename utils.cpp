@@ -76,7 +76,10 @@ string location_context(const string& filename, const yy::location& loc)
 
 static void print_error_location(const yy::location& loc, int col)
 {
-    string filename = loc.begin.filename ? *loc.begin.filename : "???";
+    assert(loc.begin.filename);
+
+    string filename = *loc.begin.filename;
+    string context = location_context(filename, loc);
 
     if (loc.begin.line == loc.end.line) {
         cout << "@ " << filename << ", line " << loc.begin.line << ", cols " << loc.begin.column
@@ -86,9 +89,9 @@ static void print_error_location(const yy::location& loc, int col)
     }
 
     if (col == -1)
-	last_tokens.print();
+	last_tokens.print(context);
     else
-	last_tokens.print(col);
+	last_tokens.print(context, col);
 }
 
 void print_error_location_pretty(const yy::location& loc)

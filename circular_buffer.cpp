@@ -90,28 +90,38 @@ void CircularBuffer::flush()
     column = 0;
 }
 
-void CircularBuffer::print() const
+void CircularBuffer::print(const string& context) const
 {
-    print(column);
+    print(context, column);
 }
 
-void CircularBuffer::print(int col) const
+/* Print the circular buffer content. This routine is called
+   from an error handler, which also provides a string
+   ('context') which contains the input portion responsible
+   for the error. The string 'context' is used only if
+   the circular buffer is empty. */
+void CircularBuffer::print(const string& context, int col) const
 {
     int i = head;
     int spaces = used();
+    int bufcnt = 0;
 
     if (!line_aligned) {
-	cout << "... ";
+	cerr << "... ";
 	spaces += 4;
     }
-    cout << "`";
+    cerr << "`";
     while (i != tail) {
-	cout << buffer[i];
+	cerr << buffer[i];
 	i++;
 	if (i == Size)
 	    i = 0;
+        bufcnt++;
     }
-    cout << "` ...\n";
+    if (!bufcnt) {
+        cerr << context;
+    }
+    cerr << "` ...\n";
 
     /* Apply a correction, using the hint 'col', which is the same as column,
        by default. */
@@ -119,7 +129,7 @@ void CircularBuffer::print(int col) const
 
     /* Print the pointer character '^'. */
     for (i=0; i<spaces; i++)
-        cout << " ";
-    cout << "^\n";
+        cerr << " ";
+    cerr << "^\n";
 }
 
