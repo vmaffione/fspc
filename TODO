@@ -1,7 +1,8 @@
+[O] save progresses
 [O] add "basic" testing (for do_square_int)
 [O] currently the preprocessing doesn't work better with overriding:
     Example: "range K=1 P(K=1)=(a[K]->END)."
-[O] with IF-THEN-ELSE constructs, optimize by translating only one branch,a nd    not both
+[O] with IF-THEN-ELSE constructs, optimize by translating only one branch, and not both
 [O] fix memory leaks
 [O] recursive sequential processes: const N=3 SEQ(I=1) = if (I<=N) then (act[I]-> SEQ(I+1);END) else END.
 [O] aggregate labels and edges when printing with graphviz
