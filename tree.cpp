@@ -1506,7 +1506,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
                                            const string& name)
 {
     string extension;
-    SymbolValue *res_clone = res.clone();
+    SymbolValue *res_clone;
     ParametricProcess *pp_clone = is_parametric(c.paramproc.clone());
 
     res.name = name;
@@ -1524,13 +1524,14 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
         }
     }
 
-    /* Compute the LTS name extension, but don't extend res.name (pretty
-       output). */
+    /* Compute the LTS name extension. */
     lts_name_extension(c.paramproc.defaults, extension);
+    res.name += extension;
 
+    res_clone = res.clone();
     /* Insert lts into the global 'processes' table. */
-    IFD(cout << "Saving " << res.name + extension << "\n");
-    if (!c.processes.insert(res.name + extension, res_clone)) {
+    IFD(cout << "Saving " << res.name << "\n");
+    if (!c.processes.insert(res.name, res_clone)) {
 	stringstream errstream;
 
         delete res_clone;

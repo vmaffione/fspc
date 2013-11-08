@@ -115,7 +115,9 @@ int FspDriver::parse(const CompilerOptions& co)
 	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
 	    if (!processes.insert(lts->name, lts)) {
-		assert(0);  //XXX Should be an invalid LTS file
+                /* This should never happen: Two LTSs are saved with the same name
+                   into the compiled file. */
+		assert(0);
 	    }
 	}
 

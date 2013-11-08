@@ -14,7 +14,14 @@ do
     if [ "$var" != "0" ]; then
 	echo ""
 	echo "Test FAILED on input${i}.fsp"
-	exit
+	exit 1
+    fi
+    ./fspcc -l tests/new-output${i}.lts
+    var=$?
+    if [ "$var" != "0" ]; then
+        echo ""
+        echo "Test FAILED on input${i}.fsp, while reopening the compiled output."
+        exit 1
     fi
     rm tests/new-output${i}.lts
 done
@@ -32,7 +39,7 @@ do
     if [ "$var" == "0" ]; then
 	echo ""
 	echo "Test FAILED on err-input${i}.fsp"
-	exit
+	exit 1
     fi
     if [ -f "tests/new-output.lts" ]; then
 	rm tests/new-output.lts
