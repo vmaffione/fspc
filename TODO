@@ -1,3 +1,4 @@
+[O] add "basic" testing (for do_square_int)
 [O] currently the preprocessing doesn't work better with overriding:
     Example: "range K=1 P(K=1)=(a[K]->END)."
 [O] with IF-THEN-ELSE constructs, optimize by translating only one branch,a nd    not both
