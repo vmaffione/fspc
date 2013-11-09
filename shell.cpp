@@ -32,6 +32,8 @@
 /* Lts definitions and operations. */
 #include "lts.hpp"
 
+/* Helper functions. */
+#include "helpers.hpp"
 
 #define DEBUG
 #ifdef DEBUG
@@ -541,9 +543,10 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
     yy::Lts * lts;
+    string tmp_name;
+    pid_t drawer;
 
     if (!interactive) {
-	// XXX do we really need this restriction ?
 	ss << "Cannot use 'see' command in scripts\n";
 	return;
     }
@@ -559,10 +562,14 @@ void Shell::see(const vector<string> &args, stringstream& ss)
     }
 
     lts = is_lts(svp);
-    lts->graphvizOutput(".tmp.gv");
+
+    /* Generate the graphivz output into a temporary file (whose name does
+       not collide with other fspc instances). */
+    tmp_name = "." + int2string(getpid()) + ".gv";
+    lts->graphvizOutput(tmp_name.c_str());
 
     /* UNIX-specific section. */
-    pid_t drawer = fork();
+    drawer = fork();
 
     switch (drawer) {
 	case -1:
@@ -570,7 +577,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	    return;
 	    break;
 	case 0:
-	    execl("ltsee", "ltsee", ".tmp.gv", NULL);
+	    execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
 	    exit(1);
 	    break;
 	default:
@@ -579,7 +586,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	    waitpid(-1, &status, 0);
     }
 
-    remove(".tmp.gv");
+    remove(tmp_name.c_str());
 }
 
 void Shell::print(const vector<string> &args, stringstream& ss)
