@@ -69,15 +69,16 @@ class Shell {
         void common_init();
         void getline_ncurses(string& line, const char * prompt);
 
-        void ls(const vector<string> &args, stringstream& ss);
-        void safety(const vector<string> &args, stringstream& ss);
-        void progress(const vector<string> &args, stringstream& ss);
-        void simulate(const vector<string> &args, stringstream& ss);
-        void basic(const vector<string> &args, stringstream& ss);
-        void alpha(const vector<string> &args, stringstream& ss);
-        void see(const vector<string> &args, stringstream& ss);
-        void print(const vector<string> &args, stringstream& ss);
-        void help(const vector<string> &args, stringstream& ss);
+        void ls(const vector<string>& args, stringstream& ss);
+        void safety(const vector<string>& args, stringstream& ss);
+        void progress(const vector<string>& args, stringstream& ss);
+        void simulate(const vector<string>& args, stringstream& ss);
+        void basic(const vector<string>& args, stringstream& ss);
+        void alpha(const vector<string>& args, stringstream& ss);
+        void see(const vector<string>& args, stringstream& ss);
+        void print(const vector<string>& args, stringstream& ss);
+        void lsprop(const vector<string>& args, stringstream &ss);
+        void help(const vector<string>& args, stringstream& ss);
 
     public:
         Shell(FspDriver& cr, istream& inr);

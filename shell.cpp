@@ -65,6 +65,7 @@ specified FSP using GraphViz";
     help_map["print"] = "print FSP_NAME {png | pdf}: print the GraphViz "
                         "representation of the specified fsp into a file "
                         "FSP_NAME.FORMAT";
+    help_map["lsprop"] = "lsprop: show a list of compiled properties";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
@@ -76,6 +77,7 @@ specified FSP using GraphViz";
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
+    cmd_map["lsprop"] = &Shell::lsprop;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -628,6 +630,20 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     }
 
     remove(filename.c_str());
+}
+
+void Shell::lsprop(const vector<string> &args, stringstream& ss)
+{
+    map<string, SymbolValue *>::iterator it;
+    SetValue *setvp;
+
+    ss << "Progresses:\n";
+    for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
+        setvp = is_set(it->second);
+	ss << "   " << it->first << ": ";
+        setvp->output(ss);
+        ss << "\n";
+    }
 }
 
 void Shell::help(const vector<string> &args, stringstream& ss)

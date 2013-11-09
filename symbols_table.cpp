@@ -310,6 +310,20 @@ void SetValue::output(const string& name, const char * filename) const
     fout << "\n";
 }
 
+void SetValue::output(stringstream& ss) const
+{
+    unsigned int i = 0;
+
+    ss << "{";
+    for (; i<actions.size() - 1; i++) {
+	ss << actions[i] << ", ";
+    }
+    if (i<actions.size()) {
+        ss << actions[i];
+    }
+    ss << "}";
+}
+
 void SetValue::print() const
 {
     cout << "r=" << rank << " {";

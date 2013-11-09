@@ -92,7 +92,7 @@ int FspDriver::parse(const CompilerOptions& co)
             return ret;
         }
 
-        /* Output a GraphViz representation of the parse tree. */
+        /* Output a GraphViz representation of the parse tree. TODO fix */
         assert(tree);
         ofstream treef("tree.gv");
         tree->print(treef);
@@ -192,7 +192,7 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Flush out program output. */
     cout << ss.str();
 
-    /* Run a LTS analysis script if the user asked for that. */
+    /* Run an LTS analysis script if the user asked for that. */
     if (co.script) {
 	ifstream fin(co.script_file, ios::in);
 	int ret;

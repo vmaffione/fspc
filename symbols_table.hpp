@@ -92,6 +92,7 @@ struct SetValue: public SymbolValue {
     SetValue& operator +=(const string&);
 
     void output(const string& name, const char * filename) const;
+    void output(stringstream& ss) const;
 };
 
 struct ConstValue: public SymbolValue {
