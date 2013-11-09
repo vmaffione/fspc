@@ -41,6 +41,10 @@
 #endif
 
 
+#define HISTORY_MAX_COMMANDS    20
+
+/* =========================== Shell implementation ==================== */
+
 void Shell::common_init()
 {
     /* Initialize the help map. */
@@ -190,7 +194,8 @@ void Shell::putsstream(stringstream& ss, bool eol) {
     }
 }
 
-bool is_printable(int ch)
+/* The more portable way I found out to implement 'isprint'. */
+static bool is_printable(int ch)
 {
     return ch>=32 && ch<=126;
 }
@@ -198,14 +203,28 @@ bool is_printable(int ch)
 void Shell::getline_ncurses(string& line, const char * prompt)
 {
     int ch;
+
+    /* Position of the cursor. */
     int y, x;
+
+    /* Position of the prompt. */
     int prompt_y, prompt_x;
+
+    /* Position of the last char of the command string. */
     int frontier_y, frontier_x;
-    int tmp_y, tmp_x;
-    int rows, cols;
+
+    /* Command string index of the cursor. */
     int str_cursor = 0;
 
+    /* Number of rows and columns in the screen. */
+    int rows, cols;
+
+    int tmp_y, tmp_x;
+
     getmaxyx(stdscr, rows, cols);
+
+    /* Print the prompty (if any), and initialize the prompt position
+       properly. */
     if (prompt) {
 	attron(COLOR_PAIR(2));
 	printw(prompt);
@@ -213,10 +232,14 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 	refresh();
     }
     getyx(stdscr, prompt_y, prompt_x);
+
+    /* Initially the frontier is the same as the prompt. */
     frontier_y = prompt_y;
     frontier_x = prompt_x;
 
-    line = "";
+    /* Always start with an empty string. */
+    line = string();
+
     for (;;) {
 	ch = getch();
 	getyx(stdscr, y, x);
@@ -230,11 +253,24 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		}
 		printw("\n");
 		refresh();
+                /* Update the history. */
+                history.add_command(line);
 		return;
 
 	    case KEY_UP:
 	    case KEY_DOWN:
-		/* Still not implemented. */
+                if (ch == KEY_UP) {
+                    history.up();
+                } else /* (ch == KEY_DOWN) */ {
+                    history.down();
+                }
+                history.get_current(line);
+                move(prompt_y, prompt_x);
+                printw("%s", line.c_str());
+		getyx(stdscr, frontier_y, frontier_x);
+                move(frontier_y, frontier_x);
+                str_cursor = line.size();
+		clrtobot();
 		break;
 
 	    case KEY_LEFT:
@@ -361,7 +397,7 @@ void Shell::readline(string& line)
     if (interactive) {
 	getline_ncurses(line, NULL);
     } else {
-	in >> line;
+        getline(in, line);
     }
 }
 
@@ -661,5 +697,58 @@ int Shell::run()
 	putsstream(ss, true);
     }
     
+}
+
+
+/* ====================== CommandHistory implementation ================= */
+
+CommandHistory::CommandHistory() {
+    /* The history is initialized as containing an empty command string. */
+    commands.push_back(string());
+    cur = 0;
+}
+
+/* Navigate the history backward. */
+void CommandHistory::up()
+{
+    if (cur) {
+        cur--;
+    }
+}
+
+/* Navigate the history forward. */
+void CommandHistory::down()
+{
+    if (cur < commands.size()) {
+        cur++;
+    }
+}
+
+/* Return the current command in the history. */
+void CommandHistory::get_current(string& s)
+{
+    if (cur < commands.size()) {
+        s = commands[cur];
+    } else /* if (cur == commands.size()) */ {
+        s = string();
+    }
+}
+
+/* Insert a new command into the history. This has always the effect
+   of resetting the "current" to the most recent command. The new command
+   is actually added to the story only if non-empty and if not equal to
+   the most recent command. */
+void CommandHistory::add_command(const string& s)
+{
+    if (s.size() && s != commands.back()) {
+        commands.push_back(s);
+        if (commands.size() > HISTORY_MAX_COMMANDS) {
+            commands.erase(commands.begin());
+        }
+    } else {
+        /* Merge to last entry, if matches. */
+    }
+    /* Reset the current. */
+    cur = commands.size();
 }
 
