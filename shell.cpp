@@ -46,7 +46,6 @@
 #define HISTORY_MAX_COMMANDS    20
 
 /* =========================== Shell implementation ==================== */
-
 void Shell::common_init()
 {
     /* Initialize the help map. */
@@ -83,10 +82,22 @@ specified FSP using GraphViz";
     cmd_map["help"] = &Shell::help;
 }
 
+void Shell::fill_completion()
+{
+    map<string, SymbolValue *>::iterator it;
+
+    for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
+	completion.insert(it->first);
+    }
+}
+
 Shell::Shell(FspDriver& cr, istream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = true;
+
+    /* Autocompletion initialization. */
+    fill_completion();
 
     /* Curses initialization. */
     initscr();
@@ -204,6 +215,23 @@ static bool is_printable(int ch)
     return ch>=32 && ch<=126;
 }
 
+static bool right_split(string& base, string& back)
+{
+    size_t p;
+
+    back.clear();
+
+    p = base.find_last_of(' ');
+    if (p == string::npos) {
+        return false;
+    }
+
+    back = base.substr(p + 1);
+    base = base.substr(0, p + 1);
+
+    return true;
+}
+
 void Shell::getline_ncurses(string& line, const char * prompt)
 {
     int ch;
@@ -224,6 +252,7 @@ void Shell::getline_ncurses(string& line, const char * prompt)
     int rows, cols;
 
     int tmp_y, tmp_x;
+    string arg;
 
     getmaxyx(stdscr, rows, cols);
 
@@ -276,6 +305,23 @@ void Shell::getline_ncurses(string& line, const char * prompt)
                 str_cursor = line.size();
 		clrtobot();
 		break;
+
+            case '\t':
+                if (!right_split(line, arg)) {
+                    break;
+                }
+                if (completion.lookup(arg)) {
+                    line += arg;
+                    move(prompt_y, prompt_x);
+                    printw("%s", line.c_str());
+                    getyx(stdscr, frontier_y, frontier_x);
+                    move(frontier_y, frontier_x);
+                    str_cursor = line.size();
+                    clrtobot();
+                } else {
+                    line += arg;
+                }
+                break;
 
 	    case KEY_LEFT:
 		if (y > prompt_y || x > prompt_x) {
@@ -724,7 +770,6 @@ int Shell::run()
 
 
 /* ====================== CommandHistory implementation ================= */
-
 CommandHistory::CommandHistory() {
     /* The history is initialized as containing an empty command string. */
     commands.push_back(string());
@@ -773,5 +818,111 @@ void CommandHistory::add_command(const string& s)
     }
     /* Reset the current. */
     cur = commands.size();
+}
+
+
+/* =================== AutoCompletion implementation ===================== */
+AutoCompletion::AutoCompletion()
+{
+    /* The trie data structure initially contains only one node with a NULL
+       character. This represents the empty string. */
+    trie.push_back(TrieElem('\0'));
+}
+
+/* Insert a string into the trie. */
+void AutoCompletion::insert(const string& s)
+{
+    unsigned int ti = 0;
+
+    /* Scan the input string and the trie in parallel. New nodes are
+       inserted into the trie when necessary. */
+    for (unsigned int si = 0; si < s.size(); si++) {
+        const TrieElem& elem = trie[ti];
+        unsigned int j = 0;
+        unsigned int n = elem.next.size();
+
+        /* Match the current input character 's[si]' with a trie node
+           in the 'next' of the current trie node. */
+        for (; j < n; j++) {
+            if (trie[ elem.next[j] ].ch == s[si]) {
+                /* A match is found: Keep navigating the trie. */
+                ti = elem.next[j];
+                break;
+            }
+        }
+        if (j == n) {
+            /* No match has been found. Create a new trie node containing
+               's[si]' and add it to the next of the current trie node. */
+            trie.push_back(TrieElem(s[si]));
+            trie[ti].next.push_back(trie.size() - 1);
+            ti = trie.size() - 1;
+        }
+    }
+}
+
+/* Find the subset of the strings in the trie that 's' is prefix of. If
+   the subset is not empty, modify 's' so that is equal to the longest
+   common prefix of all the strings in the subset.
+
+   Returns true if 's' has been modified.
+*/
+bool AutoCompletion::lookup(string& s) const
+{
+    unsigned int ti = 0;
+    bool modified = false;
+
+    /* Scanning similar to the insert() method. */
+    for (unsigned int si = 0; si < s.size(); si++) {
+        const TrieElem& elem = trie[ti];
+        unsigned int j = 0;
+        unsigned int n = elem.next.size();
+
+        for (; j < n; j++) {
+            if (trie[ elem.next[j] ].ch == s[si]) {
+                ti = elem.next[j];
+                break;
+            }
+        }
+        if (j == n) {
+            /* The input string is not a prefix of any of the strings
+               contained into the trie. */
+            return modified;
+        }
+    }
+
+    /* Keep scanning (and updating the input string) the trie as long as
+       the sub-trie does not have branches. */
+    for (;;) {
+        const TrieElem& elem = trie[ti];
+
+        if (elem.next.size() != 1) {
+            /* The trie is finished or there is a branch: Stop here. */
+            break;
+        }
+        ti = elem.next[0];
+        s.push_back(trie[ti].ch);
+        modified = true;
+    }
+
+    return modified;
+}
+
+/* Depth first search visit. Since the trie is a tree structure, it's
+   not necessary to keep track of visited nodes or worry about cycles. */
+void AutoCompletion::print(unsigned int idx, unsigned int level)
+{
+    for (unsigned int j = 0; j < level; j++) {
+        cout << "  ";
+    }
+    cout << trie[idx].ch << "\n";
+
+    for (unsigned int j = 0; j < trie[idx].next.size(); j++) {
+        this->print(trie[idx].next[j], level + 1);
+    }
+}
+
+TrieElem::TrieElem(char c)
+{
+    ch = c;
 }
 

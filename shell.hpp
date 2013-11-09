@@ -30,7 +30,8 @@
 using namespace std;
 
 
-/* Implements a command history for the Shell class. */
+/* An helper class which implements the command history for the
+   Shell class. */
 class CommandHistory {
         vector<string> commands;
         unsigned int cur;
@@ -41,6 +42,30 @@ class CommandHistory {
         void down();
         void get_current(string& s);
         void add_command(const string& s);
+};
+
+
+/* An element of a trie data structure: It contains a character and
+   an array of pointers (indexes) to other trie elements. */
+struct TrieElem {
+    char ch;
+    vector<unsigned int> next;
+
+    TrieElem(char c);
+};
+
+
+/* An helper class which implements the auto-completion feature for
+   the Shell class. It uses a trie data structure to store the set of
+   strings that can be completed. */
+class AutoCompletion {
+        vector<TrieElem> trie;
+
+    public:
+        AutoCompletion();
+        void insert(const string& s);
+        bool lookup(string& s) const;
+        void print(unsigned int idx, unsigned int level);
 };
 
 
@@ -66,7 +91,11 @@ class Shell {
         /* Command history. */
         CommandHistory history;
 
+        /* Auto-completion. */
+        AutoCompletion completion;
+
         void common_init();
+        void fill_completion();
         void getline_ncurses(string& line, const char * prompt);
 
         void ls(const vector<string>& args, stringstream& ss);
