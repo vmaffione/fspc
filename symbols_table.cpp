@@ -326,7 +326,7 @@ void SetValue::output(stringstream& ss) const
 
 void SetValue::print() const
 {
-    cout << "r=" << rank << " {";
+    cout << " {";
     for (unsigned int i=0; i<actions.size(); i++) {
 	cout << actions[i] << ", ";
     }

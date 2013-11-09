@@ -95,7 +95,6 @@ class Lts: public SymbolValue {
 
   public:
     string name;
-    int rank;
 
     Lts() { atp = NULL; } /* Invalid instance, used by tree. */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */

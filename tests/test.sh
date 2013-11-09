@@ -24,6 +24,7 @@ do
         exit 1
     fi
     rm tests/new-output${i}.lts
+    echo "input$i ok"
 done
 
 
@@ -44,6 +45,7 @@ do
     if [ -f "tests/new-output.lts" ]; then
 	rm tests/new-output.lts
     fi
+    echo "err-input$i ok"
 done
 
 
