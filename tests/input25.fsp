@@ -1,0 +1,5 @@
+TWOCOINS = (pick -> FAIR | pick->UNFAIR),
+FAIR = (toss -> heads -> FAIR | toss ->tails -> FAIR),
+UNFAIR = (toss -> tails -> UNFAIR).
+
+progress HEADS = {heads}
