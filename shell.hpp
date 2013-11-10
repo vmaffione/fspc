@@ -49,9 +49,10 @@ class CommandHistory {
    an array of pointers (indexes) to other trie elements. */
 struct TrieElem {
     char ch;
+    bool eow;   /* End Of Word: This trie element ends a word. */
     vector<unsigned int> next;
 
-    TrieElem(char c);
+    TrieElem(char c, bool end_of_word);
 };
 
 

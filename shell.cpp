@@ -82,12 +82,20 @@ specified FSP using GraphViz";
     cmd_map["help"] = &Shell::help;
 }
 
+/* This function must be called after common_init(). */
 void Shell::fill_completion()
 {
     map<string, SymbolValue *>::iterator it;
+    map<string, const char *>::iterator jt;
 
+    /* Process names. */
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
 	completion.insert(it->first);
+    }
+
+    /* fspc shell command names. */
+    for (jt = help_map.begin(); jt != help_map.end(); jt++) {
+        completion.insert(jt->first);
     }
 }
 
@@ -215,7 +223,7 @@ static bool is_printable(int ch)
     return ch>=32 && ch<=126;
 }
 
-static bool right_split(string& base, string& back)
+static void right_split(string& base, string& back)
 {
     size_t p;
 
@@ -223,13 +231,12 @@ static bool right_split(string& base, string& back)
 
     p = base.find_last_of(' ');
     if (p == string::npos) {
-        return false;
+        base.swap(back);
+        return;
     }
 
     back = base.substr(p + 1);
     base = base.substr(0, p + 1);
-
-    return true;
 }
 
 void Shell::getline_ncurses(string& line, const char * prompt)
@@ -307,10 +314,13 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		break;
 
             case '\t':
-                if (!right_split(line, arg)) {
-                    break;
-                }
+                /* Split the current 'line' into 'line' + 'arg', so that
+                   'arg' contains the last command word. */
+                right_split(line, arg);
+                /* Try to complete 'arg'. */
                 if (completion.lookup(arg)) {
+                    /* The string 'arg' has been extended because of
+                       auto-completion. Reflush the command string. */
                     line += arg;
                     move(prompt_y, prompt_x);
                     printw("%s", line.c_str());
@@ -319,6 +329,8 @@ void Shell::getline_ncurses(string& line, const char * prompt)
                     str_cursor = line.size();
                     clrtobot();
                 } else {
+                    /* The string 'arg' was not modified: Let's undo the
+                       splitting. */
                     line += arg;
                 }
                 break;
@@ -826,7 +838,7 @@ AutoCompletion::AutoCompletion()
 {
     /* The trie data structure initially contains only one node with a NULL
        character. This represents the empty string. */
-    trie.push_back(TrieElem('\0'));
+    trie.push_back(TrieElem('\0', false));
 }
 
 /* Insert a string into the trie. */
@@ -853,7 +865,7 @@ void AutoCompletion::insert(const string& s)
         if (j == n) {
             /* No match has been found. Create a new trie node containing
                's[si]' and add it to the next of the current trie node. */
-            trie.push_back(TrieElem(s[si]));
+            trie.push_back(TrieElem(s[si], si == s.size() - 1));
             trie[ti].next.push_back(trie.size() - 1);
             ti = trie.size() - 1;
         }
@@ -891,11 +903,11 @@ bool AutoCompletion::lookup(string& s) const
     }
 
     /* Keep scanning (and updating the input string) the trie as long as
-       the sub-trie does not have branches. */
+       the sub-trie does not have branches and we don't run into an EOW. */
     for (;;) {
         const TrieElem& elem = trie[ti];
 
-        if (elem.next.size() != 1) {
+        if (elem.next.size() != 1 || elem.eow) {
             /* The trie is finished or there is a branch: Stop here. */
             break;
         }
@@ -921,8 +933,9 @@ void AutoCompletion::print(unsigned int idx, unsigned int level)
     }
 }
 
-TrieElem::TrieElem(char c)
+TrieElem::TrieElem(char c, bool end_of_word)
 {
     ch = c;
+    eow = end_of_word;
 }
 
