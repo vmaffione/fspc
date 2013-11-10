@@ -2,6 +2,9 @@ CC=g++
 DEBUG=-g
 CFLAGS=$(DEBUG) -Wall
 CXXFLAGS=$(DEBUG) -Wall
+# Optimization flags, e.g. "-O2"
+CFLAGS += $(OPTIMIZE)
+CXXFLAGS += $(OPTIMIZE)
 
 all: fspcc
 
@@ -9,11 +12,11 @@ all: fspcc
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 scanner.o: scanner.cpp
-	$(CC) $(DEBUG) -c scanner.cpp
+	$(CC) $(DEBUG) $(OPTIMIZE) -c scanner.cpp
 
 # This rule has been made explicit only to avoid compiler warnings (-Wall)
 preproc.o: preproc.cpp
-	$(CC) $(DEBUG) -c preproc.cpp
+	$(CC) $(DEBUG) $(OPTIMIZE) -c preproc.cpp
 
 fspcc: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fspcc -lncurses

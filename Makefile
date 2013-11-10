@@ -1,4 +1,4 @@
-VER=1.2
+VER=1.4
 
 # Generated C++ source files (to be updated manually)
 GENERATED=parser.cpp parser.hpp scanner.cpp preproc.cpp location.hh position.hh
@@ -10,10 +10,10 @@ NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_t
 SOURCES=$(NONGEN) $(GENERATED)
 
 # All the non-generated files.
-WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh parser.diff fspcc.1
+WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh parser.diff fspcc.1 Makefile.ske
 
 # The files included in the fspc tarball.
-TAR_CONTENT=$(WCIN) fsp.y
+TAR_CONTENT=$(SOURCES) ltsee csee.sh parser.diff fspcc.1 Makefile.gen
 
 #REPORT=--report=all
 REPORT=
@@ -38,6 +38,8 @@ always:
 # Generate Makefile.gen and the GraphViz representation of the include dependencies.
 deps.gv Makefile.gen: $(SOURCES)
 	python find_deps.py
+
+Makefile.gen: Makefile.ske
 
 # Generate the parser with GNU Bison.
 parser.cpp parser.hpp location.hh position.hh: fsp.ypp fsp.y parser.diff
@@ -85,8 +87,14 @@ aur:
 	wget "https://bitbucket.org/vmaffione/fspc/downloads/fspcc-$(VER).tar.gz"
 	python create_pkgbuild.py remote $(VER)
 
-fspcc-$(VER).tar.gz:
-	tar -czf fspcc-$(VER).tar.gz $(TAR_CONTENT)
+# Create a tarball containing all the files necessary for the compilation
+# but not the generating files (e.g. fsp.ypp, fsp.lex, ecc.)
+fspcc-$(VER).tar.gz: $(TAR_CONTENT)
+	mkdir release
+	cp $(TAR_CONTENT) release
+	mv release/Makefile.gen release/Makefile  # rename the Makefile
+	tar -czvf fspcc-$(VER).tar.gz release
+	rm -rf release
 
 cleanaur:
 	-rm *.tar.gz PKGBUILD

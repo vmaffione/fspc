@@ -92,11 +92,14 @@ int FspDriver::parse(const CompilerOptions& co)
             return ret;
         }
 
-        /* Output a GraphViz representation of the parse tree. TODO fix */
         assert(tree);
+#if 0
+        /* Output a GraphViz representation of the parse tree. */
         ofstream treef("tree.gv");
         tree->print(treef);
         treef.close();
+#endif
+        /* Translate the parse tree. */
         tree->translate(*this);
         delete tree;
         tree = NULL;

@@ -1604,7 +1604,6 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
         res.hiding(hv.setv, hv.interface);
     }
-    res.graphvizOutput("temp.lts");
 
     this->post_process_definition(c, res, idn->res);
 }
@@ -1813,7 +1812,6 @@ void yy::CompositeDefNode::translate(FspDriver& c)
 
         res.hiding(hv.setv, hv.interface);
     }
-    res.graphvizOutput("temp.lts");
 
     this->post_process_definition(c, res, idn->res);
 }

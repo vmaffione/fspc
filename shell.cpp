@@ -623,8 +623,8 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	    return;
 	    break;
 	case 0:
-	    execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
-	    exit(1);
+	    execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
+	    exit(0);
 	    break;
 	default:
 	    int status;

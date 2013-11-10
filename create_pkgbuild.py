@@ -4,11 +4,12 @@ import sys
 
 local = sys.argv[1] == 'local'
 ver = sys.argv[2]
+generating = False
 
 # fields values
 pkgname = 'fspcc'
 pkgver = ver
-src = ""
+src = "/release"
 archive = pkgname + '-' + pkgver + '.tar.gz'
 if local:
     url = 'http://127.0.0.1/$pkgname-$pkgver.tar.gz'
@@ -27,7 +28,8 @@ f.write('arch=(\'i686\' \'x86_64\')\n');
 f.write('url="%s"\n' % (url, ));
 f.write('license=(\'GPL3\')\n');
 f.write('depends=(\'bash\')\n');
-f.write('makedepends=(\'bison\' \'flex\')\n');
+if generating:
+    f.write('makedepends=(\'bison\' \'flex\')\n');
 f.write('checkdepends=()\n');
 f.write('optdepends=(\'graphviz: visualizing compiled LTS\')\n');
 f.write('source=("%s")\n' % (url, ));
@@ -38,7 +40,7 @@ f.write('md5sums=(\'%s\')\n' % ( ret[0:32].decode('latin-1'), ))
 
 f.write('\nbuild() {\n'
             '\tcd "$srcdir%s"\n'
-            '\tmake || return 1 \n'
+            '\tmake OPTIMIZE=-O2 || return 1 \n'
         '}\n' % (src, ));
 
 f.write('\ncheck() {\n'

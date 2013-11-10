@@ -34,16 +34,17 @@ void help()
 {
     cout << "fspc - A Finite State Process compiler and LTS analisys tool.\n";
     cout << "USAGE: fspc [-dpgasSh] [-i FILE | -l FILE] [-o FILE]\n";
-    cout << "	-i FILE : Specifies FILE as the input file containing FSP definitions.\n";
-    cout << "	-l FILE : Specifies FILE as the input file containing compiled LTSs.\n";
-    cout << "	-o FILE : Specifies the output FILE, e.g. the file that will contain the compiled LTSs.\n";
-    cout << "	-d : Runs deadlock/error analysis on every FSP.\n";
-    cout << "	-p : Runs all the specified progress verifications on every FSP.\n";
-    cout << "	-g : Outputs a graphviz representation file of every FSP.\n";
-    cout << "	-a : The same as '-d -p -g'\n";
-    cout << "	-s : Runs an LTS analysis interactive shell\n";
-    cout << "	-S : Runs an LTS analysis script\n";
-    cout << "	-h : Shows this help.\n";
+    cout << "   -i FILE : Specifies FILE as the input file containing FSP definitions.\n";
+    cout << "   -l FILE : Specifies FILE as the input file containing compiled LTSs.\n";
+    cout << "   -o FILE : Specifies the output FILE, e.g. the file that will contain the compiled LTSs.\n";
+    cout << "   -d : Runs deadlock/error analysis on every FSP.\n";
+    cout << "   -p : Runs all the specified progress verifications on every FSP.\n";
+    cout << "   -g : Outputs a graphviz representation file of every FSP.\n";
+    cout << "   -a : The same as '-d -p -g'\n";
+    cout << "   -s : Runs an LTS analysis interactive shell\n";
+    cout << "   -S : Runs an LTS analysis script\n";
+    cout << "   -v : show versioning information\n";
+    cout << "   -h : Shows this help.\n";
 }
 
 #define GETOPT
@@ -63,7 +64,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     co.shell = false;
     co.script = false;
 
-    while ((ch = getopt(argc, argv, "i:l:o:adpghsS:")) != -1) {
+    while ((ch = getopt(argc, argv, "i:l:o:adpghsvS:")) != -1) {
 	switch (ch) {
 	    default:
 		cout << "\n";
@@ -116,6 +117,10 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 		co.script = true;
 		co.script_file = optarg;
 		break;
+            case 'v':
+                cout << "fspc 1.4 (November 2013)\n";
+                cout << "Copyright 2013 Vincenzo Maffione\n";
+                exit(0);
 	}
     }
 
