@@ -229,6 +229,13 @@ void yy::ProgressIdNode::translate(FspDriver& c)
     res = uc->res;
 }
 
+void yy::MenuIdNode::translate(FspDriver& c)
+{
+    DTC(UpperCaseIdNode, uc, children[0]);
+
+    res = uc->res;
+}
+
 void yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -595,6 +602,18 @@ void yy::ProgressDefNode::translate(FspDriver& c)
     irn->translate(c);
 
     for_each_combination(c, irn, this);
+}
+
+void yy::MenuDefNode::translate(FspDriver &c)
+{
+    translate_children(c);
+
+    DTC(MenuIdNode, id, children[1]);
+    DTC(SetNode, sn, children[3]);
+
+    // TODO implement
+    (void)id;
+    (void)sn;
 }
 
 /* This recursive method can be used to compute the set of action defined

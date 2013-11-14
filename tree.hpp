@@ -170,6 +170,13 @@ class ProgressIdNode : public UpperCaseIdNode {
         void translate(FspDriver &dr);
 };
 
+class MenuIdNode : public UpperCaseIdNode {
+    public:
+        string getClassName() const { return "MenuId"; }
+        MenuIdNode() : UpperCaseIdNode() { }
+        void translate(FspDriver &dr);
+};
+
 class ExpressionNode : public IntTreeNode {
     public:
         string getClassName() const { return "Expression"; }
@@ -216,6 +223,19 @@ class PropertyNode : public TreeNode {
     public:
         string getClassName() const { return "property"; }
         PropertyNode() : TreeNode() { }
+};
+
+class MenuDefNode : public TreeNode {
+    public:
+        string getClassName() const { return "MenuDef"; }
+        void translate(FspDriver& c);
+        MenuDefNode() : TreeNode() { }
+};
+
+class MenuKwdNode : public TreeNode {
+    public:
+        string getClassName() const { return "menu"; }
+        MenuKwdNode() : TreeNode() { }
 };
 
 class HidingInterfNode : public TreeNode {

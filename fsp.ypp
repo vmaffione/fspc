@@ -138,13 +138,12 @@ namespace yy {
 %type <node_ptr> fsp_description fsp_definition
 %type <node_ptr> constant_def range_def set_def
 %type <node_ptr> composite_def param_OPT param parameter_list parameter
-%type <node_ptr> property_def progress_def
+%type <node_ptr> property_def progress_def menu_def
 %type <node_ptr> integer upper_case_id lower_case_id
 %type <node_ptr> expression base_expression
 %type <node_ptr> parameter_id process_id progress_id
-/* %type <string_ptr> menu_id */
 %type <node_ptr> variable constant_id range_id set_id
-%type <node_ptr> const_parameter_id
+%type <node_ptr> const_parameter_id menu_id
 
 %type <node_ptr> set set_elements set_expr
 %type <node_ptr> action_labels
@@ -243,7 +242,7 @@ fsp_definition:
     | progress_def
     | process_def
     | composite_def
-/*  | menu_def */
+    | menu_def
     ;
 
 
@@ -902,7 +901,6 @@ property_def:
 
 progress_def:
     PROGRESS progress_id index_ranges_OPT '=' set {
-        /* @2 */
         $$ = new ProgressDefNode();
         $$->addChild(new ProgressKwdNode(), @1);
         $$->addChild($2, @2);
@@ -912,11 +910,16 @@ progress_def:
     }
     ;
 
-/*
 menu_def:
-    MENU menu_id '=' set
+    MENU menu_id '=' set {
+        $$ = new MenuDefNode();
+        $$->addChild(new MenuKwdNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild(new AssignNode(), @3);
+        $$->addChild($4, @4);
+    }
     ;
-*/
+
 
 %left OR;
 %left AND;
@@ -1146,7 +1149,11 @@ progress_id: upper_case_id {
         $$ = new ProgressIdNode();
         $$->addChild($1, @1);
     };
-//menu_id: UpperCaseID { ps.push_back($1); $$ = $1;};
+
+menu_id: upper_case_id {
+        $$ = new MenuIdNode();
+        $$->addChild($1, @1);
+    };
 
 %%
 
