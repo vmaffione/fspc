@@ -36,7 +36,7 @@ using namespace std;
 
 struct TerminalSet {
     vector<int> trace;
-    set<int> actions;
+    set<unsigned int> actions;
 };
 
 /* An LTS edge. */

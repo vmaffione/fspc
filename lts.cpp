@@ -36,6 +36,9 @@
 /* The fspc shell. */
 #include "shell.hpp"
 
+/* Some helpers (intersection routines). */
+#include "helpers.hpp"
+
 using namespace std;
 
 
@@ -1042,16 +1045,11 @@ int yy::Lts::progress(const string& progress_name, const ActionSetValue& as,
 
     for (unsigned int i=0; i<terminal_sets.size(); i++) {
 	TerminalSet& ts = terminal_sets[i];
-	bool violation = true;
+	bool violation;
 
-	/* There is a progress violation for the set 'as' if the terminal set
-	   'ts' does not contain any action in 'as'. */
-	for (set<unsigned int>::iterator jt = as.actions.begin();
-                        jt != as.actions.end(); jt++)
-	    if(ts.actions.count(*jt)) {
-		violation = false;
-		break;
-	    }
+	/* There is a progress violation for the set 'as' if the
+           intersection between 'as' and the terminal set 'ts' is empty. */
+        violation = !intersection_exists(as.actions, ts.actions);
 
 	if (violation) {
 	    ss << "Progress violation detected for process " << name
@@ -1061,7 +1059,7 @@ int yy::Lts::progress(const string& progress_name, const ActionSetValue& as,
 		ss << ati(atp, ts.trace[j], false) << "-> ";
 	    ss << "\n";
 	    ss << "	Actions in terminal set: {";
-	    for (set<int>::iterator it=ts.actions.begin();
+	    for (set<unsigned int>::iterator it=ts.actions.begin();
 		    it!=ts.actions.end(); it++)
 		ss << ati(atp, *it, false) << ", ";
 	    ss << "}\n\n";

@@ -32,3 +32,21 @@ void lts_name_extension(const vector<int>& values, string& extension)
     }
 }
 
+bool intersection_exists(const set<unsigned int>& first,
+                         const set<unsigned int>& second)
+{
+    const set<unsigned int>& bigger = (first.size() > second.size())
+                                        ? first : second;
+    const set<unsigned int>& smaller = (first.size() > second.size())
+                                        ? second : first;
+
+    for (set<unsigned int>:: iterator it = smaller.begin();
+                            it != smaller.end(); it++) {
+        if (bigger.count(*it)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
