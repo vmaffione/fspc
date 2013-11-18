@@ -513,7 +513,7 @@ static bool next_set_indexes(const vector<TreeNode *>& elements,
                Just pass to the next element. */
         } else if (setn) {
             indexes[j]++;
-            if (indexes[j] == setn->res.actions.size()) {
+            if (indexes[j] == setn->res.size()) {
                 /* Wraparaund: continue with the next element. */
                 indexes[j] = 0;
             } else {
@@ -522,7 +522,7 @@ static bool next_set_indexes(const vector<TreeNode *>& elements,
             }
         } else if (an) {
             indexes[j]++;
-            if (indexes[j] == an->res.actions.size()) {
+            if (indexes[j] == an->res.size()) {
                 /* Wraparaund: continue with the next element. */
                 indexes[j] = 0;
             } else {
@@ -571,10 +571,10 @@ static void for_each_combination(FspDriver& c, IndexRangesNode *irn,
             DTC(ActionRangeNode, an, elements[j]);
 
             if (an) {
-                index_string += "." + an->res.actions[ indexes[j] ];
+                index_string += "." + an->res[ indexes[j] ];
                 if (an->res.hasVariable()) {
                     if (!c.ctx.insert(an->res.variable,
-                                an->res.actions[ indexes[j] ])) {
+                                an->res[ indexes[j] ])) {
                         cout << "ERROR: ctx.insert()\n";
                     }
                 }
@@ -691,10 +691,10 @@ SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
                 SetValue next_base;
                 bool ok;
 
-                for (unsigned int j=0; j<an->res.actions.size(); j++) {
+                for (unsigned int j=0; j<an->res.size(); j++) {
                     next_base = base;
-                    next_base.indexize(an->res.actions[j]);
-                    if (!c.ctx.insert(an->res.variable, an->res.actions[j])) {
+                    next_base.indexize(an->res[j]);
+                    if (!c.ctx.insert(an->res.variable, an->res[j])) {
                         cout << "ERROR: ctx.insert()\n";
                     }
                     ret += computeActionLabels(c, next_base,
@@ -809,7 +809,7 @@ void yy::ActionRangeNode::translate(FspDriver& c)
         } else {
             assert(0);
         }
-if (res.actions.size() == 0) { // XXX remove a.s.a.p.
+if (res.size() == 0) { // XXX remove a.s.a.p.
     cout << "XXX2\n";
     res += "xxx2";
 }
@@ -922,7 +922,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                     label = strn->res;
                 } else if (setn) {
                     /* A set of actions. */
-                    label = setn->res.actions[ indexes[j] ];
+                    label = setn->res[ indexes[j] ];
                 } else {
                     assert(0);
                 }
@@ -936,12 +936,12 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                 if (strn) {
                     label += "." + strn->res;
                 } else if (setn) {
-                    label += "." + setn->res.actions[ indexes[j] ];
+                    label += "." + setn->res[ indexes[j] ];
                 } else if (an) {
-                    label += "." + an->res.actions[ indexes[j] ];
+                    label += "." + an->res[ indexes[j] ];
                     if (an->res.hasVariable()) {
                         if (!c.ctx.insert(an->res.variable,
-                                    an->res.actions[ indexes[j] ])) {
+                                    an->res[ indexes[j] ])) {
                             cout << "ERROR: ctx.insert()\n";
                         }
                     }
@@ -1611,8 +1611,8 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     if (aen) {
         SetValue& sv = aen->res;
 
-        for (unsigned int i=0; i<sv.actions.size(); i++) {
-            res.updateAlphabet(c.actions.insert(sv.actions[i]));
+        for (unsigned int i=0; i<sv.size(); i++) {
+            res.updateAlphabet(c.actions.insert(sv[i]));
         }
     }
 

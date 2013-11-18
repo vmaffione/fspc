@@ -287,9 +287,9 @@ void Serializer::set_value(const struct SetValue& setv, bool raw)
 						sizeof(char));
     }
 
-    this->integer(setv.actions.size(), 1);
-    for (unsigned int i=0; i<setv.actions.size(); i++) {
-	this->stl_string(setv.actions[i], 1);
+    this->integer(setv.size(), 1);
+    for (unsigned int i=0; i<setv.size(); i++) {
+	this->stl_string(setv[i], 1);
     }
 }
 
@@ -308,8 +308,8 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
 
     this->integer(x, 1);
     setv.actions.resize(x);
-    for (unsigned int i=0; i<setv.actions.size(); i++) {
-	this->stl_string(setv.actions[i], 1);
+    for (unsigned int i=0; i<setv.size(); i++) {
+	this->stl_string(setv[i], 1);
     }
 }
 

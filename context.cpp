@@ -28,7 +28,7 @@ using namespace std;
 
 bool ContextSet::insert(const string& var, const SetValue& v)
 {
-    assert(v.actions.size());
+    assert(v.size());
 
     for (unsigned int i=0; i<vars.size(); i++) {
         if (vars[i] == var)
@@ -48,7 +48,7 @@ unsigned int ContextSet::num()
     unsigned int ret = 1;
 
     for (unsigned int i=0; i<sets.size(); i++) {
-        ret *= sets[i].actions.size();
+        ret *= sets[i].size();
     }
 
     return ret;
@@ -69,7 +69,7 @@ bool ContextSet::select_next()
        do in computePrefixActions(). */
     while (i < indexes.size()) {
         indexes[i]++;
-        if (indexes[i] == sets[i].actions.size()) {
+        if (indexes[i] == sets[i].size()) {
             /* Wraparound: Go to the next variable. */
             indexes[i] = 0;
             i++;
@@ -86,7 +86,7 @@ bool ContextSet::lookup(const string& name, string& v)
     /* Not so useful, use ContextSet lookup instead. XXX */
     for (unsigned int i=0; i<vars.size(); i++) {
         if (name == vars[i]) {
-            v = sets[i].actions[ indexes[i] ];
+            v = sets[i][ indexes[i] ];
             return true;
         }
     }

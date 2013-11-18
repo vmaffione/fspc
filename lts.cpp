@@ -713,19 +713,19 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
 
 yy::Lts& yy::Lts::labeling(const SetValue& labels)
 {
-    if (!labels.actions.size())
+    if (!labels.size())
 	return *this;
 
-    if (labels.actions.size() == 1)
-	this->labeling(labels.actions[0]);
+    if (labels.size() == 1)
+	this->labeling(labels[0]);
     else {
 	yy::Lts copy(*this);
 
-	this->labeling(labels.actions[0]);
-	for (unsigned int i=1; i<labels.actions.size(); i++) {
+	this->labeling(labels[0]);
+	for (unsigned int i=1; i<labels.size(); i++) {
 	    yy::Lts right(copy);
 
-	    right.labeling(labels.actions[i]);
+	    right.labeling(labels[i]);
 	    this->compose(right);
 	}
     }
@@ -780,9 +780,9 @@ yy::Lts& yy::Lts::sharing(const SetValue& labels)
 	vector<int> new_indexes;
 
 	old_index = *it;
-	for (unsigned int i=0; i<labels.actions.size(); i++) {
-	    new_index = atp->insert(labels.actions[i] + "." + 
-						atp->reverse[old_index]);
+	for (unsigned int i=0; i<labels.size(); i++) {
+	    new_index = atp->insert(labels[i] + "." +
+		                    atp->reverse[old_index]);
 	    new_alphabet.insert(new_index);
 	    new_indexes.push_back(new_index);
 	}
@@ -832,10 +832,10 @@ yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 	/* Prefix match: check if 'oldlabel' is a prefix of 'action'. */
 	mm = mismatch(oldlabel.begin(), oldlabel.end(), action.begin());
 	if (mm.first == oldlabel.end()) {
-	    for (unsigned int i=0; i<newlabels.actions.size(); i++) {
+	    for (unsigned int i=0; i<newlabels.size(); i++) {
 		string new_action = action;
 
-		new_action.replace(0, oldlabel.size(), newlabels.actions[i]);
+		new_action.replace(0, oldlabel.size(), newlabels[i]);
 		new_index = atp->insert(new_action);
 		new_alphabet.insert(new_index);
 		new_indexes.push_back(new_index);
@@ -873,8 +873,8 @@ yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
 
 yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
 {
-    for (unsigned int i=0; i<oldlabels.actions.size(); i++)
-	this->relabeling(newlabels, oldlabels.actions[i]);
+    for (unsigned int i=0; i<oldlabels.size(); i++)
+	this->relabeling(newlabels, oldlabels[i]);
 
     return *this;
 }
@@ -889,34 +889,36 @@ yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
 
     /* Update the alphabet. */
     if (interface) {
-	for (unsigned int i=0; i<s.actions.size(); i++) {
-	    /* The action s.actions[i] can select multiple alphabet
+	for (unsigned int i=0; i<s.size(); i++) {
+	    /* The action s[i] can select multiple alphabet
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(atp, *it, false);
 		pair<string::const_iterator, string::iterator> mm;
-		/* Prefix match: check if 's.actions[i]' is a prefix of
+                string cand = s[i];
+
+		/* Prefix match: check if 's[i]' is a prefix of
 		   'action'. */
-		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
-							    action.begin());
-		if (mm.first == s.actions[i].end())
+		mm = mismatch(cand.begin(), cand.end(), action.begin());
+		if (mm.first == cand.end())
 		    new_alphabet.insert(*it);
 	    }
 	}
     } else {
 	new_alphabet = alphabet;
-	for (unsigned int i=0; i<s.actions.size(); i++) {
-	    /* The action s.actions[i] can hide multiple alphabet elements. */
+	for (unsigned int i=0; i<s.size(); i++) {
+	    /* The action s[i] can hide multiple alphabet elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(atp, *it, false);
 		pair<string::const_iterator, string::iterator> mm;
-		/* Prefix match: check if 's.actions[i]' is a prefix of
+                string cand = s[i];
+
+		/* Prefix match: check if 's[i]' is a prefix of
 		   'action'. */
-		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
-							    action.begin());
-		if (mm.first == s.actions[i].end())
+		mm = mismatch(cand.begin(), cand.end(), action.begin());
+		if (mm.first == cand.end())
 		    new_alphabet.erase(*it);
 	    }
 	}
@@ -943,18 +945,19 @@ yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
 
     terminal_sets_computed = false;
 
-    for (unsigned int i=0; i<s.actions.size(); i++) {
-	    /* The action s.actions[i] can select multiple alphabet
+    for (unsigned int i=0; i<s.size(); i++) {
+	    /* The action s[i] can select multiple alphabet
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(atp, *it, false);
 		pair<string::const_iterator, string::iterator> mm;
-		/* Prefix match: check if 's.actions[i]' is a prefix of
+                string cand = s[i];
+
+		/* Prefix match: check if 's[i]' is a prefix of
 		   'action'. */
-		mm = mismatch(s.actions[i].begin(), s.actions[i].end(),
-							    action.begin());
-		if (mm.first == s.actions[i].end())
+		mm = mismatch(cand.begin(), cand.end(), action.begin());
+		if (mm.first == cand.end())
 		    priority_actions.insert(*it);
 	    }
     }

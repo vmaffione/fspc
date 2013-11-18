@@ -173,7 +173,7 @@ SymbolValue * ConstValue::clone() const
 
 void ConstValue::set(SetValue& s) const
 {
-    s.actions.clear();
+    s.clear();
     s += int2string(value);
 }
 
@@ -189,7 +189,7 @@ SymbolValue * RangeValue::clone() const
 
 void RangeValue::set(SetValue& s) const
 {
-    s.actions.clear();
+    s.clear();
 
     for (int i=low; i<=high; i++) {
         s += int2string(i);
@@ -200,7 +200,7 @@ void RangeValue::set(SetValue& s) const
 SetValue& SetValue::combine(const SetValue& ss, bool dot)
 {
     int n = actions.size();
-    int nss = ss.actions.size();
+    int nss = ss.size();
     string pre = dot ? "." : "[";
     string post = dot ? "" : "]";
 
@@ -208,10 +208,10 @@ SetValue& SetValue::combine(const SetValue& ss, bool dot)
 
     for (int j=1; j<nss; j++)
 	for (int i=0; i<n; i++)
-	    actions[j*n+i] = actions[i] + pre + ss.actions[j] + post;
+	    actions[j*n+i] = actions[i] + pre + ss[j] + post;
     
     for (int i=0; i<n; i++)
-	actions[i] += pre + ss.actions[0] + post;
+	actions[i] += pre + ss[0] + post;
 
     return *this;
 }
@@ -280,7 +280,7 @@ SetValue& SetValue::indexize(int low, int high)
 SetValue& SetValue::operator +=(const SetValue& ss)
 {
     for (unsigned int i=0; i<ss.actions.size(); i++)
-	actions.push_back(ss.actions[i]);
+	actions.push_back(ss[i]);
 
     return *this;
 }

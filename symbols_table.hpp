@@ -78,6 +78,9 @@ struct SetValue: public SymbolValue {
     SymbolValue * clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
     bool hasVariable() const { return variable.size(); }
+    unsigned int size() const { return actions.size(); }
+    string operator[](unsigned int i) const { return actions[i]; }
+    string& operator[] (unsigned int i) { return actions[i]; }
 
     SetValue& combine(const string&, bool);
     SetValue& combine(const SetValue&, bool);
