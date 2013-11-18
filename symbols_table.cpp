@@ -292,6 +292,20 @@ SetValue& SetValue::operator +=(const string& s)
     return *this;
 }
 
+void SetValue::clear()
+{
+    actions.clear();
+    variable = string();
+}
+
+void SetValue::toActionSetValue(ActionsTable& at, ActionSetValue& asv)
+{
+    asv.clear();
+    for (unsigned int i = 0; i < actions.size(); i++) {
+        asv.add(at.insert(actions[i]));
+    }
+}
+
 SymbolValue * SetValue::clone() const
 {
     SetValue * sv = new SetValue(*this);
@@ -429,6 +443,16 @@ bool ActionSetValue::lookup(unsigned int a) const
 void ActionSetValue::clear()
 {
     actions.clear();
+}
+
+void ActionSetValue::toSetValue(const ActionsTable& at, SetValue& setv)
+{
+    setv.clear();
+
+    for (set<unsigned int>::iterator it = actions.begin();
+                    it != actions.end(); it++) {
+        setv += at.reverse[*it];
+    }
 }
 
 void ActionSetValue::print() const

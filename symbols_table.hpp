@@ -66,6 +66,8 @@ struct SymbolValue {
     virtual ~SymbolValue() { }
 };
 
+struct ActionSetValue;
+
 struct SetValue: public SymbolValue {
     vector<string> actions;
     string variable;
@@ -88,7 +90,9 @@ struct SetValue: public SymbolValue {
     SetValue& indexize(int low, int high);
     SetValue& operator +=(const SetValue&);
     SetValue& operator +=(const string&);
+    void clear();
 
+    void toActionSetValue(ActionsTable& at, ActionSetValue& asv);
     void output(const string& name, const char * filename) const;
     void output(stringstream& ss) const;
 };
@@ -152,6 +156,7 @@ struct ActionSetValue : public SymbolValue {
     bool add(unsigned int a);
     bool lookup(unsigned int a) const;
     void clear();
+    void toSetValue(const ActionsTable& at, SetValue& sv);
     void print() const;
     int type() const { return SymbolValue::ActionSet; }
     SymbolValue *clone() const;

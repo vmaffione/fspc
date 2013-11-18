@@ -476,14 +476,15 @@ void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
 {
     DTC(ProgressIdNode, id, children[1]);
     DTC(SetNode, sn, children[4]);
-    SymbolValue *svp;
+    ActionSetValue *asv = new ActionSetValue;
     string name = id->res + index;
 
     /* Do the set translation here. */
     sn->translate(c);
-    svp = sn->res.clone();
 
-    if (!c.progresses.insert(name, svp)) {
+    sn->res.toActionSetValue(c.actions, *asv);
+
+    if (!c.progresses.insert(name, asv)) {
         stringstream errstream;
         errstream << "progress " << name << " declared twice";
         semantic_error(c, errstream, loc);
@@ -614,11 +615,7 @@ void yy::MenuDefNode::translate(FspDriver &c)
 
     /* Turn the SetValue contained into the SetNode into an
        ActionSetValue. */
-    for (unsigned int i=0; i<sn->res.actions.size(); i++) {
-        int idx = c.actions.insert(sn->res.actions[i]);
-
-        asv->add(idx);
-    }
+    sn->res.toActionSetValue(c.actions, *asv);
 
     if (!c.menus.insert(id->res, asv)) {
         stringstream errstream;

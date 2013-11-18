@@ -46,6 +46,7 @@ class Serializer {
 	void actions_table(const struct ActionsTable& at, bool raw);
 	void lts(const yy::Lts& lts, bool raw);
 	void set_value(const struct SetValue& setv, bool raw);
+        void action_set_value(const struct ActionSetValue& as, bool raw);
 	~Serializer();
 
 	static const char SerInteger;
@@ -54,6 +55,7 @@ class Serializer {
 	static const char SerActionsTable;
 	static const char SerLts;
 	static const char SerSetValue;
+	static const char SerActionSetValue;
 };
 
 class Deserializer {
@@ -68,6 +70,7 @@ class Deserializer {
 	void actions_table(struct ActionsTable& at, bool raw);
 	void lts(yy::Lts& lts, bool raw);
 	void set_value(struct SetValue& setv, bool raw);
+        void action_set_value(struct ActionSetValue& asv, bool raw);
 	~Deserializer();
 };
 

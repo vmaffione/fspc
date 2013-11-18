@@ -37,6 +37,7 @@ const char Serializer::SerByte = 'B';
 const char Serializer::SerActionsTable = 'T';
 const char Serializer::SerLts = 'L';
 const char Serializer::SerSetValue = 'U';
+const char Serializer::SerActionSetValue = 'A';
 
 Serializer::Serializer(const char * filename)
 {
@@ -312,6 +313,40 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
     }
 }
 
+void Serializer::action_set_value(const struct ActionSetValue& asv, bool raw)
+{
+    if (!raw) {
+	fout.write(static_cast<const char *>(&Serializer::SerActionSetValue),
+						sizeof(char));
+    }
+
+    this->integer(asv.actions.size(), 1);
+    for (set<unsigned int>::iterator it = asv.actions.begin();
+                    it != asv.actions.end(); it++) {
+	this->integer(*it, 1);
+    }
+}
+
+void Deserializer::action_set_value(struct ActionSetValue& asv, bool raw)
+{
+    char type;
+    uint32_t x, y;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::SerActionSetValue) {
+	    cout << "Error: expected ActionSetValue\n";
+	    exit(-1);
+	}
+    }
+
+    this->integer(x, 1);
+    asv.clear();
+    for (unsigned int i=0; i<x; i++) {
+	this->integer(y, 1);
+        asv.add(y);
+    }
+}
 
 /* ============================ Deserializer ============================= */
 Deserializer::Deserializer(const char * filename)

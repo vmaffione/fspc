@@ -126,12 +126,12 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	desp->integer(nprogr, 0);
 	for (uint32_t i=0; i<nprogr; i++) {
-	    SetValue * setvp = new SetValue;
+	    ActionSetValue *asv = new ActionSetValue;
 	    string name;
 
 	    desp->stl_string(name, 0);
-	    desp->set_value(*setvp, 0);
-	    if (!progresses.insert(name, setvp)) {
+	    desp->action_set_value(*asv, 0);
+	    if (!progresses.insert(name, asv)) {
 		assert(0);
 	    }
 	}
@@ -141,8 +141,8 @@ int FspDriver::parse(const CompilerOptions& co)
        the associated LTS and do the deadlock analysis. */
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
-    yy::Lts * lts;
-    SetValue * setvp;    
+    yy::Lts *lts;
+    ActionSetValue *as;
 
     if (produceLts) {
 	serp->actions_table(actions, 0);
@@ -171,19 +171,19 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Do each progress check against all the global processes. */
     for (it=progresses.table.begin(); it!=progresses.table.end();
 	    it++) {
-	setvp = is_set(it->second);
+	as = is_actionset(it->second);
 	if (co.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
 		lts = is_lts(jt->second);
-		lts->progress(it->first, *setvp, ss);
+		lts->progress(it->first, *as, ss);
 	    }
 	}
 
 	/* Output the property if the input is not an LTS file. */
 	if (produceLts) {
 	    serp->stl_string(it->first, 0);
-	    serp->set_value(*setvp, 0);
+	    serp->action_set_value(*as, 0);
 	}
     }
 

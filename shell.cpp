@@ -511,9 +511,9 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
-    SymbolValue * svp;
-    SetValue * setvp;
-    yy::Lts * lts;
+    SymbolValue *svp;
+    ActionSetValue *asv;
+    yy::Lts *lts;
 
     if (args.size()) {
 	/* Progress analysis on args[0]. */
@@ -523,8 +523,8 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    lts = is_lts(svp);
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
-		setvp = is_set(it->second);
-		lts->progress(it->first, *setvp, ss);
+		asv = is_actionset(it->second);
+		lts->progress(it->first, *asv, ss);
 	    }
 	}
     } else {
@@ -534,8 +534,8 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    lts = is_lts(it->second);
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
-		setvp = is_set(jt->second);
-		lts->progress(jt->first, *setvp, ss);
+		asv = is_actionset(jt->second);
+		lts->progress(jt->first, *asv, ss);
 	    }
 	}
     }
@@ -719,13 +719,16 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 void Shell::lsprop(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
-    SetValue *setvp;
+    ActionSetValue *as;
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
-        setvp = is_set(it->second);
+        SetValue setv;
+
+        as = is_actionset(it->second);
+        as->toSetValue(c.actions, setv);
 	ss << "   " << it->first << ": ";
-        setvp->output(ss);
+        setv.output(ss);
         ss << "\n";
     }
 }

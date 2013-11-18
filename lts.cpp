@@ -1030,7 +1030,7 @@ yy::Lts& yy::Lts::property()
     return *this;
 }
 
-int yy::Lts::progress(const string& progress_name, const SetValue& s,
+int yy::Lts::progress(const string& progress_name, const ActionSetValue& as,
 					    stringstream& ss)
 {
     CHECKATP(0);
@@ -1040,10 +1040,12 @@ int yy::Lts::progress(const string& progress_name, const SetValue& s,
     for (unsigned int i=0; i<terminal_sets.size(); i++) {
 	TerminalSet& ts = terminal_sets[i];
 	bool violation = true;
-	/* There is a progress violation for the set 's' if the terminal set
-	   'ts' does not contain any action in 's'. */
-	for (unsigned int j=0; j<s.actions.size(); j++)
-	    if(ts.actions.count(atp->lookup(s.actions[j]))) {
+
+	/* There is a progress violation for the set 'as' if the terminal set
+	   'ts' does not contain any action in 'as'. */
+	for (set<unsigned int>::iterator jt = as.actions.begin();
+                        jt != as.actions.end(); jt++)
+	    if(ts.actions.count(*jt)) {
 		violation = false;
 		break;
 	    }
