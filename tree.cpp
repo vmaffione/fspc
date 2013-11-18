@@ -460,7 +460,7 @@ void yy::PropertyDefNode::translate(FspDriver& c)
         assert(0);
     }
 
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
     /* Apply the property operator, if possible. */
     if (lts->isDeterministic()) {
         lts->property();
@@ -476,15 +476,16 @@ void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
 {
     DTC(ProgressIdNode, id, children[1]);
     DTC(SetNode, sn, children[4]);
-    ActionSetValue *asv = new ActionSetValue;
+    ProgressValue *pv = new ProgressValue;
     string name = id->res + index;
 
     /* Do the set translation here. */
     sn->translate(c);
 
-    sn->res.toActionSetValue(c.actions, *asv);
+    pv->conditional = false;
+    sn->res.toActionSetValue(c.actions, pv->set);
 
-    if (!c.progresses.insert(name, asv)) {
+    if (!c.progresses.insert(name, pv)) {
         stringstream errstream;
         errstream << "progress " << name << " declared twice";
         semantic_error(c, errstream, loc);
@@ -1110,7 +1111,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 	errstream << "Process " << in->res << " undeclared";
 	semantic_error(c, errstream, loc);
     }
-    pp = is_parametric(svp);
+    pp = is<ParametricProcess>(svp);
 
     /* Find the arguments for the process parameters. */
     arguments = an ? an->res : pp->defaults;
@@ -1128,7 +1129,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
     IFD(cout << "Looking up " << in->res+extension << "\n");
     if (c.processes.lookup(in->res + extension, svp)) {
 	/* If there is a cache hit, use the stored LTS. */
-	res = *(is_lts(svp));
+	res = *(is<yy::Lts>(svp));
     } else {
         ProcessDefNode *pdn;
         CompositeDefNode *cdn;
@@ -1534,7 +1535,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
 {
     string extension;
     SymbolValue *res_clone;
-    ParametricProcess *pp_clone = is_parametric(c.paramproc.clone());
+    ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
     res.name = name;
 

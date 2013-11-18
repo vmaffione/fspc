@@ -478,7 +478,7 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
 
     ss << "Compiled FSPs:\n";
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	lts = is_lts(it->second);
+	lts = is<yy::Lts>(it->second);
 	ss << "   " << it->first << ": " << lts->numStates()
 	    << " states, " << lts->numTransitions() << " transitions, "
 	    << lts->alphabetSize() << " actions in alphabet\n";
@@ -496,14 +496,14 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 	if (!c.processes.lookup(args[0], svp)) {
 	    ss << "Process " << args[0] << " not found\n";
 	} else {
-	    lts = is_lts(svp);
+	    lts = is<yy::Lts>(svp);
 	    lts->deadlockAnalysis(ss);
 	}
     } else {
 	/* Deadlock analysis on every process. */
 	for (it=c.processes.table.begin();
 		    it!=c.processes.table.end(); it++) {
-	    lts = is_lts(it->second);
+	    lts = is<yy::Lts>(it->second);
 	    lts->deadlockAnalysis(ss);
 	}
     }
@@ -514,7 +514,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
     SymbolValue *svp;
-    ActionSetValue *asv;
+    ProgressValue *pv;
     yy::Lts *lts;
 
     if (args.size()) {
@@ -522,22 +522,22 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	if (!c.processes.lookup(args[0], svp)) {
 	    ss << "Process " << args[0] << " not found\n";
 	} else {
-	    lts = is_lts(svp);
+	    lts = is<yy::Lts>(svp);
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
-		asv = is_actionset(it->second);
-		lts->progress(it->first, *asv, ss);
+		pv = is<ProgressValue>(it->second);
+		lts->progress(it->first, pv->set, ss);
 	    }
 	}
     } else {
 	/* Progress analysis on every process. */
 	for (it=c.processes.table.begin(); 
 		    it!=c.processes.table.end(); it++) {
-	    lts = is_lts(it->second);
+	    lts = is<yy::Lts>(it->second);
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
-		asv = is_actionset(jt->second);
-		lts->progress(jt->first, *asv, ss);
+		pv = is<ProgressValue>(jt->second);
+		lts->progress(jt->first, pv->set, ss);
 	    }
 	}
     }
@@ -558,14 +558,14 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
         ss << "Process " << args[0] << " not found\n";
         return;
     }
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
 
     if (args.size() >= 2) {
         if (!c.menus.lookup(args[1], svp)) {
             ss << "Menu " << args[1] << " not found\n";
             return;
         }
-        menu = is_actionset(svp);
+        menu = is<ActionSetValue>(svp);
     }
 
     history_enable(false);
@@ -595,7 +595,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 	outfile = args[0] + ".bfsp";
     }
 
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
     lts->basic(outfile, ss);
 }
 
@@ -614,7 +614,7 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
     lts->printAlphabet(ss);
 }
 
@@ -640,7 +640,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
 
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
@@ -686,7 +686,7 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     }
     filename = args[0] + ".gv";
 
-    lts = is_lts(svp);
+    lts = is<yy::Lts>(svp);
     lts->graphvizOutput(filename.c_str());
 
     if (args.size() > 1) {
@@ -721,14 +721,14 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 void Shell::lsprop(const vector<string> &args, stringstream& ss)
 {
     map<string, SymbolValue *>::iterator it;
-    ActionSetValue *as;
+    ProgressValue *pv;
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
         SetValue setv;
 
-        as = is_actionset(it->second);
-        as->toSetValue(c.actions, setv);
+        pv = is<ProgressValue>(it->second);
+        pv->set.toSetValue(c.actions, setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);
         ss << "\n";
@@ -744,7 +744,7 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
     for (it=c.menus.table.begin(); it!=c.menus.table.end(); it++) {
         SetValue setv;
 
-        as = is_actionset(it->second);
+        as = is<ActionSetValue>(it->second);
         as->toSetValue(c.actions, setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);

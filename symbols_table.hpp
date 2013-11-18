@@ -62,6 +62,7 @@ struct SymbolValue {
     static const int Hiding = 10;
     static const int Priority = 11;
     static const int ActionSet = 13;
+    static const int Progress = 14;
 
     virtual ~SymbolValue() { }
 };
@@ -162,6 +163,17 @@ struct ActionSetValue : public SymbolValue {
     void toSetValue(const ActionsTable& at, SetValue& sv);
     void print() const;
     int type() const { return SymbolValue::ActionSet; }
+    SymbolValue *clone() const;
+};
+
+struct ProgressValue : public SymbolValue {
+    ActionSetValue condition;
+    ActionSetValue set;
+    bool conditional;
+
+    ProgressValue() : conditional(false) { }
+    void print() const;
+    int type() const { return SymbolValue::Progress; }
     SymbolValue *clone() const;
 };
 

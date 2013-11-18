@@ -126,12 +126,12 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	desp->integer(nprogr, 0);
 	for (uint32_t i=0; i<nprogr; i++) {
-	    ActionSetValue *asv = new ActionSetValue;
+	    ProgressValue *pv = new ProgressValue;
 	    string name;
 
 	    desp->stl_string(name, 0);
-	    desp->action_set_value(*asv, 0);
-	    if (!progresses.insert(name, asv)) {
+	    desp->progress_value(*pv, 0);
+	    if (!progresses.insert(name, pv)) {
 		assert(0);
 	    }
 	}
@@ -142,14 +142,14 @@ int FspDriver::parse(const CompilerOptions& co)
     map<string, SymbolValue *>::iterator it;
     map<string, SymbolValue *>::iterator jt;
     yy::Lts *lts;
-    ActionSetValue *as;
+    ProgressValue *pv;
 
     if (produceLts) {
 	serp->actions_table(actions, 0);
 	serp->integer(processes.table.size(), 0);
     }
     for (it=processes.table.begin(); it!=processes.table.end(); it++) {
-	lts = is_lts(it->second);
+	lts = is<yy::Lts>(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
 	if (produceLts) {
@@ -171,19 +171,19 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Do each progress check against all the global processes. */
     for (it=progresses.table.begin(); it!=progresses.table.end();
 	    it++) {
-	as = is_actionset(it->second);
+	pv = is<ProgressValue>(it->second);
 	if (co.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
-		lts = is_lts(jt->second);
-		lts->progress(it->first, *as, ss);
+		lts = is<yy::Lts>(jt->second);
+		lts->progress(it->first, pv->set, ss);
 	    }
 	}
 
 	/* Output the property if the input is not an LTS file. */
 	if (produceLts) {
 	    serp->stl_string(it->first, 0);
-	    serp->action_set_value(*as, 0);
+	    serp->progress_value(*pv, 0);
 	}
     }
 

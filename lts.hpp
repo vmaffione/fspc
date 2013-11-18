@@ -150,12 +150,4 @@ yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::locatio
 
 } /* namespace yy */
 
-
-inline yy::Lts * is_lts(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Lts);
-
-    return static_cast<yy::Lts *>(svp);
-}
-
 #endif

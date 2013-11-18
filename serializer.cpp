@@ -38,6 +38,7 @@ const char Serializer::SerActionsTable = 'T';
 const char Serializer::SerLts = 'L';
 const char Serializer::SerSetValue = 'U';
 const char Serializer::SerActionSetValue = 'A';
+const char Serializer::SerProgressValue = 'P';
 
 Serializer::Serializer(const char * filename)
 {
@@ -345,6 +346,42 @@ void Deserializer::action_set_value(struct ActionSetValue& asv, bool raw)
     for (unsigned int i=0; i<x; i++) {
 	this->integer(y, 1);
         asv.add(y);
+    }
+}
+
+void Serializer::progress_value(const struct ProgressValue& pv, bool raw)
+{
+    if (!raw) {
+	fout.write(static_cast<const char *>(&Serializer::SerProgressValue),
+						sizeof(char));
+    }
+
+    this->action_set_value(pv.set, 1);
+    this->byte(pv.conditional ? 1 : 0, 1);
+    if (pv.conditional) {
+        this->action_set_value(pv.condition, 1);
+    }
+}
+
+void Deserializer::progress_value(struct ProgressValue& pv, bool raw)
+{
+    char type;
+    uint8_t x;
+
+    if (!raw) {
+	fin.read(static_cast<char *>(&type), sizeof(char));
+	if (type != Serializer::SerProgressValue) {
+	    cout << "Error: expected ProgressValue\n";
+	    exit(-1);
+	}
+    }
+
+    pv.set.clear();
+    this->action_set_value(pv.set, 1);
+    this->byte(x, 1);
+    pv.conditional = (x != 0);
+    if (pv.conditional) {
+        this->action_set_value(pv.condition, 1);
     }
 }
 

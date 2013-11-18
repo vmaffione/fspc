@@ -43,60 +43,14 @@ HidingValue* err_if_not_hiding(FspDriver& driver, SymbolValue * svp, const yy::l
 PriorityValue* err_if_not_priority(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
 
 
-inline ConstValue* is_const(SymbolValue * svp)
+template <class T>
+T* is(SymbolValue *svp)
 {
-    assert(svp->type() == SymbolValue::Const);
+    T* ret = dynamic_cast<T*>(svp);
 
-    return static_cast<ConstValue *>(svp);
-}
+    assert(ret);
 
-inline RangeValue* is_range(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Range);
-
-    return static_cast<RangeValue *>(svp);
-}
-
-inline SetValue* is_set(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Set);
-
-    return static_cast<SetValue *>(svp);
-}
-
-inline RelabelingValue* is_relabeling(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Relabeling);
-
-    return static_cast<RelabelingValue *>(svp);
-}
-
-inline HidingValue* is_hiding(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Hiding);
-
-    return static_cast<HidingValue *>(svp);
-}
-
-inline PriorityValue* is_priority(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::Priority);
-
-    return static_cast<PriorityValue *>(svp);
-}
-
-inline ActionSetValue* is_actionset(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::ActionSet);
-
-    return static_cast<ActionSetValue *>(svp);
-}
-
-inline ParametricProcess* is_parametric(SymbolValue * svp)
-{
-    assert(svp->type() == SymbolValue::ParametricProcess);
-
-    return static_cast<ParametricProcess *>(svp);
+    return ret;
 }
 
 #endif

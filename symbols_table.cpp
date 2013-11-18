@@ -481,6 +481,30 @@ SymbolValue *ActionSetValue::clone() const
 }
 
 
+/* ======================== ProgressValue ========================= */
+void ProgressValue::print() const
+{
+    cout << "Progress: ";
+    if (conditional) {
+        cout << "if ";
+        condition.print();
+        cout << " then ";
+    }
+    set.print();
+}
+
+SymbolValue *ProgressValue::clone() const
+{
+    ProgressValue *pv = new ProgressValue;
+
+    pv->condition = condition;
+    pv->set = set;
+    pv->conditional = conditional;
+
+    return pv;
+}
+
+
 /* ======================== ParametricProcess ========================= */
 bool ParametricProcess::insert(const string& name, int default_value)
 {
