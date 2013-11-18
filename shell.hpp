@@ -108,7 +108,8 @@ class Shell {
         void alpha(const vector<string>& args, stringstream& ss);
         void see(const vector<string>& args, stringstream& ss);
         void print(const vector<string>& args, stringstream& ss);
-        void lsprop(const vector<string>& args, stringstream &ss);
+        void lsprop(const vector<string>& args, stringstream& ss);
+        void lsmenu(const vector<string>& args, stringstream& ss);
         void help(const vector<string>& args, stringstream& ss);
 
     public:

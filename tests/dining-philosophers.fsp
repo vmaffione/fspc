@@ -1,0 +1,17 @@
+/** Concurrency: State Models and Java Programs
+ *             Jeff Magee and Jeff Kramer
+ *  
+ */
+
+PHIL = (right.get->left.get
+          ->eat->left.put->right.put
+          ->PHIL).
+
+FORK = (get -> put -> FORK).
+
+||DINERS(N=3)= 
+   forall [i:0..N-1] 
+   (phil[i]:PHIL 
+   ||{phil[i].left,phil[((i-1)+N)%N].right}::FORK).
+
+menu RUN = {phil[0..4].{sitdown,eat}}

@@ -67,6 +67,7 @@ specified FSP using GraphViz";
                         "representation of the specified fsp into a file "
                         "FSP_NAME.FORMAT";
     help_map["lsprop"] = "lsprop: show a list of compiled properties";
+    help_map["lsmenu"] = "lsmenu: show a list of available menus";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
@@ -79,6 +80,7 @@ specified FSP using GraphViz";
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
     cmd_map["lsprop"] = &Shell::lsprop;
+    cmd_map["lsmenu"] = &Shell::lsmenu;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -723,6 +725,23 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
+        SetValue setv;
+
+        as = is_actionset(it->second);
+        as->toSetValue(c.actions, setv);
+	ss << "   " << it->first << ": ";
+        setv.output(ss);
+        ss << "\n";
+    }
+}
+
+void Shell::lsmenu(const vector<string> &args, stringstream& ss)
+{
+    map<string, SymbolValue *>::iterator it;
+    ActionSetValue *as;
+
+    ss << "Menus:\n";
+    for (it=c.menus.table.begin(); it!=c.menus.table.end(); it++) {
         SetValue setv;
 
         as = is_actionset(it->second);
