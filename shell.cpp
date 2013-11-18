@@ -103,6 +103,7 @@ Shell::Shell(FspDriver& cr, istream& inr) : c(cr), in(inr)
 {
     common_init();
     interactive = true;
+    history_enabled = true;
 
     /* Autocompletion initialization. */
     fill_completion();
@@ -293,12 +294,17 @@ void Shell::getline_ncurses(string& line, const char * prompt)
 		}
 		printw("\n");
 		refresh();
-                /* Update the history. */
-                history.add_command(line);
+                if (history_enabled) {
+                    /* Update the history. */
+                    history.add_command(line);
+                }
 		return;
 
 	    case KEY_UP:
 	    case KEY_DOWN:
+                if (!history_enabled) {
+                    break;
+                }
                 if (ch == KEY_UP) {
                     history.up();
                 } else /* (ch == KEY_DOWN) */ {
@@ -539,17 +545,30 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     SymbolValue * svp;
     yy::Lts * lts;
+    ActionSetValue *menu = NULL;
 
-    if (args.size()) {
-	if (!c.processes.lookup(args[0], svp)) {
-	    ss << "Process " << args[0] << " not found\n";
-	} else {
-	    lts = is_lts(svp);
-	    lts->simulate(*this);
-	}
-    } else {
+    if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
+        return;
     }
+
+    if (!c.processes.lookup(args[0], svp)) {
+        ss << "Process " << args[0] << " not found\n";
+        return;
+    }
+    lts = is_lts(svp);
+
+    if (args.size() >= 2) {
+        if (!c.menus.lookup(args[1], svp)) {
+            ss << "Menu " << args[1] << " not found\n";
+            return;
+        }
+        menu = is_actionset(svp);
+    }
+
+    history_enable(false);
+    lts->simulate(*this, menu);
+    history_enable(true);
 }
 
 void Shell::basic(const vector<string> &args, stringstream& ss)
@@ -728,6 +747,11 @@ void Shell::help(const vector<string> &args, stringstream& ss)
 	    ss << "   " << it->second << "\n";
 	}
     }
+}
+
+void Shell::history_enable(bool enable)
+{
+    history_enabled = enable;
 }
 
 int Shell::run()

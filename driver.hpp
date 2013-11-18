@@ -61,6 +61,9 @@ class FspDriver
 	/* Progress properties. */
 	struct SymbolsTable progresses;
 
+        /* Menu sets. */
+        struct SymbolsTable menus;
+
 	struct SymbolsTable parametric_processes;
 
         /* Current value of variables (e.g. action/process indexes). */

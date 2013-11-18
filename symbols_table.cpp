@@ -415,6 +415,47 @@ SymbolValue *PriorityValue::clone() const
     return pv;
 }
 
+/* =========================== ActionSetValue ========================= */
+bool ActionSetValue::add(unsigned int a)
+{
+    return actions.insert(a).second;
+}
+
+bool ActionSetValue::lookup(unsigned int a) const
+{
+    return actions.count(a) == 1;
+}
+
+void ActionSetValue::clear()
+{
+    actions.clear();
+}
+
+void ActionSetValue::print() const
+{
+    cout << "ActionSet: ";
+    cout << "{";
+    for (set<unsigned int>::const_iterator it = actions.begin();
+                    it != actions.end(); it++) {
+        set<unsigned int>::const_iterator jt = it;
+
+        cout << *it;
+        if ((++jt) != actions.end()) {
+            cout << ",";
+        }
+    }
+    cout << "}";
+}
+
+SymbolValue *ActionSetValue::clone() const
+{
+    ActionSetValue *av = new ActionSetValue;
+
+    av->actions = actions;
+
+    return av;
+}
+
 
 /* ======================== ParametricProcess ========================= */
 bool ParametricProcess::insert(const string& name, int default_value)

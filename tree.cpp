@@ -610,10 +610,21 @@ void yy::MenuDefNode::translate(FspDriver &c)
 
     DTC(MenuIdNode, id, children[1]);
     DTC(SetNode, sn, children[3]);
+    ActionSetValue *asv = new ActionSetValue;
 
-    // TODO implement
-    (void)id;
-    (void)sn;
+    /* Turn the SetValue contained into the SetNode into an
+       ActionSetValue. */
+    for (unsigned int i=0; i<sn->res.actions.size(); i++) {
+        int idx = c.actions.insert(sn->res.actions[i]);
+
+        asv->add(idx);
+    }
+
+    if (!c.menus.insert(id->res, asv)) {
+        stringstream errstream;
+        errstream << "menu " << id->res << " declared twice";
+        semantic_error(c, errstream, loc);
+    }
 }
 
 /* This recursive method can be used to compute the set of action defined

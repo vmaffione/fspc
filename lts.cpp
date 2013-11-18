@@ -1132,7 +1132,7 @@ void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
     ss << ati(atp, trace[size-1], false) << "\n";
 }
 
-void yy::Lts::simulate(Shell& sh) const
+void yy::Lts::simulate(Shell& sh, const ActionSetValue *menu) const
 {
     stringstream ss;
     int state = 0;
@@ -1145,9 +1145,11 @@ void yy::Lts::simulate(Shell& sh) const
 	string choice;
 	set<unsigned int> elegible_actions_set;
 	vector<unsigned int> elegible_actions;
+        vector<unsigned int> system_actions;
 	char * dummy;
 	unsigned long idx;
 	vector<int> dest;
+        unsigned int a;
 
 	/* Build the elegible actions as a set in order to remove 
 	   duplicates. */
@@ -1155,15 +1157,23 @@ void yy::Lts::simulate(Shell& sh) const
 	    elegible_actions_set.insert(nodes[state].children[i].action);
 	}
 
-	/* Build a vector<int> from the set<int>. */
+	/* Build two vector<int>'s from the set<int>. */
 	for (set<unsigned int>::iterator it = elegible_actions_set.begin();
 		it != elegible_actions_set.end(); it++) {
-	    elegible_actions.push_back(*it);
+            if (!menu || menu->lookup(*it)) {
+                /* Actions that can be chosen by the user. */
+	        elegible_actions.push_back(*it);
+            } else {
+                /* Actions that must be chosen by the system (because they
+                   are excluded by an user-specified menu. */
+                system_actions.push_back(*it);
+            }
 	}
 
 	print_trace(trace, ss);
 
-	if (elegible_actions.size() == 0) {
+	if (elegible_actions.size() + system_actions.size() == 0) {
+            /* No actions are possible: Quit the simulation. */
 	    ss << "    Simulation done.\n";
 	    sh.putsstream(ss, true); ss.clear();
 	    break;
@@ -1175,6 +1185,11 @@ choose:
 	    ss << "	    (" << i+1 << ") "
 		    << ati(atp, elegible_actions[i], false) << "\n";
 	}
+        if (system_actions.size()) {
+            /* There are actions excluded from the menu) */
+	    ss << "	    (" << i+1 << ") " << "system choice\n";
+            i++;
+        }
 	ss << "    Your choice ('q' to quit): ";
 	sh.putsstream(ss, false); ss.clear();
 	sh.readline(choice);
@@ -1182,24 +1197,32 @@ choose:
 	    return;
 
 	idx = strtoul(choice.c_str(), &dummy, 10);
-	if (idx < 1 || idx > elegible_actions.size() || *dummy != '\0') {
+	if ((idx < 1) || (idx > i) || (*dummy != '\0')) {
 	    ss << "        Invalid choice\n\n";
 	    goto choose;
 	}
-	idx--;
+	idx--; /* Back to 0-based indexes. */
 
-	for (i=0; i<nodes[state].children.size(); i++) {
-	    if (nodes[state].children[i].action == elegible_actions[idx])
-		dest.push_back(nodes[state].children[i].dest);
-	}
-	trace.push_back(elegible_actions[idx]);
+        if (idx >= elegible_actions.size()) {
+            /* System chosen action. */
+            a = system_actions[0]; // TODO random choice
+        } else {
+            /* User chosen action. */
+            a = elegible_actions[idx];
+        }
 
-	/* TODO make a random choice here. */
-	assert(dest.size() > 0);
-	state = dest[0];
+        for (i=0; i<nodes[state].children.size(); i++) {
+            if (nodes[state].children[i].action == a)
+                dest.push_back(nodes[state].children[i].dest);
+        }
+        trace.push_back(a);
 
-	ss << "\n";
-	sh.putsstream(ss, true); ss.clear();
+        /* TODO make a random choice here. */
+        assert(dest.size() > 0);
+        state = dest[0];
+
+        ss << "\n";
+        sh.putsstream(ss, true); ss.clear();
     }
 }
 

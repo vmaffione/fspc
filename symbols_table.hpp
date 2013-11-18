@@ -25,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 
 using namespace std;
 
@@ -55,14 +56,12 @@ struct SymbolValue {
     static const int Range = 1;
     static const int Set = 2;
     static const int Lts = 3;
-    static const int Process = 4;
     static const int ParametricProcess = 5;
-    static const int ProcnodePair = 6;
     static const int Arguments = 7;
     static const int Relabeling = 9;
     static const int Hiding = 10;
     static const int Priority = 11;
-    static const int LtsComposition = 12;
+    static const int ActionSet = 13;
 
     virtual ~SymbolValue() { }
 };
@@ -145,6 +144,17 @@ struct PriorityValue: public SymbolValue {
     void print() const;
     int type() const { return SymbolValue::Priority; }
     SymbolValue * clone() const;
+};
+
+struct ActionSetValue : public SymbolValue {
+    set<unsigned int> actions;
+
+    bool add(unsigned int a);
+    bool lookup(unsigned int a) const;
+    void clear();
+    void print() const;
+    int type() const { return SymbolValue::ActionSet; }
+    SymbolValue *clone() const;
 };
 
 class ParametricTranslator {

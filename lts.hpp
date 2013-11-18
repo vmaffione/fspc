@@ -117,7 +117,7 @@ class Lts: public SymbolValue {
 		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
-    void simulate(Shell& sh) const;
+    void simulate(Shell& sh, const ActionSetValue *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
 
     void updateAlphabet(int action);

@@ -85,6 +85,13 @@ inline PriorityValue* is_priority(SymbolValue * svp)
     return static_cast<PriorityValue *>(svp);
 }
 
+inline ActionSetValue* is_actionset(SymbolValue * svp)
+{
+    assert(svp->type() == SymbolValue::ActionSet);
+
+    return static_cast<ActionSetValue *>(svp);
+}
+
 inline ParametricProcess* is_parametric(SymbolValue * svp)
 {
     assert(svp->type() == SymbolValue::ParametricProcess);

@@ -91,6 +91,7 @@ class Shell {
 
         /* Command history. */
         CommandHistory history;
+        bool history_enabled;
 
         /* Auto-completion. */
         AutoCompletion completion;
@@ -117,6 +118,7 @@ class Shell {
         int run();
         void readline(string& line);
         void putsstream(stringstream& ss, bool eol);
+        void history_enable(bool enable);
 
         ~Shell();
 };
