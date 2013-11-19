@@ -165,7 +165,6 @@ class Lts: public Symbol {
 
     /* Methods to implement because of the base class. */
     void print() const;
-    int type() const { return Symbol::Lts; }
     const char *className() const { return "Lts"; }
     Symbol * clone() const;
 };

@@ -1783,14 +1783,3 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
     }
 }
 
-yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc)
-{
-    if (svp->type() != Symbol::Lts) {
-	stringstream errstream;
-	errstream << "Lts expected";
-	semantic_error(driver, errstream, loc);
-    }
-
-    return static_cast<yy::Lts *>(svp);
-}
-
