@@ -107,69 +107,69 @@ void semantic_error(FspDriver& driver, const stringstream& ss, const yy::locatio
     exit(-1);
 }
 
-ConstValue* err_if_not_const(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+ConstS* err_if_not_const(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Const) {
+    if (svp->type() != Symbol::Const) {
 	stringstream errstream;
 	errstream << "Const expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<ConstValue *>(svp);
+    return static_cast<ConstS *>(svp);
 }
 
-RangeValue* err_if_not_range(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+RangeS* err_if_not_range(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Range) {
+    if (svp->type() != Symbol::Range) {
 	stringstream errstream;
 	errstream << "Range expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<RangeValue *>(svp);
+    return static_cast<RangeS *>(svp);
 }
 
-SetValue* err_if_not_set(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+SetS* err_if_not_set(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Set) {
+    if (svp->type() != Symbol::Set) {
 	stringstream errstream;
 	errstream << "Set expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<SetValue *>(svp);
+    return static_cast<SetS *>(svp);
 }
 
-RelabelingValue* err_if_not_relabeling(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+RelabelingS* err_if_not_relabeling(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Relabeling) {
+    if (svp->type() != Symbol::Relabeling) {
 	stringstream errstream;
 	errstream << "Relabeling expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<RelabelingValue *>(svp);
+    return static_cast<RelabelingS *>(svp);
 }
 
-HidingValue* err_if_not_hiding(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+HidingS* err_if_not_hiding(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Hiding) {
+    if (svp->type() != Symbol::Hiding) {
 	stringstream errstream;
 	errstream << "Hiding expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<HidingValue *>(svp);
+    return static_cast<HidingS *>(svp);
 }
 
-PriorityValue* err_if_not_priority(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+PriorityS* err_if_not_priority(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Priority) {
+    if (svp->type() != Symbol::Priority) {
 	stringstream errstream;
-	errstream << "Priority expected";
+	errstream << "PriorityS expected";
 	semantic_error(driver, errstream, loc);
     }
 
-    return static_cast<PriorityValue *>(svp);
+    return static_cast<PriorityS *>(svp);
 }
 

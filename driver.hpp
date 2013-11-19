@@ -41,7 +41,7 @@ struct NestingContext {
     UnresolvedNames unres;
     ParametricProcess paramproc;
     vector<string> overridden_names;
-    vector<SymbolValue *> overridden_values;
+    vector<Symbol *> overridden_values;
     bool replay;
 };
 
@@ -77,7 +77,7 @@ class FspDriver
 
         /* Overridden names support. */
         vector<string> overridden_names;
-        vector<SymbolValue *> overridden_values;
+        vector<Symbol *> overridden_values;
 
         /* Are we currently in replay mode? */
         bool replay;

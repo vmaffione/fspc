@@ -46,10 +46,10 @@ struct ActionsTable {
 };
 
 
-struct SymbolValue {
+struct Symbol {
     virtual void print() const { };
     virtual int type() const = 0;
-    virtual SymbolValue * clone() const = 0;
+    virtual Symbol * clone() const = 0;
     virtual int setVariable(const string& s) { return -1; }
 
     static const int Const = 0;
@@ -57,124 +57,123 @@ struct SymbolValue {
     static const int Set = 2;
     static const int Lts = 3;
     static const int ParametricProcess = 5;
-    static const int Arguments = 7;
     static const int Relabeling = 9;
     static const int Hiding = 10;
     static const int Priority = 11;
     static const int ActionSet = 13;
     static const int Progress = 14;
 
-    virtual ~SymbolValue() { }
+    virtual ~Symbol() { }
 };
 
-struct ActionSetValue;
+struct ActionSetS;
 
-struct SetValue: public SymbolValue {
+struct SetS: public Symbol {
     vector<string> actions;
     string variable;
     
-    SetValue() { }
+    SetS() { }
     void print() const;
-    int type() const { return SymbolValue::Set; }
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Set; }
+    Symbol * clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
     bool hasVariable() const { return variable.size(); }
     unsigned int size() const { return actions.size(); }
     string operator[](unsigned int i) const { return actions[i]; }
     string& operator[] (unsigned int i) { return actions[i]; }
 
-    SetValue& combine(const string&, bool);
-    SetValue& combine(const SetValue&, bool);
+    SetS& combine(const string&, bool);
+    SetS& combine(const SetS&, bool);
 
-    SetValue& dotcat(const string&);
-    SetValue& dotcat(const SetValue&);
-    SetValue& indexize(int index);
-    SetValue& indexize(const SetValue&);
-    SetValue& indexize(const string&);
-    SetValue& indexize(int low, int high);
-    SetValue& operator +=(const SetValue&);
-    SetValue& operator +=(const string&);
+    SetS& dotcat(const string&);
+    SetS& dotcat(const SetS&);
+    SetS& indexize(int index);
+    SetS& indexize(const SetS&);
+    SetS& indexize(const string&);
+    SetS& indexize(int low, int high);
+    SetS& operator +=(const SetS&);
+    SetS& operator +=(const string&);
     void clear();
 
-    void toActionSetValue(ActionsTable& at, ActionSetValue& asv);
+    void toActionSetValue(ActionsTable& at, ActionSetS& asv);
     void output(const string& name, const char * filename) const;
     void output(stringstream& ss) const;
 };
 
-struct ConstValue: public SymbolValue {
+struct ConstS: public Symbol {
     int value;
 
     void print() const { cout << value; }
-    int type() const { return SymbolValue::Const; }
-    void set(SetValue&) const;
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Const; }
+    void set(SetS&) const;
+    Symbol * clone() const;
 };
 
-struct RangeValue: public SymbolValue {
+struct RangeS: public Symbol {
     int low;
     int high;
     string variable;
 
     void print() const { cout << "[" << low << ", " << high << "]"; }
-    int type() const { return SymbolValue::Range; }
-    void set(SetValue&) const;
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Range; }
+    void set(SetS&) const;
+    Symbol * clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
 };
 
-struct RelabelingValue: public SymbolValue {
-    vector<SetValue> old_labels;
-    vector<SetValue> new_labels;
+struct RelabelingS: public Symbol {
+    vector<SetS> old_labels;
+    vector<SetS> new_labels;
 
-    void add(const SetValue& n, const SetValue& o);
-    void merge(RelabelingValue& rlv);
+    void add(const SetS& n, const SetS& o);
+    void merge(RelabelingS& rlv);
     unsigned int size() const { return old_labels.size(); }
     void print() const;
-    int type() const { return SymbolValue::Relabeling; }
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Relabeling; }
+    Symbol * clone() const;
 };
 
-struct HidingValue: public SymbolValue {
-    SetValue setv;
+struct HidingS: public Symbol {
+    SetS setv;
     bool interface;
 
-    HidingValue() : interface(false) { }
+    HidingS() : interface(false) { }
     void print() const;
-    int type() const { return SymbolValue::Hiding; }
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Hiding; }
+    Symbol * clone() const;
 };
 
-struct PriorityValue: public SymbolValue {
-    SetValue setv;
+struct PriorityS: public Symbol {
+    SetS setv;
     bool low;
 
-    PriorityValue() : low(false) { }
+    PriorityS() : low(false) { }
     void print() const;
-    int type() const { return SymbolValue::Priority; }
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Priority; }
+    Symbol * clone() const;
 };
 
-struct ActionSetValue : public SymbolValue {
+struct ActionSetS : public Symbol {
     set<unsigned int> actions;
 
     bool add(unsigned int a);
     bool lookup(unsigned int a) const;
     void clear();
-    void toSetValue(const ActionsTable& at, SetValue& sv);
+    void toSetValue(const ActionsTable& at, SetS& sv);
     void print() const;
-    int type() const { return SymbolValue::ActionSet; }
-    SymbolValue *clone() const;
+    int type() const { return Symbol::ActionSet; }
+    Symbol *clone() const;
 };
 
-struct ProgressValue : public SymbolValue {
-    ActionSetValue condition;
-    ActionSetValue set;
+struct ProgressS : public Symbol {
+    ActionSetS condition;
+    ActionSetS set;
     bool conditional;
 
-    ProgressValue() : conditional(false) { }
+    ProgressS() : conditional(false) { }
     void print() const;
-    int type() const { return SymbolValue::Progress; }
-    SymbolValue *clone() const;
+    int type() const { return Symbol::Progress; }
+    Symbol *clone() const;
 };
 
 class ParametricTranslator {
@@ -182,7 +181,7 @@ class ParametricTranslator {
         virtual ~ParametricTranslator() {}
 };
 
-struct ParametricProcess : public SymbolValue {
+struct ParametricProcess : public Symbol {
     vector<string> names;
     vector<int> defaults;
     ParametricTranslator * translator;
@@ -192,20 +191,20 @@ struct ParametricProcess : public SymbolValue {
     void set_translator(ParametricTranslator *trans);
     void clear();
     void print() const;
-    int type() const { return SymbolValue::ParametricProcess; }
-    SymbolValue *clone() const;
+    int type() const { return Symbol::ParametricProcess; }
+    Symbol *clone() const;
 };
 
 struct SymbolsTable {
-    map<string, SymbolValue*> table;
+    map<string, Symbol*> table;
 
     void copyfrom(const SymbolsTable& st);
 
     SymbolsTable() { }
     SymbolsTable(const SymbolsTable& st);
     SymbolsTable& operator=(const SymbolsTable& st);
-    bool insert(const string& name, SymbolValue *);
-    bool lookup(const string& name, SymbolValue*&) const;
+    bool insert(const string& name, Symbol *);
+    bool lookup(const string& name, Symbol*&) const;
     bool remove(const string& name);
     int size() const { return table.size(); }
     void clear();

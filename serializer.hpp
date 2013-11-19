@@ -45,9 +45,9 @@ class Serializer {
 	void stl_string(const string& s, bool raw);
 	void actions_table(const struct ActionsTable& at, bool raw);
 	void lts(const yy::Lts& lts, bool raw);
-	void set_value(const struct SetValue& setv, bool raw);
-        void action_set_value(const struct ActionSetValue& as, bool raw);
-        void progress_value(const struct ProgressValue& pv, bool raw);
+	void set_value(const struct SetS& setv, bool raw);
+        void action_set_value(const struct ActionSetS& as, bool raw);
+        void progress_value(const struct ProgressS& pv, bool raw);
 	~Serializer();
 
 	static const char SerInteger;
@@ -71,9 +71,9 @@ class Deserializer {
 	void stl_string(string& s, bool raw);
 	void actions_table(struct ActionsTable& at, bool raw);
 	void lts(yy::Lts& lts, bool raw);
-	void set_value(struct SetValue& setv, bool raw);
-        void action_set_value(struct ActionSetValue& asv, bool raw);
-        void progress_value(struct ProgressValue& pv, bool raw);
+	void set_value(struct SetS& setv, bool raw);
+        void action_set_value(struct ActionSetS& asv, bool raw);
+        void progress_value(struct ProgressS& pv, bool raw);
 	~Deserializer();
 };
 

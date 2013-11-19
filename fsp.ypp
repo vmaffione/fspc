@@ -764,12 +764,12 @@ priority_OPT:
 
 priority:
     RSHIFT set {
-	$$ = new PriorityNode();
+	$$ = new PrioritySNode();
         $$->addChild(new OperatorNode(">>"), @1);
         $$->addChild($2, @2);
     }
     | LSHIFT set {
-	$$ = new PriorityNode();
+	$$ = new PrioritySNode();
         $$->addChild(new OperatorNode("<<"), @1);
         $$->addChild($2, @2);
     }

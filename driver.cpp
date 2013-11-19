@@ -126,7 +126,7 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	desp->integer(nprogr, 0);
 	for (uint32_t i=0; i<nprogr; i++) {
-	    ProgressValue *pv = new ProgressValue;
+	    ProgressS *pv = new ProgressS;
 	    string name;
 
 	    desp->stl_string(name, 0);
@@ -139,10 +139,10 @@ int FspDriver::parse(const CompilerOptions& co)
 
     /* Scan the 'processes' symbols table. For each process, output
        the associated LTS and do the deadlock analysis. */
-    map<string, SymbolValue *>::iterator it;
-    map<string, SymbolValue *>::iterator jt;
+    map<string, Symbol *>::iterator it;
+    map<string, Symbol *>::iterator jt;
     yy::Lts *lts;
-    ProgressValue *pv;
+    ProgressS *pv;
 
     if (produceLts) {
 	serp->actions_table(actions, 0);
@@ -171,7 +171,7 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Do each progress check against all the global processes. */
     for (it=progresses.table.begin(); it!=progresses.table.end();
 	    it++) {
-	pv = is<ProgressValue>(it->second);
+	pv = is<ProgressS>(it->second);
 	if (co.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {

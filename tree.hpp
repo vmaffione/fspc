@@ -23,7 +23,7 @@ class TreeNode : public ParametricTranslator {
         vector<TreeNode *> children;
         location loc;
 
-        SetValue computeActionLabels(FspDriver& c, SetValue base,
+        SetS computeActionLabels(FspDriver& c, SetS base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
         yy::Lts computePrefixActions(FspDriver& c,
@@ -240,7 +240,7 @@ class MenuKwdNode : public TreeNode {
 
 class HidingInterfNode : public TreeNode {
     public:
-        HidingValue res;
+        HidingS res;
 
         string getClassName() const { return "HidingInterf"; }
         HidingInterfNode() : TreeNode() { }
@@ -261,7 +261,7 @@ class InterfNode : public TreeNode {
 
 class RelabelDefNode : public TreeNode {
     public:
-        RelabelingValue res;
+        RelabelingS res;
 
         string getClassName() const { return "RelabelDef"; }
         RelabelDefNode() : TreeNode() { }
@@ -283,7 +283,7 @@ class ForallNode : public TreeNode {
 
 class RelabelDefsNode : public TreeNode {
     public:
-        RelabelingValue res;
+        RelabelingS res;
 
         RelabelDefsNode() : TreeNode() { }
         string getClassName() const { return "RelabelDefs"; }
@@ -310,7 +310,7 @@ class CloseCurlyNode : public TreeNode {
 
 class BracesRelabelDefsNode : public TreeNode {
     public:
-        RelabelingValue res;
+        RelabelingS res;
 
         string getClassName() const { return "BracesRelabelDefs"; }
         BracesRelabelDefsNode() : TreeNode() { }
@@ -350,7 +350,7 @@ class ColonNode : public TreeNode {
 
 class LabelingNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "Labeling"; }
         LabelingNode() : TreeNode() { }
@@ -365,7 +365,7 @@ class DoubleColonNode : public TreeNode {
 
 class SharingNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "Sharing"; }
         SharingNode() : TreeNode() { }
@@ -583,7 +583,7 @@ class LocalProcessNode : public LtsTreeNode {
 
 class AlphaExtNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "AlphaExt"; }
         AlphaExtNode() : TreeNode() { }
@@ -627,7 +627,7 @@ class PeriodNode : public TreeNode {
 
 class SetElementsNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "SetElements"; }
         SetElementsNode() : TreeNode() { }
@@ -681,7 +681,7 @@ class ConstKwdNode : public TreeNode {
 
 class RangeExprNode : public TreeNode {
     public:
-        RangeValue res;
+        RangeS res;
 
         string getClassName() const { return "RangeExpr"; }
         RangeExprNode() : TreeNode() { }
@@ -690,7 +690,7 @@ class RangeExprNode : public TreeNode {
 
 class ActionRangeNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "ActionRange"; }
         ActionRangeNode() : TreeNode() { }
@@ -699,7 +699,7 @@ class ActionRangeNode : public TreeNode {
 
 class RangeNode : public TreeNode {
     public:
-        RangeValue res;
+        RangeS res;
 
         string getClassName() const { return "Range"; }
         RangeNode() : TreeNode() { }
@@ -708,7 +708,7 @@ class RangeNode : public TreeNode {
 
 class SetExprNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "SetExpr"; }
         SetExprNode() : TreeNode() { }
@@ -717,7 +717,7 @@ class SetExprNode : public TreeNode {
 
 class SetNode : public TreeNode {
     public:
-        SetValue res;
+        SetS res;
 
         string getClassName() const { return "Set"; }
         SetNode() : TreeNode() { }
@@ -740,18 +740,18 @@ class RootNode : public TreeNode {
         void translate(FspDriver& dr);
 };
 
-class PriorityNode : public TreeNode {
+class PrioritySNode : public TreeNode {
     public:
-        PriorityValue res;
+        PriorityS res;
 
-        string getClassName() const { return "Priority"; }
-        PriorityNode() : TreeNode() { }
+        string getClassName() const { return "PriorityS"; }
+        PrioritySNode() : TreeNode() { }
         void translate(FspDriver& c);
 };
 
 class RelabelingNode : public TreeNode {
     public:
-        RelabelingValue res;
+        RelabelingS res;
 
         string getClassName() const { return "Relabeling"; }
         RelabelingNode() : TreeNode() { }

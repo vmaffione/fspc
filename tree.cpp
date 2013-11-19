@@ -339,8 +339,8 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
         }
         res = string2int(val);
     } else if (cn) {
-        SymbolValue *svp;
-        ConstValue *cvp;
+        Symbol *svp;
+        ConstS *cvp;
 
         if (!c.identifiers.lookup(cn->res, svp)) {
             stringstream errstream;
@@ -375,8 +375,8 @@ void yy::RangeNode::translate(FspDriver& c)
 
     if (ri) {
         /* Lookup the range identifier. */
-        SymbolValue *svp;
-        RangeValue *rvp;
+        Symbol *svp;
+        RangeS *rvp;
 
         if (!c.identifiers.lookup(ri->res, svp)) {
             stringstream errstream;
@@ -399,7 +399,7 @@ void yy::ConstantDefNode::translate(FspDriver& c)
 
     DTC(ConstantIdNode, id, children[1]);
     DTC(ExpressionNode, en, children[3]);
-    ConstValue *cvp = new ConstValue;
+    ConstS *cvp = new ConstS;
 
     cvp->value = en->res;
     if (!c.identifiers.insert(id->res, cvp)) {
@@ -417,7 +417,7 @@ void yy::RangeDefNode::translate(FspDriver& c)
     DTC(RangeIdNode, id, children[1]);
     DTC(ExpressionNode, len, children[3]);
     DTC(ExpressionNode, ren, children[5]);
-    RangeValue *rvp = new RangeValue;
+    RangeS *rvp = new RangeS;
 
     rvp->low = len->res;
     rvp->high = ren->res;
@@ -435,7 +435,7 @@ void yy::SetDefNode::translate(FspDriver& c)
 
     DTC(SetIdNode, id, children[1]);
     DTC(SetExprNode, sen, children[3]);
-    SetValue *svp = new SetValue;
+    SetS *svp = new SetS;
 
     *svp = sen->res;
     if (!c.identifiers.insert(id->res, svp)) {
@@ -451,7 +451,7 @@ void yy::PropertyDefNode::translate(FspDriver& c)
     translate_children(c);
 
     DTC(ProcessDefNode, pdn, children[1]);
-    SymbolValue *svp;
+    Symbol *svp;
     yy::Lts *lts;
 
     /* Lookup the process name that has just been inserted by
@@ -476,7 +476,7 @@ void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
 {
     DTC(ProgressIdNode, id, children[1]);
     DTC(SetNode, sn, children[4]);
-    ProgressValue *pv = new ProgressValue;
+    ProgressS *pv = new ProgressS;
     string name = id->res + index;
 
     /* Do the set translation here. */
@@ -612,10 +612,10 @@ void yy::MenuDefNode::translate(FspDriver &c)
 
     DTC(MenuIdNode, id, children[1]);
     DTC(SetNode, sn, children[3]);
-    ActionSetValue *asv = new ActionSetValue;
+    ActionSetS *asv = new ActionSetS;
 
-    /* Turn the SetValue contained into the SetNode into an
-       ActionSetValue. */
+    /* Turn the SetS contained into the SetNode into an
+       ActionSetS. */
     sn->res.toActionSetValue(c.actions, *asv);
 
     if (!c.menus.insert(id->res, asv)) {
@@ -628,11 +628,11 @@ void yy::MenuDefNode::translate(FspDriver &c)
 /* This recursive method can be used to compute the set of action defined
    by an arbitrary complex label expression, e.g.
         'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
-    The caller should pass a SetValue object built using the
-    default constructor (e.g. an empty SetValue) to 'base', and 0 to 'idx'.
+    The caller should pass a SetS object built using the
+    default constructor (e.g. an empty SetS) to 'base', and 0 to 'idx'.
     The elements vector contains pointers to strings, sets or action ranges.
 */
-SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
+SetS yy::TreeNode::computeActionLabels(FspDriver& c, SetS base,
                                            const vector<TreeNode*>& elements,
                                            unsigned int idx)
 {
@@ -653,7 +653,7 @@ SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
         DTCS(StringTreeNode, strn, elements[0]);
         DTCS(SetNode, setn, elements[0]);
 
-        base = SetValue();
+        base = SetS();
         if (strn) {
             /* Single action. */
             base += strn->res;
@@ -688,8 +688,8 @@ SetValue yy::TreeNode::computeActionLabels(FspDriver& c, SetValue base,
                    each part, we extend the current 'base' with only an
                    action, insert the variable into the context and do a
                    recursive call. */
-                SetValue ret;
-                SetValue next_base;
+                SetS ret;
+                SetS next_base;
                 bool ok;
 
                 for (unsigned int j=0; j<an->res.size(); j++) {
@@ -730,11 +730,11 @@ void yy::SetElementsNode::translate(FspDriver& c)
        corresponding to each element by using the computeActionLabels()
        protected method, and concatenate all the results. */
 
-    res = SetValue();
+    res = SetS();
     for (unsigned int i=0; i<children.size(); i+=2) {
         DTC(ActionLabelsNode, an, children[i]);
 
-        res += computeActionLabels(c, SetValue(), an->res, 0);
+        res += computeActionLabels(c, SetS(), an->res, 0);
     }
 }
 
@@ -756,8 +756,8 @@ void yy::SetNode::translate(FspDriver& c)
 
     if (si) {
         /* Lookup the set identifier. */
-        SymbolValue *svp;
-        SetValue *setvp;
+        Symbol *svp;
+        SetS *setvp;
 
         if (!c.identifiers.lookup(si->res, svp)) {
             stringstream errstream;
@@ -778,7 +778,7 @@ void yy::ActionRangeNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    res = SetValue();
+    res = SetS();
 
     if (children.size() == 1) {
         /* Build a set of actions from an integer, a range or a set. */
@@ -1100,7 +1100,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 
     DTC(ProcessIdNode, in, children[0]);
     DTCS(ArgumentsNode, an, children[1]);
-    SymbolValue *svp;
+    Symbol *svp;
     ParametricProcess *pp;
     vector<int> arguments;
     string extension;
@@ -1147,8 +1147,8 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
         /* Insert the arguments into the identifiers table, taking care
            of overridden names. */
         for (unsigned int i=0; i<pp->names.size(); i++) {
-            SymbolValue *svp;
-            ConstValue *cvp = new ConstValue();
+            Symbol *svp;
+            ConstS *cvp = new ConstS();
 
             if (c.identifiers.lookup(pp->names[i], svp)) {
                 /* If there is already an identifier with the same name as
@@ -1342,7 +1342,7 @@ void yy::RelabelDefNode::translate(FspDriver& c)
     DTCS(ActionLabelsNode, left, children[0]);
     DTCS(ForallNode, fan, children[0]);
 
-    res = RelabelingValue();
+    res = RelabelingS();
 
     if (left) {
         DTC(ActionLabelsNode, right, children[2]);
@@ -1351,8 +1351,8 @@ void yy::RelabelDefNode::translate(FspDriver& c)
            the other branch. */
         translate_children(c);
 
-        res.add(computeActionLabels(c, SetValue(), left->res, 0),
-                computeActionLabels(c, SetValue(), right->res, 0));
+        res.add(computeActionLabels(c, SetS(), left->res, 0),
+                computeActionLabels(c, SetS(), right->res, 0));
     } else if (fan) {
         /* FORALL index_ranges braces_relabel_defs */
         DTC(IndexRangesNode, irn, children[1]);
@@ -1409,7 +1409,7 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     DTCS(InterfNode, in, children[0]);
     DTC(SetNode, sn, children[1]);
 
-    res = HidingValue();
+    res = HidingS();
 
     if (hn) {
         res.interface = false;
@@ -1438,8 +1438,8 @@ void yy::ParameterNode::translate(FspDriver& c)
 
     DTC(ParameterIdNode, in, children[0]);
     DTC(ExpressionNode, en, children[2]);
-    ConstValue *cvp;
-    SymbolValue *svp;
+    ConstS *cvp;
+    Symbol *svp;
 
     /* Save the parameter name for subsequent removal. If there is
        already a parameter with the same name we report an error. */
@@ -1459,7 +1459,7 @@ void yy::ParameterNode::translate(FspDriver& c)
 
     /* Insert the parameter into the identifiers table. Here we cannot
        fail because of of the previous two operations. */
-    cvp = new ConstValue;
+    cvp = new ConstS;
     cvp->value = en->res;
     if (!c.identifiers.insert(in->res, cvp)) {
         assert(0);
@@ -1534,7 +1534,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
                                            const string& name)
 {
     string extension;
-    SymbolValue *res_clone;
+    Symbol *res_clone;
     ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
     res.name = name;
@@ -1610,7 +1610,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Extend the alphabet. */
     if (aen) {
-        SetValue& sv = aen->res;
+        SetS& sv = aen->res;
 
         for (unsigned int i=0; i<sv.size(); i++) {
             res.updateAlphabet(c.actions.insert(sv[i]));
@@ -1619,7 +1619,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Apply the relabeling operator. */
     if (rn) {
-        RelabelingValue& rlv = rn->res;
+        RelabelingS& rlv = rn->res;
 
         for (unsigned int i=0; i<rlv.size(); i++) {
             res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
@@ -1628,7 +1628,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        HidingValue& hv = hin->res;
+        HidingS& hv = hin->res;
 
         res.hiding(hv.setv, hv.interface);
     }
@@ -1647,7 +1647,7 @@ void yy::SharingNode::translate(FspDriver& c)
 
     DTC(ActionLabelsNode, an, children[0]);
 
-    res = computeActionLabels(c, SetValue(), an->res, 0);
+    res = computeActionLabels(c, SetS(), an->res, 0);
 }
 
 void yy::LabelingNode::translate(FspDriver& c)
@@ -1656,10 +1656,10 @@ void yy::LabelingNode::translate(FspDriver& c)
 
     DTC(ActionLabelsNode, an, children[0]);
 
-    res = computeActionLabels(c, SetValue(), an->res, 0);
+    res = computeActionLabels(c, SetS(), an->res, 0);
 }
 
-void yy::PriorityNode::translate(FspDriver& c)
+void yy::PrioritySNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1721,7 +1721,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
 
         /* Apply the relabeling operator. */
         if (rln) {
-            RelabelingValue& rlv = rln->res;
+            RelabelingS& rlv = rln->res;
 
             for (unsigned int i=0; i<rlv.size(); i++) {
                 res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
@@ -1764,7 +1764,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         }
         /* Apply the relabeling operator (same way). */
         if (rln) {
-            RelabelingValue& rlv = rln->res;
+            RelabelingS& rlv = rln->res;
 
             for (unsigned int k=0; k<pcn->res.size(); k++) {
                 for (unsigned int i=0; i<rlv.size(); i++) {
@@ -1823,7 +1823,7 @@ void yy::CompositeDefNode::translate(FspDriver& c)
 
     DTC(ProcessIdNode, idn, children[1]);
     DTC(CompositeBodyNode, cb, children[4]);
-    DTCS(PriorityNode, pr, children[5]);
+    DTCS(PrioritySNode, pr, children[5]);
     DTCS(HidingInterfNode, hin, children[6]);
 
     /* The base is the composite body. */
@@ -1836,7 +1836,7 @@ void yy::CompositeDefNode::translate(FspDriver& c)
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        HidingValue& hv = hin->res;
+        HidingS& hv = hin->res;
 
         res.hiding(hv.setv, hv.interface);
     }

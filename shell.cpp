@@ -87,7 +87,7 @@ specified FSP using GraphViz";
 /* This function must be called after common_init(). */
 void Shell::fill_completion()
 {
-    map<string, SymbolValue *>::iterator it;
+    map<string, Symbol *>::iterator it;
     map<string, const char *>::iterator jt;
 
     /* Process names. */
@@ -473,7 +473,7 @@ void Shell::readline(string& line)
 
 void Shell::ls(const vector<string> &args, stringstream& ss)
 {
-    map<string, SymbolValue *>::iterator it;
+    map<string, Symbol *>::iterator it;
     yy::Lts * lts;
 
     ss << "Compiled FSPs:\n";
@@ -487,8 +487,8 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
 
 void Shell::safety(const vector<string> &args, stringstream& ss)
 {
-    map<string, SymbolValue *>::iterator it;
-    SymbolValue * svp;
+    map<string, Symbol *>::iterator it;
+    Symbol * svp;
     yy::Lts * lts;
 
     if (args.size()) {
@@ -511,10 +511,10 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 
 void Shell::progress(const vector<string> &args, stringstream& ss)
 {
-    map<string, SymbolValue *>::iterator it;
-    map<string, SymbolValue *>::iterator jt;
-    SymbolValue *svp;
-    ProgressValue *pv;
+    map<string, Symbol *>::iterator it;
+    map<string, Symbol *>::iterator jt;
+    Symbol *svp;
+    ProgressS *pv;
     yy::Lts *lts;
 
     if (args.size()) {
@@ -525,7 +525,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    lts = is<yy::Lts>(svp);
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
-		pv = is<ProgressValue>(it->second);
+		pv = is<ProgressS>(it->second);
 		lts->progress(it->first, pv->set, ss);
 	    }
 	}
@@ -536,7 +536,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    lts = is<yy::Lts>(it->second);
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
-		pv = is<ProgressValue>(jt->second);
+		pv = is<ProgressS>(jt->second);
 		lts->progress(jt->first, pv->set, ss);
 	    }
 	}
@@ -545,9 +545,9 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
-    SymbolValue * svp;
+    Symbol * svp;
     yy::Lts * lts;
-    ActionSetValue *menu = NULL;
+    ActionSetS *menu = NULL;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -565,7 +565,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
             ss << "Menu " << args[1] << " not found\n";
             return;
         }
-        menu = is<ActionSetValue>(svp);
+        menu = is<ActionSetS>(svp);
     }
 
     history_enable(false);
@@ -576,7 +576,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
 void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
-    SymbolValue * svp;
+    Symbol * svp;
     yy::Lts * lts;
 
     if (!args.size()) {
@@ -601,7 +601,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 
 void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
-    SymbolValue * svp;
+    Symbol * svp;
     yy::Lts * lts;
 
     if (!args.size()) {
@@ -620,7 +620,7 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 
 void Shell::see(const vector<string> &args, stringstream& ss)
 {
-    SymbolValue * svp;
+    Symbol * svp;
     yy::Lts * lts;
     string tmp_name;
     pid_t drawer;
@@ -670,7 +670,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 
 void Shell::print(const vector<string> &args, stringstream& ss)
 {
-    SymbolValue * svp;
+    Symbol * svp;
     yy::Lts * lts;
     string format = "png";
     string filename;
@@ -720,14 +720,14 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 
 void Shell::lsprop(const vector<string> &args, stringstream& ss)
 {
-    map<string, SymbolValue *>::iterator it;
-    ProgressValue *pv;
+    map<string, Symbol *>::iterator it;
+    ProgressS *pv;
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
-        SetValue setv;
+        SetS setv;
 
-        pv = is<ProgressValue>(it->second);
+        pv = is<ProgressS>(it->second);
         pv->set.toSetValue(c.actions, setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);
@@ -737,14 +737,14 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
 
 void Shell::lsmenu(const vector<string> &args, stringstream& ss)
 {
-    map<string, SymbolValue *>::iterator it;
-    ActionSetValue *as;
+    map<string, Symbol *>::iterator it;
+    ActionSetS *as;
 
     ss << "Menus:\n";
     for (it=c.menus.table.begin(); it!=c.menus.table.end(); it++) {
-        SetValue setv;
+        SetS setv;
 
-        as = is<ActionSetValue>(it->second);
+        as = is<ActionSetS>(it->second);
         as->toSetValue(c.actions, setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);

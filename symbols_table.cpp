@@ -73,18 +73,18 @@ void ActionsTable::print() const
 
 
 /*===================== SymbolsTable implementation ====================== */
-bool SymbolsTable::insert(const string& name, SymbolValue * ptr)
+bool SymbolsTable::insert(const string& name, Symbol * ptr)
 {
-    pair< map<string, SymbolValue*>::iterator, bool > ret;
+    pair< map<string, Symbol*>::iterator, bool > ret;
 
-    ret = table.insert(pair<string, SymbolValue*>(name, ptr));
+    ret = table.insert(pair<string, Symbol*>(name, ptr));
 
     return ret.second;
 }
 
-bool SymbolsTable::lookup(const string& name, SymbolValue*& value) const
+bool SymbolsTable::lookup(const string& name, Symbol*& value) const
 {
-    map<string, SymbolValue*>::const_iterator it = table.find(name);
+    map<string, Symbol*>::const_iterator it = table.find(name);
 
     if (it == table.end())
 	return false;
@@ -95,7 +95,7 @@ bool SymbolsTable::lookup(const string& name, SymbolValue*& value) const
 
 bool SymbolsTable::remove(const string& name)
 {
-    map<string, SymbolValue*>::iterator it = table.find(name);
+    map<string, Symbol*>::iterator it = table.find(name);
 
     if (it == table.end())
 	return false;
@@ -108,7 +108,7 @@ bool SymbolsTable::remove(const string& name)
 
 void SymbolsTable::clear()
 {
-    map<string, SymbolValue*>::iterator it;
+    map<string, Symbol*>::iterator it;
 
     for (it = table.begin(); it != table.end(); it++) {
 	delete it->second;
@@ -123,17 +123,17 @@ SymbolsTable::~SymbolsTable()
 
 void SymbolsTable::copyfrom(const SymbolsTable& st)
 {
-    map<string, SymbolValue*>::const_iterator it;
+    map<string, Symbol*>::const_iterator it;
 
     for (it = st.table.begin(); it != st.table.end(); it++) {
-        SymbolValue *svp = NULL;
+        Symbol *svp = NULL;
 
         if (it->second) {
             // TODO check why this happens
             svp = it->second->clone();
         }
 
-        table.insert(pair<string, SymbolValue*>(it->first, svp));
+        table.insert(pair<string, Symbol*>(it->first, svp));
     }
 }
 
@@ -152,7 +152,7 @@ SymbolsTable& SymbolsTable::operator=(const SymbolsTable& st)
 
 void SymbolsTable::print() const
 {
-    map<string, SymbolValue*>::const_iterator it;
+    map<string, Symbol*>::const_iterator it;
 
     cout << "Symbols Table\n";
     for (it=table.begin(); it!=table.end(); it++) {
@@ -162,32 +162,32 @@ void SymbolsTable::print() const
     }
 }
 
-/* ============================= ConstValue =============================*/
-SymbolValue * ConstValue::clone() const
+/* ============================= ConstS =============================*/
+Symbol * ConstS::clone() const
 {
-    ConstValue * cv = new ConstValue;
+    ConstS * cv = new ConstS;
     cv->value = value;
 
     return cv;
 }
 
-void ConstValue::set(SetValue& s) const
+void ConstS::set(SetS& s) const
 {
     s.clear();
     s += int2string(value);
 }
 
-/* ============================= RangeValue =============================*/
-SymbolValue * RangeValue::clone() const
+/* ============================= RangeS =============================*/
+Symbol * RangeS::clone() const
 {
-    RangeValue * rv = new RangeValue;
+    RangeS * rv = new RangeS;
     rv->low = low;
     rv->high = high;
 
     return rv;
 }
 
-void RangeValue::set(SetValue& s) const
+void RangeS::set(SetS& s) const
 {
     s.clear();
 
@@ -196,8 +196,8 @@ void RangeValue::set(SetValue& s) const
     }
 }
 
-/* ============================= SetValue ================================ */
-SetValue& SetValue::combine(const SetValue& ss, bool dot)
+/* ============================= SetS ================================ */
+SetS& SetS::combine(const SetS& ss, bool dot)
 {
     int n = actions.size();
     int nss = ss.size();
@@ -216,7 +216,7 @@ SetValue& SetValue::combine(const SetValue& ss, bool dot)
     return *this;
 }
 
-SetValue& SetValue::combine(const string& s, bool dot)
+SetS& SetS::combine(const string& s, bool dot)
 {
     string pre = dot ? "." : "[";
     string post = dot ? "" : "]";
@@ -227,17 +227,17 @@ SetValue& SetValue::combine(const string& s, bool dot)
     return *this;
 }
 
-SetValue& SetValue::dotcat(const string& s)
+SetS& SetS::dotcat(const string& s)
 {
     return combine(s, true);
 }
 
-SetValue& SetValue::dotcat(const SetValue& ss)
+SetS& SetS::dotcat(const SetS& ss)
 {
     return combine(ss, true);
 }
 
-SetValue& SetValue::indexize(int index)
+SetS& SetS::indexize(int index)
 {
     stringstream sstr;
     sstr << index;
@@ -249,17 +249,17 @@ SetValue& SetValue::indexize(int index)
     return *this;
 }
 
-SetValue& SetValue::indexize(const SetValue& ss)
+SetS& SetS::indexize(const SetS& ss)
 {
     return combine(ss, true);
 }
 
-SetValue& SetValue::indexize(const string& s)
+SetS& SetS::indexize(const string& s)
 {
     return dotcat(s);
 }
 
-SetValue& SetValue::indexize(int low, int high)
+SetS& SetS::indexize(int low, int high)
 {
     int n = actions.size();
     int nr = high - low + 1;
@@ -277,7 +277,7 @@ SetValue& SetValue::indexize(int low, int high)
     
 }
 
-SetValue& SetValue::operator +=(const SetValue& ss)
+SetS& SetS::operator +=(const SetS& ss)
 {
     for (unsigned int i=0; i<ss.actions.size(); i++)
 	actions.push_back(ss[i]);
@@ -285,20 +285,20 @@ SetValue& SetValue::operator +=(const SetValue& ss)
     return *this;
 }
 
-SetValue& SetValue::operator +=(const string& s)
+SetS& SetS::operator +=(const string& s)
 {
     actions.push_back(s);
 
     return *this;
 }
 
-void SetValue::clear()
+void SetS::clear()
 {
     actions.clear();
     variable = string();
 }
 
-void SetValue::toActionSetValue(ActionsTable& at, ActionSetValue& asv)
+void SetS::toActionSetValue(ActionsTable& at, ActionSetS& asv)
 {
     asv.clear();
     for (unsigned int i = 0; i < actions.size(); i++) {
@@ -306,14 +306,14 @@ void SetValue::toActionSetValue(ActionsTable& at, ActionSetValue& asv)
     }
 }
 
-SymbolValue * SetValue::clone() const
+Symbol * SetS::clone() const
 {
-    SetValue * sv = new SetValue(*this);
+    SetS * sv = new SetS(*this);
 
     return sv;
 }
 
-void SetValue::output(const string& name, const char * filename) const
+void SetS::output(const string& name, const char * filename) const
 {
     fstream fout(filename, fstream::out | fstream::app);
 
@@ -324,7 +324,7 @@ void SetValue::output(const string& name, const char * filename) const
     fout << "\n";
 }
 
-void SetValue::output(stringstream& ss) const
+void SetS::output(stringstream& ss) const
 {
     unsigned int i = 0;
 
@@ -338,7 +338,7 @@ void SetValue::output(stringstream& ss) const
     ss << "}";
 }
 
-void SetValue::print() const
+void SetS::print() const
 {
     cout << " {";
     for (unsigned int i=0; i<actions.size(); i++) {
@@ -348,8 +348,8 @@ void SetValue::print() const
 }
 
 
-/* =========================== RelabelingValue =========================*/
-void RelabelingValue::print() const
+/* =========================== RelabelingS =========================*/
+void RelabelingS::print() const
 {
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	new_labels[i].print();
@@ -359,9 +359,9 @@ void RelabelingValue::print() const
     }
 }
 
-SymbolValue * RelabelingValue::clone() const
+Symbol * RelabelingS::clone() const
 {
-    RelabelingValue * rlv = new RelabelingValue;
+    RelabelingS * rlv = new RelabelingS;
 
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	rlv->old_labels.push_back(old_labels[i]);
@@ -371,14 +371,14 @@ SymbolValue * RelabelingValue::clone() const
     return rlv;
 }
 
-void RelabelingValue::add(const SetValue& new_setvp,
-                             const SetValue& old_setvp)
+void RelabelingS::add(const SetS& new_setvp,
+                             const SetS& old_setvp)
 {
     old_labels.push_back(old_setvp);
     new_labels.push_back(new_setvp);
 }
 
-void RelabelingValue::merge(RelabelingValue& rlv)
+void RelabelingS::merge(RelabelingS& rlv)
 {
     for (unsigned int i=0; i<rlv.old_labels.size(); i++) {
         add(rlv.new_labels[i], rlv.old_labels[i]);
@@ -386,8 +386,8 @@ void RelabelingValue::merge(RelabelingValue& rlv)
 }
 
 
-/* ============================ HidingValue ===========================*/
-void HidingValue::print() const
+/* ============================ HidingS ===========================*/
+void HidingS::print() const
 {
     cout << "Hiding: ";
     if (interface)
@@ -397,9 +397,9 @@ void HidingValue::print() const
     setv.print();
 }
 
-SymbolValue * HidingValue::clone() const
+Symbol * HidingS::clone() const
 {
-    HidingValue * hv = new HidingValue;
+    HidingS * hv = new HidingS;
 
     hv->interface = interface;
     hv->setv = setv;
@@ -408,10 +408,10 @@ SymbolValue * HidingValue::clone() const
 }
 
 
-/* =========================== PriorityValue ========================= */
-void PriorityValue::print() const
+/* =========================== PriorityS ========================= */
+void PriorityS::print() const
 {
-    cout << "Priority: ";
+    cout << "PriorityS: ";
     if (low)
 	cout << ">> ";
     else
@@ -419,9 +419,9 @@ void PriorityValue::print() const
     setv.print();
 }
 
-SymbolValue *PriorityValue::clone() const
+Symbol *PriorityS::clone() const
 {
-    PriorityValue *pv = new PriorityValue;
+    PriorityS *pv = new PriorityS;
 
     pv->low = low;
     pv->setv = setv;
@@ -429,23 +429,23 @@ SymbolValue *PriorityValue::clone() const
     return pv;
 }
 
-/* =========================== ActionSetValue ========================= */
-bool ActionSetValue::add(unsigned int a)
+/* =========================== ActionSetS ========================= */
+bool ActionSetS::add(unsigned int a)
 {
     return actions.insert(a).second;
 }
 
-bool ActionSetValue::lookup(unsigned int a) const
+bool ActionSetS::lookup(unsigned int a) const
 {
     return actions.count(a) == 1;
 }
 
-void ActionSetValue::clear()
+void ActionSetS::clear()
 {
     actions.clear();
 }
 
-void ActionSetValue::toSetValue(const ActionsTable& at, SetValue& setv)
+void ActionSetS::toSetValue(const ActionsTable& at, SetS& setv)
 {
     setv.clear();
 
@@ -455,7 +455,7 @@ void ActionSetValue::toSetValue(const ActionsTable& at, SetValue& setv)
     }
 }
 
-void ActionSetValue::print() const
+void ActionSetS::print() const
 {
     cout << "ActionSet: ";
     cout << "{";
@@ -471,9 +471,9 @@ void ActionSetValue::print() const
     cout << "}";
 }
 
-SymbolValue *ActionSetValue::clone() const
+Symbol *ActionSetS::clone() const
 {
-    ActionSetValue *av = new ActionSetValue;
+    ActionSetS *av = new ActionSetS;
 
     av->actions = actions;
 
@@ -481,8 +481,8 @@ SymbolValue *ActionSetValue::clone() const
 }
 
 
-/* ======================== ProgressValue ========================= */
-void ProgressValue::print() const
+/* ======================== ProgressS ========================= */
+void ProgressS::print() const
 {
     cout << "Progress: ";
     if (conditional) {
@@ -493,9 +493,9 @@ void ProgressValue::print() const
     set.print();
 }
 
-SymbolValue *ProgressValue::clone() const
+Symbol *ProgressS::clone() const
 {
-    ProgressValue *pv = new ProgressValue;
+    ProgressS *pv = new ProgressS;
 
     pv->condition = condition;
     pv->set = set;
@@ -541,7 +541,7 @@ void ParametricProcess::print() const
     }
 }
 
-SymbolValue * ParametricProcess::clone() const
+Symbol * ParametricProcess::clone() const
 {
     ParametricProcess * pp = new ParametricProcess;
 

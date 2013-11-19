@@ -75,7 +75,7 @@ class FspDriver;
 
 namespace yy {
 
-class Lts: public SymbolValue {
+class Lts: public Symbol {
     vector<LtsNode> nodes;
     ActionsTable * atp;
 
@@ -105,19 +105,19 @@ class Lts: public SymbolValue {
     int terminalSets();
     bool isDeterministic() const;
     Lts& compose(const Lts& q);
-    Lts& labeling(const SetValue& labels);
+    Lts& labeling(const SetS& labels);
     Lts& labeling(const string& label);
-    Lts& sharing(const SetValue& labels);
-    Lts& relabeling(const SetValue& newlabels, const SetValue& oldlabels);
-    Lts& relabeling(const SetValue& newlabels, const string& oldlabel);
-    Lts& hiding(const SetValue& s, bool interface);
-    Lts& priority(const SetValue& s, bool low);
+    Lts& sharing(const SetS& labels);
+    Lts& relabeling(const SetS& newlabels, const SetS& oldlabels);
+    Lts& relabeling(const SetS& newlabels, const string& oldlabel);
+    Lts& hiding(const SetS& s, bool interface);
+    Lts& priority(const SetS& s, bool low);
     Lts& property();
-    int progress(const string& progress_name, const ActionSetValue& as,
+    int progress(const string& progress_name, const ActionSetS& as,
 		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;
-    void simulate(Shell& sh, const ActionSetValue *asv) const;
+    void simulate(Shell& sh, const ActionSetS *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
 
     void updateAlphabet(int action);
@@ -142,11 +142,11 @@ class Lts: public SymbolValue {
 
     /* Methods to implement because of the base class. */
     void print() const;
-    int type() const { return SymbolValue::Lts; }
-    SymbolValue * clone() const;
+    int type() const { return Symbol::Lts; }
+    Symbol * clone() const;
 };
 
-yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc);
+yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc);
 
 } /* namespace yy */
 

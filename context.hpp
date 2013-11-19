@@ -35,11 +35,11 @@ using namespace std;
    the currently selected context. */
 class ContextSet {
     vector<string> vars;
-    vector<SetValue> sets;
+    vector<SetS> sets;
     vector<unsigned int> indexes;
 
 public:
-    bool insert(const string&, const SetValue&);
+    bool insert(const string&, const SetS&);
     unsigned int num();  /* Number of contexts in the set. */
     bool select_next();
     void select_first();

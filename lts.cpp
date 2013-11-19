@@ -674,7 +674,7 @@ bool yy::Lts::isDeterministic() const
     return true;
 }
 
-SymbolValue * yy::Lts::clone() const
+Symbol * yy::Lts::clone() const
 {
     yy::Lts * lv = new yy::Lts(*this);
 
@@ -714,7 +714,7 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
-yy::Lts& yy::Lts::labeling(const SetValue& labels)
+yy::Lts& yy::Lts::labeling(const SetS& labels)
 {
     if (!labels.size())
 	return *this;
@@ -766,7 +766,7 @@ yy::Lts& yy::Lts::labeling(const string& label)
     return *this;
 }
 
-yy::Lts& yy::Lts::sharing(const SetValue& labels)
+yy::Lts& yy::Lts::sharing(const SetS& labels)
 {
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
@@ -812,7 +812,7 @@ yy::Lts& yy::Lts::sharing(const SetValue& labels)
     return *this;
 }
 
-yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
+yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
@@ -874,7 +874,7 @@ yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const string& oldlabel)
     return *this;
 }
 
-yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabels)
+yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const SetS& oldlabels)
 {
     for (unsigned int i=0; i<oldlabels.size(); i++)
 	this->relabeling(newlabels, oldlabels[i]);
@@ -882,7 +882,7 @@ yy::Lts& yy::Lts::relabeling(const SetValue& newlabels, const SetValue& oldlabel
     return *this;
 }
 
-yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
+yy::Lts& yy::Lts::hiding(const SetS& s, bool interface)
 {
     set<int> new_alphabet;
 
@@ -938,7 +938,7 @@ yy::Lts& yy::Lts::hiding(const SetValue& s, bool interface)
     return *this;
 }
 
-yy::Lts& yy::Lts::priority(const SetValue& s, bool low)
+yy::Lts& yy::Lts::priority(const SetS& s, bool low)
 {
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
@@ -1036,7 +1036,7 @@ yy::Lts& yy::Lts::property()
     return *this;
 }
 
-int yy::Lts::progress(const string& progress_name, const ActionSetValue& as,
+int yy::Lts::progress(const string& progress_name, const ActionSetS& as,
 					    stringstream& ss)
 {
     CHECKATP(0);
@@ -1135,7 +1135,7 @@ void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
     ss << ati(atp, trace[size-1], false) << "\n";
 }
 
-void yy::Lts::simulate(Shell& sh, const ActionSetValue *menu) const
+void yy::Lts::simulate(Shell& sh, const ActionSetS *menu) const
 {
     stringstream ss;
     int state = 0;
@@ -1633,9 +1633,9 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
     }
 }
 
-yy::Lts * err_if_not_lts(FspDriver& driver, SymbolValue * svp, const yy::location& loc)
+yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc)
 {
-    if (svp->type() != SymbolValue::Lts) {
+    if (svp->type() != Symbol::Lts) {
 	stringstream errstream;
 	errstream << "Lts expected";
 	semantic_error(driver, errstream, loc);

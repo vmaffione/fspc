@@ -26,7 +26,7 @@ using namespace std;
 
 /* ====================== Context implementation ======================= */
 
-bool ContextSet::insert(const string& var, const SetValue& v)
+bool ContextSet::insert(const string& var, const SetS& v)
 {
     assert(v.size());
 

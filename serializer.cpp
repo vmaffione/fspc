@@ -281,7 +281,7 @@ void Deserializer::lts(yy::Lts &lts, bool raw)
     }
 }
 
-void Serializer::set_value(const struct SetValue& setv, bool raw)
+void Serializer::set_value(const struct SetS& setv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerSetValue),
@@ -294,7 +294,7 @@ void Serializer::set_value(const struct SetValue& setv, bool raw)
     }
 }
 
-void Deserializer::set_value(struct SetValue& setv, bool raw)
+void Deserializer::set_value(struct SetS& setv, bool raw)
 {
     char type;
     uint32_t x;
@@ -302,7 +302,7 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerSetValue) {
-	    cout << "Error: expected SetValue\n";
+	    cout << "Error: expected SetS\n";
 	    exit(-1);
 	}
     }
@@ -314,7 +314,7 @@ void Deserializer::set_value(struct SetValue& setv, bool raw)
     }
 }
 
-void Serializer::action_set_value(const struct ActionSetValue& asv, bool raw)
+void Serializer::action_set_value(const struct ActionSetS& asv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerActionSetValue),
@@ -328,7 +328,7 @@ void Serializer::action_set_value(const struct ActionSetValue& asv, bool raw)
     }
 }
 
-void Deserializer::action_set_value(struct ActionSetValue& asv, bool raw)
+void Deserializer::action_set_value(struct ActionSetS& asv, bool raw)
 {
     char type;
     uint32_t x, y;
@@ -336,7 +336,7 @@ void Deserializer::action_set_value(struct ActionSetValue& asv, bool raw)
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerActionSetValue) {
-	    cout << "Error: expected ActionSetValue\n";
+	    cout << "Error: expected ActionSetS\n";
 	    exit(-1);
 	}
     }
@@ -349,7 +349,7 @@ void Deserializer::action_set_value(struct ActionSetValue& asv, bool raw)
     }
 }
 
-void Serializer::progress_value(const struct ProgressValue& pv, bool raw)
+void Serializer::progress_value(const struct ProgressS& pv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerProgressValue),
@@ -363,7 +363,7 @@ void Serializer::progress_value(const struct ProgressValue& pv, bool raw)
     }
 }
 
-void Deserializer::progress_value(struct ProgressValue& pv, bool raw)
+void Deserializer::progress_value(struct ProgressS& pv, bool raw)
 {
     char type;
     uint8_t x;
@@ -371,7 +371,7 @@ void Deserializer::progress_value(struct ProgressValue& pv, bool raw)
     if (!raw) {
 	fin.read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerProgressValue) {
-	    cout << "Error: expected ProgressValue\n";
+	    cout << "Error: expected ProgressS\n";
 	    exit(-1);
 	}
     }
