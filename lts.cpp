@@ -1036,7 +1036,7 @@ yy::Lts& yy::Lts::property()
     return *this;
 }
 
-int yy::Lts::progress(const string& progress_name, const ActionSetS& as,
+int yy::Lts::progress(const string& progress_name, const ProgressS& pr,
 					    stringstream& ss)
 {
     CHECKATP(0);
@@ -1047,9 +1047,19 @@ int yy::Lts::progress(const string& progress_name, const ActionSetS& as,
 	TerminalSet& ts = terminal_sets[i];
 	bool violation;
 
-	/* There is a progress violation for the set 'as' if the
-           intersection between 'as' and the terminal set 'ts' is empty. */
-        violation = !intersection_exists(as.actions, ts.actions);
+        if (pr.conditional) {
+            /* There is a conditional progress violation for the progress 'pr'
+               if the intersection between 'pr.condition' and the terminal set
+              'ts' is not empty and the intersection between 'pr.set' and 'ts'
+              is empty. */
+            violation = intersection_exists(pr.condition.actions, ts.actions) &&
+                        !intersection_exists(pr.set.actions, ts.actions);
+        } else {
+            /* There is an uncoditional progress violation for the progress 'pr'
+               if the intersection between 'pr.set' and the terminal set 'ts'
+               is empty. */
+            violation = !intersection_exists(pr.set.actions, ts.actions);
+        }
 
 	if (violation) {
 	    ss << "Progress violation detected for process " << name

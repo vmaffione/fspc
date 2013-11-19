@@ -1,2 +1,4 @@
 P = (a1[i:1..2]->a2[i]->P[i]), P[i:1..2] = (b[i]->c[i]->d[i]->P[i]).
 progress PR[i:1..2] = {a[i],b[i]}
+progress CPR1 = if {c[1], b[2]} then {a[1], d[2]}
+progress CPR2 = if {c[2], b[2]} then {d[1], d[2]}

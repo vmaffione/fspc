@@ -113,7 +113,7 @@ class Lts: public Symbol {
     Lts& hiding(const SetS& s, bool interface);
     Lts& priority(const SetS& s, bool low);
     Lts& property();
-    int progress(const string& progress_name, const ActionSetS& as,
+    int progress(const string& progress_name, const ProgressS& pr,
 		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char * filename) const;

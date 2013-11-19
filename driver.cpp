@@ -176,7 +176,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
 		lts = is<yy::Lts>(jt->second);
-		lts->progress(it->first, pv->set, ss);
+		lts->progress(it->first, *pv, ss);
 	    }
 	}
 

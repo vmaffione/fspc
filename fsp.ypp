@@ -908,6 +908,17 @@ progress_def:
         $$->addChild(new AssignNode(), @4);
         $$->addChild($5, @5);
     }
+    | PROGRESS progress_id index_ranges_OPT '=' IF set THEN set {
+        $$ = new ProgressDefNode();
+        $$->addChild(new ProgressKwdNode(), @1);
+        $$->addChild($2, @2);
+        $$->addChild($3, @3);
+        $$->addChild(new AssignNode(), @4);
+        $$->addChild(new IfNode(), @5);
+        $$->addChild($6, @6);
+        $$->addChild(new ThenNode(), @7);
+        $$->addChild($8, @8);
+    }
     ;
 
 menu_def:

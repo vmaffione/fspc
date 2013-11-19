@@ -475,15 +475,33 @@ void yy::PropertyDefNode::translate(FspDriver& c)
 void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
 {
     DTC(ProgressIdNode, id, children[1]);
-    DTC(SetNode, sn, children[4]);
     ProgressS *pv = new ProgressS;
     string name = id->res + index;
 
-    /* Do the set translation here. */
-    sn->translate(c);
+    if (children.size() == 5) {
+        /* Progress definition in unconditional form (normal form). */
+        DTC(SetNode, sn, children[4]);
 
-    pv->conditional = false;
-    sn->res.toActionSetValue(c.actions, pv->set);
+        /* Do the set translation here. */
+        sn->translate(c);
+
+        pv->conditional = false;
+        sn->res.toActionSetValue(c.actions, pv->set);
+    } else if (children.size() == 8) {
+        /* Progress definition in conditional form. */
+        DTC(SetNode, cn, children[5]);
+        DTC(SetNode, sn, children[7]);
+
+        /* Do the set translation here. */
+        cn->translate(c);
+        sn->translate(c);
+
+        pv->conditional = true;
+        cn->res.toActionSetValue(c.actions, pv->condition);
+        sn->res.toActionSetValue(c.actions, pv->set);
+    } else {
+        assert(0);
+    }
 
     if (!c.progresses.insert(name, pv)) {
         stringstream errstream;

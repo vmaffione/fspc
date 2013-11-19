@@ -526,7 +526,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
 		pv = is<ProgressS>(it->second);
-		lts->progress(it->first, pv->set, ss);
+		lts->progress(it->first, *pv, ss);
 	    }
 	}
     } else {
@@ -537,7 +537,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
 		pv = is<ProgressS>(jt->second);
-		lts->progress(jt->first, pv->set, ss);
+		lts->progress(jt->first, *pv, ss);
 	    }
 	}
     }
@@ -725,12 +725,21 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
-        SetS setv;
+        SetS set;
+        SetS cond;
 
         pv = is<ProgressS>(it->second);
-        pv->set.toSetValue(c.actions, setv);
+        pv->set.toSetValue(c.actions, set);
+        if (pv->conditional) {
+            pv->condition.toSetValue(c.actions, cond);
+        }
 	ss << "   " << it->first << ": ";
-        setv.output(ss);
+        if (pv->conditional) {
+            ss << "if ";
+            cond.output(ss);
+            ss << " then ";
+        }
+        set.output(ss);
         ss << "\n";
     }
 }
