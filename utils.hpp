@@ -33,22 +33,28 @@ using namespace std;
 void semantic_error(FspDriver& driver, const stringstream& ss, const yy::location& loc);
 void print_error_location_pretty(const yy::location& loc);
 
-/* Helper function used to get a ConstS* from a Symbol*. If the
-   object pointed is not a constant, a semantic error is issued. */
-ConstS* err_if_not_const(FspDriver& driver, Symbol * svp, const yy::location& loc);
-RangeS* err_if_not_range(FspDriver& driver, Symbol * svp, const yy::location& loc);
-SetS* err_if_not_set(FspDriver& driver, Symbol * svp, const yy::location& loc);
-RelabelingS* err_if_not_relabeling(FspDriver& driver, Symbol * svp, const yy::location& loc);
-HidingS* err_if_not_hiding(FspDriver& driver, Symbol * svp, const yy::location& loc);
-PriorityS* err_if_not_priority(FspDriver& driver, Symbol * svp, const yy::location& loc);
-
-
 template <class T>
 T* is(Symbol *svp)
 {
     T* ret = dynamic_cast<T*>(svp);
 
     assert(ret);
+
+    return ret;
+}
+
+/* Helper function used to get a ConstS* from a Symbol*. If the
+   object pointed is not a constant, a semantic error is issued. */
+template <class T>
+T* err_if_not(FspDriver& c, Symbol *svp, const yy::location& loc)
+{
+    T* ret = dynamic_cast<T*>(svp);
+
+    if (ret == NULL) {
+	stringstream errstream;
+	errstream << T().className() << " expected";
+	semantic_error(c, errstream, loc);
+    }
 
     return ret;
 }

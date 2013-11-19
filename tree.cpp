@@ -347,7 +347,7 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
             errstream << "const/parameter " << cn->res << " undeclared";
             semantic_error(c, errstream, loc);
         }
-        cvp = err_if_not_const(c, svp, loc);
+        cvp = err_if_not<ConstS>(c, svp, loc);
         res = cvp->value;
     } else {
         assert(0);
@@ -383,7 +383,7 @@ void yy::RangeNode::translate(FspDriver& c)
             errstream << "range " << ri->res << " undeclared";
             semantic_error(c, errstream, loc);
         }
-        rvp = err_if_not_range(c, svp, loc);
+        rvp = err_if_not<RangeS>(c, svp, loc);
         res = *rvp;
     } else if (re) {
         /* Return the range expression. */
@@ -764,7 +764,7 @@ void yy::SetNode::translate(FspDriver& c)
             errstream << "set " << si->res << " undeclared";
             semantic_error(c, errstream, loc);
         }
-        setvp = err_if_not_set(c, svp, loc);
+        setvp = err_if_not<SetS>(c, svp, loc);
         res = *setvp;
     } else if (se) {
         /* Return the set expression. */

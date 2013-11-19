@@ -49,7 +49,8 @@ struct ActionsTable {
 struct Symbol {
     virtual void print() const { };
     virtual int type() const = 0;
-    virtual Symbol * clone() const = 0;
+    virtual const char *className() const = 0;
+    virtual Symbol *clone() const = 0;
     virtual int setVariable(const string& s) { return -1; }
 
     static const int Const = 0;
@@ -75,7 +76,8 @@ struct SetS: public Symbol {
     SetS() { }
     void print() const;
     int type() const { return Symbol::Set; }
-    Symbol * clone() const;
+    const char *className() const { return "Set"; }
+    Symbol *clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
     bool hasVariable() const { return variable.size(); }
     unsigned int size() const { return actions.size(); }
@@ -105,6 +107,7 @@ struct ConstS: public Symbol {
 
     void print() const { cout << value; }
     int type() const { return Symbol::Const; }
+    const char *className() const { return "Const"; }
     void set(SetS&) const;
     Symbol * clone() const;
 };
@@ -116,6 +119,7 @@ struct RangeS: public Symbol {
 
     void print() const { cout << "[" << low << ", " << high << "]"; }
     int type() const { return Symbol::Range; }
+    const char *className() const { return "Range"; }
     void set(SetS&) const;
     Symbol * clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
@@ -130,6 +134,7 @@ struct RelabelingS: public Symbol {
     unsigned int size() const { return old_labels.size(); }
     void print() const;
     int type() const { return Symbol::Relabeling; }
+    const char *className() const { return "Relabeling"; }
     Symbol * clone() const;
 };
 
@@ -140,6 +145,7 @@ struct HidingS: public Symbol {
     HidingS() : interface(false) { }
     void print() const;
     int type() const { return Symbol::Hiding; }
+    const char *className() const { return "Hiding"; }
     Symbol * clone() const;
 };
 
@@ -150,6 +156,7 @@ struct PriorityS: public Symbol {
     PriorityS() : low(false) { }
     void print() const;
     int type() const { return Symbol::Priority; }
+    const char *className() const { return "Priority"; }
     Symbol * clone() const;
 };
 
@@ -162,6 +169,7 @@ struct ActionSetS : public Symbol {
     void toSetValue(const ActionsTable& at, SetS& sv);
     void print() const;
     int type() const { return Symbol::ActionSet; }
+    const char *className() const { return "ActionSet"; }
     Symbol *clone() const;
 };
 
@@ -173,6 +181,7 @@ struct ProgressS : public Symbol {
     ProgressS() : conditional(false) { }
     void print() const;
     int type() const { return Symbol::Progress; }
+    const char *className() const { return "Progress"; }
     Symbol *clone() const;
 };
 
@@ -192,6 +201,7 @@ struct ParametricProcess : public Symbol {
     void clear();
     void print() const;
     int type() const { return Symbol::ParametricProcess; }
+    const char *className() const { return "Parametric"; }
     Symbol *clone() const;
 };
 
