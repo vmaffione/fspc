@@ -118,6 +118,8 @@ string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 
 
 /* ====================== class Lts implementation ===================== */
+yy::Lts::ComposeAlgorithm yy::Lts::compose_algorithm = &yy::Lts::compose_declarative;
+
 static inline void set_type(LtsNode& n, unsigned int type)
 {
     n.info &= ~LtsNode::TypeMask;
@@ -276,7 +278,7 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 }
 
 
-void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
+void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
 {    
     unsigned int nq;
     unsigned int np;
@@ -373,6 +375,11 @@ void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
     }
 
     reduce(product);
+}
+
+void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
+{
+    (this->*compose_algorithm)(p, q);
 }
 
 yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)

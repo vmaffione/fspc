@@ -90,6 +90,14 @@ class Lts: public Symbol {
     vector<TerminalSet> terminal_sets;
     bool terminal_sets_computed;
 
+
+    void compose_declarative(const Lts& p, const Lts& q);
+
+    /* Pointer to a composition algorithm (member function). */
+    typedef void (Lts::*ComposeAlgorithm)(const Lts&, const Lts&);
+    /* Pointer to the currently used composition algorithm. */
+    static ComposeAlgorithm compose_algorithm;
+
     void compose(const Lts& p, const Lts& q);
     void reduce(const vector<LtsNode>& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
