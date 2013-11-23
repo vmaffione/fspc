@@ -118,7 +118,8 @@ string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 
 
 /* ====================== class Lts implementation ===================== */
-yy::Lts::ComposeAlgorithm yy::Lts::compose_algorithm = &yy::Lts::compose_declarative;
+yy::Lts::ComposeAlgorithm yy::Lts::compose_algorithm =
+                                    &yy::Lts::compose_operational;
 
 static inline void set_type(LtsNode& n, unsigned int type)
 {
@@ -365,6 +366,7 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
             }
     }
 
+    // TODO mergeAlphabetFrom() !!
     for (set<int>::iterator it=p.alphabet.begin();
             it!=p.alphabet.end(); it++) {
         updateAlphabet(*it);
@@ -375,6 +377,107 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
     }
 
     reduce(product);
+}
+
+static void update_composition(unsigned int idx,
+                               unsigned int dst_ip, const LtsNode& dst_p,
+                               unsigned int dst_iq, const LtsNode& dst_q,
+                               unsigned int nq, Edge& e,
+                               map<unsigned int, unsigned int>& direct,
+                               vector<unsigned int>& inverse,
+                               vector<LtsNode>& nodes)
+{
+    pair< map<unsigned int, unsigned int>::iterator, bool> insr;
+    pair<unsigned int, unsigned int> couple;
+
+    couple.first = dst_ip*nq + dst_iq;
+    couple.second = nodes.size();
+    insr = direct.insert(couple);
+    if (insr.second) {
+        unsigned int type = LtsNode::Normal;
+
+        if (get_type(dst_p) == LtsNode::Error ||
+                get_type(dst_q) == LtsNode::Error) {
+            type = LtsNode::Error;
+        } else if (get_type(dst_p) == LtsNode::End &&
+                get_type(dst_q) == LtsNode::End) {
+            type = LtsNode::End;
+        }
+        nodes.push_back(LtsNode());
+        set_type(nodes.back(), type);
+        inverse.push_back(couple.first);
+    }
+
+    e.dest = insr.first->second;
+    nodes[idx].children.push_back(e);
+}
+
+void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
+{
+    unsigned int nq = q.numStates();
+    /* Maps '(ip, iq)' --> 'idx', where 'idx' is an index in the vector
+       'nodes' */
+    map<unsigned int, unsigned int> direct;
+    /* Maps 'idx' --> 'ip*nq + iq'. */
+    vector<unsigned int> inverse;
+    unsigned idx = 0;
+    unsigned ip, iq;
+    Edge e;
+
+    assert(p.atp == atp && q.atp == atp);
+
+    /* First of all we reset *this, like Lts(ActionsTable *) would do. */
+    nodes.clear();
+    terminal_sets_computed = false;
+    alphabet.clear();
+
+    nodes.push_back(LtsNode());
+    ::set_type(nodes.back(), LtsNode::Normal);
+    direct[0] = 0;
+    inverse.push_back(0);
+
+    while (idx < nodes.size()) {
+        ip = inverse[idx] / nq;
+        iq = inverse[idx] % nq;
+
+        for (unsigned int jp = 0; jp < p.nodes[ip].children.size(); jp++) {
+            const Edge& ep = p.nodes[ip].children[jp];
+
+            e.action = ep.action;
+            if (q.lookupAlphabet(ep.action) == -1) {
+                update_composition(idx, ep.dest, p.nodes[ep.dest],
+                                   iq, q.nodes[iq], nq, e, direct,
+                                   inverse, nodes);
+            } else {
+                for (unsigned int jq = 0; jq < q.nodes[iq].children.size();
+                                                                jq++) {
+                    const Edge& eq = q.nodes[iq].children[jq];
+
+                    if (eq.action == ep.action) {
+                        update_composition(idx, ep.dest, p.nodes[ep.dest],
+                                           eq.dest, q.nodes[eq.dest],
+                                           nq, e, direct, inverse, nodes);
+                    }
+                }
+            }
+        }
+
+        for (unsigned int jq = 0; jq < q.nodes[iq].children.size(); jq++) {
+            const Edge& eq = q.nodes[iq].children[jq];
+
+            e.action = eq.action;
+            if (p.lookupAlphabet(eq.action) == -1) {
+                update_composition(idx, ip, p.nodes[ip], eq.dest,
+                                   q.nodes[eq.dest], nq, e, direct,
+                                   inverse, nodes);
+            }
+        }
+
+        idx++;
+    }
+
+    mergeAlphabetFrom(p.alphabet);
+    mergeAlphabetFrom(q.alphabet);
 }
 
 void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)

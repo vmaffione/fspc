@@ -92,6 +92,7 @@ class Lts: public Symbol {
 
 
     void compose_declarative(const Lts& p, const Lts& q);
+    void compose_operational(const Lts& p, const Lts& q);
 
     /* Pointer to a composition algorithm (member function). */
     typedef void (Lts::*ComposeAlgorithm)(const Lts&, const Lts&);
