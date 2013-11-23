@@ -366,15 +366,8 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
             }
     }
 
-    // TODO mergeAlphabetFrom() !!
-    for (set<int>::iterator it=p.alphabet.begin();
-            it!=p.alphabet.end(); it++) {
-        updateAlphabet(*it);
-    }
-    for (set<int>::iterator it=q.alphabet.begin();
-            it!=q.alphabet.end(); it++) {
-        updateAlphabet(*it);
-    }
+    mergeAlphabetFrom(p.alphabet);
+    mergeAlphabetFrom(q.alphabet);
 
     reduce(product);
 }
