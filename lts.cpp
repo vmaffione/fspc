@@ -256,9 +256,8 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 
 void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
 {    
-    int n;
-    int nq;
-    int np;
+    unsigned int nq;
+    unsigned int np;
     Edge e;
     vector<LtsNode> product;
 
@@ -274,75 +273,82 @@ void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
        p*nq+q (exactly how a matrix is mapped onto a vector. */
     np = p.numStates();
     nq = q.numStates();
-    n = np * nq;
-    product.resize(n);
+    product.resize(np * nq);
 
     /* Scan the P graph and combine P actions with Q states. */
-    for (unsigned int ip=0; ip<p.nodes.size(); ip++)
-	for (unsigned int jp=0; jp<p.nodes[ip].children.size(); jp++) {
-	    const Edge& ep = p.nodes[ip].children[jp];
-	    /* We analyze an edge of P: (i, ep.action, ep.dest). */
-	    e.action = ep.action;
+    for (unsigned int ip=0; ip<p.nodes.size(); ip++) {
+        for (unsigned int jp=0; jp<p.nodes[ip].children.size(); jp++) {
+            const Edge& ep = p.nodes[ip].children[jp];
 
-	    if (q.lookupAlphabet(ep.action) == -1) {
-		/* If ep.action is not included in the alphabet of Q, this
-		   action can be executed by P independently on the state
-		   of Q. */
-		for (int iq=0; iq<nq; iq++) {
-		    e.dest = ep.dest * nq + iq;
-		    product[ip*nq+iq].children.push_back(e);
-		}
-	    } else {
-		/* If ep.action is included in the alphabet of Q, this
-		   action can be executed by P only together with Q. */
-		for (unsigned int iq=0; iq<q.nodes.size(); iq++)
-		    for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
-			const Edge& eq = q.nodes[iq].children[jq];
+            /* We analyze an edge of P: (i, ep.action, ep.dest). */
+            e.action = ep.action;
 
-			if (eq.action == ep.action) {
-			    e.dest = ep.dest * nq + eq.dest;
-			    product[ip*nq+iq].children.push_back(e);
-			}
-		    }
-		
-	    }
-	}
+            if (q.lookupAlphabet(ep.action) == -1) {
+                /* If ep.action is not included in the alphabet of Q, this
+                   action can be executed by P independently on the state
+                   of Q. */
+                for (unsigned int iq=0; iq<nq; iq++) {
+                    e.dest = ep.dest * nq + iq;
+                    product[ip*nq+iq].children.push_back(e);
+                }
+            } else {
+                /* If ep.action is included in the alphabet of Q, this
+                   action can be executed by P only together with Q. */
+                for (unsigned int iq=0; iq<q.nodes.size(); iq++)
+                    for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
+                        const Edge& eq = q.nodes[iq].children[jq];
+
+                        if (eq.action == ep.action) {
+                            e.dest = ep.dest * nq + eq.dest;
+                            product[ip*nq+iq].children.push_back(e);
+                        }
+                    }
+
+            }
+        }
+    }
 
     /* Scan the Q graph and combine Q actions with P states */
-    for (unsigned int iq=0; iq<q.nodes.size(); iq++)
-	for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
-	    const Edge& eq = q.nodes[iq].children[jq];
-	    /* We analyze an edge of Q: (i, eq.action, eq.dest). */
-	    e.action = eq.action;
+    for (unsigned int iq=0; iq<q.nodes.size(); iq++) {
+        for (unsigned int jq=0; jq<q.nodes[iq].children.size(); jq++) {
+            const Edge& eq = q.nodes[iq].children[jq];
 
-	    if (p.lookupAlphabet(eq.action) == -1) {
-		/* If ep.action is not included in the alphabet of P, this
-		   action can be executed by Q independently on the state
-		   of P. */
-		for (int ip=0; ip<np; ip++) {
-		    e.dest = ip * nq + eq.dest;
-		    product[ip*nq+iq].children.push_back(e);
-		}
-	    } /* else case has already been covered by the previous scan. */
-	}
+            /* We analyze an edge of Q: (i, eq.action, eq.dest). */
+            e.action = eq.action;
+
+            if (p.lookupAlphabet(eq.action) == -1) {
+                /* If ep.action is not included in the alphabet of P, this
+                   action can be executed by Q independently on the state
+                   of P. */
+                for (unsigned int ip=0; ip<np; ip++) {
+                    e.dest = ip * nq + eq.dest;
+                    product[ip*nq+iq].children.push_back(e);
+                }
+            } /* else case has already been covered by the previous scan. */
+        }
+    }
 
     /* A composed state is an END state when both the components are
        END states. */
-    for (unsigned int ip=0; ip<p.nodes.size(); ip++)
-	for (unsigned int iq=0; iq<q.nodes.size(); iq++)
-	    if ((p.nodes[ip].type == LtsNode::Error) ||
-		    (q.nodes[iq].type == LtsNode::Error))
-		product[ip*nq+iq].type = LtsNode::Error;
-	    else if ((p.nodes[ip].type == LtsNode::End) &&
-		    (q.nodes[iq].type == LtsNode::End))
-		product[ip*nq+iq].type = LtsNode::End;
+    for (unsigned int ip=0; ip<p.nodes.size(); ip++) {
+        for (unsigned int iq=0; iq<q.nodes.size(); iq++)
+            if ((p.nodes[ip].type == LtsNode::Error) ||
+                    (q.nodes[iq].type == LtsNode::Error)) {
+                product[ip*nq+iq].type = LtsNode::Error;
+            } else if ((p.nodes[ip].type == LtsNode::End) &&
+                    (q.nodes[iq].type == LtsNode::End)) {
+                product[ip*nq+iq].type = LtsNode::End;
+            }
+    }
 
     for (set<int>::iterator it=p.alphabet.begin();
-				it!=p.alphabet.end(); it++)
-	updateAlphabet(*it);
+            it!=p.alphabet.end(); it++) {
+        updateAlphabet(*it);
+    }
     for (set<int>::iterator it=q.alphabet.begin();
-				it!=q.alphabet.end(); it++)
-	updateAlphabet(*it);
+            it!=q.alphabet.end(); it++) {
+        updateAlphabet(*it);
+    }
 
     reduce(product);
 }
