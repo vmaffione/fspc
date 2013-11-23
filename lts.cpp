@@ -118,6 +118,28 @@ string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 
 
 /* ====================== class Lts implementation ===================== */
+static inline void set_type(LtsNode& n, unsigned int type)
+{
+    n.info &= ~LtsNode::TypeMask;
+    n.info |= type & LtsNode::TypeMask;
+}
+
+static inline unsigned int get_type(const LtsNode& n)
+{
+    return n.info & LtsNode::TypeMask;
+}
+
+static void set_priv(LtsNode& n, unsigned int priv)
+{
+    n.info &= ~LtsNode::PrivMask;
+    n.info |= (priv << INFO_PRIV_SHIFT);
+}
+
+static unsigned int get_priv(const LtsNode& n)
+{
+    return n.info >> INFO_PRIV_SHIFT;
+}
+
 int yy::Lts::lookupAlphabet(int action) const
 {
     set<int>::iterator it = alphabet.find(action);
@@ -162,8 +184,8 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 {
     struct LtsNode node;
 
-    node.type = type;
-    node.priv = ~0U;
+    ::set_type(node, type);
+    ::set_priv(node, LtsNode::MaxPriv);
     nodes.push_back(node);
     terminal_sets_computed = false;
 }
@@ -177,7 +199,7 @@ void yy::Lts::print() const {
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
 	cout << "State " << i << "(priv=" << get_priv(i) << ", type=" <<
-            nodes[i].type << "):\n";
+            get_type(i) << "):\n";
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    cout << "    " << ati(atp, nodes[i].children[j].action, false)
 		    << " --> " << nodes[i].children[j].dest << "\n";
@@ -246,8 +268,8 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 
     for (int i=0; i<np; i++)
 	if (map[i] != -1) {
-	    nodes[map[i]].type = unconnected[i].type;
-            nodes[map[i]].priv = unconnected[i].priv;
+            ::set_type(nodes[map[i]], ::get_type(unconnected[i]));
+            ::set_priv(nodes[map[i]], ::get_priv(unconnected[i]));
         }
 
     nodes.resize(n);
@@ -332,12 +354,12 @@ void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
        END states. */
     for (unsigned int ip=0; ip<p.nodes.size(); ip++) {
         for (unsigned int iq=0; iq<q.nodes.size(); iq++)
-            if ((p.nodes[ip].type == LtsNode::Error) ||
-                    (q.nodes[iq].type == LtsNode::Error)) {
-                product[ip*nq+iq].type = LtsNode::Error;
-            } else if ((p.nodes[ip].type == LtsNode::End) &&
-                    (q.nodes[iq].type == LtsNode::End)) {
-                product[ip*nq+iq].type = LtsNode::End;
+            if ((p.get_type(ip) == LtsNode::Error) ||
+                    (q.get_type(iq) == LtsNode::Error)) {
+                ::set_type(product[ip*nq+iq], LtsNode::Error);
+            } else if ((p.get_type(ip) == LtsNode::End) &&
+                    (q.get_type(iq) == LtsNode::End)) {
+                ::set_type(product[ip*nq+iq], LtsNode::End);
             }
     }
 
@@ -412,12 +434,12 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
 	}
 
 	/* No outgoing transitions ==> Deadlock state */
-	if (i == 0 && nodes[state].type != LtsNode::End) { 
+	if (i == 0 && get_type(state) != LtsNode::End) { 
 	    int t;
 	    int j;
 	    string ed;
 
-	    if (nodes[state].type == LtsNode::Normal)
+	    if (get_type(state) == LtsNode::Normal)
 		ed = "Deadlock";
 	    else
 		ed = "Property violation";
@@ -983,8 +1005,8 @@ yy::Lts& yy::Lts::priority(const SetS& s, bool low)
 	    }
 	if (found) {
 	    new_nodes[i].children = new_children;
-	    new_nodes[i].type = nodes[i].type;
-            new_nodes[i].priv = nodes[i].priv;
+            ::set_type(new_nodes[i], ::get_type(nodes[i]));
+            ::set_priv(new_nodes[i], ::get_priv(nodes[i]));
 	} else
 	    new_nodes[i] = nodes[i];
     }
@@ -1008,19 +1030,19 @@ yy::Lts& yy::Lts::property()
     /* Look for the ERROR state. If there is no ERROR state, create one. */
     e.dest = ~0U;
     for (unsigned int i=0; i<nodes.size(); i++) {
-	switch (nodes[i].type) {
+	switch (get_type(i)) {
 	    case LtsNode::Error:
 		e.dest = i;
 		break;
 	    case LtsNode::End:
 		/* Convert an END node into a normal node. */
-		nodes[i].type = LtsNode::Normal;
+		set_type(i, LtsNode::Normal);
 		break;
 	}
     }
     if (e.dest == ~0U) {
 	nodes.push_back(LtsNode());
-	nodes.back().type = LtsNode::Error;
+	::set_type(nodes.back(), LtsNode::Error);
 	e.dest = nodes.size() - 1;
     }
 
@@ -1102,7 +1124,7 @@ void yy::Lts::graphvizOutput(const char * filename) const
     fout << "rankdir = LR;\n";
     //fout << "ratio = 1.0;\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
-	switch (nodes[i].type) {
+	switch (get_type(i)) {
 	    case LtsNode::Normal:
 		fout << i
 		    << " [shape=circle,style=filled, fillcolor=pink];\n";
@@ -1255,8 +1277,8 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
 
     *fsptr << ",\nS" << state << " = ";
     if (!size) {
-	assert(node.type != LtsNode::Normal);
-	switch (node.type) {
+	assert(get_type(node) != LtsNode::Normal);
+	switch (get_type(node)) {
 	    case LtsNode::Error:
 		*fsptr << "ERROR";
 		break;
@@ -1365,7 +1387,7 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
         remap[zero_idx] = cnt++;
     }
     for (unsigned int i=0; i<nodes.size(); i++) {
-        if (nodes[i].type == type) {
+        if (get_type(i) == type) {
             remap[i] = ~0U;  /* Undefined remapping. */
         } else if (i != zero_idx) {
             remap[i] = cnt++;
@@ -1381,8 +1403,8 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
 
         if (k != ~0U) {
             /* Rule out incomplete nodes. */
-            new_nodes[k].type = n.type;
-            new_nodes[k].priv = n.priv;
+            ::set_type(new_nodes[k], ::get_type(n));
+            ::set_priv(new_nodes[k], ::get_priv(n));
             for (unsigned int j=0; j<n.children.size(); j++) {
                 Edge e = n.children[j];
 
@@ -1428,7 +1450,7 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
         for (unsigned int j=0; j<sz; j++) {
             Edge e = nodes[i].children[j];
 
-            if (nodes[e.dest].type == LtsNode::Incomplete) {
+            if (get_type(e.dest) == LtsNode::Incomplete) {
                 priv = get_priv(e.dest);
                 assert(priv < offsets.size());
                 if (offsets[priv] == ~0U) {
@@ -1476,7 +1498,7 @@ bool yy::Lts::endcat(const yy::Lts& lts)
     /* Find the End node (well, the first that we run into, but this
        method should be invoked after the mergeEndNodes method). */
     for (x=0; x<nodes.size(); x++) {
-        if (nodes[x].type == LtsNode::End) {
+        if (get_type(x) == LtsNode::End) {
             break;
         }
     }
@@ -1504,7 +1526,7 @@ yy::Lts& yy::Lts::mergeEndNodes()
 
     /* Select the first End node that we run into. */
     for (x=0; x<nodes.size(); x++) {
-        if (nodes[x].type == LtsNode::End) {
+        if (get_type(x) == LtsNode::End) {
             break;
         }
     }
@@ -1518,7 +1540,7 @@ yy::Lts& yy::Lts::mergeEndNodes()
             for (unsigned int j=0; j<nodes[i].children.size(); j++) {
                 Edge& e = nodes[i].children[j];
 
-                if (nodes[e.dest].type == LtsNode::End) {
+                if (get_type(e.dest) == LtsNode::End) {
                     e.dest = x;
                 }
             }
@@ -1526,8 +1548,8 @@ yy::Lts& yy::Lts::mergeEndNodes()
         /* Turn the type of the non-selected End nodes into LtsNode::Zombie,
            so that the can be removed using the removeType method. */
         for (unsigned int i=0; i<nodes.size(); i++) {
-            if (nodes[i].type == LtsNode::End && i != x) {
-                nodes[i].type = LtsNode::Zombie;
+            if (get_type(i) == LtsNode::End && i != x) {
+                set_type(i, LtsNode::Zombie);
                 zombies = true;
             }
         }
@@ -1543,7 +1565,8 @@ yy::Lts& yy::Lts::mergeEndNodes()
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
     assert(state < nodes.size());
-    nodes[state].priv = val;
+    nodes[state].info &= ~LtsNode::PrivMask;
+    nodes[state].info |= (val << INFO_PRIV_SHIFT);
 }
 
 /* Get the 'priv' field of *this[state]. */
@@ -1551,7 +1574,7 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
 
-    return nodes[state].priv;
+    return nodes[state].info >> INFO_PRIV_SHIFT;
 }
 
 /* Scan the graph looking for transitions towards unresolved nodes. Say
@@ -1572,7 +1595,7 @@ unsigned int yy::Lts::resolve()
     for (unsigned int i=0; i<nodes.size(); i++) {
         unsigned int sz = nodes[i].children.size();
 
-        if (nodes[i].type != LtsNode::Unresolved
+        if (get_type(i) != LtsNode::Unresolved
                     && get_priv(i) == get_priv(0)) {
             /* Look for a non-unresolved node with the same priv as the zero
                node, which may be an unresolved nodes (this happens with definitions
@@ -1582,14 +1605,14 @@ unsigned int yy::Lts::resolve()
         for (unsigned int j=0; j<sz; j++) {
             Edge& e = nodes[i].children[j];
 
-            if (nodes[e.dest].type == LtsNode::Unresolved) {
+            if (get_type(e.dest) == LtsNode::Unresolved) {
                 bool found = false;
 
                 priv = get_priv(e.dest);
-                assert(priv != ~0U);
+                assert(priv != LtsNode::MaxPriv);
                 /* Look for a non-unresolved node with a matching 'priv'. */
                 for (unsigned int k=0; k<nodes.size(); k++) {
-                    if (nodes[k].type != LtsNode::Unresolved
+                    if (get_type(k) != LtsNode::Unresolved
                                     && get_priv(k) == priv) {
                         /* Replace the unresolved destination with the
                            state 'k'. */
@@ -1614,10 +1637,10 @@ unsigned int yy::Lts::resolve()
 
     /* Reset the priv fields. */
     for (unsigned int i=0; i<nodes.size(); i++) {
-        set_priv(i, ~0U);
+        set_priv(i, LtsNode::MaxPriv);
     }
 
-    return ~0U;
+    return LtsNode::MaxPriv;
 }
 
 /* Scan the graph looking for nodes whose 'priv' is contained in the 'privs'

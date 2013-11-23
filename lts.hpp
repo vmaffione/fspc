@@ -45,10 +45,12 @@ struct Edge {
     unsigned int action;
 };
 
+#define INFO_TYPE_BITS  3U
+#define INFO_PRIV_SHIFT INFO_TYPE_BITS
+
 struct LtsNode {
     vector<Edge> children;
-    unsigned int type; /* set if the node is an END node */
-    unsigned int priv;
+    unsigned int info; /* Stores type and priv. */
 
     static const int Normal = 0;
     static const int End = 1;
@@ -56,6 +58,10 @@ struct LtsNode {
     static const int Incomplete = 3;
     static const int Unresolved = 4;
     static const int Zombie = 5;
+
+    static const unsigned int TypeMask = (1 << INFO_TYPE_BITS) - 1;
+    static const unsigned int PrivMask = ~TypeMask;
+    static const unsigned int MaxPriv = PrivMask >> INFO_TYPE_BITS;
 
     void offset(int offset);
 };
@@ -136,6 +142,13 @@ class Lts: public Symbol {
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state) const;
+    void set_type(unsigned int state, unsigned int type) {
+        nodes[state].info &= ~LtsNode::TypeMask;
+        nodes[state].info |= type & LtsNode::TypeMask;
+    }
+    unsigned int get_type(unsigned int state) const {
+        return nodes[state].info & LtsNode::TypeMask;
+    }
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
 

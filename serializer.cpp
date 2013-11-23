@@ -213,7 +213,7 @@ void Serializer::lts(const yy::Lts &lts, bool raw)
     this->integer(lts.numTransitions(), 1);
     this->integer(lts.nodes.size(), 1);
     for (unsigned int i=0; i<lts.nodes.size(); i++) {
-	switch (lts.nodes[i].type) {
+	switch (lts.get_type(i)) {
 	    case LtsNode::End:
 		end = i;
 		break;
@@ -259,11 +259,11 @@ void Deserializer::lts(yy::Lts &lts, bool raw)
     this->integer(end, 1);
     this->integer(error, 1);
     for (unsigned int i=0; i<lts.nodes.size(); i++)
-	lts.nodes[i].type = LtsNode::Normal;
+	lts.set_type(i, LtsNode::Normal);
     if (end != ~0U)
-	lts.nodes[end].type = LtsNode::End;
+	lts.set_type(end, LtsNode::End);
     if (error != ~0U) // XXX if (~error)
-	lts.nodes[error].type = LtsNode::Error;
+	lts.set_type(error, LtsNode::Error);
 
     for (int i=0; i<ntr; i++) {
 	this->integer(x, 1);

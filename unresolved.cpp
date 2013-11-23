@@ -43,7 +43,7 @@ unsigned int UnresolvedNames::insert(const string& name, bool defined)
    'name'. In such a case we must remove 'name' from this conflicting entry,
    merging the conflicting entry into the entry 'idx'.
    When a conflicting entry exists, its index is returned. Otherwise,
-   this method returns ~0U.
+   this method returns LtsNode::MaxPriv.
  */
 unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
                                      bool defined)
@@ -73,7 +73,7 @@ unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
     elem.defined = defined;
     names[i].push_back(elem);
 
-    return ~0U;
+    return ~0x7U;
 }
 
 /* Given an entry pointer, return the index contained in the entry. */
