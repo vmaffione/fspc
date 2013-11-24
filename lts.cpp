@@ -211,6 +211,14 @@ void yy::Lts::print() const {
     cout << numStates() << " states, " << numTransitions() << " transitions\n";
 }
 
+void yy::Lts::clear()
+{
+    nodes.clear();
+    alphabet.clear();
+    terminal_sets.clear();
+    terminal_sets_computed = false;
+}
+
 int yy::Lts::numTransitions() const
 {
     int n = 0;

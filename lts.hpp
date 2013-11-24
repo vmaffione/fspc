@@ -161,6 +161,7 @@ class Lts: public Symbol {
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
 
+    void clear();
 
     /* Methods to implement because of the base class. */
     void print() const;

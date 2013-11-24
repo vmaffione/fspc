@@ -46,7 +46,9 @@ class TreeNode : public ParametricTranslator {
         virtual void translate(FspDriver& dr);
         virtual void combination(FspDriver& dr, string index, bool first) { }
         virtual string getClassName() const;
+        virtual void clear() { }
         void translate_children(FspDriver& dr);
+        void clear_children();
 };
 
 
@@ -80,6 +82,7 @@ class LtsTreeNode : public TreeNode {
         yy::Lts res;
 
         LtsTreeNode() : TreeNode() { }
+        void clear() { res.clear(); }
 };
 
 

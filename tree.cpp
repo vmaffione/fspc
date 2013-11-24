@@ -145,6 +145,15 @@ void yy::TreeNode::translate_children(FspDriver& c)
     }
 }
 
+void yy::TreeNode::clear_children()
+{
+    for (unsigned int i=0; i<children.size(); i++) {
+        if (children[i]) {
+            children[i]->clear();
+        }
+    }
+}
+
 void yy::TreeNode::translate(FspDriver& c)
 {
     translate_children(c);
@@ -317,6 +326,8 @@ void yy::ExpressionNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::BaseExpressionNode::translate(FspDriver& c)
@@ -352,6 +363,8 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::RangeExprNode::translate(FspDriver& c)
@@ -364,6 +377,8 @@ void yy::RangeExprNode::translate(FspDriver& c)
     /* Build a range from two expressions. */
     res.low = l->res;
     res.high = r->res;
+
+    clear_children();
 }
 
 void yy::RangeNode::translate(FspDriver& c)
@@ -391,6 +406,8 @@ void yy::RangeNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::ConstantDefNode::translate(FspDriver& c)
@@ -408,6 +425,8 @@ void yy::ConstantDefNode::translate(FspDriver& c)
         delete cvp;
         semantic_error(c, errstream, loc);
     }
+
+    clear_children();
 }
 
 void yy::RangeDefNode::translate(FspDriver& c)
@@ -427,6 +446,8 @@ void yy::RangeDefNode::translate(FspDriver& c)
         delete rvp;
         semantic_error(c, errstream, loc);
     }
+
+    clear_children();
 }
 
 void yy::SetDefNode::translate(FspDriver& c)
@@ -444,6 +465,8 @@ void yy::SetDefNode::translate(FspDriver& c)
         delete svp;
         semantic_error(c, errstream, loc);
     }
+
+    clear_children();
 }
 
 void yy::PropertyDefNode::translate(FspDriver& c)
@@ -470,6 +493,8 @@ void yy::PropertyDefNode::translate(FspDriver& c)
             << lts->name << " is a non-deterministic process";
         semantic_error(c, errstream, loc);
     }
+
+    clear_children();
 }
 
 void yy::ProgressDefNode::combination(FspDriver& c, string index, bool first)
@@ -622,6 +647,8 @@ void yy::ProgressDefNode::translate(FspDriver& c)
     irn->translate(c);
 
     for_each_combination(c, irn, this);
+
+    clear_children();
 }
 
 void yy::MenuDefNode::translate(FspDriver &c)
@@ -641,6 +668,8 @@ void yy::MenuDefNode::translate(FspDriver &c)
         errstream << "menu " << id->res << " declared twice";
         semantic_error(c, errstream, loc);
     }
+
+    clear_children();
 }
 
 /* This recursive method can be used to compute the set of action defined
@@ -754,6 +783,8 @@ void yy::SetElementsNode::translate(FspDriver& c)
 
         res += computeActionLabels(c, SetS(), an->res, 0);
     }
+
+    clear_children();
 }
 
 void yy::SetExprNode::translate(FspDriver& c)
@@ -763,6 +794,8 @@ void yy::SetExprNode::translate(FspDriver& c)
     DTC(SetElementsNode, sn, children[1]);
 
     res = sn->res;
+
+    clear_children();
 }
 
 void yy::SetNode::translate(FspDriver& c)
@@ -790,6 +823,8 @@ void yy::SetNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::ActionRangeNode::translate(FspDriver& c)
@@ -828,13 +863,11 @@ void yy::ActionRangeNode::translate(FspDriver& c)
         } else {
             assert(0);
         }
-if (res.size() == 0) { // XXX remove a.s.a.p.
-    cout << "XXX2\n";
-    res += "xxx2";
-}
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::ActionLabelsNode::translate(FspDriver& c)
@@ -896,6 +929,8 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
             break;
         }
     }
+
+    clear_children();
 }
 
 yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
@@ -1024,6 +1059,8 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
 
         res.push_back(an);
     }
+
+    clear_children();
 }
 
 void yy::IndicesNode::translate(FspDriver& c)
@@ -1037,6 +1074,8 @@ void yy::IndicesNode::translate(FspDriver& c)
 
         res += "." + int2string(en->res);
     }
+
+    clear_children();
 }
 
 void yy::BaseLocalProcessNode::translate(FspDriver& c)
@@ -1070,6 +1109,8 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
            the process name is only referenced). */
         update_unres(c, name, res, false, loc);
     }
+
+    clear_children();
 }
 
 void yy::ChoiceNode::translate(FspDriver& c)
@@ -1089,6 +1130,8 @@ void yy::ChoiceNode::translate(FspDriver& c)
 
         res.zeromerge(apn->res);
     }
+
+    clear_children();
 }
 
 void yy::ArgumentListNode::translate(FspDriver& c)
@@ -1101,6 +1144,8 @@ void yy::ArgumentListNode::translate(FspDriver& c)
 
         res.push_back(en->res);
     }
+
+    clear_children();
 }
 
 void yy::ArgumentsNode::translate(FspDriver& c)
@@ -1110,6 +1155,8 @@ void yy::ArgumentsNode::translate(FspDriver& c)
     DTC(ArgumentListNode, al, children[1]);
 
     res = al->res;
+
+    clear_children();
 }
 
 void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
@@ -1195,11 +1242,15 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
     }
+
+    clear_children();
 }
 
 void yy::ProcessRefSeqNode::translate(FspDriver& c)
 {
     process_ref_translate(c, res);
+
+    clear_children();
 }
 
 void yy::SeqProcessListNode::translate(FspDriver& c)
@@ -1217,6 +1268,8 @@ void yy::SeqProcessListNode::translate(FspDriver& c)
 
         res.endcat(pr->res);
     }
+
+    clear_children();
 }
 
 void yy::SeqCompNode::translate(FspDriver& c)
@@ -1228,6 +1281,8 @@ void yy::SeqCompNode::translate(FspDriver& c)
 
     res = pl->res;
     res.endcat(lp->res);
+
+    clear_children();
 }
 
 void yy::LocalProcessNode::translate(FspDriver& c)
@@ -1266,6 +1321,8 @@ void yy::LocalProcessNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::ProcessElseNode::translate(FspDriver& c)
@@ -1275,6 +1332,8 @@ void yy::ProcessElseNode::translate(FspDriver& c)
     DTC(LocalProcessNode, pn, children[1]);
 
     res = pn->res;
+
+    clear_children();
 }
 
 void yy::ActionPrefixNode::translate(FspDriver& c)
@@ -1311,6 +1370,8 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     }
 
     c.ctx = saved_ctx;
+
+    clear_children();
 }
 
 void yy::ProcessBodyNode::translate(FspDriver& c)
@@ -1329,6 +1390,8 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::AlphaExtNode::translate(FspDriver& c)
@@ -1338,6 +1401,8 @@ void yy::AlphaExtNode::translate(FspDriver& c)
     DTC(SetNode, sn, children[1]);
 
     res = sn->res;
+
+    clear_children();
 }
 
 void yy::RelabelDefNode::combination(FspDriver& c, string index, bool first)
@@ -1382,6 +1447,8 @@ void yy::RelabelDefNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::RelabelDefsNode::translate(FspDriver& c)
@@ -1399,6 +1466,8 @@ void yy::RelabelDefsNode::translate(FspDriver& c)
 
         res.merge(rn->res);
     }
+
+    clear_children();
 }
 
 void yy::BracesRelabelDefsNode::translate(FspDriver& c)
@@ -1408,6 +1477,8 @@ void yy::BracesRelabelDefsNode::translate(FspDriver& c)
     DTC(RelabelDefsNode, rn, children[1]);
 
     res = rn->res;
+
+    clear_children();
 }
 
 void yy::RelabelingNode::translate(FspDriver& c)
@@ -1417,6 +1488,8 @@ void yy::RelabelingNode::translate(FspDriver& c)
     DTC(BracesRelabelDefsNode, bd, children[1]);
 
     res = bd->res;
+
+    clear_children();
 }
 
 void yy::HidingInterfNode::translate(FspDriver& c)
@@ -1438,6 +1511,8 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     }
 
     res.setv = sn->res;
+
+    clear_children();
 }
 
 void yy::ParameterNode::translate(FspDriver& c)
@@ -1482,6 +1557,8 @@ void yy::ParameterNode::translate(FspDriver& c)
     if (!c.identifiers.insert(in->res, cvp)) {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::IndexRangesNode::translate(FspDriver& c)
@@ -1494,6 +1571,8 @@ void yy::IndexRangesNode::translate(FspDriver& c)
 
         res.push_back(arn);
     }
+
+    clear_children();
 }
 
 void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
@@ -1529,6 +1608,8 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
     irn->translate(c);
 
     for_each_combination(c, irn, this);
+
+    clear_children();
 }
 
 void yy::LocalProcessDefsNode::translate(FspDriver& c)
@@ -1546,6 +1627,8 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
 
         res.append(lpd->res, 0);
     }
+
+    clear_children();
 }
 
 void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
@@ -1652,11 +1735,15 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     }
 
     this->post_process_definition(c, res, idn->res);
+
+    clear_children();
 }
 
 void yy::ProcessRefNode::translate(FspDriver& c)
 {
     process_ref_translate(c, res);
+
+    clear_children();
 }
 
 void yy::SharingNode::translate(FspDriver& c)
@@ -1666,6 +1753,8 @@ void yy::SharingNode::translate(FspDriver& c)
     DTC(ActionLabelsNode, an, children[0]);
 
     res = computeActionLabels(c, SetS(), an->res, 0);
+
+    clear_children();
 }
 
 void yy::LabelingNode::translate(FspDriver& c)
@@ -1675,6 +1764,8 @@ void yy::LabelingNode::translate(FspDriver& c)
     DTC(ActionLabelsNode, an, children[0]);
 
     res = computeActionLabels(c, SetS(), an->res, 0);
+
+    clear_children();
 }
 
 void yy::PrioritySNode::translate(FspDriver& c)
@@ -1692,6 +1783,8 @@ void yy::PrioritySNode::translate(FspDriver& c)
         assert(0);
     }
     res.setv = sn->res;
+
+    clear_children();
 }
 
 void yy::CompositeBodyNode::combination(FspDriver& c, string index,
@@ -1811,6 +1904,8 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
     } else {
         assert(0);
     }
+
+    clear_children();
 }
 
 void yy::CompositeElseNode::translate(FspDriver& c)
@@ -1820,6 +1915,8 @@ void yy::CompositeElseNode::translate(FspDriver& c)
     DTC(CompositeBodyNode, cb, children[1]);
 
     res = cb->res;
+
+    clear_children();
 }
 
 void yy::ParallelCompNode::translate(FspDriver& c)
@@ -1833,6 +1930,8 @@ void yy::ParallelCompNode::translate(FspDriver& c)
 
         res.push_back(cb->res);
     }
+
+    clear_children();
 }
 
 void yy::CompositeDefNode::translate(FspDriver& c)
@@ -1860,5 +1959,7 @@ void yy::CompositeDefNode::translate(FspDriver& c)
     }
 
     this->post_process_definition(c, res, idn->res);
+
+    clear_children();
 }
 
