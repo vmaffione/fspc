@@ -187,9 +187,9 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 {
     struct LtsNode node;
 
-    ::set_type(node, type);
-    ::set_priv(node, LtsNode::MaxPriv);
     nodes.push_back(node);
+    set_type(0, type);
+    set_priv(0, LtsNode::MaxPriv);
     terminal_sets_computed = false;
 }
 
@@ -279,8 +279,8 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 
     for (int i=0; i<np; i++)
 	if (map[i] != -1) {
-            ::set_type(nodes[map[i]], ::get_type(unconnected[i]));
-            ::set_priv(nodes[map[i]], ::get_priv(unconnected[i]));
+            set_type(map[i], ::get_type(unconnected[i]));
+            set_priv(map[i], ::get_priv(unconnected[i]));
         }
 
     nodes.resize(n);
@@ -381,8 +381,8 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
 }
 
 static void update_composition(unsigned int idx,
-                               unsigned int dst_ip, const LtsNode& dst_p,
-                               unsigned int dst_iq, const LtsNode& dst_q,
+                               unsigned int dst_ip, const yy::Lts& p,
+                               unsigned int dst_iq, const yy::Lts& q,
                                unsigned int nq, Edge& e,
                                map<unsigned int, unsigned int>& direct,
                                vector<unsigned int>& inverse,
@@ -397,11 +397,11 @@ static void update_composition(unsigned int idx,
     if (insr.second) {
         unsigned int type = LtsNode::Normal;
 
-        if (get_type(dst_p) == LtsNode::Error ||
-                get_type(dst_q) == LtsNode::Error) {
+        if (p.get_type(dst_ip) == LtsNode::Error ||
+                q.get_type(dst_iq) == LtsNode::Error) {
             type = LtsNode::Error;
-        } else if (get_type(dst_p) == LtsNode::End &&
-                get_type(dst_q) == LtsNode::End) {
+        } else if (p.get_type(dst_ip) == LtsNode::End &&
+                q.get_type(dst_iq) == LtsNode::End) {
             type = LtsNode::End;
         }
         nodes.push_back(LtsNode());
@@ -433,7 +433,7 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
     alphabet.clear();
 
     nodes.push_back(LtsNode());
-    ::set_type(nodes.back(), LtsNode::Normal);
+    set_type(nodes.size() - 1, LtsNode::Normal);
     direct[0] = 0;
     inverse.push_back(0);
 
@@ -446,8 +446,8 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
 
             e.action = ep.action;
             if (q.lookupAlphabet(ep.action) == -1) {
-                update_composition(idx, ep.dest, p.nodes[ep.dest],
-                                   iq, q.nodes[iq], nq, e, direct,
+                update_composition(idx, ep.dest, p,
+                                   iq, q, nq, e, direct,
                                    inverse, nodes);
             } else {
                 for (unsigned int jq = 0; jq < q.nodes[iq].children.size();
@@ -455,8 +455,8 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
                     const Edge& eq = q.nodes[iq].children[jq];
 
                     if (eq.action == ep.action) {
-                        update_composition(idx, ep.dest, p.nodes[ep.dest],
-                                           eq.dest, q.nodes[eq.dest],
+                        update_composition(idx, ep.dest, p,
+                                           eq.dest, q,
                                            nq, e, direct, inverse, nodes);
                     }
                 }
@@ -468,8 +468,8 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
 
             e.action = eq.action;
             if (p.lookupAlphabet(eq.action) == -1) {
-                update_composition(idx, ip, p.nodes[ip], eq.dest,
-                                   q.nodes[eq.dest], nq, e, direct,
+                update_composition(idx, ip, p, eq.dest,
+                                   q, nq, e, direct,
                                    inverse, nodes);
             }
         }
@@ -842,7 +842,7 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
     while (pop != push) {
 	state = frontier[pop++];
 	/* Invoke the visit function */
-	lvo.vfp(state, nodes[state], lvo.opaque);
+	lvo.vfp(state, *this, nodes[state], lvo.opaque);
 	for (unsigned int i=0; i<nodes[state].children.size(); i++) {
 	    int child = nodes[state].children[i].dest;
 	    if (!seen[child]) {
@@ -1116,8 +1116,8 @@ yy::Lts& yy::Lts::priority(const SetS& s, bool low)
 	    }
 	if (found) {
 	    new_nodes[i].children = new_children;
-            ::set_type(new_nodes[i], ::get_type(nodes[i]));
-            ::set_priv(new_nodes[i], ::get_priv(nodes[i]));
+            ::set_type(new_nodes[i], get_type(i));
+            ::set_priv(new_nodes[i], get_priv(i));
 	} else
 	    new_nodes[i] = nodes[i];
     }
@@ -1153,7 +1153,7 @@ yy::Lts& yy::Lts::property()
     }
     if (e.dest == ~0U) {
 	nodes.push_back(LtsNode());
-	::set_type(nodes.back(), LtsNode::Error);
+	set_type(nodes.size() - 1, LtsNode::Error);
 	e.dest = nodes.size() - 1;
     }
 
@@ -1378,7 +1378,7 @@ choose:
     }
 }
 
-static void basicVisitFunction(int state, const struct LtsNode& node,
+static void basicVisitFunction(int state, const yy::Lts& lts, const struct LtsNode& node,
 				void * opaque)
 {
     OutputData * bvd = static_cast<OutputData *>(opaque);
@@ -1388,8 +1388,8 @@ static void basicVisitFunction(int state, const struct LtsNode& node,
 
     *fsptr << ",\nS" << state << " = ";
     if (!size) {
-	assert(get_type(node) != LtsNode::Normal);
-	switch (get_type(node)) {
+	assert(lts.get_type(state) != LtsNode::Normal);
+	switch (lts.get_type(state)) {
 	    case LtsNode::Error:
 		*fsptr << "ERROR";
 		break;
@@ -1514,8 +1514,8 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
 
         if (k != ~0U) {
             /* Rule out incomplete nodes. */
-            ::set_type(new_nodes[k], ::get_type(n));
-            ::set_priv(new_nodes[k], ::get_priv(n));
+            ::set_type(new_nodes[k], get_type(i));
+            ::set_priv(new_nodes[k], get_priv(i));
             for (unsigned int j=0; j<n.children.size(); j++) {
                 Edge e = n.children[j];
 

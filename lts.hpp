@@ -66,13 +66,6 @@ struct LtsNode {
     void offset(int offset);
 };
 
-typedef void (*LtsVisitFunction)(int, const struct LtsNode&, void*);
-
-struct LtsVisitObject {
-    LtsVisitFunction vfp;
-    void * opaque;
-};
-
 class Serializer;
 class Deserializer;
 class Shell;
@@ -80,6 +73,15 @@ class FspDriver;
 
 
 namespace yy {
+
+class Lts;
+
+typedef void (*LtsVisitFunction)(int, const Lts&, const struct LtsNode&, void*);
+
+struct LtsVisitObject {
+    LtsVisitFunction vfp;
+    void *opaque;
+};
 
 class Lts: public Symbol {
     vector<LtsNode> nodes;
