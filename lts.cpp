@@ -167,7 +167,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 
     nodes.push_back(node);
     set_type(0, type);
-    set_priv(0, LtsNode::MaxPriv);
+    set_priv(0, LtsNode::NoPriv);
     terminal_sets_computed = false;
 }
 
@@ -192,6 +192,7 @@ void yy::Lts::print() const {
 void yy::Lts::clear()
 {
     nodes.clear();
+    privs.clear();
     alphabet.clear();
     terminal_sets.clear();
     terminal_sets_computed = false;
@@ -213,16 +214,19 @@ int yy::Lts::numTransitions() const
 void yy::Lts::copy_node_in(int state, const Lts& lts, int i)
 {
     nodes[state] = lts.nodes[i];
+    set_priv(state, lts.privs[i]);
 }
 
 void yy::Lts::copy_node_out(Lts& lts, int i, int state)
 {
     lts.nodes[i] = nodes[state];
+    lts.set_priv(i, get_priv(state));
 }
 
 void yy::Lts::copy_nodes_in(const Lts& lts)
 {
     nodes = lts.nodes;
+    privs = lts.privs;
 }
 
 /* BFS on the LTS for useless states removal. */
@@ -1669,9 +1673,18 @@ yy::Lts& yy::Lts::mergeEndNodes()
 /* Set the 'priv' field of *this[state] to 'val'. */
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
+    unsigned int size = privs.size();
+    unsigned int max = LtsNode::NoPriv;
+
     assert(state < nodes.size());
-    nodes[state].info &= ~LtsNode::PrivMask;
-    nodes[state].info |= (val << INFO_PRIV_SHIFT);
+
+    if (state >= size) {
+        for (unsigned int i = size; i < nodes.size(); i++) {
+            privs.push_back(max);
+        }
+    }
+
+    privs[state] = val;
 }
 
 /* Get the 'priv' field of *this[state]. */
@@ -1679,7 +1692,11 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
 
-    return nodes[state].info >> INFO_PRIV_SHIFT;
+    if (state >= privs.size()) {
+        return LtsNode::NoPriv;
+    }
+
+    return privs[state];
 }
 
 /* Scan the graph looking for transitions towards unresolved nodes. Say
@@ -1714,7 +1731,7 @@ unsigned int yy::Lts::resolve()
                 bool found = false;
 
                 priv = get_priv(e.dest);
-                assert(priv != LtsNode::MaxPriv);
+                assert(priv != LtsNode::NoPriv);
                 /* Look for a non-unresolved node with a matching 'priv'. */
                 for (unsigned int k=0; k<nodes.size(); k++) {
                     if (get_type(k) != LtsNode::Unresolved
@@ -1742,10 +1759,10 @@ unsigned int yy::Lts::resolve()
 
     /* Reset the priv fields. */
     for (unsigned int i=0; i<nodes.size(); i++) {
-        set_priv(i, LtsNode::MaxPriv);
+        set_priv(i, LtsNode::NoPriv);
     }
 
-    return LtsNode::MaxPriv;
+    return LtsNode::NoPriv;
 }
 
 /* Scan the graph looking for nodes whose 'priv' is contained in the 'privs'

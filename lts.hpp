@@ -46,11 +46,10 @@ struct Edge {
 };
 
 #define INFO_TYPE_BITS  3U
-#define INFO_PRIV_SHIFT INFO_TYPE_BITS
 
 struct LtsNode {
     vector<Edge> children;
-    unsigned int info; /* Stores type and priv. */
+    unsigned int info; /* Stores type. */
 
     static const int Normal = 0;
     static const int End = 1;
@@ -60,8 +59,7 @@ struct LtsNode {
     static const int Zombie = 5;
 
     static const unsigned int TypeMask = (1 << INFO_TYPE_BITS) - 1;
-    static const unsigned int PrivMask = ~TypeMask;
-    static const unsigned int MaxPriv = PrivMask >> INFO_TYPE_BITS;
+    static const unsigned int NoPriv = ~0U;
 
     void offset(int offset);
 };
@@ -85,6 +83,7 @@ struct LtsVisitObject {
 
 class Lts: public Symbol {
     vector<LtsNode> nodes;
+    vector<unsigned int> privs;
     ActionsTable * atp;
 
     set<int> alphabet;

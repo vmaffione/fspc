@@ -40,7 +40,7 @@ static void update_unres(FspDriver& c, const string& name,
         semantic_error(c, errstream, loc);
     }
 
-    if (lts.get_priv(0) == LtsNode::MaxPriv) {
+    if (lts.get_priv(0) == LtsNode::NoPriv) {
         /* If 'lts[0]' does not have its 'priv' set, we must be in one of
            the following two cases:
                 - 'lts[0]' is an unresolved node, and so we have to assign
@@ -62,7 +62,7 @@ static void update_unres(FspDriver& c, const string& name,
         ui = c.unres.append(name, lts.get_priv(0), define);
         /* Update all the 'priv' fields that have the 'idx' previously
            associated to 'name', if any. */
-        if (ui != LtsNode::MaxPriv) {
+        if (ui != LtsNode::NoPriv) {
             lts.replace_priv(lts.get_priv(0), ui);
         }
     }
@@ -1692,7 +1692,7 @@ cout << "UnresolvedNames:\n";
 for (unsigned int i=0; i<c.unres.size(); i++) {
     unsigned ui = c.unres.get_idx(i);
 
-    if (ui != LtsNode::MaxPriv) {
+    if (ui != LtsNode::NoPriv) {
         cout << "   " << ui << " " << c.unres.get_name(i) << "\n";
     }
 }
@@ -1700,7 +1700,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Try to resolve all the unresolved nodes into the LTS. */
     unres = res.resolve();
-    if (unres != LtsNode::MaxPriv) {
+    if (unres != LtsNode::NoPriv) {
         stringstream errstream;
         errstream << "process reference " << unres << " unresolved";
         semantic_error(c, errstream, loc);

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cassert>
 
+#include "lts.hpp"
+
 
 #define FUNNY   44  /* Magic number used to generate indexes. */
 
@@ -43,7 +45,7 @@ unsigned int UnresolvedNames::insert(const string& name, bool defined)
    'name'. In such a case we must remove 'name' from this conflicting entry,
    merging the conflicting entry into the entry 'idx'.
    When a conflicting entry exists, its index is returned. Otherwise,
-   this method returns LtsNode::MaxPriv.
+   this method returns LtsNode::NoPriv.
  */
 unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
                                      bool defined)
@@ -73,7 +75,7 @@ unsigned int UnresolvedNames::append(const string& name, unsigned int idx,
     elem.defined = defined;
     names[i].push_back(elem);
 
-    return ~0x7U;
+    return LtsNode::NoPriv;
 }
 
 /* Given an entry pointer, return the index contained in the entry. */
