@@ -27,6 +27,7 @@
 #include <string>
 #include <set>
 #include <assert.h>
+#include <stdint.h>
 
 #include "symbols_table.hpp"
 #include "location.hh"
@@ -41,8 +42,8 @@ struct TerminalSet {
 
 /* An LTS edge. */
 struct Edge {
-    unsigned int dest;
-    unsigned int action;
+    uint32_t dest;
+    uint32_t action;
 };
 
 #define INFO_TYPE_BITS  3U
