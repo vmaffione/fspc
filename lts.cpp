@@ -169,6 +169,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     set_type(0, type);
     set_priv(0, LtsNode::NoPriv);
     terminal_sets_computed = false;
+    end = err = ~0U;
 }
 
 void yy::Lts::print() const {
@@ -196,11 +197,23 @@ void yy::Lts::clear()
     alphabet.clear();
     terminal_sets.clear();
     terminal_sets_computed = false;
+    end = err = ~0U;
 }
 
 /* Clean up some space that will not be needed in the future. */
 void yy::Lts::cleanup()
 {
+    bool search = (err == ~0U || end == ~0U);
+
+    for (unsigned int i = 0; search && i < nodes.size(); i++) {
+        if (get_type(i) == LtsNode::End) {
+            end = i;
+            search = (err == ~0U);
+        } else if (get_type(i) == LtsNode::Error) {
+            err = i;
+            search = (end == ~0U);
+        }
+    }
     infos.clear();
 }
 
@@ -221,12 +234,14 @@ void yy::Lts::copy_node_in(int state, const Lts& lts, int i)
 {
     nodes[state] = lts.nodes[i];
     set_priv(state, lts.get_priv(i));
+    set_type(state, lts.get_type(i));
 }
 
 void yy::Lts::copy_node_out(Lts& lts, int i, int state)
 {
     lts.nodes[i] = nodes[state];
     lts.set_priv(i, get_priv(state));
+    lts.set_type(i, get_type(state));
 }
 
 void yy::Lts::copy_nodes_in(const Lts& lts)
@@ -431,6 +446,7 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
     nodes.clear();
     terminal_sets_computed = false;
     alphabet.clear();
+    end = err = ~0U;
 
     nodes.push_back(LtsNode());
     set_type(nodes.size() - 1, LtsNode::Normal);
@@ -1676,20 +1692,59 @@ yy::Lts& yy::Lts::mergeEndNodes()
     return *this;
 }
 
-/* Set the 'priv' field of *this[state] to 'val'. */
-void yy::Lts::set_priv(unsigned int state, unsigned int val)
+static void extend_infos(vector<LtsNodeInfo>& infos, unsigned int request,
+                 unsigned int hint)
 {
     unsigned int size = infos.size();
     unsigned int max = LtsNode::NoPriv;
+    unsigned int type = LtsNode::Normal;
 
-    assert(state < nodes.size());
-
-    if (state >= size) {
-        for (unsigned int i = size; i < nodes.size(); i++) {
+    if (request >= size) {
+        for (unsigned int i = size; i < hint; i++) {
             infos.push_back(LtsNodeInfo());
             infos.back().priv = max;
+            infos.back().type = type;
         }
     }
+}
+
+void yy::Lts::set_type(unsigned int state, unsigned int type)
+{
+    assert(state < nodes.size());
+
+    extend_infos(infos, state, nodes.size());
+
+    infos[state].type = type;
+    if (type == LtsNode::End) {
+        end = state;
+    } else if (type == LtsNode::Error) {
+        err = state;
+    }
+}
+
+unsigned int yy::Lts::get_type(unsigned int state) const
+{
+    assert(state < nodes.size());
+
+    if (state >= infos.size()) {
+        if (state == end) {
+            return LtsNode::End;
+        }
+        if (state == err) {
+            return LtsNode::Error;
+        }
+        return LtsNode::Normal;
+    }
+
+    return infos[state].type;
+}
+
+/* Set the 'priv' field of *this[state] to 'val'. */
+void yy::Lts::set_priv(unsigned int state, unsigned int val)
+{
+    assert(state < nodes.size());
+
+    extend_infos(infos, state, nodes.size());
 
     infos[state].priv = val;
 }

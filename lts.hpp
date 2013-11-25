@@ -46,11 +46,8 @@ struct Edge {
     uint32_t action;
 };
 
-#define INFO_TYPE_BITS  3U
-
 struct LtsNode {
     vector<Edge> children;
-    unsigned int info; /* Stores type. */
 
     static const int Normal = 0;
     static const int End = 1;
@@ -59,7 +56,6 @@ struct LtsNode {
     static const int Unresolved = 4;
     static const int Zombie = 5;
 
-    static const unsigned int TypeMask = (1 << INFO_TYPE_BITS) - 1;
     static const unsigned int NoPriv = ~0U;
 
     void offset(int offset);
@@ -67,6 +63,7 @@ struct LtsNode {
 
 struct LtsNodeInfo {
     unsigned int priv;
+    unsigned int type;
 };
 
 
@@ -90,6 +87,9 @@ struct LtsVisitObject {
 class Lts: public Symbol {
     vector<LtsNode> nodes;
     vector<LtsNodeInfo> infos;
+    unsigned int end;
+    unsigned int err;
+
     ActionsTable * atp;
 
     set<int> alphabet;
@@ -126,7 +126,7 @@ class Lts: public Symbol {
   public:
     string name;
 
-    Lts() { atp = NULL; } /* Invalid instance, used by tree. */
+    Lts() { atp = NULL; err = end = ~0U; } /* Invalid instance, used by tree. */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
@@ -166,13 +166,8 @@ class Lts: public Symbol {
 
     void set_priv(unsigned int state, unsigned int val);
     unsigned int get_priv(unsigned int state) const;
-    void set_type(unsigned int state, unsigned int type) {
-        nodes[state].info &= ~LtsNode::TypeMask;
-        nodes[state].info |= type & LtsNode::TypeMask;
-    }
-    unsigned int get_type(unsigned int state) const {
-        return nodes[state].info & LtsNode::TypeMask;
-    }
+    void set_type(unsigned int state, unsigned int type);
+    unsigned int get_type(unsigned int state) const;
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
 
