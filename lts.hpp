@@ -65,6 +65,11 @@ struct LtsNode {
     void offset(int offset);
 };
 
+struct LtsNodeInfo {
+    unsigned int priv;
+};
+
+
 class Serializer;
 class Deserializer;
 class Shell;
@@ -84,7 +89,7 @@ struct LtsVisitObject {
 
 class Lts: public Symbol {
     vector<LtsNode> nodes;
-    vector<unsigned int> privs;
+    vector<LtsNodeInfo> infos;
     ActionsTable * atp;
 
     set<int> alphabet;

@@ -192,7 +192,7 @@ void yy::Lts::print() const {
 void yy::Lts::clear()
 {
     nodes.clear();
-    privs.clear();
+    infos.clear();
     alphabet.clear();
     terminal_sets.clear();
     terminal_sets_computed = false;
@@ -201,7 +201,7 @@ void yy::Lts::clear()
 /* Clean up some space that will not be needed in the future. */
 void yy::Lts::cleanup()
 {
-    privs.clear();
+    infos.clear();
 }
 
 int yy::Lts::numTransitions() const
@@ -232,7 +232,7 @@ void yy::Lts::copy_node_out(Lts& lts, int i, int state)
 void yy::Lts::copy_nodes_in(const Lts& lts)
 {
     nodes = lts.nodes;
-    privs = lts.privs;
+    infos = lts.infos;
 }
 
 /* BFS on the LTS for useless states removal. */
@@ -1679,18 +1679,19 @@ yy::Lts& yy::Lts::mergeEndNodes()
 /* Set the 'priv' field of *this[state] to 'val'. */
 void yy::Lts::set_priv(unsigned int state, unsigned int val)
 {
-    unsigned int size = privs.size();
+    unsigned int size = infos.size();
     unsigned int max = LtsNode::NoPriv;
 
     assert(state < nodes.size());
 
     if (state >= size) {
         for (unsigned int i = size; i < nodes.size(); i++) {
-            privs.push_back(max);
+            infos.push_back(LtsNodeInfo());
+            infos.back().priv = max;
         }
     }
 
-    privs[state] = val;
+    infos[state].priv = val;
 }
 
 /* Get the 'priv' field of *this[state]. */
@@ -1698,11 +1699,11 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
 
-    if (state >= privs.size()) {
+    if (state >= infos.size()) {
         return LtsNode::NoPriv;
     }
 
-    return privs[state];
+    return infos[state].priv;
 }
 
 /* Scan the graph looking for transitions towards unresolved nodes. Say
