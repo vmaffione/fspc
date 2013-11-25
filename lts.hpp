@@ -92,7 +92,15 @@ class Lts: public Symbol {
     vector<TerminalSet> terminal_sets;
     bool terminal_sets_computed;
 
+    void copy_node_in(int state, const Lts& lts, int i);
+    void copy_node_out(Lts& lts, int i, int state);
+    void copy_nodes_in(const Lts& lts);
 
+    void update_composition(unsigned int idx, unsigned int dst_ip,
+                            const yy::Lts& p, unsigned int dst_iq,
+                            const yy::Lts& q, unsigned int nq, Edge& e,
+                            map<unsigned int, unsigned int>& direct,
+                            vector<unsigned int>& inverse);
     void compose_declarative(const Lts& p, const Lts& q);
     void compose_operational(const Lts& p, const Lts& q);
 
@@ -102,7 +110,7 @@ class Lts: public Symbol {
     static ComposeAlgorithm compose_algorithm;
 
     void compose(const Lts& p, const Lts& q);
-    void reduce(const vector<LtsNode>& unconnected);
+    void reduce(const Lts& unconnected);
     void print_trace(const vector<int>& trace, stringstream& ss) const;
     void removeType(unsigned int type, unsigned int zero_idx,
                     bool call_reduce);

@@ -121,28 +121,6 @@ string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 yy::Lts::ComposeAlgorithm yy::Lts::compose_algorithm =
                                     &yy::Lts::compose_operational;
 
-static inline void set_type(LtsNode& n, unsigned int type)
-{
-    n.info &= ~LtsNode::TypeMask;
-    n.info |= type & LtsNode::TypeMask;
-}
-
-static inline unsigned int get_type(const LtsNode& n)
-{
-    return n.info & LtsNode::TypeMask;
-}
-
-static void set_priv(LtsNode& n, unsigned int priv)
-{
-    n.info &= ~LtsNode::PrivMask;
-    n.info |= (priv << INFO_PRIV_SHIFT);
-}
-
-static unsigned int get_priv(const LtsNode& n)
-{
-    return n.info >> INFO_PRIV_SHIFT;
-}
-
 int yy::Lts::lookupAlphabet(int action) const
 {
     set<int>::iterator it = alphabet.find(action);
@@ -232,10 +210,25 @@ int yy::Lts::numTransitions() const
     return n;
 }
 
-/* BFS on the LTS for useless states removal. */
-void yy::Lts::reduce(const vector<LtsNode>& unconnected)
+void yy::Lts::copy_node_in(int state, const Lts& lts, int i)
 {
-    int np = unconnected.size();
+    nodes[state] = lts.nodes[i];
+}
+
+void yy::Lts::copy_node_out(Lts& lts, int i, int state)
+{
+    lts.nodes[i] = nodes[state];
+}
+
+void yy::Lts::copy_nodes_in(const Lts& lts)
+{
+    nodes = lts.nodes;
+}
+
+/* BFS on the LTS for useless states removal. */
+void yy::Lts::reduce(const yy::Lts& unconnected)
+{
+    int np = unconnected.nodes.size();
     vector<int> frontier(np);
     vector<int> map(np);
     int pop, push;
@@ -264,23 +257,23 @@ void yy::Lts::reduce(const vector<LtsNode>& unconnected)
 	Edge e;
 
 	state = frontier[pop++];
-	for (unsigned int j=0; j<unconnected[state].children.size(); j++) {
-	    int child = unconnected[state].children[j].dest;
+	for (unsigned int j=0; j<unconnected.nodes[state].children.size(); j++) {
+	    int child = unconnected.nodes[state].children[j].dest;
 
 	    if (map[child] == -1) {
 		map[child] = n++;
 		frontier[push++] = child;
 	    }
 	    e.dest = map[child];
-	    e.action = unconnected[state].children[j].action;
+	    e.action = unconnected.nodes[state].children[j].action;
 	    nodes[map[state]].children.push_back(e);
 	}
     }
 
     for (int i=0; i<np; i++)
 	if (map[i] != -1) {
-            set_type(map[i], ::get_type(unconnected[i]));
-            set_priv(map[i], ::get_priv(unconnected[i]));
+            set_type(map[i], unconnected.get_type(i));
+            set_priv(map[i], unconnected.get_priv(i));
         }
 
     nodes.resize(n);
@@ -292,21 +285,19 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
     unsigned int nq;
     unsigned int np;
     Edge e;
-    vector<LtsNode> product;
+    Lts product;
 
     assert(p.atp == atp && q.atp == atp);
 
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
-    nodes.clear();
-    terminal_sets_computed = false;
-    alphabet.clear();
+    this->clear();
 
     /* We build the cartesian product of P states and Q states. For 
        convenience, we map the composite state (p,q) with the "linear" state
        p*nq+q (exactly how a matrix is mapped onto a vector. */
     np = p.numStates();
     nq = q.numStates();
-    product.resize(np * nq);
+    product.nodes.resize(np * nq);
 
     /* Scan the P graph and combine P actions with Q states. */
     for (unsigned int ip=0; ip<p.nodes.size(); ip++) {
@@ -322,7 +313,7 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
                    of Q. */
                 for (unsigned int iq=0; iq<nq; iq++) {
                     e.dest = ep.dest * nq + iq;
-                    product[ip*nq+iq].children.push_back(e);
+                    product.nodes[ip*nq+iq].children.push_back(e);
                 }
             } else {
                 /* If ep.action is included in the alphabet of Q, this
@@ -333,7 +324,7 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
 
                         if (eq.action == ep.action) {
                             e.dest = ep.dest * nq + eq.dest;
-                            product[ip*nq+iq].children.push_back(e);
+                            product.nodes[ip*nq+iq].children.push_back(e);
                         }
                     }
 
@@ -355,7 +346,7 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
                    of P. */
                 for (unsigned int ip=0; ip<np; ip++) {
                     e.dest = ip * nq + eq.dest;
-                    product[ip*nq+iq].children.push_back(e);
+                    product.nodes[ip*nq+iq].children.push_back(e);
                 }
             } /* else case has already been covered by the previous scan. */
         }
@@ -367,10 +358,10 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
         for (unsigned int iq=0; iq<q.nodes.size(); iq++)
             if ((p.get_type(ip) == LtsNode::Error) ||
                     (q.get_type(iq) == LtsNode::Error)) {
-                ::set_type(product[ip*nq+iq], LtsNode::Error);
+                product.set_type(ip*nq+iq, LtsNode::Error);
             } else if ((p.get_type(ip) == LtsNode::End) &&
                     (q.get_type(iq) == LtsNode::End)) {
-                ::set_type(product[ip*nq+iq], LtsNode::End);
+                product.set_type(ip*nq+iq, LtsNode::End);
             }
     }
 
@@ -380,13 +371,12 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
     reduce(product);
 }
 
-static void update_composition(unsigned int idx,
+void yy::Lts::update_composition(unsigned int idx,
                                unsigned int dst_ip, const yy::Lts& p,
                                unsigned int dst_iq, const yy::Lts& q,
                                unsigned int nq, Edge& e,
                                map<unsigned int, unsigned int>& direct,
-                               vector<unsigned int>& inverse,
-                               vector<LtsNode>& nodes)
+                               vector<unsigned int>& inverse)
 {
     pair< map<unsigned int, unsigned int>::iterator, bool> insr;
     pair<unsigned int, unsigned int> couple;
@@ -405,7 +395,7 @@ static void update_composition(unsigned int idx,
             type = LtsNode::End;
         }
         nodes.push_back(LtsNode());
-        set_type(nodes.back(), type);
+        set_type(nodes.size() - 1, type);
         inverse.push_back(couple.first);
     }
 
@@ -448,7 +438,7 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
             if (q.lookupAlphabet(ep.action) == -1) {
                 update_composition(idx, ep.dest, p,
                                    iq, q, nq, e, direct,
-                                   inverse, nodes);
+                                   inverse);
             } else {
                 for (unsigned int jq = 0; jq < q.nodes[iq].children.size();
                                                                 jq++) {
@@ -457,7 +447,7 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
                     if (eq.action == ep.action) {
                         update_composition(idx, ep.dest, p,
                                            eq.dest, q,
-                                           nq, e, direct, inverse, nodes);
+                                           nq, e, direct, inverse);
                     }
                 }
             }
@@ -470,7 +460,7 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
             if (p.lookupAlphabet(eq.action) == -1) {
                 update_composition(idx, ip, p, eq.dest,
                                    q, nq, e, direct,
-                                   inverse, nodes);
+                                   inverse);
             }
         }
 
@@ -1081,9 +1071,11 @@ yy::Lts& yy::Lts::priority(const SetS& s, bool low)
 {
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
-    vector<LtsNode> new_nodes(nodes.size());
+    Lts new_lts;
 
     CHECKATP(*this);
+
+    new_lts.nodes.resize(nodes.size());
 
     terminal_sets_computed = false;
 
@@ -1115,14 +1107,15 @@ yy::Lts& yy::Lts::priority(const SetS& s, bool low)
 		found = true;
 	    }
 	if (found) {
-	    new_nodes[i].children = new_children;
-            ::set_type(new_nodes[i], get_type(i));
-            ::set_priv(new_nodes[i], get_priv(i));
-	} else
-	    new_nodes[i] = nodes[i];
+	    new_lts.nodes[i].children = new_children;
+            new_lts.set_type(i, get_type(i));
+            new_lts.set_priv(i, get_priv(i));
+	} else {
+            copy_node_out(new_lts, i, i);
+        }
     }
 
-    reduce(new_nodes);
+    reduce(new_lts);
 
     return *this;
 }
@@ -1452,9 +1445,8 @@ unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
 
     /* Append the new nodes in this->nodes, offsetting the destinations. */
     for (unsigned int i=first; i<lts.nodes.size(); i++) {
-        const LtsNode& n = lts.nodes[i];
-
-        nodes.push_back(n);
+        nodes.push_back(LtsNode());
+        copy_node_in(nodes.size() - 1, lts, i);
         nodes.back().offset(offset);
     }
 
@@ -1505,7 +1497,9 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
         }
     }
 
-    vector<LtsNode> new_nodes(cnt);
+    Lts new_lts;
+
+    new_lts.nodes.resize(cnt);
 
     /* Regenerate this->nodes using the mapping. */
     for (unsigned int i=0; i<nodes.size(); i++) {
@@ -1514,24 +1508,24 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
 
         if (k != ~0U) {
             /* Rule out incomplete nodes. */
-            ::set_type(new_nodes[k], get_type(i));
-            ::set_priv(new_nodes[k], get_priv(i));
+            new_lts.set_type(k, get_type(i));
+            new_lts.set_priv(k, get_priv(i));
             for (unsigned int j=0; j<n.children.size(); j++) {
                 Edge e = n.children[j];
 
                 if (remap[e.dest] != ~0U) {
                     /* Rule out transitions towards incomplete nodes. */
                     e.dest = remap[e.dest];
-                    new_nodes[k].children.push_back(e);
+                    new_lts.nodes[k].children.push_back(e);
                 }
             }
         }
     }
 
     if (call_reduce) {
-        reduce(new_nodes);
+        reduce(new_lts);
     } else {
-        nodes = new_nodes;
+        copy_nodes_in(new_lts);
     }
 }
 
@@ -1622,7 +1616,7 @@ bool yy::Lts::endcat(const yy::Lts& lts)
     offset = append(lts, 1);
 
     /* Replace the End node with 'lts[0]'. */
-    nodes[x] = lts.nodes[0];
+    copy_node_in(x, lts, 0);
     /* Offset the transitions of 'lts[0]'. */
     nodes[x].offset(offset);
 
