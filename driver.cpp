@@ -59,7 +59,6 @@ int FspDriver::parse(const CompilerOptions& co)
 {
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
-    int produceLts = (co.input_type != CompilerOptions::InputTypeLts);
     stringstream ss;
 
     if (co.input_type == CompilerOptions::InputTypeFsp) {
@@ -104,7 +103,9 @@ int FspDriver::parse(const CompilerOptions& co)
         delete tree;
         tree = NULL;
 
-	serp = new Serializer(co.output_file);
+        if (co.output_file) {
+	    serp = new Serializer(co.output_file);
+        }
     } else { /* Load the processes table from an LTS file. */
 	uint32_t nlts, nprogr;
 
@@ -144,7 +145,7 @@ int FspDriver::parse(const CompilerOptions& co)
     yy::Lts *lts;
     ProgressS *pv;
 
-    if (produceLts) {
+    if (serp) {
 	serp->actions_table(actions, 0);
 	serp->integer(processes.table.size(), 0);
     }
@@ -152,7 +153,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	lts = is<yy::Lts>(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
-	if (produceLts) {
+	if (serp) {
 	    serp->lts(*lts, 0);
 	}
 
@@ -165,7 +166,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	}
     }
 
-    if (produceLts) {
+    if (serp) {
 	serp->integer(progresses.table.size(), 0);
     }
     /* Do each progress check against all the global processes. */
@@ -181,7 +182,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	}
 
 	/* Output the property if the input is not an LTS file. */
-	if (produceLts) {
+	if (serp) {
 	    serp->stl_string(it->first, 0);
 	    serp->progress_value(*pv, 0);
 	}

@@ -53,6 +53,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int ch;
     int il_options = 0;
+    bool output_file_option = false;
 
     /* Set default values. */
     co.input_file = "input.fsp";
@@ -86,6 +87,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
 	    case 'o':
 		co.output_file = optarg;
+                output_file_option = true;
 		break;
 
 	    case 'a':
@@ -127,6 +129,14 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     if (il_options > 1) {
 	cerr << "Error: Cannot specify more than one input file\n";
 	exit(-1);
+    }
+
+    if (!output_file_option && co.shell) {
+        /* When the user requests an interactive shell, and does not
+           explicitely specify the '-o' option, we don't output any
+           compiled file. This is useful when the user wants to
+           work (interactively) with huge LTSs. */
+        co.output_file = NULL;
     }
 }
 #else	/* !GET_OPT */
