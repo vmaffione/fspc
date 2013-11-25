@@ -198,6 +198,12 @@ void yy::Lts::clear()
     terminal_sets_computed = false;
 }
 
+/* Clean up some space that will not be needed in the future. */
+void yy::Lts::cleanup()
+{
+    privs.clear();
+}
+
 int yy::Lts::numTransitions() const
 {
     int n = 0;
@@ -214,7 +220,7 @@ int yy::Lts::numTransitions() const
 void yy::Lts::copy_node_in(int state, const Lts& lts, int i)
 {
     nodes[state] = lts.nodes[i];
-    set_priv(state, lts.privs[i]);
+    set_priv(state, lts.get_priv(i));
 }
 
 void yy::Lts::copy_node_out(Lts& lts, int i, int state)

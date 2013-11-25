@@ -7,6 +7,7 @@
 #include "driver.hpp"
 #include "unresolved.hpp"
 #include "helpers.hpp"
+#include "utils.hpp"
 
 using namespace std;
 using namespace yy;
@@ -1635,10 +1636,11 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
                                            const string& name)
 {
     string extension;
-    Symbol *res_clone;
+    Lts *res_clone;
     ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
     res.name = name;
+    res.cleanup();
 
     if (!c.replay) {
         /* Store c.paramproc in parametric_processes. */
@@ -1657,7 +1659,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
     lts_name_extension(c.paramproc.defaults, extension);
     res.name += extension;
 
-    res_clone = res.clone();
+    res_clone = is<Lts>(res.clone());
     /* Insert lts into the global 'processes' table. */
     IFD(cout << "Saving " << res.name << "\n");
     if (!c.processes.insert(res.name, res_clone)) {
