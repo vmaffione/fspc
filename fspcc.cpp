@@ -43,7 +43,7 @@ void help()
     cout << "   -a : The same as '-d -p -g'\n";
     cout << "   -s : Runs an LTS analysis interactive shell\n";
     cout << "   -S : Runs an LTS analysis script\n";
-    cout << "   -v : show versioning information\n";
+    cout << "   -v : Shows versioning information\n";
     cout << "   -h : Shows this help.\n";
 }
 
@@ -85,10 +85,6 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 		break;
 
 	    case 'o':
-                /* When the user does not explicitely specify the '-o'
-                   option, we don't output any compiled file. This is
-                   useful - as an example - when the user wants to
-                   work interactively with huge LTSs. */
                 co.output_file = optarg;
                 break;
 
@@ -136,9 +132,8 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     if (!co.output_file && !co.shell && !co.script) {
         /* There's (normally) no point in running this program if one
            neither runs a shell nor a script nor generates a compiled
-           output. */
-        cerr << "   Warning: You didn't specify '-o' nor '-s' nor '-S'.\n"
-                "            Are you sure about what you are doing?\n";
+           output. Assume a default '-o' option. */
+        co.output_file = "default.lts";
     }
 }
 #else	/* !GET_OPT */

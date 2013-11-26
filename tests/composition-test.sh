@@ -29,7 +29,7 @@ do
     sed -i "s/N=3/N=${i}/g" comp-input.fsp
 
     TSTART=$(get_ms)
-    ${FSPC} -i comp-input.fsp &> /dev/null
+    ${FSPC} -i comp-input.fsp -o /dev/null
     TEND=$(get_ms)
 
     DIFF=$(( $TEND - $TSTART ))
