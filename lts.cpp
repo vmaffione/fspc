@@ -396,6 +396,7 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
     reduce(product);
 }
 
+/* Helper function used by Lts::compose_operational(). */
 void yy::Lts::update_composition(unsigned int idx,
                                unsigned int dst_ip, const yy::Lts& p,
                                unsigned int dst_iq, const yy::Lts& q,
