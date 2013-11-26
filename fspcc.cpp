@@ -53,12 +53,11 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int ch;
     int il_options = 0;
-    bool output_file_option = false;
 
     /* Set default values. */
     co.input_file = "input.fsp";
     co.input_type = CompilerOptions::InputTypeFsp;
-    co.output_file = "output.lts";
+    co.output_file = NULL;
     co.deadlock = false;
     co.progress = false;
     co.graphviz = false;
@@ -86,9 +85,12 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 		break;
 
 	    case 'o':
-		co.output_file = optarg;
-                output_file_option = true;
-		break;
+                /* When the user does not explicitely specify the '-o'
+                   option, we don't output any compiled file. This is
+                   useful - as an example - when the user wants to
+                   work interactively with huge LTSs. */
+                co.output_file = optarg;
+                break;
 
 	    case 'a':
 		co.deadlock = co.progress = co.graphviz = true;
@@ -131,12 +133,12 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 	exit(-1);
     }
 
-    if (!output_file_option && co.shell) {
-        /* When the user requests an interactive shell, and does not
-           explicitely specify the '-o' option, we don't output any
-           compiled file. This is useful when the user wants to
-           work (interactively) with huge LTSs. */
-        co.output_file = NULL;
+    if (!co.output_file && !co.shell && !co.script) {
+        /* There's (normally) no point in running this program if one
+           neither runs a shell nor a script nor generates a compiled
+           output. */
+        cerr << "   Warning: You didn't specify '-o' nor '-s' nor '-S'.\n"
+                "            Are you sure about what you are doing?\n";
     }
 }
 #else	/* !GET_OPT */

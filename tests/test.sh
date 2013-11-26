@@ -23,7 +23,7 @@ do
 	echo "Test FAILED on input${i}.fsp"
 	exit 1
     fi
-    ${FSPC} -l tests/new-output${i}.lts
+    ${FSPC} -l tests/new-output${i}.lts &> /dev/null
     var=$?
     if [ "$var" != "0" ]; then
         echo ""
