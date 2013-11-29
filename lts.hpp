@@ -149,6 +149,7 @@ class Lts: public Symbol {
     void graphvizOutput(const char * filename) const;
     void simulate(Shell& sh, const ActionSetS *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
+    void minimize(stringstream& ss);
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;

@@ -21,6 +21,8 @@
 #include <map>
 #include <fstream>
 #include <algorithm>
+#include <list>
+#include <queue>
 #include <cstdlib>
 #include <assert.h>
 
@@ -1450,6 +1452,113 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
     fout << ".\n";
 
     fout.close();
+}
+
+/* Minimize the number of states of the LTS. For now the
+   algorithm only aggregates states that are reacheable
+   through a finite tau-steps. */
+void yy::Lts::minimize(stringstream& ss)
+{
+    set<unsigned int> frontier;
+    vector<unsigned int> current;
+    vector<bool> seen(nodes.size());
+    unsigned int st;
+    unsigned int cur_idx;
+
+    if (!nodes.size()) {
+        return;
+    }
+
+    /* Three data structures here:
+        - 'current', a set which contains the current tau-reachable
+          nodes that have been seen (not necessarily visited) during
+           the visit
+        - 'frontier', a set which contains the nodes seen during the
+           visit that are not part of the 'current' set
+        - 'seen', a bitmap that marks the nodes seen during the visit
+
+       Note that if 'seen[x]' is true, then 'x' must be contained in
+       either 'current' or 'frontier', but not both.
+    */
+
+    for (unsigned int i = 0; i < seen.size(); i++) {
+        seen[i] = false;
+    }
+
+    /* At initialization time 'frontier' is empty, while 'current'
+       contains the zero node. 'cur_idx' is an index into 'current'.*/
+    cur_idx = 0;
+    current.push_back(0);
+    seen[0] = true;
+
+    for (;;) {
+        /* In the generic iteration, we first try to extract a node from
+           'current' which has not been visited yet (although it may have
+           been seen many times). */
+        if (cur_idx < current.size()) {
+            st = current[cur_idx++];
+        } else {
+           /* If all the nodes in 'current' have been visited, it means the
+              'current' is a tau-reachable set that can be replaced by a single
+              state in a minimized LTS.
+              We then try to extract a node from 'frontier'.
+            */
+            ss << "New set found: {";
+            for (unsigned int i = 0; i < current.size(); i++) {
+                ss << current[i] << ",";
+            }
+            ss << "}\n";
+
+            if (frontier.empty()) {
+                /* Frontier is empty, we've done with the minimizing visit. */
+                break;
+            }
+
+            /* Reset 'current' so that contains the node just extracted from
+               'frontier', which is then removed from 'frontier'. This
+               situation is analogue to what happens at initialization time,
+               where 'current' contains a starting node that will aggregate
+               all the tau-reachable node to itself. */
+            current.clear();
+            st = *(frontier.begin());
+            frontier.erase(frontier.begin());
+            current.push_back(st);
+            cur_idx = 1;
+        }
+
+        const LtsNode& n = nodes[st];
+
+        /* Visit a node. */
+        for (unsigned int i = 0; i < n.children.size(); i++) {
+            const Edge& e = n.children[i];
+
+            if (e.action == 0) {
+                /* This is a tau-transition. */
+                if (seen[e.dest] && frontier.count(e.dest)) {
+                    /* This happens if we "mistakenly" added the destination
+                       to 'frontier', because of a previous non-tau-transition
+                       towards the same destination. Make up for the mistake,
+                       removing the destination from 'frontier', and pretending
+                       that the destination has never been seen before. It will
+                       be added to 'current' below. */
+                    frontier.erase(e.dest);
+                    seen[e.dest] = false;
+                }
+                if (!seen[e.dest]) {
+                    /* Add the destination to 'current' if it has not been
+                       seen previously. */
+                    current.push_back(e.dest);
+                }
+            } else if (!seen[e.dest]) {
+                /* This transition has a regular action. Add the destination to
+                   frontier if it has not been seen previously. */
+                frontier.insert(e.dest);
+            }
+            /* Whatever happened in this inner loop iteration, mark the
+               destination as seen. */
+            seen[e.dest] = true;
+        }
+    }
 }
 
 void LtsNode::offset(int offset)
