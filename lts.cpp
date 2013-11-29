@@ -535,6 +535,10 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
 
     CHECKATP(0);
 
+    if (!n) {
+        return 0;
+    }
+
     /* BFS looking for states with no outgoing transitions. We use a BFS
        instead of a DFS because the former is simpler to implement and
        because it finds the shortest path to each deadlock state. */
