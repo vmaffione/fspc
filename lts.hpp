@@ -199,6 +199,9 @@ yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& lo
 class LtsPtr {
         Lts *ptr;
 
+        void get();
+        void put();
+
     public:
         LtsPtr();
         LtsPtr(Lts *);

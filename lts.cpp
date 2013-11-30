@@ -1978,7 +1978,8 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 
 #ifdef DBG_REFCNT
 #define DREF(p) do \
-    cout << __func__ << ":"<< p << ":" << p->refcount << "\n"; \
+        if (p) \
+            cout << __func__ << ":"<< p << ":" << p->refcount << "\n"; \
     while (0);
 #else  /* !DBG_REFCNT */
 #define DREF(p)
@@ -1993,10 +1994,29 @@ yy::LtsPtr::LtsPtr(yy::Lts *lts)
 {
     ptr = lts;
 
+    get();
+    DREF(ptr);
+}
+
+void yy::LtsPtr::get()
+{
     if (ptr) {
         /* Now *this holds *lts, so increment the refcount. */
         ptr->refcount++;
-        DREF(lts);
+    }
+}
+
+void yy::LtsPtr::put()
+{
+    if (ptr) {
+        /* We are going to loose what we held previously.
+           Decrement the refcount of what we held and maybe free the
+           referenced object. */
+        ptr->refcount--;
+        assert(ptr->refcount >= 0);
+        if (ptr->refcount == 0) {
+            delete ptr;
+        }
     }
 }
 
@@ -2005,35 +2025,20 @@ yy::LtsPtr::LtsPtr(const LtsPtr& p)
 {
     ptr = p.ptr;
 
-    if (ptr) {
-        /* Now *this holds *lts, so increment the refcount. */
-        ptr->refcount++;
-        DREF(ptr);
-    }
+    get();
+    DREF(ptr);
 }
 
 /* Assign the object pointed by another LtsPtr instance. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 {
-    if (ptr) {
-        /* We are going to loose what we held previously.
-           Decrement the refcount of what we held and maybe free the
-           referenced object. */
-        ptr->refcount--;
-        DREF(ptr);
-        assert(ptr->refcount >= 0);
-        if (ptr->refcount == 0) {
-            delete ptr;
-        }
-    }
+    put();
+    DREF(ptr);
 
     ptr = p.ptr;
 
-    if (ptr) {
-        /* We hold a new object, let's increment the refcount. */
-        ptr->refcount++;
-        DREF(ptr);
-    }
+    get();
+    DREF(ptr);
 
     return *this;
 }
@@ -2041,25 +2046,13 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 /* Assign the object pointed by the input pointer. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 {
-    if (ptr) {
-        /* We are going to loose what we held previously.
-           Decrement the refcount of what we held and maybe free the
-           referenced object. */
-        ptr->refcount--;
-        DREF(ptr);
-        assert(ptr->refcount >= 0);
-        if (ptr->refcount == 0) {
-            delete ptr;
-        }
-    }
+    put();
+    DREF(ptr);
 
     ptr = lts;
 
-    if (ptr) {
-        /* We hold a new object, let's increment the refcount. */
-        ptr->refcount++;
-        DREF(ptr);
-    }
+    get();
+    DREF(ptr);
 
     return *this;
 }
@@ -2090,27 +2083,16 @@ yy::LtsPtr::operator Lts*()
  */
 yy::Lts* yy::LtsPtr::delegate()
 {
-    if (ptr) {
-        ptr->refcount++;
-        DREF(ptr);
-    }
+    get();
+    DREF(ptr);
 
     return ptr;
 }
 
 yy::LtsPtr::~LtsPtr()
 {
-    if (ptr) {
-        /* We are going to loose what we held previously.
-           Decrement the refcount of what we held and maybe free the
-           referenced object. */
-        ptr->refcount--;
-        DREF(ptr);
-        assert(ptr->refcount >= 0);
-        if (ptr->refcount == 0) {
-            delete ptr;
-        }
-    }
+    put();
+    DREF(ptr);
 
     ptr = NULL;
 }
@@ -2119,17 +2101,8 @@ yy::LtsPtr::~LtsPtr()
    instance. */
 void yy::LtsPtr::clear()
 {
-    if (ptr) {
-        /* We are going to loose what we held previously.
-           Decrement the refcount of what we held and maybe free the
-           referenced object. */
-        ptr->refcount--;
-        DREF(ptr);
-        assert(ptr->refcount >= 0);
-        if (ptr->refcount == 0) {
-            delete ptr;
-        }
-    }
+    put();
+    DREF(ptr);
 
     ptr = NULL;
 }
