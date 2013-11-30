@@ -114,7 +114,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	desp->actions_table(actions, 0);
 	desp->integer(nlts, 0);
 	for (uint32_t i=0; i<nlts; i++) {
-	    yy::Lts * lts = new yy::Lts(LtsNode::End, &actions);
+	    yy::LtsPtr lts = new yy::Lts(LtsNode::End, &actions);
 
 	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
@@ -142,7 +142,7 @@ int FspDriver::parse(const CompilerOptions& co)
        the associated LTS and do the deadlock analysis. */
     map<string, Symbol *>::iterator it;
     map<string, Symbol *>::iterator jt;
-    yy::Lts *lts;
+    yy::LtsPtr lts;
     ProgressS *pv;
 
     if (serp) {

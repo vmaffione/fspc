@@ -172,6 +172,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     set_priv(0, LtsNode::NoPriv);
     terminal_sets_computed = false;
     end = err = ~0U;
+    refcount = 0;
 }
 
 void yy::Lts::print() const {
@@ -510,6 +511,7 @@ yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)
     assert(p.atp && q.atp == p.atp);
     atp = p.atp;
     compose(p, q);
+    refcount = 0;
 }
 
 yy::Lts& yy::Lts::compose(const yy::Lts& q)
@@ -1968,5 +1970,102 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
             set_priv(i, new_priv);
         }
     }
+}
+
+
+/* =========================== LtsPtr ============================== */
+yy::LtsPtr::LtsPtr() : ptr(NULL)
+{
+}
+
+yy::LtsPtr::LtsPtr(yy::Lts *lts)
+{
+    ptr = lts;
+
+    if (ptr) {
+        ptr->refcount++;
+    }
+}
+
+yy::LtsPtr::LtsPtr(const LtsPtr& p)
+{
+    ptr = p.ptr;
+
+    if (ptr) {
+        ptr->refcount++;
+    }
+}
+
+yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
+{
+    if (ptr) {
+        ptr->refcount--;
+        assert(ptr->refcount >= 0);
+        if (ptr->refcount == 0) {
+            delete ptr;
+        }
+    }
+
+    ptr = p.ptr;
+
+    if (ptr) {
+        ptr->refcount++;
+    }
+
+    return *this;
+}
+
+yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
+{
+    if (ptr) {
+        ptr->refcount--;
+        assert(ptr->refcount >= 0);
+        if (ptr->refcount == 0) {
+            delete ptr;
+        }
+    }
+
+    ptr = lts;
+
+    if (ptr) {
+        ptr->refcount++;
+    }
+
+    return *this;
+}
+
+yy::LtsPtr::operator Lts*()
+{
+    if (ptr) {
+        ptr->refcount++;
+    }
+
+    return ptr;
+}
+
+yy::LtsPtr::~LtsPtr()
+{
+    if (ptr) {
+        ptr->refcount--;
+        assert(ptr->refcount >= 0);
+        if (ptr->refcount == 0) {
+            delete ptr;
+        }
+    }
+
+    ptr = NULL;
+}
+
+void yy::LtsPtr::clear()
+{
+    if (ptr) {
+        ptr->refcount--;
+        assert(ptr->refcount >= 0);
+        if (ptr->refcount == 0) {
+            delete ptr;
+        }
+    }
+
+    ptr = NULL;
 }
 

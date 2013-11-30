@@ -125,6 +125,7 @@ class Lts: public Symbol {
 
   public:
     string name;
+    unsigned refcount;  /* XXX private */
 
     Lts() { atp = NULL; err = end = ~0U; } /* Invalid instance, used by tree. */
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
@@ -182,6 +183,21 @@ class Lts: public Symbol {
 };
 
 yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc);
+
+class LtsPtr {
+        Lts *ptr;
+
+    public:
+        LtsPtr();
+        LtsPtr(Lts *);
+        LtsPtr(const LtsPtr&);
+        LtsPtr& operator=(Lts* lts);
+        LtsPtr& operator=(LtsPtr&);
+        Lts* operator->() { return ptr; }
+        operator Lts*();
+        ~LtsPtr();
+        void clear();
+};
 
 } /* namespace yy */
 

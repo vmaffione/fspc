@@ -29,8 +29,8 @@ using namespace yy;
          node
    define: true if 'name' is on the left side of an FSP assignement
 */
-static void update_unres(FspDriver& c, const string& name,
-                         yy::Lts *lts, bool define, const yy::location& loc)
+static void update_unres(FspDriver& c, const string& name, yy::LtsPtr lts,
+                         bool define, const yy::location& loc)
 {
     unsigned int ui;
 
@@ -476,7 +476,7 @@ void yy::PropertyDefNode::translate(FspDriver& c)
 
     DTC(ProcessDefNode, pdn, children[1]);
     Symbol *svp;
-    yy::Lts *lts;
+    yy::LtsPtr lts;
 
     /* Lookup the process name that has just been inserted by
        ProcessDefNode::translate. */
@@ -934,7 +934,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
     clear_children();
 }
 
-yy::Lts* yy::TreeNode::computePrefixActions(FspDriver& c,
+yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
                                            unsigned int idx,
                                            vector<Context>& ctxcache)
@@ -943,7 +943,7 @@ yy::Lts* yy::TreeNode::computePrefixActions(FspDriver& c,
     DTC(ActionLabelsNode, an, als[idx]);
     const vector<TreeNode *>& elements = an->res;
     vector<unsigned int> indexes(elements.size());
-    Lts *lts = new Lts(LtsNode::Normal, &c.actions);
+    LtsPtr lts = new Lts(LtsNode::Normal, &c.actions);
     Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
@@ -1006,7 +1006,7 @@ yy::Lts* yy::TreeNode::computePrefixActions(FspDriver& c,
             }
         }
 
-        Lts *next;
+        LtsPtr next;
         if (idx+1 >= als.size()) {
             /* This was the last ActionLabels in the chain: We create an
                incomplete node which represent an Lts which is the result
@@ -1160,7 +1160,7 @@ void yy::ArgumentsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts **res)
+void yy::TreeNode::process_ref_translate(FspDriver& c, yy::LtsPtr *res)
 {
     translate_children(c);
 
@@ -1635,7 +1635,7 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::TreeNode::post_process_definition(FspDriver& c, Lts *res,
+void yy::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
                                            const string& name)
 {
     string extension;
