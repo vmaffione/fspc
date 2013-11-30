@@ -173,6 +173,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     terminal_sets_computed = false;
     end = err = ~0U;
     refcount = 0;
+    DBR(delegated = 0);
 }
 
 void yy::Lts::print() const {
@@ -512,6 +513,7 @@ yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)
     atp = p.atp;
     compose(p, q);
     refcount = 0;
+    DBR(delegated = 0);
 }
 
 yy::Lts& yy::Lts::compose(const yy::Lts& q)
@@ -1974,16 +1976,6 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 
 
 /* =========================== LtsPtr ============================== */
-//#define DBG_REFCNT
-
-#ifdef DBG_REFCNT
-#define DREF(p) do \
-        if (p) \
-            cout << __func__ << ":"<< p << ":" << p->refcount << "\n"; \
-    while (0);
-#else  /* !DBG_REFCNT */
-#define DREF(p)
-#endif /* !DBG_REFCNT */
 
 yy::LtsPtr::LtsPtr() : ptr(NULL)
 {
@@ -1994,25 +1986,30 @@ yy::LtsPtr::LtsPtr(yy::Lts *lts)
 {
     ptr = lts;
 
-    get();
-    DREF(ptr);
+    get(__func__);
 }
 
-void yy::LtsPtr::get()
+void yy::LtsPtr::get(const char *nm)
 {
     if (ptr) {
         /* Now *this holds *lts, so increment the refcount. */
         ptr->refcount++;
+        DBR(cout << nm << ":"<< ptr << ":" <<
+            ptr->refcount - ptr->delegated  << "+" <<
+            ptr->delegated << "\n");
     }
 }
 
-void yy::LtsPtr::put()
+void yy::LtsPtr::put(const char *nm)
 {
     if (ptr) {
         /* We are going to loose what we held previously.
            Decrement the refcount of what we held and maybe free the
            referenced object. */
         ptr->refcount--;
+        DBR(cout << nm << ":"<< ptr << ":" <<
+            ptr->refcount - ptr->delegated  << "+" <<
+            ptr->delegated << "\n");
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
@@ -2025,20 +2022,17 @@ yy::LtsPtr::LtsPtr(const LtsPtr& p)
 {
     ptr = p.ptr;
 
-    get();
-    DREF(ptr);
+    get(__func__);
 }
 
 /* Assign the object pointed by another LtsPtr instance. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 {
-    put();
-    DREF(ptr);
+    put(__func__);
 
     ptr = p.ptr;
 
-    get();
-    DREF(ptr);
+    get(__func__);
 
     return *this;
 }
@@ -2046,13 +2040,11 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 /* Assign the object pointed by the input pointer. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 {
-    put();
-    DREF(ptr);
+    put(__func__);
 
     ptr = lts;
 
-    get();
-    DREF(ptr);
+    get(__func__);
 
     return *this;
 }
@@ -2083,16 +2075,15 @@ yy::LtsPtr::operator Lts*()
  */
 yy::Lts* yy::LtsPtr::delegate()
 {
-    get();
-    DREF(ptr);
+    get(__func__);
+    DBR(if (ptr) ptr->delegated++);
 
     return ptr;
 }
 
 yy::LtsPtr::~LtsPtr()
 {
-    put();
-    DREF(ptr);
+    put(__func__);
 
     ptr = NULL;
 }
@@ -2101,8 +2092,7 @@ yy::LtsPtr::~LtsPtr()
    instance. */
 void yy::LtsPtr::clear()
 {
-    put();
-    DREF(ptr);
+    put(__func__);
 
     ptr = NULL;
 }

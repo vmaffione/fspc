@@ -92,6 +92,14 @@ struct LtsVisitObject {
     void *opaque;
 };
 
+/* Debug the Lts::refcount. */
+//#define DBG_REFCNT
+#ifdef DBG_REFCNT
+#define DBR(x) x
+#else
+#define DBR(x)
+#endif
+
 /* An LTS. */
 class Lts: public Symbol {
     vector<LtsNode> nodes;
@@ -137,8 +145,9 @@ class Lts: public Symbol {
 
     /* Reference counter used to implement the LtsPtr smart pointer class. */
     unsigned refcount;
+    DBR(unsigned delegated);
 
-    Lts() { atp = NULL; err = end = ~0U; refcount = 0; }
+    Lts() { atp = NULL; err = end = ~0U; refcount = 0; DBR(delegated = 0); }
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
@@ -195,12 +204,13 @@ class Lts: public Symbol {
 
 yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc);
 
+
 /* Smart pointer to an LTS object. */
 class LtsPtr {
         Lts *ptr;
 
-        void get();
-        void put();
+        void get(const char *nm);
+        void put(const char *nm);
 
     public:
         LtsPtr();
