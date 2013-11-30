@@ -82,7 +82,7 @@ class LtsTreeNode : public TreeNode {
         yy::LtsPtr res;
 
         LtsTreeNode() : TreeNode() { }
-        void clear() { /* XXX */ }
+        void clear() { res.clear(); }
 };
 
 
