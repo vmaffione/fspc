@@ -1974,6 +1974,10 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 
 
 /* =========================== LtsPtr ============================== */
+#define DREF(p) do \
+    cout << __func__ << ":"<< p << ":" << p->refcount << "\n"; \
+    while (0);
+
 yy::LtsPtr::LtsPtr() : ptr(NULL)
 {
 }
@@ -1984,6 +1988,7 @@ yy::LtsPtr::LtsPtr(yy::Lts *lts)
 
     if (ptr) {
         ptr->refcount++;
+        DREF(lts);
     }
 }
 
@@ -1993,6 +1998,7 @@ yy::LtsPtr::LtsPtr(const LtsPtr& p)
 
     if (ptr) {
         ptr->refcount++;
+        DREF(ptr);
     }
 }
 
@@ -2000,6 +2006,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 {
     if (ptr) {
         ptr->refcount--;
+        DREF(ptr);
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
@@ -2010,6 +2017,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 
     if (ptr) {
         ptr->refcount++;
+        DREF(ptr);
     }
 
     return *this;
@@ -2019,6 +2027,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 {
     if (ptr) {
         ptr->refcount--;
+        DREF(ptr);
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
@@ -2029,6 +2038,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 
     if (ptr) {
         ptr->refcount++;
+        DREF(ptr);
     }
 
     return *this;
@@ -2038,6 +2048,7 @@ yy::LtsPtr::operator Lts*()
 {
     if (ptr) {
         ptr->refcount++;
+        DREF(ptr);
     }
 
     return ptr;
@@ -2047,6 +2058,7 @@ yy::LtsPtr::~LtsPtr()
 {
     if (ptr) {
         ptr->refcount--;
+        DREF(ptr);
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
@@ -2060,6 +2072,7 @@ void yy::LtsPtr::clear()
 {
     if (ptr) {
         ptr->refcount--;
+        DREF(ptr);
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
