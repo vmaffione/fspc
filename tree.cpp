@@ -1663,7 +1663,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
 
     /* Insert lts into the global 'processes' table. */
     IFD(cout << "Saving " << res->name << "\n");
-    if (!c.processes.insert(res->name, res)) {
+    if (!c.processes.insert(res->name, res.delegate())) {
 	stringstream errstream;
 
         delete res;

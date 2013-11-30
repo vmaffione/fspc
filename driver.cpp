@@ -116,9 +116,9 @@ int FspDriver::parse(const CompilerOptions& co)
 	for (uint32_t i=0; i<nlts; i++) {
 	    yy::LtsPtr lts = new yy::Lts(LtsNode::End, &actions);
 
-	    desp->lts(lts, 0);
+	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
-	    if (!processes.insert(lts->name, lts)) {
+	    if (!processes.insert(lts->name, lts.delegate())) {
                 /* This should never happen: Two LTSs are saved with the same name
                    into the compiled file. */
 		assert(0);
@@ -154,7 +154,7 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	/* We output an LTS file only if the input is not an LTS file. */
 	if (serp) {
-	    serp->lts(lts, 0);
+	    serp->lts(*lts, 0);
 	}
 
 	if (co.deadlock) {

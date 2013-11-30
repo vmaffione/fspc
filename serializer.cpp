@@ -199,7 +199,7 @@ void serializeLtsVisitFunction(int state, const yy::Lts& lts,
     }
 }
 
-void Serializer::lts(yy::LtsPtr lts, bool raw)
+void Serializer::lts(const yy::Lts& lts, bool raw)
 {
     yy::LtsVisitObject lvo;
     uint32_t end = ~0;
@@ -210,11 +210,11 @@ void Serializer::lts(yy::LtsPtr lts, bool raw)
 						sizeof(char));
     }
 
-    this->stl_string(lts->name, 1);
-    this->integer(lts->numTransitions(), 1);
-    this->integer(lts->nodes.size(), 1);
-    for (unsigned int i=0; i<lts->nodes.size(); i++) {
-	switch (lts->get_type(i)) {
+    this->stl_string(lts.name, 1);
+    this->integer(lts.numTransitions(), 1);
+    this->integer(lts.nodes.size(), 1);
+    for (unsigned int i=0; i<lts.nodes.size(); i++) {
+	switch (lts.get_type(i)) {
 	    case LtsNode::End:
 		end = i;
 		break;
@@ -228,16 +228,16 @@ void Serializer::lts(yy::LtsPtr lts, bool raw)
 
     lvo.vfp = serializeLtsVisitFunction;
     lvo.opaque = this;
-    lts->visit(lvo);
+    lts.visit(lvo);
 
-    this->integer(lts->alphabet.size(), 1);
-    for (set<int>::iterator it=lts->alphabet.begin();
-			it!=lts->alphabet.end(); it++) {
+    this->integer(lts.alphabet.size(), 1);
+    for (set<int>::iterator it=lts.alphabet.begin();
+			it!=lts.alphabet.end(); it++) {
 	this->integer(*it, 1);
     }
 }
 
-void Deserializer::lts(yy::LtsPtr &lts, bool raw)
+void Deserializer::lts(yy::Lts &lts, bool raw)
 {
     char type;
     uint32_t x, y, z, end, error;
@@ -252,19 +252,19 @@ void Deserializer::lts(yy::LtsPtr &lts, bool raw)
 	}
     }
 
-    lts->terminal_sets_computed = false;
+    lts.terminal_sets_computed = false;
 
-    this->stl_string(lts->name, 1);
+    this->stl_string(lts.name, 1);
     this->integer(x, 1); ntr = x;
-    this->integer(x, 1); lts->nodes.resize(x);
+    this->integer(x, 1); lts.nodes.resize(x);
     this->integer(end, 1);
     this->integer(error, 1);
-    for (unsigned int i=0; i<lts->nodes.size(); i++)
-	lts->set_type(i, LtsNode::Normal);
+    for (unsigned int i=0; i<lts.nodes.size(); i++)
+	lts.set_type(i, LtsNode::Normal);
     if (end != ~0U)
-	lts->set_type(end, LtsNode::End);
+	lts.set_type(end, LtsNode::End);
     if (error != ~0U) // XXX if (~error)
-	lts->set_type(error, LtsNode::Error);
+	lts.set_type(error, LtsNode::Error);
 
     for (int i=0; i<ntr; i++) {
 	this->integer(x, 1);
@@ -272,13 +272,13 @@ void Deserializer::lts(yy::LtsPtr &lts, bool raw)
 	this->integer(z, 1);
 	e.dest = z;
 	e.action = y;
-	lts->nodes[x].children.push_back(e);
+	lts.nodes[x].children.push_back(e);
     }
 
     this->integer(x, 1);
     for (uint32_t i=0; i<x; i++) {
 	this->integer(y, 1);
-	lts->updateAlphabet(y);
+	lts.updateAlphabet(y);
     }
 }
 

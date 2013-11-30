@@ -194,6 +194,7 @@ class LtsPtr {
         LtsPtr& operator=(Lts* lts);
         LtsPtr& operator=(LtsPtr&);
         Lts* operator->() { return ptr; }
+        Lts* delegate();
         operator Lts*();
         ~LtsPtr();
         void clear();

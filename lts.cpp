@@ -1974,9 +1974,15 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 
 
 /* =========================== LtsPtr ============================== */
+//#define DBG_REFCNT
+
+#ifdef DBG_REFCNT
 #define DREF(p) do \
     cout << __func__ << ":"<< p << ":" << p->refcount << "\n"; \
     while (0);
+#else  /* !DBG_REFCNT */
+#define DREF(p)
+#endif /* !DBG_REFCNT */
 
 yy::LtsPtr::LtsPtr() : ptr(NULL)
 {
@@ -2045,6 +2051,11 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 }
 
 yy::LtsPtr::operator Lts*()
+{
+    return ptr;
+}
+
+yy::Lts* yy::LtsPtr::delegate()
 {
     if (ptr) {
         ptr->refcount++;
