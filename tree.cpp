@@ -1190,13 +1190,10 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts **res)
 
     lts_name_extension(arguments, extension);
 
-    /* We first lookup the global processes table in order to see if
-       we already have the requested LTS. */
+    /* We first lookup the global processes table in order to see whether
+       we already have the requested LTS or we need to compute it. */
     IFD(cout << "Looking up " << in->res+extension << "\n");
-    if (c.processes.lookup(in->res + extension, svp)) {
-	/* If there is a cache hit, use the stored LTS. */
-	*res = is<yy::Lts>(svp->clone());
-    } else {
+    if (!c.processes.lookup(in->res + extension, svp)) {
         ProcessDefNode *pdn;
         CompositeDefNode *cdn;
 
@@ -1218,7 +1215,8 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts **res)
 
             if (c.identifiers.lookup(pp->names[i], svp)) {
                 /* If there is already an identifier with the same name as
-                   the i-th parameter, override temporarly the identifier. */
+                   the i-th parameter, override temporarly the identifier.
+                */
                 c.overridden_names.push_back(pp->names[i]);
                 c.overridden_values.push_back(svp->clone());
                 c.identifiers.remove(pp->names[i]);
@@ -1231,17 +1229,22 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts **res)
             }
             c.paramproc.insert(pp->names[i], arguments[i]);
         }
-        /* Do the translation an grab the result. The new LTS is
-           stored in the 'processes' table by the translate function. */
+        /* Do the translation. The new LTS is stored in the 'processes'
+           table by the translate function. */
         if (pdn) {
             pdn->translate(c);
-            *res = pdn->res;
         } else {
             cdn->translate(c);
-            *res = cdn->res;
         }
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
+    }
+
+    /* Use the LTS stored in the 'processes' table. */
+    if (c.processes.lookup(in->res + extension, svp)) {
+	*res = is<yy::Lts>(svp->clone());
+    } else {
+        assert(0);
     }
 
     clear_children();
@@ -1636,7 +1639,6 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts *res,
                                            const string& name)
 {
     string extension;
-    Lts *res_clone;
     ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
     res->name = name;
@@ -1659,13 +1661,12 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts *res,
     lts_name_extension(c.paramproc.defaults, extension);
     res->name += extension;
 
-    res_clone = is<Lts>(res->clone());
     /* Insert lts into the global 'processes' table. */
     IFD(cout << "Saving " << res->name << "\n");
-    if (!c.processes.insert(res->name, res_clone)) {
+    if (!c.processes.insert(res->name, res)) {
 	stringstream errstream;
 
-        delete res_clone;
+        delete res;
 	errstream << "Process " << res->name + extension
                     << " already declared";
 	semantic_error(c, errstream, loc);
