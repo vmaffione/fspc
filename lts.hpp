@@ -46,6 +46,7 @@ struct Edge {
     uint32_t action;
 };
 
+/* An LTS node, containing a list of edges. */
 struct LtsNode {
     vector<Edge> children;
 
@@ -61,6 +62,13 @@ struct LtsNode {
     void offset(int offset);
 };
 
+/* Private information associated to each LTS node. This information
+   is not stored into the LtsNode class, because it is only necessary
+   when parsing an FSP "process definition". In particular, we don't
+   need this info when parsing an FSP "composite process definition",
+   where the memory demand can be extremely high. In this way we can
+   use the info when needed and free the memory when it is not
+   needed anymore. */
 struct LtsNodeInfo {
     unsigned int priv;
     unsigned int type;
@@ -84,6 +92,7 @@ struct LtsVisitObject {
     void *opaque;
 };
 
+/* An LTS. */
 class Lts: public Symbol {
     vector<LtsNode> nodes;
     vector<LtsNodeInfo> infos;
@@ -125,9 +134,11 @@ class Lts: public Symbol {
 
   public:
     string name;
-    unsigned refcount;  /* XXX private */
 
-    Lts() { atp = NULL; err = end = ~0U; } /* Invalid instance, used by tree. */
+    /* Reference counter used to implement the LtsPtr smart pointer class. */
+    unsigned refcount;
+
+    Lts() { atp = NULL; err = end = ~0U; refcount = 0; }
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
@@ -184,6 +195,7 @@ class Lts: public Symbol {
 
 yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc);
 
+/* Smart pointer to an LTS object. */
 class LtsPtr {
         Lts *ptr;
 

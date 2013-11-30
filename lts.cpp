@@ -1988,29 +1988,37 @@ yy::LtsPtr::LtsPtr() : ptr(NULL)
 {
 }
 
+/* Build a LtsPtr instance from a pointer. */
 yy::LtsPtr::LtsPtr(yy::Lts *lts)
 {
     ptr = lts;
 
     if (ptr) {
+        /* Now *this holds *lts, so increment the refcount. */
         ptr->refcount++;
         DREF(lts);
     }
 }
 
+/* Build a LtsPtr instance from another LtsPtr instance. */
 yy::LtsPtr::LtsPtr(const LtsPtr& p)
 {
     ptr = p.ptr;
 
     if (ptr) {
+        /* Now *this holds *lts, so increment the refcount. */
         ptr->refcount++;
         DREF(ptr);
     }
 }
 
+/* Assign the object pointed by another LtsPtr instance. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 {
     if (ptr) {
+        /* We are going to loose what we held previously.
+           Decrement the refcount of what we held and maybe free the
+           referenced object. */
         ptr->refcount--;
         DREF(ptr);
         assert(ptr->refcount >= 0);
@@ -2022,6 +2030,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
     ptr = p.ptr;
 
     if (ptr) {
+        /* We hold a new object, let's increment the refcount. */
         ptr->refcount++;
         DREF(ptr);
     }
@@ -2029,9 +2038,13 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
     return *this;
 }
 
+/* Assign the object pointed by the input pointer. */
 yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
 {
     if (ptr) {
+        /* We are going to loose what we held previously.
+           Decrement the refcount of what we held and maybe free the
+           referenced object. */
         ptr->refcount--;
         DREF(ptr);
         assert(ptr->refcount >= 0);
@@ -2043,6 +2056,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
     ptr = lts;
 
     if (ptr) {
+        /* We hold a new object, let's increment the refcount. */
         ptr->refcount++;
         DREF(ptr);
     }
@@ -2050,11 +2064,30 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
     return *this;
 }
 
+/* The user is going to either:
+   - pass *this to a function argument of type Lts*, or
+   - assign *this to an Lts*
+
+   In both cases (well, it's just the same case) just make the
+   request go through, without modify the referenced object refcount.
+   We want the user to ask explicitely to take care of the referenced
+   object (see LtsPtr::delegate).
+   */
 yy::LtsPtr::operator Lts*()
 {
     return ptr;
 }
 
+/* The user is explicitly asking to take care of the referenced object,
+   if any. This means that even when the last LtsPtr instance that was
+   assigned the referenced object dies, we don't want to destroy the
+   object, because now also the user takes care of it. We implement
+   this behaviour by incrementing the refcount, that is we add a reference
+   that we delegate to the caller. From now on __also__ the caller is
+   responsible of the deallocation. If the user does not decrement
+   the refcount, the object will be never freed by LtsPtr (but it can be
+   freed by the user manually, of course).
+ */
 yy::Lts* yy::LtsPtr::delegate()
 {
     if (ptr) {
@@ -2068,6 +2101,9 @@ yy::Lts* yy::LtsPtr::delegate()
 yy::LtsPtr::~LtsPtr()
 {
     if (ptr) {
+        /* We are going to loose what we held previously.
+           Decrement the refcount of what we held and maybe free the
+           referenced object. */
         ptr->refcount--;
         DREF(ptr);
         assert(ptr->refcount >= 0);
@@ -2079,9 +2115,14 @@ yy::LtsPtr::~LtsPtr()
     ptr = NULL;
 }
 
+/* This emulates a call to the destructor, and resets the LtsPtr
+   instance. */
 void yy::LtsPtr::clear()
 {
     if (ptr) {
+        /* We are going to loose what we held previously.
+           Decrement the refcount of what we held and maybe free the
+           referenced object. */
         ptr->refcount--;
         DREF(ptr);
         assert(ptr->refcount >= 0);

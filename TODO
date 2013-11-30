@@ -1,4 +1,3 @@
-[O] Use Lts* when composing (avoid copies)
 [O] serializer must do non-blocking reads!
 [O] add "basic" testing (for do_square_int)
 [O] currently the preprocessing doesn't work better with overriding:
