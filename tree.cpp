@@ -30,7 +30,7 @@ using namespace yy;
    define: true if 'name' is on the left side of an FSP assignement
 */
 static void update_unres(FspDriver& c, const string& name,
-                         Lts& lts, bool define, const yy::location& loc)
+                         yy::Lts *lts, bool define, const yy::location& loc)
 {
     unsigned int ui;
 
@@ -41,7 +41,7 @@ static void update_unres(FspDriver& c, const string& name,
         semantic_error(c, errstream, loc);
     }
 
-    if (lts.get_priv(0) == LtsNode::NoPriv) {
+    if (lts->get_priv(0) == LtsNode::NoPriv) {
         /* If 'lts[0]' does not have its 'priv' set, we must be in one of
            the following two cases:
                 - 'lts[0]' is an unresolved node, and so we have to assign
@@ -53,18 +53,18 @@ static void update_unres(FspDriver& c, const string& name,
                   (Lts::resolve). In this case 'define' is true.
         */
         ui = c.unres.insert(name, define); /* Create a new entry for 'name' */
-        lts.set_priv(0, ui);  /* Record the alias into the 'lts[0]' priv. */
+        lts->set_priv(0, ui);  /* Record the alias into the 'lts[0]' priv. */
     } else {
         /* If 'lts[0]' does have its 'priv' set, it means that 'lts[0]'
            is not unresolved, and there is already an alias assigned to it.
 
            Tell 'unres' that the 'lts[0]' priv field must be an alias also
            for 'name'. */
-        ui = c.unres.append(name, lts.get_priv(0), define);
+        ui = c.unres.append(name, lts->get_priv(0), define);
         /* Update all the 'priv' fields that have the 'idx' previously
            associated to 'name', if any. */
         if (ui != LtsNode::NoPriv) {
-            lts.replace_priv(lts.get_priv(0), ui);
+            lts->replace_priv(lts->get_priv(0), ui);
         }
     }
 }
@@ -480,7 +480,7 @@ void yy::PropertyDefNode::translate(FspDriver& c)
 
     /* Lookup the process name that has just been inserted by
        ProcessDefNode::translate. */
-    if (!c.processes.lookup(pdn->res.name, svp)) {
+    if (!c.processes.lookup(pdn->res->name, svp)) {
         assert(0);
     }
 
@@ -934,7 +934,7 @@ void yy::ActionLabelsNode::translate(FspDriver& c)
     clear_children();
 }
 
-yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
+yy::Lts* yy::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
                                            unsigned int idx,
                                            vector<Context>& ctxcache)
@@ -943,7 +943,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
     DTC(ActionLabelsNode, an, als[idx]);
     const vector<TreeNode *>& elements = an->res;
     vector<unsigned int> indexes(elements.size());
-    Lts lts(LtsNode::Normal, &c.actions);
+    Lts *lts = new Lts(LtsNode::Normal, &c.actions);
     Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
@@ -1006,7 +1006,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
             }
         }
 
-        Lts next;
+        Lts *next;
         if (idx+1 >= als.size()) {
             /* This was the last ActionLabels in the chain: We create an
                incomplete node which represent an Lts which is the result
@@ -1020,9 +1020,9 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
                    context. */
                 ctxcache.push_back(c.ctx);
             }
-            next = Lts(LtsNode::Incomplete, &c.actions);
+            next = new Lts(LtsNode::Incomplete, &c.actions);
             /* Store the index in the 'priv' field. */
-            next.set_priv(0, ctxcache.size() - 1);
+            next->set_priv(0, ctxcache.size() - 1);
         } else {
             /* This was not the last ActionLabels in the chain. Get
                the result of the remainder of the chain. */
@@ -1030,7 +1030,7 @@ yy::Lts yy::TreeNode::computePrefixActions(FspDriver& c,
         }
 
         /* Attach 'next' to 'lts' using 'label'. */
-        lts.zerocat(next, label);
+        lts->zerocat(*next, label);
 
         /* Restore the saved context. */
         c.ctx = ctx;
@@ -1088,11 +1088,11 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     DTCS(ErrorNode, ern, children[0]);
 
     if (en) {
-        res = Lts(LtsNode::End, &c.actions);
+        res = new Lts(LtsNode::End, &c.actions);
     } else if (sn) {
-        res = Lts(LtsNode::Normal, &c.actions);
+        res = new Lts(LtsNode::Normal, &c.actions);
     } else if (ern) {
-        res = Lts(LtsNode::Error, &c.actions);
+        res = new Lts(LtsNode::Error, &c.actions);
     } else {
         DTC(ProcessIdNode, in, children[0]);
         DTCS(IndicesNode, ixn, children[1]);
@@ -1100,7 +1100,7 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
 
         /* Create an LTS containing a single unresolved
            node. */
-        res = Lts(LtsNode::Unresolved, &c.actions);
+        res = new Lts(LtsNode::Unresolved, &c.actions);
         if (ixn) {
             name += ixn->res;
         }
@@ -1129,7 +1129,7 @@ void yy::ChoiceNode::translate(FspDriver& c)
     for (unsigned int i=2; i<children.size(); i+=2) {
         DTC(ActionPrefixNode, apn, children[i]);
 
-        res.zeromerge(apn->res);
+        res->zeromerge(*apn->res);
     }
 
     clear_children();
@@ -1160,7 +1160,7 @@ void yy::ArgumentsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
+void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts **res)
 {
     translate_children(c);
 
@@ -1195,7 +1195,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
     IFD(cout << "Looking up " << in->res+extension << "\n");
     if (c.processes.lookup(in->res + extension, svp)) {
 	/* If there is a cache hit, use the stored LTS. */
-	res = *(is<yy::Lts>(svp));
+	*res = is<yy::Lts>(svp->clone());
     } else {
         ProcessDefNode *pdn;
         CompositeDefNode *cdn;
@@ -1235,10 +1235,10 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
            stored in the 'processes' table by the translate function. */
         if (pdn) {
             pdn->translate(c);
-            res = pdn->res;
+            *res = pdn->res;
         } else {
             cdn->translate(c);
-            res = cdn->res;
+            *res = cdn->res;
         }
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
@@ -1249,7 +1249,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::Lts& res)
 
 void yy::ProcessRefSeqNode::translate(FspDriver& c)
 {
-    process_ref_translate(c, res);
+    process_ref_translate(c, &res);
 
     clear_children();
 }
@@ -1267,7 +1267,7 @@ void yy::SeqProcessListNode::translate(FspDriver& c)
     for (unsigned int i=2; i<children.size(); i+=2) {
         DTC(ProcessRefSeqNode, pr, children[i]);
 
-        res.endcat(pr->res);
+        res->endcat(*pr->res);
     }
 
     clear_children();
@@ -1281,7 +1281,7 @@ void yy::SeqCompNode::translate(FspDriver& c)
     DTC(BaseLocalProcessNode, lp, children[2]);
 
     res = pl->res;
-    res.endcat(lp->res);
+    res->endcat(*lp->res);
 
     clear_children();
 }
@@ -1317,7 +1317,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
         } else if (pen) {
             res = pen->res;
         } else {
-            res = Lts(LtsNode::Normal, &c.actions);
+            res = new Lts(LtsNode::Normal, &c.actions);
         }
     } else {
         assert(0);
@@ -1363,11 +1363,11 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
         for (unsigned int i=0; i<ctxcache.size(); i++) {
             c.ctx = ctxcache[i];
             lp->translate(c);
-            processes.push_back(lp->res);
+            processes.push_back(*lp->res);
         }
 
         /* Connect the incomplete Lts to the computed translations. */
-        res.incompcat(processes);
+        res->incompcat(processes);
     }
 
     c.ctx = saved_ctx;
@@ -1387,7 +1387,7 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
         DTC(LocalProcessDefsNode, lpd, children[2]);
 
         res = pn->res;
-        res.append(lpd->res, 0);
+        res->append(*lpd->res, 0);
     } else {
         assert(0);
     }
@@ -1594,7 +1594,7 @@ void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
     if (first) {
         res = lp->res;
     } else {
-        res.append(lp->res, 0);
+        res->append(*lp->res, 0);
     }
 }
 
@@ -1626,30 +1626,30 @@ void yy::LocalProcessDefsNode::translate(FspDriver& c)
     for (unsigned int i=2; i<children.size(); i+=2) {
         DTC(LocalProcessDefNode, lpd, children[i]);
 
-        res.append(lpd->res, 0);
+        res->append(*lpd->res, 0);
     }
 
     clear_children();
 }
 
-void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
+void yy::TreeNode::post_process_definition(FspDriver& c, Lts *res,
                                            const string& name)
 {
     string extension;
     Lts *res_clone;
     ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
-    res.name = name;
-    res.cleanup();
+    res->name = name;
+    res->cleanup();
 
     if (!c.replay) {
         /* Store c.paramproc in parametric_processes. */
         pp_clone->set_translator(this);
-        if (!c.parametric_processes.insert(res.name, pp_clone)) {
+        if (!c.parametric_processes.insert(res->name, pp_clone)) {
             stringstream errstream;
 
             delete pp_clone;
-            errstream << "Parametric process " << res.name
+            errstream << "Parametric process " << res->name
                 << " already declared";
             semantic_error(c, errstream, loc);
         }
@@ -1657,16 +1657,16 @@ void yy::TreeNode::post_process_definition(FspDriver& c, Lts& res,
 
     /* Compute the LTS name extension. */
     lts_name_extension(c.paramproc.defaults, extension);
-    res.name += extension;
+    res->name += extension;
 
-    res_clone = is<Lts>(res.clone());
+    res_clone = is<Lts>(res->clone());
     /* Insert lts into the global 'processes' table. */
-    IFD(cout << "Saving " << res.name << "\n");
-    if (!c.processes.insert(res.name, res_clone)) {
+    IFD(cout << "Saving " << res->name << "\n");
+    if (!c.processes.insert(res->name, res_clone)) {
 	stringstream errstream;
 
         delete res_clone;
-	errstream << "Process " << res.name + extension
+	errstream << "Process " << res->name + extension
                     << " already declared";
 	semantic_error(c, errstream, loc);
     }
@@ -1701,7 +1701,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 #endif
 
     /* Try to resolve all the unresolved nodes into the LTS. */
-    unres = res.resolve();
+    unres = res->resolve();
     if (unres != LtsNode::NoPriv) {
         stringstream errstream;
         errstream << "process reference " << unres << " unresolved";
@@ -1709,14 +1709,14 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     }
 
     /* Merge the End nodes. */
-    res.mergeEndNodes();
+    res->mergeEndNodes();
 
     /* Extend the alphabet. */
     if (aen) {
         SetS& sv = aen->res;
 
         for (unsigned int i=0; i<sv.size(); i++) {
-            res.updateAlphabet(c.actions.insert(sv[i]));
+            res->updateAlphabet(c.actions.insert(sv[i]));
         }
     }
 
@@ -1725,7 +1725,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
         RelabelingS& rlv = rn->res;
 
         for (unsigned int i=0; i<rlv.size(); i++) {
-            res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+            res->relabeling(rlv.new_labels[i], rlv.old_labels[i]);
         }
     }
 
@@ -1733,7 +1733,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     if (hin) {
         HidingS& hv = hin->res;
 
-        res.hiding(hv.setv, hv.interface);
+        res->hiding(hv.setv, hv.interface);
     }
 
     this->post_process_definition(c, res, idn->res);
@@ -1743,7 +1743,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
 void yy::ProcessRefNode::translate(FspDriver& c)
 {
-    process_ref_translate(c, res);
+    process_ref_translate(c, &res);
 
     clear_children();
 }
@@ -1801,7 +1801,7 @@ void yy::CompositeBodyNode::combination(FspDriver& c, string index,
         first = false;
         res = cb->res;
     } else {
-        res.compose(cb->res);
+        res->compose(*cb->res);
     }
 }
 
@@ -1824,12 +1824,12 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
 
         /* Apply the process labeling operator. */
         if (lbn) {
-            res.labeling(lbn->res);
+            res->labeling(lbn->res);
         }
 
         /* Apply the process sharing operator. */
         if (shn) {
-            res.sharing(shn->res);
+            res->sharing(shn->res);
         }
 
         /* Apply the relabeling operator. */
@@ -1837,7 +1837,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
             RelabelingS& rlv = rln->res;
 
             for (unsigned int i=0; i<rlv.size(); i++) {
-                res.relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+                res->relabeling(rlv.new_labels[i], rlv.old_labels[i]);
             }
         }
     } else if (children.size() == 5) {
@@ -1851,7 +1851,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         } else if (ce) {
             res = ce->res;
         } else {
-            res = Lts(LtsNode::Normal, &c.actions);
+            res = new Lts(LtsNode::Normal, &c.actions);
         }
     } else if (children.size() == 6) {
         /* sharing_OPT labeling_OPT ( parallel_composition ) relabeling_OPT
@@ -1865,14 +1865,14 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
            separately, before parallel composition. */
         if (lbn) {
             for (unsigned int k=0; k<pcn->res.size(); k++) {
-                pcn->res[k].labeling(lbn->res);
+                pcn->res[k]->labeling(lbn->res);
             }
         }
 
         /* Apply the process sharing operator (same way). */
         if (shn) {
             for (unsigned int k=0; k<pcn->res.size(); k++) {
-                pcn->res[k].sharing(shn->res);
+                pcn->res[k]->sharing(shn->res);
             }
         }
         /* Apply the relabeling operator (same way). */
@@ -1881,7 +1881,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
 
             for (unsigned int k=0; k<pcn->res.size(); k++) {
                 for (unsigned int i=0; i<rlv.size(); i++) {
-                    pcn->res[k].relabeling(rlv.new_labels[i],
+                    pcn->res[k]->relabeling(rlv.new_labels[i],
                                            rlv.old_labels[i]);
                 }
             }
@@ -1891,7 +1891,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         assert(pcn->res.size());
         res = pcn->res[0];
         for (unsigned int k=1; k<pcn->res.size(); k++) {
-            res.compose(pcn->res[k]);
+            res->compose(*pcn->res[k]);
         }
 
     } else if (children.size() == 3) {
@@ -1950,14 +1950,14 @@ void yy::CompositeDefNode::translate(FspDriver& c)
 
     /* Apply the priority operator. */
     if (pr) {
-        res.priority(pr->res.setv, pr->res.low);
+        res->priority(pr->res.setv, pr->res.low);
     }
 
     /* Apply the hiding/interface operator. */
     if (hin) {
         HidingS& hv = hin->res;
 
-        res.hiding(hv.setv, hv.interface);
+        res->hiding(hv.setv, hv.interface);
     }
 
     this->post_process_definition(c, res, idn->res);

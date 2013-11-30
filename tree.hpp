@@ -26,17 +26,17 @@ class TreeNode : public ParametricTranslator {
         SetS computeActionLabels(FspDriver& c, SetS base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
-        yy::Lts computePrefixActions(FspDriver& c,
+        yy::Lts *computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
                                      vector<Context>& ctxcache);
-        void post_process_definition(FspDriver& c, Lts& res,
+        void post_process_definition(FspDriver& c, Lts *res,
                                            const string& name);
         /* TODO when everything will work, remove this method and
            declare a ProcessRefBase class from which ProcessRefNode an
            ProcessRefSeq derive, and define the translate method of the
            base class with the code contained in process_ref_translate. */
-        void process_ref_translate(FspDriver& c, yy::Lts& res);
+        void process_ref_translate(FspDriver& c, yy::Lts **res);
 
     public:
         TreeNode() { }
@@ -79,10 +79,10 @@ class StringTreeNode : public TreeNode {
 
 class LtsTreeNode : public TreeNode {
     public:
-        yy::Lts res;
+        yy::Lts *res;
 
         LtsTreeNode() : TreeNode() { }
-        void clear() { res.clear(); }
+        void clear() { /* XXX */ }
 };
 
 
@@ -384,7 +384,7 @@ class ProcessRefNode : public LtsTreeNode {
 
 class ParallelCompNode : public TreeNode {
     public:
-        vector<Lts> res;
+        vector<Lts*> res;
 
         string getClassName() const { return "ParallelComp"; }
         ParallelCompNode() : TreeNode() { }
