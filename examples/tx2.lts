@@ -1,0 +1,97 @@
+/* Some straightforward definitions. */
+const True = 1
+const False = 0
+const Free = True
+const Locked = False
+range BR = False..True
+
+/* Problem specific definitions. */
+const N = 3        /* Number of descriptors in the TX ring. */
+range R = 0..N-1
+const WTHR = 1  /* Wake threshold */
+const STHR = 1  /* Stop threshold */
+
+/* Sets of processes instance names (passive and active processes). */
+set Threads = {txbh, napi, ih, xmt}
+set Notifications = {napi_sched, intr_sched, txbh_sched}
+set Variables = {gntka}
+set Indices = {tntc, tdt, tdh, tdd}  /* tdd follows tdh */
+set TrueInitBooleans = {hntk, txen}
+set FalseInitBooleans = {hwork}
+set Booleans = {TrueInitBooleans, FalseInitBooleans}
+set Trylocks = {nl}
+
+/* Set of actions passive process types */
+set NotificationOps = {signal, start}
+set VariableOps = {r[0..N], w[0..N]}
+set IndexOps = {r[R], inc}
+set BooleanOps = {r[BR], w[BR]}
+set TrylockOps = {trylock[BR], unlock}
+set WaitsetOps = {wait, signal, endwait}
+
+/* All the possible actions in this system. */
+set Alpha = {Notifications.NotificationOps, Indices.IndexOps,
+		Booleans.BooleanOps, Trylocks.TrylockOps, Variables.VariableOps}
+
+
+
+BOOL(I=0) = BOOL[I],
+BOOL[i:False..True] = (w[j:False..True]->BOOL[j] | r[i]->BOOL[i]).
+
+VAR(I=0) = VAR[I],
+VAR[i:0..N] = (r[i]->VAR[i] | w[j:R]->VAR[j]).
+
+INDEX(I=0) = INDEX[I],
+INDEX[i:R] = (r[i]->INDEX[i] | inc->INDEX[(i+1)%N]).
+
+/* Currently not used. */
+WAITSET = EMPTY,
+EMPTY = (wait->BLOCKED | signal->EMPTY),
+BLOCKED = (signal->endwait->EMPTY | wait->ERROR).
+
+NOTIFICATION = (signal->start->NOTIFICATION).
+
+
+/* Model of a trylock object: when trying to lock return false if the lock is already held. */
+TRYLOCK = TRYLOCK[Free],
+TRYLOCK[Free] = (trylock[True]->TRYLOCK[Locked]),
+TRYLOCK[Locked] = (unlock->TRYLOCK[Free] | trylock[False]->TRYLOCK[Locked]).
+
+
+/* Guest transmitter model, that is the start_xmit routine in the guest driver. */
+GUEST_XMIT = (txen.r[True]->WORK),
+WORK = (tdt.inc->SIGNAL),
+SIGNAL = (hntk.r[i:BR]-> if (i==True) then (hntk.w[False]->txbh_sched.signal->CHECK) else CHECK),
+CHECK = (tdt.r[j:R]->tntc.r[k:R]-> if ((k>=j+1 && k-j-1 < STHR) || (k<=j && N+k-j-1 < STHR)) then WAIT[j] else GUEST_XMIT),
+WAIT[j:R] = (txen.w[False]->DOUBLECHECK[j]),
+DOUBLECHECK[j:R] =(tntc.r[k:R]-> if ((k>=j+1 && k-j-1 >= 1) || (k<=j && N+k-j-1 >= 1)) then (txen.w[True]->WORK) else GUEST_XMIT) + Alpha.
+
+
+/* Guest interrupt handler model. */
+GUEST_INTERRUPT_HANDLER = (intr_sched.start->nl.trylock[l:BR]->if (l==True) then (gntka.w[N]->napi_sched.signal->GUEST_INTERRUPT_HANDLER) else GUEST_INTERRUPT_HANDLER) + Alpha.
+
+
+/* Guest napi polling callback model. */
+GUEST_NAPI_POLL = (napi_sched.start->CHECK),
+CHECK = (tntc.r[k:R]->tdd.r[d:R]-> if (k!=d) then WORK else SIGNAL[k]),
+WORK = (tntc.inc->CHECK),
+SIGNAL[k:R] = (tdt.r[j:R]->if ((k>=j+1 && k-j-1 >= WTHR) || (k<=j && N+k-j-1 >= WTHR)) then (txen.w[True]->NAPI_EXIT[k]) else NAPI_EXIT[k]),
+NAPI_EXIT[k:R] = (nl.unlock->gntka.w[k]->DOUBLECHECK[k]),
+DOUBLECHECK[k:R] = (tdh.r[g:R]->if (g != k) then RESCHEDULE else GUEST_NAPI_POLL),
+RESCHEDULE = (nl.trylock[l:BR]-> if (l==True) then (gntka.w[N]->CHECK) else GUEST_NAPI_POLL) + Alpha.
+
+
+/* Host bottom half model. "hwork" is a private bool variable set if some work has been done in a bh iteration (start-->stop). */
+HOST_TX_BH = (txbh_sched.start->hwork.w[False]->CHECK),
+CHECK = (tdt.r[j:R]->tdh.r[g:R]-> if (j!=g) then WORK else SIGNAL[g]),
+WORK = (hwork.w[True]->tdd.inc->tdh.inc->CHECK),
+SIGNAL[g:R] = (gntka.r[i:0..N]-> if (i!=N) then (hwork.r[b:BR]-> if (b==True) then (intr_sched.signal->EXIT[g]) else EXIT[g]) else EXIT[g]),
+EXIT[g:R] = (hntk.w[True]->DOUBLECHECK[g]),
+DOUBLECHECK[g:R] = (tdt.r[j:R]-> if (j!=g) then (hntk.w[False]->WORK) else HOST_TX_BH) + Alpha.
+
+
+
+||SYSTEM = (txbh:HOST_TX_BH || napi:GUEST_NAPI_POLL || ih:GUEST_INTERRUPT_HANDLER || xmt:GUEST_XMIT
+			|| Threads::Indices:INDEX || Threads::Notifications:NOTIFICATION || Threads::Trylocks:TRYLOCK
+			|| Threads::FalseInitBooleans:BOOL(False) || Threads::TrueInitBooleans:BOOL(True)
+			|| Threads::Variables:VAR).
