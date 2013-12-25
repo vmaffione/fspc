@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <vector>
+#include <queue>
 #include <fstream>
 #include <sstream>
 
@@ -178,6 +179,34 @@ void yy::TreeNode::clear_children()
 void yy::TreeNode::translate(FspDriver& c)
 {
     translate_children(c);
+}
+
+void yy::TreeNode::getNodesByClasses(const vector<string>& classes,
+                            vector<TreeNode *>& results)
+{
+    queue<TreeNode *> frontier;
+
+    results.clear();
+    frontier.push(this);
+
+    while (!frontier.empty()) {
+        TreeNode *cur = frontier.front();
+
+        frontier.pop();
+
+        for (unsigned int i = 0; i < classes.size(); i++) {
+            if (cur->getClassName() == classes[i]) {
+                results.push_back(cur);
+                break;
+            }
+        }
+
+        for (unsigned int i = 0; i < cur->children.size(); i++) {
+            if (cur->children[i]) {
+                frontier.push(cur->children[i]);
+            }
+        }
+    }
 }
 
 /* ========================== Translation methods ======================== */
@@ -1659,23 +1688,9 @@ void yy::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
                                            const string& name)
 {
     string extension;
-    ParametricProcess *pp_clone = is<ParametricProcess>(c.paramproc.clone());
 
     res->name = name;
     res->cleanup();
-
-    if (!c.replay) {
-        /* Store c.paramproc in parametric_processes. */
-        pp_clone->set_translator(this);
-        if (!c.parametric_processes.insert(res->name, pp_clone)) {
-            stringstream errstream;
-
-            delete pp_clone;
-            errstream << "Parametric process " << res->name
-                << " already declared";
-            semantic_error(c, errstream, loc);
-        }
-    }
 
     /* Compute the LTS name extension. */
     lts_name_extension(c.paramproc.defaults, extension);

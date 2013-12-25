@@ -59,6 +59,77 @@ void FspDriver::clear()
     }
 }
 
+void FspDriver::findProcessesDefinitions()
+{
+    vector<string> classes;
+    vector<yy::TreeNode *> definitions;
+
+    assert(tree);
+    /* Find all the tree nodes that correspond to process definitions
+       (either simple or composite). */
+    classes.push_back(yy::ProcessDefNode::className());
+    classes.push_back(yy::CompositeDefNode::className());
+    tree->getNodesByClasses(classes, definitions);
+
+    for (unsigned int i = 0; i < definitions.size(); i++) {
+        /* For each process definition, find all the parameters name
+           and default values, building a ParametricProcess object.
+           This object is then stored into the parametric_process
+           symbols table. */
+        DTCS(yy::ProcessDefNode, pdn, definitions[i]);
+        DTCS(yy::CompositeDefNode, cdn, definitions[i]);
+        yy::ProcessIdNode *pid;
+        yy::ParamNode *pan;
+        ParametricProcess *pp = new ParametricProcess;
+
+        /* Find the ProcessIdNode and ParamNode depending on the process
+           definition type. */
+        if (pdn) {
+            pid = yy::tree_downcast<yy::ProcessIdNode>(pdn->getChild(0));
+            pan = yy::tree_downcast_null<yy::ParamNode>(pdn->getChild(1));
+            pp->set_translator(pdn);
+        } else if (cdn) {
+            pid = yy::tree_downcast<yy::ProcessIdNode>(cdn->getChild(1));
+            pan = yy::tree_downcast_null<yy::ParamNode>(cdn->getChild(2));
+            pp->set_translator(cdn);
+        } else {
+            assert(0);
+        }
+
+        pid->translate(*this);  /* Compute the name. */
+
+        if (pan) {
+            /* Compute the parameters. */
+            DTC(yy::ParameterListNode, pln, pan->getChild(1));
+
+            for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
+                DTC(yy::ParameterNode, p, pln->getChild(i));
+                DTC(yy::ParameterIdNode, in, p->getChild(0));
+                DTC(yy::ExpressionNode, en, p->getChild(2));
+
+                in->translate(*this);
+                en->translate(*this);
+
+                if (!pp->insert(in->res, en->res)) {
+                    stringstream errstream;
+                    errstream << "parameter " << in->res << " declared twice";
+                    semantic_error(*this, errstream, p->getLocation());
+                }
+            }
+        }
+
+        /* Insert into the symbol table. */
+        if (!this->parametric_processes.insert(pid->res, pp)) {
+            stringstream errstream;
+
+            delete pp;
+            errstream << "Parametric process " << pid->res
+                        << " already declared";
+            semantic_error(*this, errstream, pid->getLocation());
+        }
+    }
+}
+
 int FspDriver::parse(const CompilerOptions& co)
 {
     Serializer * serp = NULL;
@@ -102,6 +173,8 @@ int FspDriver::parse(const CompilerOptions& co)
         tree->print(treef);
         treef.close();
 #endif
+        findProcessesDefinitions();
+
         /* Translate the parse tree. */
         tree->translate(*this);
 

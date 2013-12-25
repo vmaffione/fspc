@@ -534,10 +534,9 @@ void ParametricProcess::set_translator(ParametricTranslator *trans)
 
 void ParametricProcess::print() const
 {
-    cout << "ParametricProcess: ";
+    cout << "ParametricProcess: " << this;
     for (unsigned int i=0; i<names.size(); i++) {
-        cout << "   " << names[i] << " [" << defaults[i] << "], "
-                << this << "\n";
+        cout << "   " << names[i] << " [" << defaults[i] << "], ";
     }
 }
 

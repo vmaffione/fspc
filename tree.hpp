@@ -63,14 +63,17 @@ class TreeNode : public ParametricTranslator {
         virtual ~TreeNode();
         void addChild(TreeNode *n, const location& loc);
         void print(ofstream& os);
-        int numChildren() const { return children.size(); }
+        unsigned int numChildren() const { return children.size(); }
         TreeNode *getChild(unsigned int i) const { return children[i]; }
+        location getLocation() const { return loc; }
         virtual void translate(FspDriver& dr);
         virtual void combination(FspDriver& dr, string index, bool first) { }
         virtual string getClassName() const;
         virtual void clear() { }
         void translate_children(FspDriver& dr);
         void clear_children();
+        void getNodesByClasses(const vector<string>& classes,
+                                vector<TreeNode *>& results);
 };
 
 
@@ -884,10 +887,9 @@ class ProgressKwdNode : public TreeNode {
         string getClassName() const { return className(); }
 };
 
-
 /* Useful wrappers for downcasting a TreeNode pointer to pointers to derived types. */
 template <class T>
-T* tree_downcast_safe(TreeNode *n)
+T* tree_downcast_safe(yy::TreeNode *n)
 {
     T *ret = dynamic_cast<T*>(n);
 
@@ -895,7 +897,7 @@ T* tree_downcast_safe(TreeNode *n)
 }
 
 template <class T>
-T* tree_downcast(TreeNode *n)
+T* tree_downcast(yy::TreeNode *n)
 {
     T *ret = tree_downcast_safe<T>(n);
 
@@ -905,31 +907,23 @@ T* tree_downcast(TreeNode *n)
 }
 
 template <class T>
-T* tree_downcast_null(TreeNode *n)
+T* tree_downcast_null(yy::TreeNode *n)
 {
     if (!n)
         return NULL;
     return tree_downcast<T>(n);
 }
 
+
+} /* namespace yy */
+
 /* Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
 #define DTC(_t, _n, _x) \
-    _t *_n = tree_downcast<_t>(_x);
+    _t *_n = yy::tree_downcast<_t>(_x);
 
 /* Same as the previous one, but using the safe downcast function. */
 #define DTCS(_t, _n, _x) \
-    _t *_n = tree_downcast_safe<_t>(_x);
-
-
-#define DO_DOWNCAST(_p, _t)  \
-    ( { \
-        TreeNode *n = _p; \
-        _t *tmp = dynamic_cast<_t*>(n); \
-        assert(tmp); \
-        tmp; \
-    } )
-
-} /* namespace yy */
+    _t *_n = yy::tree_downcast_safe<_t>(_x);
 
 #endif
 

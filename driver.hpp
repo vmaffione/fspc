@@ -108,6 +108,8 @@ class FspDriver
 	int parse(const CompilerOptions& co);
 	bool trace_parsing;
 
+        void findProcessesDefinitions();
+
 	/* Error handling. */
 	void error(const yy::location& l, const std::string& m);
 	void error(const std::string& m);
