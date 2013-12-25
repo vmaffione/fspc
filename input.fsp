@@ -1,11 +1,5 @@
-//P=(a[i:1..2].t->b[j:i..i*2]->c[i+j]->END).
-//P=(a->(a1->END|a2->STOP|a3->STOP)|b->(b1->ERROR|b2->END)|c->c1->(c2->STOP|c3->c4->END)).
-//P=(a->b->P).
-//P=(a[i:1..2][3..4]->(b[i]->END)).
-//P = P[0], P[i:0..1] = (a[i]->P[(i+1)%4]), P[2] = (d[2]->d2->P[3]), P[i:3..4] = (c[i]->c1->P[(i+1)%5]).
-//P(G=1)=(a[G]->b[G]->END).Q(G=3)=P(G);P(G+1);END.T=Q(8);Q;END.
-//P=(a->b->END). Q=(x->y->END). ||C=(P||Q).
-//P(K=0)=(a[K]->END). ||C(K=1) = p[i:1..K]:P(K). ||CC = c:C(3).
-P(K=0)=(a[K]->END). ||C = forall [i:1..3] P(i).
+P(K=3) = (a[K]->b[K+1]->END).
+Q = P(1);P(2);L,
+    L=(l1->l2->END).
 
-menu M = {a,b,c[1..2]}
+U = P(4);Q;U.

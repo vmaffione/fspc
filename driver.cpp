@@ -53,6 +53,10 @@ void FspDriver::clear()
 	remove(remove_file.c_str());
 	remove_file = "";
     }
+    if (tree) {
+        delete tree;
+        tree = NULL;
+    }
 }
 
 int FspDriver::parse(const CompilerOptions& co)
@@ -100,8 +104,6 @@ int FspDriver::parse(const CompilerOptions& co)
 #endif
         /* Translate the parse tree. */
         tree->translate(*this);
-        delete tree;
-        tree = NULL;
 
         if (co.output_file) {
 	    serp = new Serializer(co.output_file);
