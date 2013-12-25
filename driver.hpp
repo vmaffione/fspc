@@ -39,7 +39,7 @@ namespace yy {
 struct NestingContext {
     Context ctx;
     UnresolvedNames unres;
-    ParametricProcess paramproc;
+    ParametricProcess parameters;
     vector<string> overridden_names;
     vector<Symbol *> overridden_values;
     bool replay;
@@ -72,8 +72,8 @@ class FspDriver
         /* Keep track of process names to be resolved and their aliases. */
         UnresolvedNames unres;
 
-        /* The names of the parameters used in a process definition. */
-        ParametricProcess paramproc;
+        /* The names of the parameters used in a process translation. */
+        ParametricProcess parameters;
 
         /* Overridden names support. */
         vector<string> overridden_names;

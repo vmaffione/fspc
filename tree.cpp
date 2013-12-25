@@ -1276,7 +1276,9 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::LtsPtr *res)
                 assert(0);
                 delete cvp;
             }
-            c.paramproc.insert(pp->names[i], arguments[i]);
+            /* Insert the parameter into 'c.parameters', which is part of
+               the translator context. */
+            c.parameters.insert(pp->names[i], arguments[i]);
         }
         /* Do the translation. The new LTS is stored in the 'processes'
            table by the translate function. */
@@ -1587,9 +1589,9 @@ void yy::ParameterNode::translate(FspDriver& c)
     ConstS *cvp;
     Symbol *svp;
 
-    /* Save the parameter name for subsequent removal. If there is
-       already a parameter with the same name we report an error. */
-    if (!c.paramproc.insert(in->res, en->res)) {
+    /* Insert the parameter into 'c.parameter', which is part of the
+       translator context. */
+    if (!c.parameters.insert(in->res, en->res)) {
         stringstream errstream;
         errstream << "parameter " << in->res << " declared twice";
         semantic_error(c, errstream, loc);
@@ -1692,8 +1694,9 @@ void yy::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
     res->name = name;
     res->cleanup();
 
-    /* Compute the LTS name extension. */
-    lts_name_extension(c.paramproc.defaults, extension);
+    /* Compute the LTS name extension with the parameter values
+       used with this translation. */
+    lts_name_extension(c.parameters.defaults, extension);
     res->name += extension;
 
     /* Insert lts into the global 'processes' table. */
