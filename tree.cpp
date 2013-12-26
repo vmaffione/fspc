@@ -1202,7 +1202,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
         pdn = dynamic_cast<TreeNode *>(pp->translator);
         assert(pdn);
         /* Save and reset the compiler context. It must be called before
-           inserting the parameters into c.paramproc (see the following
+           inserting the parameters into 'c.parameters' (see the following
            for loop). */
         c.nesting_save();
         /* Insert the arguments into the identifiers table, taking care

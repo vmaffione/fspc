@@ -71,7 +71,10 @@ class FspDriver
         /* Keep track of process names to be resolved and their aliases. */
         UnresolvedNames unres;
 
-        /* The names of the parameters used in a process translation. */
+        /* The names and values of the parameters used in a process
+           translation. This is used to (1) restore the previous
+           translator context and (2) compute the extended name of
+           an LTS. */
         ParametricProcess parameters;
 
         /* Overridden names support. */
@@ -104,8 +107,8 @@ class FspDriver
 	int parse(const CompilerOptions& co);
 	bool trace_parsing;
 
-        void findProcessesDefinitions();
-        void translateTree();
+        void translateProcessesDefinitions();
+        void translateDeclarations();
 
 	/* Error handling. */
 	void error(const yy::location& l, const std::string& m);

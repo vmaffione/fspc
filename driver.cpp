@@ -58,7 +58,31 @@ void FspDriver::clear()
     }
 }
 
-void FspDriver::findProcessesDefinitions()
+void FspDriver::translateDeclarations()
+{
+    vector<string> classes;
+    vector<yy::TreeNode *> declarations;
+
+    assert(tree);
+    /* Find all the tree nodes that don't correspond to process
+       definitions (e.g. declarations). Observe that a property
+       definition is considered to be a process definition. */
+    classes.push_back(yy::ConstantDefNode::className());
+    classes.push_back(yy::RangeDefNode::className());
+    classes.push_back(yy::SetDefNode::className());
+    classes.push_back(yy::ProgressDefNode::className());
+    classes.push_back(yy::MenuDefNode::className());
+    tree->getNodesByClasses(classes, declarations);
+
+    /* Translate the declarations found. This results in filling
+       in the following symbols tables: 'identifiers', 'progresses'
+       and 'menus'. */
+    for (unsigned int i = 0; i < declarations.size(); i++) {
+        declarations[i]->translate(*this);
+    }
+}
+
+void FspDriver::translateProcessesDefinitions()
 {
     vector<string> classes;
     vector<yy::TreeNode *> definitions;
@@ -73,10 +97,11 @@ void FspDriver::findProcessesDefinitions()
     for (unsigned int i = 0; i < definitions.size(); i++) {
         /* For each process definition, find all the parameters name
            and default values, building a ParametricProcess object.
-           This object is then stored into the parametric_process
+           This object is then stored into the 'parametric_process'
            symbols table. */
         DTCS(yy::ProcessDefNode, pdn, definitions[i]);
         DTCS(yy::CompositeDefNode, cdn, definitions[i]);
+        yy::LtsTreeNode *ltn;
         yy::ProcessIdNode *pid;
         yy::ParamNode *pan;
         ParametricProcess *pp = new ParametricProcess;
@@ -87,10 +112,12 @@ void FspDriver::findProcessesDefinitions()
             pid = yy::tree_downcast<yy::ProcessIdNode>(pdn->getChild(1));
             pan = yy::tree_downcast_null<yy::ParamNode>(pdn->getChild(2));
             pp->set_translator(pdn);
+            ltn = pdn;
         } else if (cdn) {
             pid = yy::tree_downcast<yy::ProcessIdNode>(cdn->getChild(1));
             pan = yy::tree_downcast_null<yy::ParamNode>(cdn->getChild(2));
             pp->set_translator(cdn);
+            ltn = cdn;
         } else {
             assert(0);
         }
@@ -126,39 +153,16 @@ void FspDriver::findProcessesDefinitions()
                         << " already declared";
             semantic_error(*this, errstream, pid->getLocation());
         }
+
+        /* Translate the process definition, filling in the 'processes'
+           symbol table. Note that we don't call 'ltn->translate(*this)'
+           directly, but we use the 'process_ref_translate()' wrapper
+           function (which is also used with process references like ).
+           This function also setups and restore the translator context,
+           taking care of the default process parameters and overridden
+           identifiers. */
+        ltn->process_ref_translate(*this, pid->res, NULL, &ltn->res);
     }
-}
-
-void FspDriver::translateTree()
-{
-    vector<string> classes;
-    vector<yy::TreeNode *> declarations;
-
-    assert(tree);
-    /* Find all the tree nodes that don't correspond to process
-       definitions (e.g. declarations). */
-    classes.push_back(yy::ConstantDefNode::className());
-    classes.push_back(yy::RangeDefNode::className());
-    classes.push_back(yy::SetDefNode::className());
-    classes.push_back(yy::ProgressDefNode::className());
-    classes.push_back(yy::MenuDefNode::className());
-    tree->getNodesByClasses(classes, declarations);
-
-    for (unsigned int i = 0; i < declarations.size(); i++) {
-        declarations[i]->translate(*this);
-    }
-
-    map<string, Symbol *>::iterator it;
-    for (it = parametric_processes.table.begin();
-                        it != parametric_processes.table.end(); it++) {
-        ParametricProcess *pp = is<ParametricProcess>(it->second);
-        yy::LtsTreeNode *ltn = dynamic_cast<yy::LtsTreeNode *>(pp->translator);
-
-        assert(ltn);
-        ltn->process_ref_translate(*this, it->first, NULL, &ltn->res);
-    }
-
- //   tree->translate(*this);
 }
 
 int FspDriver::parse(const CompilerOptions& co)
@@ -204,11 +208,11 @@ int FspDriver::parse(const CompilerOptions& co)
         tree->print(treef);
         treef.close();
 #endif
-        /* Collect the process definitions. */
-        findProcessesDefinitions();
+        /* Translate the declarations (e.g. range, set, progress, ...). */
+        translateDeclarations();
 
-        /* Translate the parse tree. */
-        translateTree();
+        /* Collect and translate the process definitions. */
+        translateProcessesDefinitions();
 
         if (co.output_file) {
 	    serp = new Serializer(co.output_file);
