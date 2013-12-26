@@ -88,10 +88,9 @@ class FspDriver
 
         /* The parsing result. */
         yy::TreeNode *tree;
-        /* =========================================================== */
 
+        /* Preprocessed file, input to the parser. */
 	string remove_file;
-	string current_file;
 
 
 	FspDriver();

@@ -188,7 +188,6 @@ int FspDriver::parse(const CompilerOptions& co)
 	scan_begin(temp.c_str());
 	yy::FspParser parser(*this);
 	parser.set_debug_level(trace_parsing);
-	this->current_file = orig; /* TODO redundant (remove_file)*/
 	ret = parser.parse();
 	scan_end();
 
