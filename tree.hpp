@@ -32,6 +32,66 @@
 #include "location.hh"
 
 
+class Result {
+    public:
+        virtual ~Result() { }
+};
+
+class IntResult : public Result {
+    public:
+        int val;
+
+        IntResult(int v) : val(v) { }
+};
+
+class StringResult : public Result {
+    public:
+        std::string val;
+        StringResult(const std::string& v) : val(v) { }
+};
+
+class LtsResult : public Result {
+    public:
+        yy::LtsPtr val;
+        LtsResult(yy::LtsPtr v) : val(v) { }
+};
+
+template <class T>
+T* result_downcast_safe(Result *r)
+{
+    T *ret = dynamic_cast<T*>(r);
+
+    return ret;
+}
+
+template <class T>
+T* result_downcast(Result *r)
+{
+    T *ret = result_downcast_safe<T>(r);
+
+    assert(ret);
+
+    return ret;
+}
+
+template <class T>
+T* result_downcast_null(Result *r)
+{
+    if (!r) {
+        return NULL;
+    }
+    return result_downcast<T>(r);
+}
+
+/* Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
+#define DRC(_t, _n, _x) \
+    _t *_n = result_downcast<_t>(_x);
+
+/* Same as the previous one, but using the safe downcast function. */
+#define DRCS(_t, _n, _x) \
+    _t *_n = result_downcast_safe<_t>(_x);
+
+
 struct FspDriver;
 
 namespace yy {
@@ -61,7 +121,7 @@ class TreeNode : public ParametricTranslator {
         unsigned int numChildren() const { return children.size(); }
         TreeNode *getChild(unsigned int i) const { return children[i]; }
         location getLocation() const { return loc; }
-        virtual void translate(FspDriver& dr);
+        virtual Result *translate(FspDriver& dr);
         virtual void combination(FspDriver& dr, string index, bool first) { }
         virtual string getClassName() const;
         virtual void clear() { }
@@ -124,7 +184,7 @@ class BaseExpressionNode : public IntTreeNode {
         static string className() { return "BaseExpression"; }
         string getClassName() const { return className(); }
         BaseExpressionNode() : IntTreeNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class IntegerNode : public IntTreeNode {
@@ -153,7 +213,7 @@ class VariableIdNode : public LowerCaseIdNode {
         static string className() { return "VariableId"; }
         string getClassName() const { return className(); }
         VariableIdNode() : LowerCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ConstantIdNode : public UpperCaseIdNode {
@@ -161,7 +221,7 @@ class ConstantIdNode : public UpperCaseIdNode {
         static string className() { return "ConstantId"; }
         string getClassName() const { return className(); }
         ConstantIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class RangeIdNode : public UpperCaseIdNode {
@@ -169,7 +229,7 @@ class RangeIdNode : public UpperCaseIdNode {
         static string className() { return "RangeId"; }
         string getClassName() const { return className(); }
         RangeIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class SetIdNode : public UpperCaseIdNode {
@@ -177,7 +237,7 @@ class SetIdNode : public UpperCaseIdNode {
         static string className() { return "SetId"; }
         string getClassName() const { return className(); }
         SetIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ConstParameterIdNode : public UpperCaseIdNode {
@@ -185,7 +245,7 @@ class ConstParameterIdNode : public UpperCaseIdNode {
         static string className() { return "ConstParameterId"; }
         string getClassName() const { return className(); }
         ConstParameterIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ParameterIdNode : public UpperCaseIdNode {
@@ -193,7 +253,7 @@ class ParameterIdNode : public UpperCaseIdNode {
         static string className() { return "ParameterId"; }
         string getClassName() const { return className(); }
         ParameterIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ProcessIdNode : public UpperCaseIdNode {
@@ -201,7 +261,7 @@ class ProcessIdNode : public UpperCaseIdNode {
         static string className() { return "ProcessId"; }
         string getClassName() const { return className(); }
         ProcessIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ProgressIdNode : public UpperCaseIdNode {
@@ -209,7 +269,7 @@ class ProgressIdNode : public UpperCaseIdNode {
         static string className() { return "ProgressId"; }
         string getClassName() const { return className(); }
         ProgressIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class MenuIdNode : public UpperCaseIdNode {
@@ -217,7 +277,7 @@ class MenuIdNode : public UpperCaseIdNode {
         static string className() { return "MenuId"; }
         string getClassName() const { return className(); }
         MenuIdNode() : UpperCaseIdNode() { }
-        void translate(FspDriver &dr);
+        Result *translate(FspDriver &dr);
 };
 
 class ExpressionNode : public IntTreeNode {
@@ -225,7 +285,7 @@ class ExpressionNode : public IntTreeNode {
         static string className() { return "Expression"; }
         string getClassName() const { return className(); }
         ExpressionNode() : IntTreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class OperatorNode : public TreeNode {
@@ -255,7 +315,7 @@ class ProgressDefNode : public TreeNode {
     public:
         static string className() { return "ProgressDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
         void combination(FspDriver& c, string index, bool first);
         ProgressDefNode() : TreeNode() { }
 };
@@ -271,7 +331,7 @@ class MenuDefNode : public TreeNode {
     public:
         static string className() { return "MenuDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
         MenuDefNode() : TreeNode() { }
 };
 
@@ -289,7 +349,7 @@ class HidingInterfNode : public TreeNode {
         static string className() { return "HidingInterf"; }
         string getClassName() const { return className(); }
         HidingInterfNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class HidingNode : public TreeNode {
@@ -313,7 +373,7 @@ class RelabelDefNode : public TreeNode {
         static string className() { return "RelabelDef"; }
         string getClassName() const { return className(); }
         RelabelDefNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
@@ -338,7 +398,7 @@ class RelabelDefsNode : public TreeNode {
         RelabelDefsNode() : TreeNode() { }
         static string className() { return "RelabelDefs"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class CommaNode : public TreeNode {
@@ -369,7 +429,7 @@ class BracesRelabelDefsNode : public TreeNode {
         static string className() { return "BracesRelabelDefs"; }
         string getClassName() const { return className(); }
         BracesRelabelDefsNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ParameterNode : public TreeNode {
@@ -414,7 +474,7 @@ class LabelingNode : public TreeNode {
         static string className() { return "Labeling"; }
         string getClassName() const { return className(); }
         LabelingNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class DoubleColonNode : public TreeNode {
@@ -431,7 +491,7 @@ class SharingNode : public TreeNode {
         static string className() { return "Sharing"; }
         string getClassName() const { return className(); }
         SharingNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ProcessRefNode : public LtsTreeNode {
@@ -439,7 +499,7 @@ class ProcessRefNode : public LtsTreeNode {
         static string className() { return "ProcessRef"; }
         string getClassName() const { return className(); }
         ProcessRefNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ParallelCompNode : public TreeNode {
@@ -449,7 +509,7 @@ class ParallelCompNode : public TreeNode {
         static string className() { return "ParallelComp"; }
         string getClassName() const { return className(); }
         ParallelCompNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class CompositeElseNode : public LtsTreeNode {
@@ -457,7 +517,7 @@ class CompositeElseNode : public LtsTreeNode {
         static string className() { return "CompositeElse"; }
         string getClassName() const { return className(); }
         CompositeElseNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ElseNode : public TreeNode {
@@ -472,7 +532,7 @@ class CompositeBodyNode : public LtsTreeNode {
         static string className() { return "CompositeBody"; }
         string getClassName() const { return className(); }
         CompositeBodyNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
@@ -495,7 +555,7 @@ class CompositeDefNode : public LtsTreeNode {
         CompositeDefNode() : LtsTreeNode() { }
         static string className() { return "CompositeDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ArgumentListNode : public TreeNode {
@@ -505,7 +565,7 @@ class ArgumentListNode : public TreeNode {
         static string className() { return "ArgumentList"; }
         string getClassName() const { return className(); }
         ArgumentListNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ArgumentsNode : public TreeNode {
@@ -515,7 +575,7 @@ class ArgumentsNode : public TreeNode {
         static string className() { return "Arguments"; }
         string getClassName() const { return className(); }
         ArgumentsNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ProcessRefSeqNode : public LtsTreeNode {
@@ -523,7 +583,7 @@ class ProcessRefSeqNode : public LtsTreeNode {
         static string className() { return "ProcessRefSeq"; }
         string getClassName() const { return className(); }
         ProcessRefSeqNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class SeqProcessListNode : public LtsTreeNode {
@@ -531,7 +591,7 @@ class SeqProcessListNode : public LtsTreeNode {
         static string className() { return "SeqProcessList"; }
         string getClassName() const { return className(); }
         SeqProcessListNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class SemicolonNode : public TreeNode {
@@ -546,7 +606,7 @@ class SeqCompNode : public LtsTreeNode {
         static string className() { return "SeqComp"; }
         string getClassName() const { return className(); }
         SeqCompNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class IndexRangesNode : public TreeNode {
@@ -556,7 +616,7 @@ class IndexRangesNode : public TreeNode {
         static string className() { return "IndexRanges"; }
         string getClassName() const { return className(); }
         IndexRangesNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class OpenSquareNode : public TreeNode {
@@ -578,7 +638,7 @@ class IndicesNode : public StringTreeNode {
         static string className() { return "Indices"; }
         string getClassName() const { return className(); }
         IndicesNode() : StringTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class GuardNode : public IntTreeNode {
@@ -602,7 +662,7 @@ class PrefixActionsNode : public TreeNode {
         static string className() { return "PrefixActions"; }
         string getClassName() const { return className(); }
         PrefixActionsNode() : TreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class ArrowNode : public TreeNode {
@@ -617,7 +677,7 @@ class ActionPrefixNode : public LtsTreeNode {
         static string className() { return "ActionPrefix"; }
         string getClassName() const { return className(); }
         ActionPrefixNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class ChoiceNode : public LtsTreeNode {
@@ -625,7 +685,7 @@ class ChoiceNode : public LtsTreeNode {
         static string className() { return "Choice"; }
         string getClassName() const { return className(); }
         ChoiceNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class BaseLocalProcessNode : public LtsTreeNode {
@@ -633,7 +693,7 @@ class BaseLocalProcessNode : public LtsTreeNode {
         static string className() { return "BaseLocalProcess"; }
         string getClassName() const { return className(); }
         BaseLocalProcessNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class EndNode : public TreeNode {
@@ -662,7 +722,7 @@ class ProcessElseNode : public LtsTreeNode {
         static string className() { return "ProcessElse"; }
         string getClassName() const { return className(); }
         ProcessElseNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class LocalProcessNode : public LtsTreeNode {
@@ -670,7 +730,7 @@ class LocalProcessNode : public LtsTreeNode {
         static string className() { return "LocalProcess"; }
         string getClassName() const { return className(); }
         LocalProcessNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class AlphaExtNode : public TreeNode {
@@ -680,7 +740,7 @@ class AlphaExtNode : public TreeNode {
         static string className() { return "AlphaExt"; }
         string getClassName() const { return className(); }
         AlphaExtNode() : TreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class LocalProcessDefNode : public LtsTreeNode {
@@ -688,7 +748,7 @@ class LocalProcessDefNode : public LtsTreeNode {
         static string className() { return "LocalProcessDef"; }
         string getClassName() const { return className(); }
         LocalProcessDefNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
         void combination(FspDriver& dr, string index, bool first);
 };
 
@@ -697,7 +757,7 @@ class LocalProcessDefsNode : public LtsTreeNode {
         static string className() { return "LocalProcessDefs"; }
         string getClassName() const { return className(); }
         LocalProcessDefsNode() : LtsTreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ProcessBodyNode : public LtsTreeNode {
@@ -705,7 +765,7 @@ class ProcessBodyNode : public LtsTreeNode {
         static string className() { return "ProcessBody"; }
         string getClassName() const { return className(); }
         ProcessBodyNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class ProcessDefNode : public LtsTreeNode {
@@ -713,7 +773,7 @@ class ProcessDefNode : public LtsTreeNode {
         static string className() { return "ProcessDef"; }
         string getClassName() const { return className(); }
         ProcessDefNode() : LtsTreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class PeriodNode : public TreeNode {
@@ -730,7 +790,7 @@ class SetElementsNode : public TreeNode {
         static string className() { return "SetElements"; }
         string getClassName() const { return className(); }
         SetElementsNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class SetDefNode : public TreeNode {
@@ -738,7 +798,7 @@ class SetDefNode : public TreeNode {
         SetDefNode() : TreeNode() { } 
         static string className() { return "SetDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class SetKwdNode : public TreeNode {
@@ -753,7 +813,7 @@ class RangeDefNode : public TreeNode {
         RangeDefNode() : TreeNode() { } 
         static string className() { return "RangeDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class RangeKwdNode : public TreeNode {
@@ -775,7 +835,7 @@ class ConstantDefNode : public TreeNode {
         ConstantDefNode() : TreeNode() { } 
         static string className() { return "ConstDef"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ConstKwdNode : public TreeNode {
@@ -792,7 +852,7 @@ class RangeExprNode : public TreeNode {
         static string className() { return "RangeExpr"; }
         string getClassName() const { return className(); }
         RangeExprNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class ActionRangeNode : public TreeNode {
@@ -802,7 +862,7 @@ class ActionRangeNode : public TreeNode {
         static string className() { return "ActionRange"; }
         string getClassName() const { return className(); }
         ActionRangeNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class RangeNode : public TreeNode {
@@ -812,7 +872,7 @@ class RangeNode : public TreeNode {
         static string className() { return "Range"; }
         string getClassName() const { return className(); }
         RangeNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class SetExprNode : public TreeNode {
@@ -822,7 +882,7 @@ class SetExprNode : public TreeNode {
         static string className() { return "SetExpr"; }
         string getClassName() const { return className(); }
         SetExprNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class SetNode : public TreeNode {
@@ -832,7 +892,7 @@ class SetNode : public TreeNode {
         static string className() { return "Set"; }
         string getClassName() const { return className(); }
         SetNode() : TreeNode() { }
-        void translate(FspDriver&);
+        Result *translate(FspDriver&);
 };
 
 class ActionLabelsNode : public TreeNode {
@@ -842,7 +902,7 @@ class ActionLabelsNode : public TreeNode {
         static string className() { return "ActionLabels"; }
         string getClassName() const { return className(); }
         ActionLabelsNode() : TreeNode() { }
-        void translate(FspDriver& dr);
+        Result *translate(FspDriver& dr);
 };
 
 class RootNode : public TreeNode {
@@ -859,7 +919,7 @@ class PrioritySNode : public TreeNode {
         static string className() { return "PriorityS"; }
         string getClassName() const { return className(); }
         PrioritySNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class RelabelingNode : public TreeNode {
@@ -869,7 +929,7 @@ class RelabelingNode : public TreeNode {
         static string className() { return "Relabeling"; }
         string getClassName() const { return className(); }
         RelabelingNode() : TreeNode() { }
-        void translate(FspDriver& c);
+        Result *translate(FspDriver& c);
 };
 
 class ProgressKwdNode : public TreeNode {

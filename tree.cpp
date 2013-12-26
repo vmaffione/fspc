@@ -176,9 +176,11 @@ void yy::TreeNode::clear_children()
     }
 }
 
-void yy::TreeNode::translate(FspDriver& c)
+Result *yy::TreeNode::translate(FspDriver& c)
 {
     translate_children(c);
+
+    return NULL;
 }
 
 void yy::TreeNode::getNodesByClasses(const vector<string>& classes,
@@ -211,70 +213,70 @@ void yy::TreeNode::getNodesByClasses(const vector<string>& classes,
 
 /* ========================== Translation methods ======================== */
 
-void yy::VariableIdNode::translate(FspDriver& c)
+Result *yy::VariableIdNode::translate(FspDriver& c)
 {
     DTC(LowerCaseIdNode, lc, children[0]);
 
     res = lc->res;
 }
 
-void yy::ConstantIdNode::translate(FspDriver& c)
+Result *yy::ConstantIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::RangeIdNode::translate(FspDriver& c)
+Result *yy::RangeIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::SetIdNode::translate(FspDriver& c)
+Result *yy::SetIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::ConstParameterIdNode::translate(FspDriver& c)
+Result *yy::ConstParameterIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::ParameterIdNode::translate(FspDriver& c)
+Result *yy::ParameterIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::ProcessIdNode::translate(FspDriver& c)
+Result *yy::ProcessIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::ProgressIdNode::translate(FspDriver& c)
+Result *yy::ProgressIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::MenuIdNode::translate(FspDriver& c)
+Result *yy::MenuIdNode::translate(FspDriver& c)
 {
     DTC(UpperCaseIdNode, uc, children[0]);
 
     res = uc->res;
 }
 
-void yy::ExpressionNode::translate(FspDriver& c)
+Result *yy::ExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -359,7 +361,7 @@ void yy::ExpressionNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::BaseExpressionNode::translate(FspDriver& c)
+Result *yy::BaseExpressionNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -396,7 +398,7 @@ void yy::BaseExpressionNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::RangeExprNode::translate(FspDriver& c)
+Result *yy::RangeExprNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -410,7 +412,7 @@ void yy::RangeExprNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::RangeNode::translate(FspDriver& c)
+Result *yy::RangeNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -439,7 +441,7 @@ void yy::RangeNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ConstantDefNode::translate(FspDriver& c)
+Result *yy::ConstantDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -458,7 +460,7 @@ void yy::ConstantDefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::RangeDefNode::translate(FspDriver& c)
+Result *yy::RangeDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -479,7 +481,7 @@ void yy::RangeDefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SetDefNode::translate(FspDriver& c)
+Result *yy::SetDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -639,7 +641,7 @@ static void for_each_combination(FspDriver& c, IndexRangesNode *irn,
     } while (next_set_indexes(elements, indexes));
 }
 
-void yy::ProgressDefNode::translate(FspDriver& c)
+Result *yy::ProgressDefNode::translate(FspDriver& c)
 {
     DTC(ProgressIdNode, id, children[1]);
     DTCS(IndexRangesNode, irn, children[2]);
@@ -652,7 +654,7 @@ void yy::ProgressDefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::MenuDefNode::translate(FspDriver &c)
+Result *yy::MenuDefNode::translate(FspDriver &c)
 {
     translate_children(c);
 
@@ -770,7 +772,7 @@ SetS yy::TreeNode::computeActionLabels(FspDriver& c, SetS base,
     return computeActionLabels(c, base, elements, idx+1);
 }
 
-void yy::SetElementsNode::translate(FspDriver& c)
+Result *yy::SetElementsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -788,7 +790,7 @@ void yy::SetElementsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SetExprNode::translate(FspDriver& c)
+Result *yy::SetExprNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -799,7 +801,7 @@ void yy::SetExprNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SetNode::translate(FspDriver& c)
+Result *yy::SetNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -828,7 +830,7 @@ void yy::SetNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ActionRangeNode::translate(FspDriver& c)
+Result *yy::ActionRangeNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -871,7 +873,7 @@ void yy::ActionRangeNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ActionLabelsNode::translate(FspDriver& c)
+Result *yy::ActionLabelsNode::translate(FspDriver& c)
 {
     /* Given an arbitrary complex label expression, e.g.
             'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
@@ -1042,7 +1044,7 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
     return lts;
 }
 
-void yy::PrefixActionsNode::translate(FspDriver& c)
+Result *yy::PrefixActionsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1064,7 +1066,7 @@ void yy::PrefixActionsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::IndicesNode::translate(FspDriver& c)
+Result *yy::IndicesNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1079,7 +1081,7 @@ void yy::IndicesNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::BaseLocalProcessNode::translate(FspDriver& c)
+Result *yy::BaseLocalProcessNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1114,7 +1116,7 @@ void yy::BaseLocalProcessNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ChoiceNode::translate(FspDriver& c)
+Result *yy::ChoiceNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1135,7 +1137,7 @@ void yy::ChoiceNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ArgumentListNode::translate(FspDriver& c)
+Result *yy::ArgumentListNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1149,7 +1151,7 @@ void yy::ArgumentListNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ArgumentsNode::translate(FspDriver& c)
+Result *yy::ArgumentsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1251,7 +1253,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
     }
 }
 
-void yy::ProcessRefSeqNode::translate(FspDriver& c)
+Result *yy::ProcessRefSeqNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1263,7 +1265,7 @@ void yy::ProcessRefSeqNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SeqProcessListNode::translate(FspDriver& c)
+Result *yy::SeqProcessListNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1282,7 +1284,7 @@ void yy::SeqProcessListNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SeqCompNode::translate(FspDriver& c)
+Result *yy::SeqCompNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1295,7 +1297,7 @@ void yy::SeqCompNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::LocalProcessNode::translate(FspDriver& c)
+Result *yy::LocalProcessNode::translate(FspDriver& c)
 {
 
     if (children.size() == 1) {
@@ -1340,7 +1342,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ProcessElseNode::translate(FspDriver& c)
+Result *yy::ProcessElseNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1351,7 +1353,7 @@ void yy::ProcessElseNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ActionPrefixNode::translate(FspDriver& c)
+Result *yy::ActionPrefixNode::translate(FspDriver& c)
 {
     vector<Context> ctxcache;
     Context saved_ctx = c.ctx;
@@ -1389,7 +1391,7 @@ void yy::ActionPrefixNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ProcessBodyNode::translate(FspDriver& c)
+Result *yy::ProcessBodyNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1409,7 +1411,7 @@ void yy::ProcessBodyNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::AlphaExtNode::translate(FspDriver& c)
+Result *yy::AlphaExtNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1433,7 +1435,7 @@ void yy::RelabelDefNode::combination(FspDriver& c, string index, bool first)
     }
 }
 
-void yy::RelabelDefNode::translate(FspDriver& c)
+Result *yy::RelabelDefNode::translate(FspDriver& c)
 {
     assert(children.size() == 3);
 
@@ -1466,7 +1468,7 @@ void yy::RelabelDefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::RelabelDefsNode::translate(FspDriver& c)
+Result *yy::RelabelDefsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1485,7 +1487,7 @@ void yy::RelabelDefsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::BracesRelabelDefsNode::translate(FspDriver& c)
+Result *yy::BracesRelabelDefsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1496,7 +1498,7 @@ void yy::BracesRelabelDefsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::RelabelingNode::translate(FspDriver& c)
+Result *yy::RelabelingNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1507,7 +1509,7 @@ void yy::RelabelingNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::HidingInterfNode::translate(FspDriver& c)
+Result *yy::HidingInterfNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1530,7 +1532,7 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::IndexRangesNode::translate(FspDriver& c)
+Result *yy::IndexRangesNode::translate(FspDriver& c)
 {
     /* Translation is deferred: Just collect the children. */
     res.clear();
@@ -1566,7 +1568,7 @@ void yy::LocalProcessDefNode::combination(FspDriver& c, string index,
     }
 }
 
-void yy::LocalProcessDefNode::translate(FspDriver& c)
+Result *yy::LocalProcessDefNode::translate(FspDriver& c)
 {
     DTC(ProcessIdNode, in, children[0]);
     DTC(IndexRangesNode, irn, children[1]);
@@ -1581,7 +1583,7 @@ void yy::LocalProcessDefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::LocalProcessDefsNode::translate(FspDriver& c)
+Result *yy::LocalProcessDefsNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1625,7 +1627,7 @@ void yy::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
     }
 }
 
-void yy::ProcessDefNode::translate(FspDriver& c)
+Result *yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1707,7 +1709,7 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     clear_children();
 }
 
-void yy::ProcessRefNode::translate(FspDriver& c)
+Result *yy::ProcessRefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1719,7 +1721,7 @@ void yy::ProcessRefNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::SharingNode::translate(FspDriver& c)
+Result *yy::SharingNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1730,7 +1732,7 @@ void yy::SharingNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::LabelingNode::translate(FspDriver& c)
+Result *yy::LabelingNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1741,7 +1743,7 @@ void yy::LabelingNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::PrioritySNode::translate(FspDriver& c)
+Result *yy::PrioritySNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1776,7 +1778,7 @@ void yy::CompositeBodyNode::combination(FspDriver& c, string index,
     }
 }
 
-void yy::CompositeBodyNode::translate(FspDriver& c)
+Result *yy::CompositeBodyNode::translate(FspDriver& c)
 {
     if (children.size() != 3 && children.size() != 5) {
         /* When children.size() == 3 or 5, we have deferred translation,
@@ -1884,7 +1886,7 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::CompositeElseNode::translate(FspDriver& c)
+Result *yy::CompositeElseNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1895,7 +1897,7 @@ void yy::CompositeElseNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ParallelCompNode::translate(FspDriver& c)
+Result *yy::ParallelCompNode::translate(FspDriver& c)
 {
     translate_children(c);
 
@@ -1910,7 +1912,7 @@ void yy::ParallelCompNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::CompositeDefNode::translate(FspDriver& c)
+Result *yy::CompositeDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
