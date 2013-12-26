@@ -138,7 +138,7 @@ namespace yy {
 %type <node_ptr> fsp_description fsp_definition
 %type <node_ptr> constant_def range_def set_def
 %type <node_ptr> composite_def param_OPT param parameter_list parameter
-%type <node_ptr> property_def progress_def menu_def
+%type <node_ptr> property_OPT progress_def menu_def
 %type <node_ptr> integer upper_case_id lower_case_id
 %type <node_ptr> expression base_expression
 %type <node_ptr> parameter_id process_id progress_id
@@ -238,7 +238,6 @@ fsp_definition:
     constant_def
     | range_def
     | set_def
-    | property_def
     | progress_def
     | process_def
     | composite_def
@@ -389,16 +388,26 @@ set_elements:
 
 /* Processes */
 process_def:
-    process_id param_OPT '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
+    property_OPT process_id param_OPT '=' process_body alphabet_extension_OPT relabel_OPT hiding_OPT '.' {
 	$$ = new ProcessDefNode();
-	$$->addChild($1, @1);
+        $$->addChild($1, @1);
 	$$->addChild($2, @2);
-	$$->addChild(new AssignNode(), @3);
-	$$->addChild($4, @4);
+	$$->addChild($3, @3);
+	$$->addChild(new AssignNode(), @4);
 	$$->addChild($5, @5);
 	$$->addChild($6, @6);
 	$$->addChild($7, @7);
-	$$->addChild(new PeriodNode(), @8);
+	$$->addChild($8, @8);
+	$$->addChild(new PeriodNode(), @9);
+    }
+    ;
+
+property_OPT:
+    {
+        $$ = NULL;
+    }
+    | PROPERTY {
+        $$ = new PropertyNode();
     }
     ;
 
@@ -888,17 +897,7 @@ hiding:
     ;
 
 
-/* Property, Progress and Menu */
-// TODO second form of progress (if S then C)
-property_def:
-    PROPERTY process_def {
-        /* @2 */
-        $$ = new PropertyDefNode();
-        $$->addChild(new PropertyNode(), @1);
-        $$->addChild($2, @2);
-    }
-    ;
-
+/* Progress and Menu (Property is included into process_def). */
 progress_def:
     PROGRESS progress_id index_ranges_OPT '=' set {
         $$ = new ProgressDefNode();

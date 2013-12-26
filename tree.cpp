@@ -211,27 +211,6 @@ void yy::TreeNode::getNodesByClasses(const vector<string>& classes,
 
 /* ========================== Translation methods ======================== */
 
-void yy::RootNode::translate(FspDriver& c)
-{
-    for (unsigned int i=0; i<children.size(); i++) {
-        if (children[i]) {
-            DTCS(ProcessDefNode, pdn, children[i]);
-            DTCS(CompositeDefNode, cdn, children[i]);
-
-            if (pdn || cdn) {
-                /* Save the compiler context (in this case, an empty
-                   context). */
-                c.nesting_save(false);
-            }
-            children[i]->translate(c);
-            if (pdn || cdn) {
-                /* Restore the saved context (empty). */
-                c.nesting_restore();
-            }
-        }
-    }
-}
-
 void yy::VariableIdNode::translate(FspDriver& c)
 {
     DTC(LowerCaseIdNode, lc, children[0]);
@@ -513,34 +492,6 @@ void yy::SetDefNode::translate(FspDriver& c)
         stringstream errstream;
         errstream << "set " << id->res << " declared twice";
         delete svp;
-        semantic_error(c, errstream, loc);
-    }
-
-    clear_children();
-}
-
-void yy::PropertyDefNode::translate(FspDriver& c)
-{
-    translate_children(c);
-
-    DTC(ProcessDefNode, pdn, children[1]);
-    Symbol *svp;
-    yy::LtsPtr lts;
-
-    /* Lookup the process name that has just been inserted by
-       ProcessDefNode::translate. */
-    if (!c.processes.lookup(pdn->res->name, svp)) {
-        assert(0);
-    }
-
-    lts = is<yy::Lts>(svp);
-    /* Apply the property operator, if possible. */
-    if (lts->isDeterministic()) {
-        lts->property();
-    } else {
-        stringstream errstream;
-        errstream << "Cannot apply the 'property' keyword since "
-            << lts->name << " is a non-deterministic process";
         semantic_error(c, errstream, loc);
     }
 
@@ -1253,7 +1204,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
         /* Save and reset the compiler context. It must be called before
            inserting the parameters into c.paramproc (see the following
            for loop). */
-        c.nesting_save(true);
+        c.nesting_save();
         /* Insert the arguments into the identifiers table, taking care
            of overridden names. */
         for (unsigned int i=0; i<pp->names.size(); i++) {
@@ -1567,52 +1518,6 @@ void yy::HidingInterfNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::ParameterNode::translate(FspDriver& c)
-{
-    if (c.replay) {
-        /* When c.replay is true, it means that we are translating a process
-           because of a process reference (e.g. ProcessRefSeqNode). In
-           this case we don't want to translate the parse tree nodes
-           corresponding to parameters, because the identifiers corresponding
-           to the process arguments have already been inserted into the
-           identifiers table. */
-        return;
-    }
-
-    translate_children(c);
-
-    DTC(ParameterIdNode, in, children[0]);
-    DTC(ExpressionNode, en, children[2]);
-    ConstS *cvp;
-    Symbol *svp;
-
-    /* Insert the parameter into 'c.parameter', which is part of the
-       translator context. */
-    if (!c.parameters.insert(in->res, en->res)) {
-        stringstream errstream;
-        errstream << "parameter " << in->res << " declared twice";
-        semantic_error(c, errstream, loc);
-    }
-
-    if (c.identifiers.lookup(in->res, svp)) {
-        /* If there is already an identifier with the same name as
-           this parameter, override temporarly the identifier. */
-        c.overridden_names.push_back(in->res);
-        c.overridden_values.push_back(svp->clone());
-        c.identifiers.remove(in->res);
-    }
-
-    /* Insert the parameter into the identifiers table. Here we cannot
-       fail because of of the previous two operations. */
-    cvp = new ConstS;
-    cvp->value = en->res;
-    if (!c.identifiers.insert(in->res, cvp)) {
-        assert(0);
-    }
-
-    clear_children();
-}
-
 void yy::IndexRangesNode::translate(FspDriver& c)
 {
     /* Translation is deferred: Just collect the children. */
@@ -1712,11 +1617,12 @@ void yy::ProcessDefNode::translate(FspDriver& c)
 {
     translate_children(c);
 
-    DTC(ProcessIdNode, idn, children[0]);
-    DTC(ProcessBodyNode, bn, children[3]);
-    DTCS(AlphaExtNode, aen, children[4]);
-    DTCS(RelabelingNode, rn, children[5]);
-    DTCS(HidingInterfNode, hin, children[6]);
+    DTCS(PropertyNode, prn, children[0]);
+    DTC(ProcessIdNode, idn, children[1]);
+    DTC(ProcessBodyNode, bn, children[4]);
+    DTCS(AlphaExtNode, aen, children[5]);
+    DTCS(RelabelingNode, rn, children[6]);
+    DTCS(HidingInterfNode, hin, children[7]);
     unsigned unres;
 
     /* The base is the process body. */
@@ -1770,6 +1676,18 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
         HidingS& hv = hin->res;
 
         res->hiding(hv.setv, hv.interface);
+    }
+
+    if (prn) {
+        /* Apply the property operator, if possible. */
+        if (res->isDeterministic()) {
+            res->property();
+        } else {
+            stringstream errstream;
+            errstream << "Cannot apply the 'property' keyword since "
+                << idn->res << " is a non-deterministic process";
+            semantic_error(c, errstream, loc);
+        }
     }
 
     this->post_process_definition(c, res, idn->res);

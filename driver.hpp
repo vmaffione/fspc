@@ -42,7 +42,6 @@ struct NestingContext {
     ParametricProcess parameters;
     vector<string> overridden_names;
     vector<Symbol *> overridden_values;
-    bool replay;
 };
 
 /* Conducting the whole scanning and parsing of fspcc. */
@@ -79,12 +78,9 @@ class FspDriver
         vector<string> overridden_names;
         vector<Symbol *> overridden_values;
 
-        /* Are we currently in replay mode? */
-        bool replay;
-
         /* Nesting support for parametric process references. */
         vector<NestingContext> nesting_stack;
-        void nesting_save(bool replay);
+        void nesting_save();
         void nesting_restore();
 
         /* The parsing result. */

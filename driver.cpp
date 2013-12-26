@@ -39,7 +39,6 @@ FspDriver::FspDriver() : actions("Global actions table")
 {
     trace_scanning = trace_parsing = false;
     tree = NULL;
-    replay = false;
 }
 
 FspDriver::~FspDriver()
@@ -85,8 +84,8 @@ void FspDriver::findProcessesDefinitions()
         /* Find the ProcessIdNode and ParamNode depending on the process
            definition type. */
         if (pdn) {
-            pid = yy::tree_downcast<yy::ProcessIdNode>(pdn->getChild(0));
-            pan = yy::tree_downcast_null<yy::ParamNode>(pdn->getChild(1));
+            pid = yy::tree_downcast<yy::ProcessIdNode>(pdn->getChild(1));
+            pan = yy::tree_downcast_null<yy::ParamNode>(pdn->getChild(2));
             pp->set_translator(pdn);
         } else if (cdn) {
             pid = yy::tree_downcast<yy::ProcessIdNode>(cdn->getChild(1));
@@ -99,7 +98,7 @@ void FspDriver::findProcessesDefinitions()
         pid->translate(*this);  /* Compute the name. */
 
         if (pan) {
-            /* Compute the parameters. */
+            /* Find the parameters. */
             DTC(yy::ParameterListNode, pln, pan->getChild(1));
 
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
@@ -144,7 +143,7 @@ void FspDriver::translateTree()
     classes.push_back(yy::ProgressDefNode::className());
     classes.push_back(yy::MenuDefNode::className());
     tree->getNodesByClasses(classes, declarations);
-/*
+
     for (unsigned int i = 0; i < declarations.size(); i++) {
         declarations[i]->translate(*this);
     }
@@ -152,17 +151,14 @@ void FspDriver::translateTree()
     map<string, Symbol *>::iterator it;
     for (it = parametric_processes.table.begin();
                         it != parametric_processes.table.end(); it++) {
-        process_ref_translate(*this, it->first, NULL, NULL);
+        ParametricProcess *pp = is<ParametricProcess>(it->second);
+        yy::LtsTreeNode *ltn = dynamic_cast<yy::LtsTreeNode *>(pp->translator);
+
+        assert(ltn);
+        ltn->process_ref_translate(*this, it->first, NULL, &ltn->res);
     }
 
-    classes.clear();
-    classes.push_back(yy::PropertyDefNode::className());
-    tree->getNodesByClasses(classes, declarations);
-    for (unsigned int i = 0; i < declarations.size(); i++) {
-        declarations[i]->translate(*this);
-    }
-*/
-    tree->translate(*this);
+ //   tree->translate(*this);
 }
 
 int FspDriver::parse(const CompilerOptions& co)
@@ -332,7 +328,7 @@ int FspDriver::parse(const CompilerOptions& co)
     return 0;
 }
 
-void FspDriver::nesting_save(bool r)
+void FspDriver::nesting_save()
 {
     /* Save the current context and push it on the
        nesting stack. */
@@ -342,7 +338,6 @@ void FspDriver::nesting_save(bool r)
     nesting_stack.back().parameters = parameters;
     nesting_stack.back().overridden_names = overridden_names;
     nesting_stack.back().overridden_values = overridden_values;
-    nesting_stack.back().replay = replay;
 
     /* Clean the current context. */
     ctx.clear();
@@ -350,7 +345,6 @@ void FspDriver::nesting_save(bool r)
     parameters.clear();
     overridden_names.clear();
     overridden_values.clear();
-    replay = r;
 }
 
 void FspDriver::nesting_restore()
@@ -376,7 +370,6 @@ void FspDriver::nesting_restore()
     parameters = nesting_stack.back().parameters;
     overridden_names = nesting_stack.back().overridden_names;
     overridden_values = nesting_stack.back().overridden_values;
-    replay = nesting_stack.back().replay;
     nesting_stack.pop_back();
 }
 

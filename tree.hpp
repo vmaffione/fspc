@@ -52,13 +52,6 @@ class TreeNode : public ParametricTranslator {
                                      vector<Context>& ctxcache);
         void post_process_definition(FspDriver& c, yy::LtsPtr res,
                                            const string& name);
-        /* TODO ? when everything will work, remove this method and
-           declare a ProcessRefBase class from which ProcessRefNode an
-           ProcessRefSeq derive, and define the translate method of the
-           base class with the code contained in process_ref_translate. */
-        void process_ref_translate(FspDriver& c, const string& name,
-                                            const vector<int> *arguments,
-                                            yy::LtsPtr *res);
 
     public:
         TreeNode() { }
@@ -76,6 +69,13 @@ class TreeNode : public ParametricTranslator {
         void clear_children();
         void getNodesByClasses(const vector<string>& classes,
                                 vector<TreeNode *>& results);
+        /* TODO ? when everything will work, remove this method and
+           declare a ProcessRefBase class from which ProcessRefNode an
+           ProcessRefSeq derive, and define the translate method of the
+           base class with the code contained in process_ref_translate. */
+        void process_ref_translate(FspDriver& c, const string& name,
+                                            const vector<int> *arguments,
+                                            yy::LtsPtr *res);
 };
 
 
@@ -260,14 +260,6 @@ class ProgressDefNode : public TreeNode {
         ProgressDefNode() : TreeNode() { }
 };
 
-class PropertyDefNode : public TreeNode {
-    public:
-        static string className() { return "PropertyDef"; }
-        string getClassName() const { return className(); }
-        void translate(FspDriver& c);
-        PropertyDefNode() : TreeNode() { }
-};
-
 class PropertyNode : public TreeNode {
     public:
         static string className() { return "property"; }
@@ -385,7 +377,6 @@ class ParameterNode : public TreeNode {
         ParameterNode() : TreeNode() { } 
         static string className() { return "Parameter"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& c);
 };
 
 class AssignNode : public TreeNode {
@@ -859,7 +850,6 @@ class RootNode : public TreeNode {
         RootNode() : TreeNode() { }
         static string className() { return "Root"; }
         string getClassName() const { return className(); }
-        void translate(FspDriver& dr);
 };
 
 class PrioritySNode : public TreeNode {
