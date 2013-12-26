@@ -48,6 +48,8 @@ struct NestingContext {
 class FspDriver
 {
     public:
+        CompilerOptions cop;
+
 	/* Main actions table. */
 	struct ActionsTable actions;
 
@@ -83,7 +85,7 @@ class FspDriver
 
         /* Nesting support for parametric process references. */
         vector<NestingContext> nesting_stack;
-        void nesting_save();
+        bool nesting_save();
         void nesting_restore();
 
         /* The parsing result. */

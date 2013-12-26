@@ -1195,6 +1195,7 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
     IFD(cout << "Looking up " << name + extension << "\n");
     if (!c.processes.lookup(name + extension, svp)) {
         TreeNode *pdn;
+        bool ok;
 
 	/* If there is a cache miss, we have to compute the requested LTS
 	   using the translate method and save it in the global processes
@@ -1204,7 +1205,13 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
         /* Save and reset the compiler context. It must be called before
            inserting the parameters into 'c.parameters' (see the following
            for loop). */
-        c.nesting_save();
+        ok = c.nesting_save();
+        if (!ok) {
+            stringstream errstream;
+            errstream << "Max reference depth exceeded while translating "
+                        "process " << name + extension;
+            general_error(c, errstream, loc);
+        }
         /* Insert the arguments into the identifiers table, taking care
            of overridden names. */
         for (unsigned int i=0; i<pp->names.size(); i++) {
@@ -1290,11 +1297,12 @@ void yy::SeqCompNode::translate(FspDriver& c)
 
 void yy::LocalProcessNode::translate(FspDriver& c)
 {
-    translate_children(c);
 
     if (children.size() == 1) {
         DTCS(BaseLocalProcessNode, b, children[0]);
         DTCS(SeqCompNode, sc, children[0]);
+
+        translate_children(c);
 
         if (b) {
             res = b->res;
@@ -1307,6 +1315,7 @@ void yy::LocalProcessNode::translate(FspDriver& c)
         /* ( choice ) */
         DTC(ChoiceNode, cn, children[1]);
 
+        translate_children(c);
         res = cn->res;
     } else if (children.size() == 5) {
         /* IF expression THEN local_process else_OPT. */
@@ -1314,9 +1323,12 @@ void yy::LocalProcessNode::translate(FspDriver& c)
         DTC(LocalProcessNode, pn, children[3]);
         DTCS(ProcessElseNode, pen, children[4]);
 
+        en->translate(c);
         if (en->res) {
+            pn->translate(c);
             res = pn->res;
         } else if (pen) {
+            pen->translate(c);
             res = pen->res;
         } else {
             res = new Lts(LtsNode::Normal, &c.actions);
@@ -1766,9 +1778,9 @@ void yy::CompositeBodyNode::combination(FspDriver& c, string index,
 
 void yy::CompositeBodyNode::translate(FspDriver& c)
 {
-    if (children.size() != 3) {
-        /* When children.size() == 3, we have deferred translation, and so
-           we don't have to do the translation here. */
+    if (children.size() != 3 && children.size() != 5) {
+        /* When children.size() == 3 or 5, we have deferred translation,
+           and so we don't have to do the translation here. */
         translate_children(c);
     }
 
@@ -1805,9 +1817,12 @@ void yy::CompositeBodyNode::translate(FspDriver& c)
         DTC(CompositeBodyNode, cb, children[3]);
         DTCS(CompositeElseNode, ce, children[4]);
 
+        en->translate(c);
         if (en->res) {
+            cb->translate(c);
             res = cb->res;
         } else if (ce) {
+            ce->translate(c);
             res = ce->res;
         } else {
             res = new Lts(LtsNode::Normal, &c.actions);

@@ -1,2 +1,2 @@
-P = (a->b->c->L),
-    L = (e[2..3]->P).
+P(K=0) = (a[K]->L),
+   L = if (K==0) then END else P(K-1);END.

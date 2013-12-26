@@ -99,11 +99,24 @@ void print_error_location_pretty(const yy::location& loc)
     print_error_location(loc, loc.begin.column);
 }
 
-void semantic_error(FspDriver& driver, const stringstream& ss, const yy::location& loc)
+static void common_error(FspDriver& driver, const stringstream& ss,
+                         const yy::location& loc, const char *errtype)
 {
     print_error_location_pretty(loc);
-    cout << "Semantic error: " << ss.str() << "\n";
+    cout << errtype << " error: " << ss.str() << "\n";
     driver.clear();
     exit(-1);
+}
+
+void semantic_error(FspDriver& driver, const stringstream& ss,
+                    const yy::location& loc)
+{
+    common_error(driver, ss, loc, "Semantic");
+}
+
+void general_error(FspDriver& driver, const stringstream& ss,
+                   const yy::location& loc)
+{
+    common_error(driver, ss, loc, "General");
 }
 

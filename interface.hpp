@@ -21,7 +21,7 @@
 #ifndef __INTERFACE__HH
 #define __INTERFACE__HH
 
-
+/* Options that a client can pass to the FSP compiler. */
 struct CompilerOptions {
     const char * input_file;
     int input_type;
@@ -31,12 +31,11 @@ struct CompilerOptions {
     bool graphviz;
     bool shell;
     bool script;
-    const char * script_file;
+    unsigned int max_reference_depth;
+    const char *script_file;
 
     static const int InputTypeFsp = 0;
     static const int InputTypeLts = 1;
 };
-
-int parser(const CompilerOptions& co);
 
 #endif

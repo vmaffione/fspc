@@ -171,6 +171,9 @@ int FspDriver::parse(const CompilerOptions& co)
     Deserializer * desp = NULL;
     stringstream ss;
 
+    /* Copy in the options. */
+    cop = co;
+
     if (co.input_type == CompilerOptions::InputTypeFsp) {
 	string orig(co.input_file);
 	string temp = ".fspcc." + orig;
@@ -331,8 +334,12 @@ int FspDriver::parse(const CompilerOptions& co)
     return 0;
 }
 
-void FspDriver::nesting_save()
+bool FspDriver::nesting_save()
 {
+    if (nesting_stack.size() > cop.max_reference_depth) {
+        return false;
+    }
+
     /* Save the current context and push it on the
        nesting stack. */
     nesting_stack.push_back(NestingContext());
@@ -348,6 +355,8 @@ void FspDriver::nesting_save()
     parameters.clear();
     overridden_names.clear();
     overridden_values.clear();
+
+    return true;
 }
 
 void FspDriver::nesting_restore()
