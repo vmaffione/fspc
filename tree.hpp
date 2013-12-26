@@ -52,11 +52,13 @@ class TreeNode : public ParametricTranslator {
                                      vector<Context>& ctxcache);
         void post_process_definition(FspDriver& c, yy::LtsPtr res,
                                            const string& name);
-        /* TODO when everything will work, remove this method and
+        /* TODO ? when everything will work, remove this method and
            declare a ProcessRefBase class from which ProcessRefNode an
            ProcessRefSeq derive, and define the translate method of the
            base class with the code contained in process_ref_translate. */
-        void process_ref_translate(FspDriver& c, yy::LtsPtr *res);
+        void process_ref_translate(FspDriver& c, const string& name,
+                                            const vector<int> *arguments,
+                                            yy::LtsPtr *res);
 
     public:
         TreeNode() { }

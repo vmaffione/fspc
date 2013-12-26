@@ -109,6 +109,7 @@ class FspDriver
 	bool trace_parsing;
 
         void findProcessesDefinitions();
+        void translateTree();
 
 	/* Error handling. */
 	void error(const yy::location& l, const std::string& m);

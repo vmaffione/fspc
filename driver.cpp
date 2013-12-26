@@ -130,6 +130,41 @@ void FspDriver::findProcessesDefinitions()
     }
 }
 
+void FspDriver::translateTree()
+{
+    vector<string> classes;
+    vector<yy::TreeNode *> declarations;
+
+    assert(tree);
+    /* Find all the tree nodes that don't correspond to process
+       definitions (e.g. declarations). */
+    classes.push_back(yy::ConstantDefNode::className());
+    classes.push_back(yy::RangeDefNode::className());
+    classes.push_back(yy::SetDefNode::className());
+    classes.push_back(yy::ProgressDefNode::className());
+    classes.push_back(yy::MenuDefNode::className());
+    tree->getNodesByClasses(classes, declarations);
+/*
+    for (unsigned int i = 0; i < declarations.size(); i++) {
+        declarations[i]->translate(*this);
+    }
+
+    map<string, Symbol *>::iterator it;
+    for (it = parametric_processes.table.begin();
+                        it != parametric_processes.table.end(); it++) {
+        process_ref_translate(*this, it->first, NULL, NULL);
+    }
+
+    classes.clear();
+    classes.push_back(yy::PropertyDefNode::className());
+    tree->getNodesByClasses(classes, declarations);
+    for (unsigned int i = 0; i < declarations.size(); i++) {
+        declarations[i]->translate(*this);
+    }
+*/
+    tree->translate(*this);
+}
+
 int FspDriver::parse(const CompilerOptions& co)
 {
     Serializer * serp = NULL;
@@ -173,10 +208,11 @@ int FspDriver::parse(const CompilerOptions& co)
         tree->print(treef);
         treef.close();
 #endif
+        /* Collect the process definitions. */
         findProcessesDefinitions();
 
         /* Translate the parse tree. */
-        tree->translate(*this);
+        translateTree();
 
         if (co.output_file) {
 	    serp = new Serializer(co.output_file);

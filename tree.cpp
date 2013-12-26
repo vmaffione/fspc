@@ -1209,27 +1209,27 @@ void yy::ArgumentsNode::translate(FspDriver& c)
     clear_children();
 }
 
-void yy::TreeNode::process_ref_translate(FspDriver& c, yy::LtsPtr *res)
+void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
+                                            const vector<int> *args,
+                                            yy::LtsPtr *res)
 {
-    translate_children(c);
-
-    DTC(ProcessIdNode, in, children[0]);
-    DTCS(ArgumentsNode, an, children[1]);
     Symbol *svp;
     ParametricProcess *pp;
     vector<int> arguments;
     string extension;
 
+    assert(res);
+
     /* Lookup 'process_id' in the 'parametric_process' table. */
-    if (!c.parametric_processes.lookup(in->res, svp)) {
+    if (!c.parametric_processes.lookup(name, svp)) {
 	stringstream errstream;
-	errstream << "Process " << in->res << " undeclared";
+	errstream << "Process " << name << " undeclared";
 	semantic_error(c, errstream, loc);
     }
     pp = is<ParametricProcess>(svp);
 
     /* Find the arguments for the process parameters. */
-    arguments = an ? an->res : pp->defaults;
+    arguments = args ? *args : pp->defaults;
 
     if (arguments.size() != pp->defaults.size()) {
 	stringstream errstream;
@@ -1241,17 +1241,15 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::LtsPtr *res)
 
     /* We first lookup the global processes table in order to see whether
        we already have the requested LTS or we need to compute it. */
-    IFD(cout << "Looking up " << in->res+extension << "\n");
-    if (!c.processes.lookup(in->res + extension, svp)) {
-        ProcessDefNode *pdn;
-        CompositeDefNode *cdn;
+    IFD(cout << "Looking up " << name + extension << "\n");
+    if (!c.processes.lookup(name + extension, svp)) {
+        TreeNode *pdn;
 
 	/* If there is a cache miss, we have to compute the requested LTS
 	   using the translate method and save it in the global processes
            table. */
-        pdn = dynamic_cast<ProcessDefNode *>(pp->translator);
-        cdn = dynamic_cast<CompositeDefNode *>(pp->translator);
-        assert(pdn || cdn);
+        pdn = dynamic_cast<TreeNode *>(pp->translator);
+        assert(pdn);
         /* Save and reset the compiler context. It must be called before
            inserting the parameters into c.paramproc (see the following
            for loop). */
@@ -1282,28 +1280,27 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, yy::LtsPtr *res)
         }
         /* Do the translation. The new LTS is stored in the 'processes'
            table by the translate function. */
-        if (pdn) {
-            pdn->translate(c);
-        } else {
-            cdn->translate(c);
-        }
+        pdn->translate(c);
         /* Restore the previously saved compiler context. */
         c.nesting_restore();
     }
 
     /* Use the LTS stored in the 'processes' table. */
-    if (c.processes.lookup(in->res + extension, svp)) {
+    if (c.processes.lookup(name + extension, svp)) {
 	*res = is<yy::Lts>(svp->clone());
     } else {
         assert(0);
     }
-
-    clear_children();
 }
 
 void yy::ProcessRefSeqNode::translate(FspDriver& c)
 {
-    process_ref_translate(c, &res);
+    translate_children(c);
+
+    DTC(ProcessIdNode, in, children[0]);
+    DTCS(ArgumentsNode, an, children[1]);
+
+    process_ref_translate(c, in->res, an ? &an->res : NULL, &res);
 
     clear_children();
 }
@@ -1782,7 +1779,12 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
 void yy::ProcessRefNode::translate(FspDriver& c)
 {
-    process_ref_translate(c, &res);
+    translate_children(c);
+
+    DTC(ProcessIdNode, in, children[0]);
+    DTCS(ArgumentsNode, an, children[1]);
+
+    process_ref_translate(c, in->res, an ? &an->res : NULL, &res);
 
     clear_children();
 }
