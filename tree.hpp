@@ -41,20 +41,87 @@ class IntResult : public Result {
     public:
         int val;
 
+        IntResult() { }
         IntResult(int v) : val(v) { }
 };
 
 class StringResult : public Result {
     public:
         std::string val;
+
+        StringResult() { }
         StringResult(const std::string& v) : val(v) { }
+};
+
+class RangeResult : public Result {
+    public:
+        RangeS val;
+
+        RangeResult() { }
+        RangeResult(int low, int high) { val.low = low; val.high = high; }
+};
+
+class SetResult : public Result {
+    public:
+        SetS val;
+
+        SetResult() { }
 };
 
 class LtsResult : public Result {
     public:
         yy::LtsPtr val;
+
+        LtsResult() { }
         LtsResult(yy::LtsPtr v) : val(v) { }
 };
+
+class IntVecResult : public Result {
+    public:
+        vector<int> val;
+
+        IntVecResult() { }
+};
+
+class HidingResult : public Result {
+    public:
+        HidingS val;
+
+        HidingResult() { }
+};
+
+class PriorityResult : public Result {
+    public:
+        PriorityS val;
+
+        PriorityResult() { }
+};
+
+namespace yy {
+    class TreeNode;
+}
+
+class TreeNodeVecResult : public Result {
+    public:
+        vector<yy::TreeNode *> val;
+
+        TreeNodeVecResult() { }
+};
+
+class RelabelingResult : public Result {
+    public:
+        RelabelingS val;
+
+        RelabelingResult() { }
+};
+
+class LtsVecResult : public Result {
+    public:
+        vector<yy::LtsPtr> val;
+
+        LtsVecResult() { }
+};
+
 
 template <class T>
 T* result_downcast_safe(Result *r)
@@ -122,7 +189,8 @@ class TreeNode : public ParametricTranslator {
         TreeNode *getChild(unsigned int i) const { return children[i]; }
         location getLocation() const { return loc; }
         virtual Result *translate(FspDriver& dr);
-        virtual void combination(FspDriver& dr, string index, bool first) { }
+        virtual void combination(FspDriver& dr, Result *r,
+                                 string index, bool first) { }
         virtual string getClassName() const;
         virtual void clear() { }
         void translate_children(FspDriver& dr);
@@ -316,7 +384,8 @@ class ProgressDefNode : public TreeNode {
         static string className() { return "ProgressDef"; }
         string getClassName() const { return className(); }
         Result *translate(FspDriver& c);
-        void combination(FspDriver& c, string index, bool first);
+        void combination(FspDriver& c, Result *r,
+                         string index, bool first);
         ProgressDefNode() : TreeNode() { }
 };
 
@@ -374,7 +443,8 @@ class RelabelDefNode : public TreeNode {
         string getClassName() const { return className(); }
         RelabelDefNode() : TreeNode() { }
         Result *translate(FspDriver& c);
-        void combination(FspDriver& dr, string index, bool first);
+        void combination(FspDriver& dr, Result *r,
+                         string index, bool first);
 };
 
 class SlashNode : public TreeNode {
@@ -533,7 +603,8 @@ class CompositeBodyNode : public LtsTreeNode {
         string getClassName() const { return className(); }
         CompositeBodyNode() : LtsTreeNode() { }
         Result *translate(FspDriver& c);
-        void combination(FspDriver& dr, string index, bool first);
+        void combination(FspDriver& dr, Result *r,
+                         string index, bool first);
 };
 
 class IfNode : public TreeNode {
@@ -749,7 +820,8 @@ class LocalProcessDefNode : public LtsTreeNode {
         string getClassName() const { return className(); }
         LocalProcessDefNode() : LtsTreeNode() { }
         Result *translate(FspDriver& c);
-        void combination(FspDriver& dr, string index, bool first);
+        void combination(FspDriver& dr, Result *r,
+                         string index, bool first);
 };
 
 class LocalProcessDefsNode : public LtsTreeNode {

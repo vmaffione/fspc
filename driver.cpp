@@ -105,6 +105,7 @@ void FspDriver::translateProcessesDefinitions()
         yy::ProcessIdNode *pid;
         yy::ParamNode *pan;
         ParametricProcess *pp = new ParametricProcess;
+        LtsResult *result = new LtsResult;
 
         /* Find the ProcessIdNode and ParamNode depending on the process
            definition type. */
@@ -122,7 +123,8 @@ void FspDriver::translateProcessesDefinitions()
             assert(0);
         }
 
-        pid->translate(*this);  /* Compute the name. */
+        /* Compute the name. */
+        DRC(StringResult, id, pid->translate(*this));
 
         if (pan) {
             /* Find the parameters. */
@@ -130,26 +132,27 @@ void FspDriver::translateProcessesDefinitions()
 
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
                 DTC(yy::ParameterNode, p, pln->getChild(i));
-                DTC(yy::ParameterIdNode, in, p->getChild(0));
-                DTC(yy::ExpressionNode, en, p->getChild(2));
+                /* parameter_id = EXPR */
+                DRC(StringResult, paid, p->getChild(0)->translate(*this));
+                DRC(IntResult, expr, p->getChild(2)->translate(*this));
 
-                in->translate(*this);
-                en->translate(*this);
-
-                if (!pp->insert(in->res, en->res)) {
+                if (!pp->insert(paid->val, expr->val)) {
                     stringstream errstream;
-                    errstream << "parameter " << in->res << " declared twice";
+                    errstream << "parameter " << paid->val <<
+                                    " declared twice";
                     semantic_error(*this, errstream, p->getLocation());
                 }
+                delete paid;
+                delete expr;
             }
         }
 
         /* Insert into the symbol table. */
-        if (!this->parametric_processes.insert(pid->res, pp)) {
+        if (!this->parametric_processes.insert(id->val, pp)) {
             stringstream errstream;
 
             delete pp;
-            errstream << "Parametric process " << pid->res
+            errstream << "Parametric process " << id->val
                         << " already declared";
             semantic_error(*this, errstream, pid->getLocation());
         }
@@ -161,7 +164,9 @@ void FspDriver::translateProcessesDefinitions()
            This function also setups and restore the translator context,
            taking care of the default process parameters and overridden
            identifiers. */
-        ltn->process_ref_translate(*this, pid->res, NULL, &ltn->res);
+        ltn->process_ref_translate(*this, id->val, NULL, &result->val);
+        delete id;
+        delete result;
     }
 }
 
