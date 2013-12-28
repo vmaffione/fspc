@@ -99,8 +99,8 @@ void FspDriver::translateProcessesDefinitions()
            and default values, building a ParametricProcess object.
            This object is then stored into the 'parametric_process'
            symbols table. */
-        DTCS(yy::ProcessDefNode, pdn, definitions[i]);
-        DTCS(yy::CompositeDefNode, cdn, definitions[i]);
+        TDCS(yy::ProcessDefNode, pdn, definitions[i]);
+        TDCS(yy::CompositeDefNode, cdn, definitions[i]);
         yy::LtsTreeNode *ltn;
         yy::ProcessIdNode *pid;
         yy::ParamNode *pan;
@@ -124,17 +124,17 @@ void FspDriver::translateProcessesDefinitions()
         }
 
         /* Compute the name. */
-        DRC(StringResult, id, pid->translate(*this));
+        RDC(StringResult, id, pid->translate(*this));
 
         if (pan) {
             /* Find the parameters. */
-            DTC(yy::ParameterListNode, pln, pan->getChild(1));
+            TDC(yy::ParameterListNode, pln, pan->getChild(1));
 
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
-                DTC(yy::ParameterNode, p, pln->getChild(i));
+                TDC(yy::ParameterNode, p, pln->getChild(i));
                 /* parameter_id = EXPR */
-                DRC(StringResult, paid, p->getChild(0)->translate(*this));
-                DRC(IntResult, expr, p->getChild(2)->translate(*this));
+                RDC(StringResult, paid, p->getChild(0)->translate(*this));
+                RDC(IntResult, expr, p->getChild(2)->translate(*this));
 
                 if (!pp->insert(paid->val, expr->val)) {
                     stringstream errstream;
