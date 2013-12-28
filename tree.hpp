@@ -75,10 +75,10 @@ class SetResult : public Result {
 
 class LtsResult : public Result {
     public:
-        yy::LtsPtr val;
+        fsp::LtsPtr val;
 
         LtsResult() { }
-        LtsResult(yy::LtsPtr v) : val(v) { }
+        LtsResult(fsp::LtsPtr v) : val(v) { }
 };
 
 class IntVecResult : public Result {
@@ -102,13 +102,13 @@ class PriorityResult : public Result {
         PriorityResult() { }
 };
 
-namespace yy {
+namespace fsp {
     class TreeNode;
 }
 
 class TreeNodeVecResult : public Result {
     public:
-        vector<yy::TreeNode *> val;
+        vector<fsp::TreeNode *> val;
 
         TreeNodeVecResult() { }
 };
@@ -122,7 +122,7 @@ class RelabelingResult : public Result {
 
 class LtsVecResult : public Result {
     public:
-        vector<yy::LtsPtr> val;
+        vector<fsp::LtsPtr> val;
 
         LtsVecResult() { }
 };
@@ -155,7 +155,7 @@ T* result_downcast(Result *r)
 
 struct FspDriver;
 
-namespace yy {
+namespace fsp {
 
 /* Parse tree node base class. It derives from ParametricTranslator,
    so that a TreeNode* can be used with the ParametricProcess class. */
@@ -167,11 +167,11 @@ class TreeNode : public ParametricTranslator {
         SetS computeActionLabels(FspDriver& c, SetS base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
-        yy::LtsPtr computePrefixActions(FspDriver& c,
+        fsp::LtsPtr computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
                                      vector<Context>& ctxcache);
-        void post_process_definition(FspDriver& c, yy::LtsPtr res,
+        void post_process_definition(FspDriver& c, fsp::LtsPtr res,
                                            const string& name);
 
     public:
@@ -193,7 +193,7 @@ class TreeNode : public ParametricTranslator {
 
 void process_ref_translate(FspDriver& c, const location &loc,
                            const string& name, const vector<int> *arguments,
-                           yy::LtsPtr *res);
+                           fsp::LtsPtr *res);
 
 /* ======================== FIRST DERIVATION LEVEL =========================
    The first derivation level adds a first specialization to a parse tree
@@ -959,7 +959,7 @@ class ProgressKwdNode : public TreeNode {
 
 /* Useful wrappers for downcasting a TreeNode pointer to pointers to derived types. */
 template <class T>
-T* tree_downcast_safe(yy::TreeNode *n)
+T* tree_downcast_safe(fsp::TreeNode *n)
 {
     T *ret = dynamic_cast<T*>(n);
 
@@ -967,7 +967,7 @@ T* tree_downcast_safe(yy::TreeNode *n)
 }
 
 template <class T>
-T* tree_downcast(yy::TreeNode *n)
+T* tree_downcast(fsp::TreeNode *n)
 {
     T *ret = tree_downcast_safe<T>(n);
 
@@ -977,7 +977,7 @@ T* tree_downcast(yy::TreeNode *n)
 }
 
 template <class T>
-T* tree_downcast_null(yy::TreeNode *n)
+T* tree_downcast_null(fsp::TreeNode *n)
 {
     if (!n)
         return NULL;
@@ -985,17 +985,17 @@ T* tree_downcast_null(yy::TreeNode *n)
 }
 
 
-} /* namespace yy */
+} /* namespace fsp */
 
 /* Tree downcast declaration:
    Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
 #define TDC(_t, _n, _x) \
-    _t *_n = yy::tree_downcast<_t>(_x);
+    _t *_n = fsp::tree_downcast<_t>(_x);
 
 /* Tree downcast safe declaration:
    Same as the previous one, but using the safe downcast function. */
 #define TDCS(_t, _n, _x) \
-    _t *_n = yy::tree_downcast_safe<_t>(_x);
+    _t *_n = fsp::tree_downcast_safe<_t>(_x);
 
 #endif
 

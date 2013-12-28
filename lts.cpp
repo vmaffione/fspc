@@ -120,22 +120,22 @@ string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 
 
 /* ====================== class Lts implementation ===================== */
-yy::Lts::ComposeAlgorithm yy::Lts::compose_algorithm =
-                                    &yy::Lts::compose_operational;
+fsp::Lts::ComposeAlgorithm fsp::Lts::compose_algorithm =
+                                    &fsp::Lts::compose_operational;
 
-int yy::Lts::lookupAlphabet(int action) const
+int fsp::Lts::lookupAlphabet(int action) const
 {
     set<int>::iterator it = alphabet.find(action);
     
     return (it == alphabet.end()) ? -1 : 0;
 }
 
-void yy::Lts::updateAlphabet(int action)
+void fsp::Lts::updateAlphabet(int action)
 {
     alphabet.insert(action);
 }
 
-void yy::Lts::mergeAlphabetInto(set<int>& actions) const
+void fsp::Lts::mergeAlphabetInto(set<int>& actions) const
 {
     for (set<int>::iterator it = alphabet.begin();
 			it != alphabet.end(); it++) {
@@ -143,7 +143,7 @@ void yy::Lts::mergeAlphabetInto(set<int>& actions) const
     }
 }
 
-void yy::Lts::mergeAlphabetFrom(const set<int>& actions)
+void fsp::Lts::mergeAlphabetFrom(const set<int>& actions)
 {
     for (set<int>::iterator it = actions.begin();
 			it != actions.end(); it++) {
@@ -151,7 +151,7 @@ void yy::Lts::mergeAlphabetFrom(const set<int>& actions)
     }
 }
 
-void yy::Lts::printAlphabet(stringstream& ss) const
+void fsp::Lts::printAlphabet(stringstream& ss) const
 {
     set<int>::iterator it;
 
@@ -163,7 +163,7 @@ void yy::Lts::printAlphabet(stringstream& ss) const
     ss << "}\n";
 }
 
-yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
+fsp::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
 {
     struct LtsNode node;
 
@@ -176,7 +176,7 @@ yy::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     DBR(delegated = 0);
 }
 
-void yy::Lts::print() const {
+void fsp::Lts::print() const {
     stringstream ss;
 
     CHECKATP();
@@ -194,7 +194,7 @@ void yy::Lts::print() const {
     cout << numStates() << " states, " << numTransitions() << " transitions\n";
 }
 
-void yy::Lts::clear()
+void fsp::Lts::clear()
 {
     nodes.clear();
     infos.clear();
@@ -205,7 +205,7 @@ void yy::Lts::clear()
 }
 
 /* Clean up some space that will not be needed in the future. */
-void yy::Lts::cleanup()
+void fsp::Lts::cleanup()
 {
     bool search = (err == ~0U || end == ~0U);
 
@@ -221,7 +221,7 @@ void yy::Lts::cleanup()
     infos.clear();
 }
 
-int yy::Lts::numTransitions() const
+int fsp::Lts::numTransitions() const
 {
     int n = 0;
 
@@ -234,28 +234,28 @@ int yy::Lts::numTransitions() const
     return n;
 }
 
-void yy::Lts::copy_node_in(int state, const Lts& lts, int i)
+void fsp::Lts::copy_node_in(int state, const Lts& lts, int i)
 {
     nodes[state] = lts.nodes[i];
     set_priv(state, lts.get_priv(i));
     set_type(state, lts.get_type(i));
 }
 
-void yy::Lts::copy_node_out(Lts& lts, int i, int state)
+void fsp::Lts::copy_node_out(Lts& lts, int i, int state)
 {
     lts.nodes[i] = nodes[state];
     lts.set_priv(i, get_priv(state));
     lts.set_type(i, get_type(state));
 }
 
-void yy::Lts::copy_nodes_in(const Lts& lts)
+void fsp::Lts::copy_nodes_in(const Lts& lts)
 {
     nodes = lts.nodes;
     infos = lts.infos;
 }
 
 /* BFS on the LTS for useless states removal. */
-void yy::Lts::reduce(const yy::Lts& unconnected)
+void fsp::Lts::reduce(const fsp::Lts& unconnected)
 {
     int np = unconnected.nodes.size();
     vector<int> frontier(np);
@@ -309,7 +309,7 @@ void yy::Lts::reduce(const yy::Lts& unconnected)
 }
 
 
-void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
+void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
 {    
     unsigned int nq;
     unsigned int np;
@@ -401,9 +401,9 @@ void yy::Lts::compose_declarative(const yy::Lts& p, const yy::Lts& q)
 }
 
 /* Helper function used by Lts::compose_operational(). */
-void yy::Lts::update_composition(unsigned int idx,
-                               unsigned int dst_ip, const yy::Lts& p,
-                               unsigned int dst_iq, const yy::Lts& q,
+void fsp::Lts::update_composition(unsigned int idx,
+                               unsigned int dst_ip, const fsp::Lts& p,
+                               unsigned int dst_iq, const fsp::Lts& q,
                                unsigned int nq, Edge& e,
                                map<unsigned int, unsigned int>& direct,
                                vector<unsigned int>& inverse)
@@ -433,7 +433,7 @@ void yy::Lts::update_composition(unsigned int idx,
     nodes[idx].children.push_back(e);
 }
 
-void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
+void fsp::Lts::compose_operational(const fsp::Lts& p, const fsp::Lts& q)
 {
     unsigned int nq = q.numStates();
     /* Maps '(ip, iq)' --> 'idx', where 'idx' is an index in the vector
@@ -502,12 +502,12 @@ void yy::Lts::compose_operational(const yy::Lts& p, const yy::Lts& q)
     mergeAlphabetFrom(q.alphabet);
 }
 
-void yy::Lts::compose(const yy::Lts& p, const yy::Lts& q)
+void fsp::Lts::compose(const fsp::Lts& p, const fsp::Lts& q)
 {
     (this->*compose_algorithm)(p, q);
 }
 
-yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)
+fsp::Lts::Lts(const fsp::Lts& p, const fsp::Lts& q)
 {
     assert(p.atp && q.atp == p.atp);
     atp = p.atp;
@@ -516,16 +516,16 @@ yy::Lts::Lts(const yy::Lts& p, const yy::Lts& q)
     DBR(delegated = 0);
 }
 
-yy::Lts& yy::Lts::compose(const yy::Lts& q)
+fsp::Lts& fsp::Lts::compose(const fsp::Lts& q)
 {
-    yy::Lts copy(*this);
+    fsp::Lts copy(*this);
 
     compose(copy, q);
 
     return *this;
 }
 
-int yy::Lts::deadlockAnalysis(stringstream& ss) const
+int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 {
     int nd = 0;
     int state = 0;
@@ -603,7 +603,7 @@ int yy::Lts::deadlockAnalysis(stringstream& ss) const
     return nd;
 }
 
-int yy::Lts::terminalSets()
+int fsp::Lts::terminalSets()
 {
     int n = nodes.size();
     int na = atp->reverse.size();
@@ -821,7 +821,7 @@ clear_flags:
     return nts;
 }
 
-bool yy::Lts::isDeterministic() const
+bool fsp::Lts::isDeterministic() const
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
 	map<int, int> links;
@@ -840,14 +840,14 @@ bool yy::Lts::isDeterministic() const
     return true;
 }
 
-Symbol * yy::Lts::clone() const
+Symbol * fsp::Lts::clone() const
 {
-    yy::Lts * lv = new yy::Lts(*this);
+    fsp::Lts * lv = new fsp::Lts(*this);
 
     return lv;
 }
 
-void yy::Lts::visit(const struct LtsVisitObject& lvo) const
+void fsp::Lts::visit(const struct LtsVisitObject& lvo) const
 {
     int state = 0;
     int n = nodes.size();
@@ -880,7 +880,7 @@ void yy::Lts::visit(const struct LtsVisitObject& lvo) const
     }
 }
 
-yy::Lts& yy::Lts::labeling(const SetS& labels)
+fsp::Lts& fsp::Lts::labeling(const SetS& labels)
 {
     if (!labels.size())
 	return *this;
@@ -888,11 +888,11 @@ yy::Lts& yy::Lts::labeling(const SetS& labels)
     if (labels.size() == 1)
 	this->labeling(labels[0]);
     else {
-	yy::Lts copy(*this);
+	fsp::Lts copy(*this);
 
 	this->labeling(labels[0]);
 	for (unsigned int i=1; i<labels.size(); i++) {
-	    yy::Lts right(copy);
+	    fsp::Lts right(copy);
 
 	    right.labeling(labels[i]);
 	    this->compose(right);
@@ -902,7 +902,7 @@ yy::Lts& yy::Lts::labeling(const SetS& labels)
     return *this;
 }
 
-yy::Lts& yy::Lts::labeling(const string& label)
+fsp::Lts& fsp::Lts::labeling(const string& label)
 {
     set<int> new_alphabet;
     map<int, int> mapping;
@@ -932,7 +932,7 @@ yy::Lts& yy::Lts::labeling(const string& label)
     return *this;
 }
 
-yy::Lts& yy::Lts::sharing(const SetS& labels)
+fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 {
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
@@ -978,7 +978,7 @@ yy::Lts& yy::Lts::sharing(const SetS& labels)
     return *this;
 }
 
-yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
+fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 {
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
@@ -1040,7 +1040,7 @@ yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
     return *this;
 }
 
-yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const SetS& oldlabels)
+fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const SetS& oldlabels)
 {
     for (unsigned int i=0; i<oldlabels.size(); i++)
 	this->relabeling(newlabels, oldlabels[i]);
@@ -1048,7 +1048,7 @@ yy::Lts& yy::Lts::relabeling(const SetS& newlabels, const SetS& oldlabels)
     return *this;
 }
 
-yy::Lts& yy::Lts::hiding(const SetS& s, bool interface)
+fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 {
     set<int> new_alphabet;
 
@@ -1104,7 +1104,7 @@ yy::Lts& yy::Lts::hiding(const SetS& s, bool interface)
     return *this;
 }
 
-yy::Lts& yy::Lts::priority(const SetS& s, bool low)
+fsp::Lts& fsp::Lts::priority(const SetS& s, bool low)
 {
     int low_int = (low) ? 1 : 0;
     set<int> priority_actions;
@@ -1157,7 +1157,7 @@ yy::Lts& yy::Lts::priority(const SetS& s, bool low)
     return *this;
 }
 
-yy::Lts& yy::Lts::property()
+fsp::Lts& fsp::Lts::property()
 {
     Edge e;
 
@@ -1205,7 +1205,7 @@ yy::Lts& yy::Lts::property()
     return *this;
 }
 
-int yy::Lts::progress(const string& progress_name, const ProgressS& pr,
+int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 					    stringstream& ss)
 {
     CHECKATP(0);
@@ -1254,7 +1254,7 @@ struct OutputData {
     ActionsTable * atp;
 };
 
-void yy::Lts::graphvizOutput(const char * filename) const
+void fsp::Lts::graphvizOutput(const char * filename) const
 {
     fstream fout;
 
@@ -1297,7 +1297,7 @@ void yy::Lts::graphvizOutput(const char * filename) const
     fout.close();
 }
 
-void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
+void fsp::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
 {
     int size = trace.size();
 
@@ -1314,7 +1314,7 @@ void yy::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
     ss << ati(atp, trace[size-1], false) << "\n";
 }
 
-void yy::Lts::simulate(Shell& sh, const ActionSetS *menu) const
+void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
 {
     stringstream ss;
     int state = 0;
@@ -1408,7 +1408,7 @@ choose:
     }
 }
 
-static void basicVisitFunction(int state, const yy::Lts& lts, const struct LtsNode& node,
+static void basicVisitFunction(int state, const fsp::Lts& lts, const struct LtsNode& node,
 				void * opaque)
 {
     OutputData * bvd = static_cast<OutputData *>(opaque);
@@ -1441,7 +1441,7 @@ static void basicVisitFunction(int state, const yy::Lts& lts, const struct LtsNo
     }
 }
 
-void yy::Lts::basic(const string& outfile, stringstream& ss) const
+void fsp::Lts::basic(const string& outfile, stringstream& ss) const
 {
     fstream fout(outfile.c_str(), fstream::out);
     LtsVisitObject lvo;
@@ -1465,7 +1465,7 @@ void yy::Lts::basic(const string& outfile, stringstream& ss) const
 /* Minimize the number of states of the LTS. For now the
    algorithm only aggregates states that are reacheable
    through a finite tau-steps. */
-void yy::Lts::minimize(stringstream& ss)
+void fsp::Lts::minimize(stringstream& ss)
 {
     set<unsigned int> frontier;
     vector<unsigned int> current;
@@ -1581,7 +1581,7 @@ void LtsNode::offset(int offset)
    offset that can be used to compute the 'Edge.dest' field of connection
    going from this->nodes[k] to a state in 'lts' after the concatenation.
 */
-unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
+unsigned int fsp::Lts::append(const fsp::Lts& lts, unsigned int first)
 {
     unsigned int offset = nodes.size() - first;
 
@@ -1603,7 +1603,7 @@ unsigned int yy::Lts::append(const yy::Lts& lts, unsigned int first)
    (nodes[0]). The two Lts object are connected by an edge labeled
    with 'label'.
 */
-yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
+fsp::Lts& fsp::Lts::zerocat(const fsp::Lts& lts, const string& label)
 {
     unsigned int offset = append(lts, 0);
     Edge e;
@@ -1621,7 +1621,7 @@ yy::Lts& yy::Lts::zerocat(const yy::Lts& lts, const string& label)
 
 /* Remove incomplete nodes (and related transitions) from *this, compacting
    the this->nodes vector. */
-void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
+void fsp::Lts::removeType(unsigned int type, unsigned int zero_idx,
                          bool call_reduce)
 {
     vector<unsigned int> remap(nodes.size());
@@ -1679,7 +1679,7 @@ void yy::Lts::removeType(unsigned int type, unsigned int zero_idx,
    'x -> ltsv[k][0]', where 'lts[k][0]' is the zero node of 'ltsv[k]'.
    The incomplete nodes in *this are then removed from *this.
 */
-yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
+fsp::Lts& fsp::Lts::incompcat(const vector<fsp::Lts>& ltsv)
 {
     unsigned int num_nodes = nodes.size();
     vector<unsigned int> offsets(ltsv.size());
@@ -1723,7 +1723,7 @@ yy::Lts& yy::Lts::incompcat(const vector<yy::Lts>& ltsv)
 /* Append 'lts' to *this, and then create a connection from *this[0] to
    lts[0].
 */
-yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
+fsp::Lts& fsp::Lts::zeromerge(const fsp::Lts& lts)
 {
     unsigned int offset = append(lts, 1);
 
@@ -1739,7 +1739,7 @@ yy::Lts& yy::Lts::zeromerge(const yy::Lts& lts)
 }
 
 /* Append 'lts' to *this and connect the End node of this to 'lts[0]'. */
-bool yy::Lts::endcat(const yy::Lts& lts)
+bool fsp::Lts::endcat(const fsp::Lts& lts)
 {
     unsigned int offset;
     unsigned int x;
@@ -1769,7 +1769,7 @@ bool yy::Lts::endcat(const yy::Lts& lts)
 
 /* Merge all the End nodes into a single End node, modifying the
    involved transitions accordingly. */
-yy::Lts& yy::Lts::mergeEndNodes()
+fsp::Lts& fsp::Lts::mergeEndNodes()
 {
     unsigned int x;
 
@@ -1826,7 +1826,7 @@ static void extend_infos(vector<LtsNodeInfo>& infos, unsigned int request,
     }
 }
 
-void yy::Lts::set_type(unsigned int state, unsigned int type)
+void fsp::Lts::set_type(unsigned int state, unsigned int type)
 {
     assert(state < nodes.size());
 
@@ -1840,7 +1840,7 @@ void yy::Lts::set_type(unsigned int state, unsigned int type)
     }
 }
 
-unsigned int yy::Lts::get_type(unsigned int state) const
+unsigned int fsp::Lts::get_type(unsigned int state) const
 {
     assert(state < nodes.size());
 
@@ -1858,7 +1858,7 @@ unsigned int yy::Lts::get_type(unsigned int state) const
 }
 
 /* Set the 'priv' field of *this[state] to 'val'. */
-void yy::Lts::set_priv(unsigned int state, unsigned int val)
+void fsp::Lts::set_priv(unsigned int state, unsigned int val)
 {
     assert(state < nodes.size());
 
@@ -1868,7 +1868,7 @@ void yy::Lts::set_priv(unsigned int state, unsigned int val)
 }
 
 /* Get the 'priv' field of *this[state]. */
-unsigned int yy::Lts::get_priv(unsigned int state) const
+unsigned int fsp::Lts::get_priv(unsigned int state) const
 {
     assert(state < nodes.size());
 
@@ -1889,7 +1889,7 @@ unsigned int yy::Lts::get_priv(unsigned int state) const
    Afterwards, all the unresolved nodes are removed from the graph.
    TODO add same caching/precomputation to make this function more efficient.
 */
-unsigned int yy::Lts::resolve()
+unsigned int fsp::Lts::resolve()
 {
     unsigned int priv;
     unsigned int zero_idx = ~0U;
@@ -1951,7 +1951,7 @@ unsigned int yy::Lts::resolve()
    elements.
    <<<UNUSED>>>
 */
-void yy::Lts::check_privs(set<unsigned int>& privs)
+void fsp::Lts::check_privs(set<unsigned int>& privs)
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
         unsigned int priv = get_priv(i);
@@ -1965,7 +1965,7 @@ void yy::Lts::check_privs(set<unsigned int>& privs)
 /* Scan the 'priv' fields, replacing each occurence of 'old_priv' with
    'new_priv'.
 */
-void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
+void fsp::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 {
     for (unsigned int i=0; i<nodes.size(); i++) {
         if (get_priv(i) == old_priv) {
@@ -1977,19 +1977,19 @@ void yy::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 
 /* =========================== LtsPtr ============================== */
 
-yy::LtsPtr::LtsPtr() : ptr(NULL)
+fsp::LtsPtr::LtsPtr() : ptr(NULL)
 {
 }
 
 /* Build a LtsPtr instance from a pointer. */
-yy::LtsPtr::LtsPtr(yy::Lts *lts)
+fsp::LtsPtr::LtsPtr(fsp::Lts *lts)
 {
     ptr = lts;
 
     get(__func__);
 }
 
-void yy::LtsPtr::get(const char *nm)
+void fsp::LtsPtr::get(const char *nm)
 {
     if (ptr) {
         /* Now *this holds *lts, so increment the refcount. */
@@ -2000,7 +2000,7 @@ void yy::LtsPtr::get(const char *nm)
     }
 }
 
-void yy::LtsPtr::put(const char *nm)
+void fsp::LtsPtr::put(const char *nm)
 {
     if (ptr) {
         /* We are going to loose what we held previously.
@@ -2018,7 +2018,7 @@ void yy::LtsPtr::put(const char *nm)
 }
 
 /* Build a LtsPtr instance from another LtsPtr instance. */
-yy::LtsPtr::LtsPtr(const LtsPtr& p)
+fsp::LtsPtr::LtsPtr(const LtsPtr& p)
 {
     ptr = p.ptr;
 
@@ -2026,7 +2026,7 @@ yy::LtsPtr::LtsPtr(const LtsPtr& p)
 }
 
 /* Assign the object pointed by another LtsPtr instance. */
-yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
+fsp::LtsPtr& fsp::LtsPtr::operator=(fsp::LtsPtr& p)
 {
     put(__func__);
 
@@ -2038,7 +2038,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::LtsPtr& p)
 }
 
 /* Assign the object pointed by the input pointer. */
-yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
+fsp::LtsPtr& fsp::LtsPtr::operator=(fsp::Lts *lts)
 {
     put(__func__);
 
@@ -2058,7 +2058,7 @@ yy::LtsPtr& yy::LtsPtr::operator=(yy::Lts *lts)
    We want the user to ask explicitely to take care of the referenced
    object (see LtsPtr::delegate).
    */
-yy::LtsPtr::operator Lts*()
+fsp::LtsPtr::operator Lts*()
 {
     return ptr;
 }
@@ -2073,7 +2073,7 @@ yy::LtsPtr::operator Lts*()
    the refcount, the object will be never freed by LtsPtr (but it can be
    freed by the user manually, of course).
  */
-yy::Lts* yy::LtsPtr::delegate()
+fsp::Lts* fsp::LtsPtr::delegate()
 {
     get(__func__);
     DBR(if (ptr) ptr->delegated++);
@@ -2081,7 +2081,7 @@ yy::Lts* yy::LtsPtr::delegate()
     return ptr;
 }
 
-yy::LtsPtr::~LtsPtr()
+fsp::LtsPtr::~LtsPtr()
 {
     put(__func__);
 
@@ -2090,7 +2090,7 @@ yy::LtsPtr::~LtsPtr()
 
 /* This emulates a call to the destructor, and resets the LtsPtr
    instance. */
-void yy::LtsPtr::clear()
+void fsp::LtsPtr::clear()
 {
     put(__func__);
 

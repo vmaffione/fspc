@@ -31,10 +31,10 @@ using namespace std;
 
 
 void semantic_error(FspDriver& driver, const stringstream& ss,
-                    const yy::location& loc);
+                    const fsp::location& loc);
 void general_error(FspDriver& driver, const stringstream& ss,
-                   const yy::location& loc);
-void print_error_location_pretty(const yy::location& loc);
+                   const fsp::location& loc);
+void print_error_location_pretty(const fsp::location& loc);
 
 template <class T>
 T* is(Symbol *svp)
@@ -49,7 +49,7 @@ T* is(Symbol *svp)
 /* Helper function used to get a ConstS* from a Symbol*. If the
    object pointed is not a constant, a semantic error is issued. */
 template <class T>
-T* err_if_not(FspDriver& c, Symbol *svp, const yy::location& loc)
+T* err_if_not(FspDriver& c, Symbol *svp, const fsp::location& loc)
 {
     T* ret = dynamic_cast<T*>(svp);
 

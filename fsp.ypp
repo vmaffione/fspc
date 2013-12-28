@@ -46,7 +46,7 @@ using namespace std;
    this to resolve shift/reduce conflicts at runtime. */
 %glr-parser
 
-/* Create a parser header file. This is needed because we define yylex()
+/* Create a parser header file. This is needed because we define fsplex()
    in another source file (the FLEX generated scanner source file). */
 %defines
 
@@ -74,7 +74,7 @@ using namespace std;
 #include <string>
 class FspDriver;
 
-namespace yy {
+namespace fsp {
     class TreeNode;
 };
 }
@@ -199,7 +199,7 @@ namespace yy {
 
 #include "helpers.hpp"
 
-using namespace yy;
+using namespace fsp;
 
 
 //#define DEBUG
@@ -1167,7 +1167,7 @@ menu_id: upper_case_id {
 
 %%
 
-void yy::FspParser::error (const yy::FspParser::location_type& l,
+void fsp::FspParser::error (const fsp::FspParser::location_type& l,
 	                   const std::string& m)
 {
     driver.error(l, m);

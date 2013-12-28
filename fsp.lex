@@ -47,8 +47,8 @@ using namespace std;
 # undef yywrap
 # define yywrap() 1
 
-/* By default yylex returns int, we use token_type.
-   Unfortunately yyterminate by default returns 0, which is
+/* By default fsplex returns int, we use token_type.
+   Unfortunately fspterminate by default returns 0, which is
    not of token_type.  */
 #define yyterminate() return token::ENDOF
 
@@ -63,8 +63,8 @@ using namespace std;
 /* The following is executed before each rule's action. */
 #define YY_USER_ACTION \
     do { \
-	yylloc->columns(yyleng); \
-	last_tokens.insert(yytext, yyleng); \
+	fsplloc->columns(fspleng); \
+	last_tokens.insert(fsptext, fspleng); \
     } while (0);
 
 
@@ -72,7 +72,7 @@ using namespace std;
    ============================================================== */
 %}
 
-/* We don't want to take a standard yywrap() from fl.so, and so we can
+/* We don't want to take a standard fspwrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
 %option noyywrap nounput batch debug
 %option outfile="scanner.cpp"
@@ -89,14 +89,14 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 
 %{
   /* This code, which appears before the first rule, is copied 
-     verbatim at the beginning of yylex(). At each yylex() 
+     verbatim at the beginning of fsplex(). At each fsplex() 
      invocation, therefore, we mark the current last position as the
      start of the next token.  */
 
     /* Shortcut typedef. */
-    typedef yy::FspParser::token token;
+    typedef fsp::FspParser::token token;
 
-    yylloc->step ();
+    fsplloc->step ();
 %}
 
 "/*" {
@@ -110,15 +110,15 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <COMMENTS>[\n]+ {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    yylloc->lines(yyleng);
-    yylloc->step();
+    fsplloc->lines(fspleng);
+    fsplloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
 }
 
 <COMMENTS>. {
-    yylloc->step();
+    fsplloc->step();
 }
 
 "//" {
@@ -128,8 +128,8 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 <INLINECOMMENTS>[\n] {
     /* When in comment state, throw away anything but keep
        tracking locations. */
-    yylloc->lines(yyleng);
-    yylloc->step();
+    fsplloc->lines(fspleng);
+    fsplloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
@@ -137,14 +137,14 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 }
 
 <INLINECOMMENTS>. {
-    /*last_tokens.location_step(yylloc);*/
-    yylloc->step();
+    /*last_tokens.location_step(fsplloc);*/
+    fsplloc->step();
 }
 
 
 {DIGIT}+ {
-    yylval->int_value = atoi(yytext); //TODO strtol()
-    IFD(cout << "INTEGER: " << yylval->int_value << "\n");
+    fsplval->int_value = atoi(fsptext); //TODO strtol()
+    IFD(cout << "INTEGER: " << fsplval->int_value << "\n");
     return token::INTEGER;
 }
 
@@ -164,13 +164,13 @@ STOP { IFD(cout << "STOP\n"); return token::STOP; }
 ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 {LowerCaseID} {
-    yylval->string_ptr = new string(yytext);
+    fsplval->string_ptr = new string(fsptext);
     IFD(cout << "LowerCaseID\n"); 
     return token::LowerCaseID;
 }
 
 {UpperCaseID} {
-    yylval->string_ptr = new string(yytext);
+    fsplval->string_ptr = new string(fsptext);
     IFD(cout << "UpperCaseID\n"); 
     return token::UpperCaseID;
 }
@@ -231,18 +231,18 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 }
 
 "|"|"^"|"&"|"<"|">" {
-    IFD(cout << yytext[0] << "\n"); 
-    return yy::FspParser::token_type(yytext[0]);
+    IFD(cout << fsptext[0] << "\n"); 
+    return fsp::FspParser::token_type(fsptext[0]);
 }
 
 "+"|"-"|"*"|"/"|"%"|"!" {
-    IFD(cout << yytext[0] << "\n"); 
-    return yy::FspParser::token_type(yytext[0]);
+    IFD(cout << fsptext[0] << "\n"); 
+    return fsp::FspParser::token_type(fsptext[0]);
 }
 
 "("|")"|"["|"]"|"{"|"}"|"="|"."|","|":"|";"|"@"|"\\" {
-    IFD(cout << yytext[0] << "\n"); 
-    return yy::FspParser::token_type(yytext[0]);
+    IFD(cout << fsptext[0] << "\n"); 
+    return fsp::FspParser::token_type(fsptext[0]);
 }
 
 "$r" {
@@ -255,21 +255,21 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 [ \t\r]+ {
     /* Eat up whitespaces, and keep tracking positions. */
-    /* last_tokens.location_step(yylloc); */
-    yylloc->step();
+    /* last_tokens.location_step(fsplloc); */
+    fsplloc->step();
 }
 
 [\n]+ {
     /* Update the line counter and step forward. */
-    yylloc->lines(yyleng);
-    yylloc->step();
+    fsplloc->lines(fspleng);
+    fsplloc->step();
 
     /* When reporting an error we want to see the last line only. */
     last_tokens.flush();
 }
 
 . {
-    cerr << "Unrecognized character " << yytext << endl;
+    cerr << "Unrecognized character " << fsptext << endl;
     exit(1);
 }
 %%
@@ -278,10 +278,10 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 void FspDriver::scan_begin(const char * filename)
 {
-    yy_flex_debug = trace_scanning;
+    fsp_flex_debug = trace_scanning;
     if (filename == NULL /* || strcmp(file,"-") == 0 */) {
-	yyin = stdin;
-    } else if (!(yyin = fopen(filename, "r"))) {
+	fspin = stdin;
+    } else if (!(fspin = fopen(filename, "r"))) {
 	string err = "cannot open " + string(filename) + ": " + strerror(errno);
 	perror(err.c_str());
 	exit(EXIT_FAILURE);
@@ -290,6 +290,6 @@ void FspDriver::scan_begin(const char * filename)
 
 void FspDriver::scan_end ()
 {
-    fclose(yyin);
+    fclose(fspin);
 }
 

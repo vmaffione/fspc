@@ -81,7 +81,7 @@ class Shell;
 class FspDriver;
 
 
-namespace yy {
+namespace fsp {
 
 class Lts;
 
@@ -119,8 +119,8 @@ class Lts: public Symbol {
     void copy_nodes_in(const Lts& lts);
 
     void update_composition(unsigned int idx, unsigned int dst_ip,
-                            const yy::Lts& p, unsigned int dst_iq,
-                            const yy::Lts& q, unsigned int nq, Edge& e,
+                            const fsp::Lts& p, unsigned int dst_iq,
+                            const fsp::Lts& q, unsigned int nq, Edge& e,
                             map<unsigned int, unsigned int>& direct,
                             vector<unsigned int>& inverse);
     void compose_declarative(const Lts& p, const Lts& q);
@@ -202,7 +202,7 @@ class Lts: public Symbol {
     Symbol * clone() const;
 };
 
-yy::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const yy::location& loc);
+fsp::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const fsp::location& loc);
 
 
 /* Smart pointer to an LTS object. */
@@ -225,6 +225,6 @@ class LtsPtr {
         void clear();
 };
 
-} /* namespace yy */
+} /* namespace fsp */
 
 #endif

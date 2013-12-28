@@ -61,17 +61,17 @@ void FspDriver::clear()
 void FspDriver::translateDeclarations()
 {
     vector<string> classes;
-    vector<yy::TreeNode *> declarations;
+    vector<fsp::TreeNode *> declarations;
 
     assert(tree);
     /* Find all the tree nodes that don't correspond to process
        definitions (e.g. declarations). Observe that a property
        definition is considered to be a process definition. */
-    classes.push_back(yy::ConstantDefNode::className());
-    classes.push_back(yy::RangeDefNode::className());
-    classes.push_back(yy::SetDefNode::className());
-    classes.push_back(yy::ProgressDefNode::className());
-    classes.push_back(yy::MenuDefNode::className());
+    classes.push_back(fsp::ConstantDefNode::className());
+    classes.push_back(fsp::RangeDefNode::className());
+    classes.push_back(fsp::SetDefNode::className());
+    classes.push_back(fsp::ProgressDefNode::className());
+    classes.push_back(fsp::MenuDefNode::className());
     tree->getNodesByClasses(classes, declarations);
 
     /* Translate the declarations found. This results in filling
@@ -85,13 +85,13 @@ void FspDriver::translateDeclarations()
 void FspDriver::translateProcessesDefinitions()
 {
     vector<string> classes;
-    vector<yy::TreeNode *> definitions;
+    vector<fsp::TreeNode *> definitions;
 
     assert(tree);
     /* Find all the tree nodes that correspond to process definitions
        (either simple or composite). */
-    classes.push_back(yy::ProcessDefNode::className());
-    classes.push_back(yy::CompositeDefNode::className());
+    classes.push_back(fsp::ProcessDefNode::className());
+    classes.push_back(fsp::CompositeDefNode::className());
     tree->getNodesByClasses(classes, definitions);
 
     for (unsigned int i = 0; i < definitions.size(); i++) {
@@ -99,24 +99,24 @@ void FspDriver::translateProcessesDefinitions()
            and default values, building a ParametricProcess object.
            This object is then stored into the 'parametric_process'
            symbols table. */
-        TDCS(yy::ProcessDefNode, pdn, definitions[i]);
-        TDCS(yy::CompositeDefNode, cdn, definitions[i]);
-        yy::LtsTreeNode *ltn;
-        yy::ProcessIdNode *pid;
-        yy::ParamNode *pan;
+        TDCS(fsp::ProcessDefNode, pdn, definitions[i]);
+        TDCS(fsp::CompositeDefNode, cdn, definitions[i]);
+        fsp::LtsTreeNode *ltn;
+        fsp::ProcessIdNode *pid;
+        fsp::ParamNode *pan;
         ParametricProcess *pp = new ParametricProcess;
         LtsResult *result = new LtsResult;
 
         /* Find the ProcessIdNode and ParamNode depending on the process
            definition type. */
         if (pdn) {
-            pid = yy::tree_downcast<yy::ProcessIdNode>(pdn->getChild(1));
-            pan = yy::tree_downcast_null<yy::ParamNode>(pdn->getChild(2));
+            pid = fsp::tree_downcast<fsp::ProcessIdNode>(pdn->getChild(1));
+            pan = fsp::tree_downcast_null<fsp::ParamNode>(pdn->getChild(2));
             pp->set_translator(pdn);
             ltn = pdn;
         } else if (cdn) {
-            pid = yy::tree_downcast<yy::ProcessIdNode>(cdn->getChild(1));
-            pan = yy::tree_downcast_null<yy::ParamNode>(cdn->getChild(2));
+            pid = fsp::tree_downcast<fsp::ProcessIdNode>(cdn->getChild(1));
+            pan = fsp::tree_downcast_null<fsp::ParamNode>(cdn->getChild(2));
             pp->set_translator(cdn);
             ltn = cdn;
         } else {
@@ -128,10 +128,10 @@ void FspDriver::translateProcessesDefinitions()
 
         if (pan) {
             /* Find the parameters. */
-            TDC(yy::ParameterListNode, pln, pan->getChild(1));
+            TDC(fsp::ParameterListNode, pln, pan->getChild(1));
 
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
-                TDC(yy::ParameterNode, p, pln->getChild(i));
+                TDC(fsp::ParameterNode, p, pln->getChild(i));
                 /* parameter_id = EXPR */
                 RDC(StringResult, paid, p->getChild(0)->translate(*this));
                 RDC(IntResult, expr, p->getChild(2)->translate(*this));
@@ -195,7 +195,7 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	/* Parse the preprocessed temporary file. */
 	scan_begin(temp.c_str());
-	yy::FspParser parser(*this);
+	fsp::FspParser parser(*this);
 	parser.set_debug_level(trace_parsing);
 	ret = parser.parse();
 	scan_end();
@@ -233,7 +233,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	desp->actions_table(actions, 0);
 	desp->integer(nlts, 0);
 	for (uint32_t i=0; i<nlts; i++) {
-	    yy::LtsPtr lts = new yy::Lts(LtsNode::End, &actions);
+	    fsp::LtsPtr lts = new fsp::Lts(LtsNode::End, &actions);
 
 	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
@@ -261,7 +261,7 @@ int FspDriver::parse(const CompilerOptions& co)
        the associated LTS and do the deadlock analysis. */
     map<string, Symbol *>::iterator it;
     map<string, Symbol *>::iterator jt;
-    yy::LtsPtr lts;
+    fsp::LtsPtr lts;
     ProgressS *pv;
 
     if (serp) {
@@ -269,7 +269,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	serp->integer(processes.table.size(), 0);
     }
     for (it=processes.table.begin(); it!=processes.table.end(); it++) {
-	lts = is<yy::Lts>(it->second);
+	lts = is<fsp::Lts>(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
 	if (serp) {
@@ -295,7 +295,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	if (co.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
-		lts = is<yy::Lts>(jt->second);
+		lts = is<fsp::Lts>(jt->second);
 		lts->progress(it->first, *pv, ss);
 	    }
 	}
@@ -391,7 +391,7 @@ void FspDriver::nesting_restore()
     nesting_stack.pop_back();
 }
 
-void FspDriver::error(const yy::location& l, const std::string& m)
+void FspDriver::error(const fsp::location& l, const std::string& m)
 {
     print_error_location_pretty(l);
     cerr << m << endl;

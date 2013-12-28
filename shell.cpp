@@ -476,11 +476,11 @@ void Shell::readline(string& line)
 void Shell::ls(const vector<string> &args, stringstream& ss)
 {
     map<string, Symbol *>::iterator it;
-    yy::Lts * lts;
+    fsp::Lts * lts;
 
     ss << "Compiled FSPs:\n";
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	lts = is<yy::Lts>(it->second);
+	lts = is<fsp::Lts>(it->second);
 	ss << "   " << it->first << ": " << lts->numStates()
 	    << " states, " << lts->numTransitions() << " transitions, "
 	    << lts->alphabetSize() << " actions in alphabet\n";
@@ -491,21 +491,21 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, Symbol *>::iterator it;
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
 
     if (args.size()) {
 	/* Deadlock analysis on args[0]. */
 	if (!c.processes.lookup(args[0], svp)) {
 	    ss << "Process " << args[0] << " not found\n";
 	} else {
-	    lts = is<yy::Lts>(svp);
+	    lts = is<fsp::Lts>(svp);
 	    lts->deadlockAnalysis(ss);
 	}
     } else {
 	/* Deadlock analysis on every process. */
 	for (it=c.processes.table.begin();
 		    it!=c.processes.table.end(); it++) {
-	    lts = is<yy::Lts>(it->second);
+	    lts = is<fsp::Lts>(it->second);
 	    lts->deadlockAnalysis(ss);
 	}
     }
@@ -517,14 +517,14 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
     map<string, Symbol *>::iterator jt;
     Symbol *svp;
     ProgressS *pv;
-    yy::Lts *lts;
+    fsp::Lts *lts;
 
     if (args.size()) {
 	/* Progress analysis on args[0]. */
 	if (!c.processes.lookup(args[0], svp)) {
 	    ss << "Process " << args[0] << " not found\n";
 	} else {
-	    lts = is<yy::Lts>(svp);
+	    lts = is<fsp::Lts>(svp);
 	    for (it=c.progresses.table.begin();
 		    it!=c.progresses.table.end(); it++) {
 		pv = is<ProgressS>(it->second);
@@ -535,7 +535,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	/* Progress analysis on every process. */
 	for (it=c.processes.table.begin(); 
 		    it!=c.processes.table.end(); it++) {
-	    lts = is<yy::Lts>(it->second);
+	    lts = is<fsp::Lts>(it->second);
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
 		pv = is<ProgressS>(jt->second);
@@ -548,7 +548,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
     ActionSetS *menu = NULL;
 
     if (!args.size()) {
@@ -560,7 +560,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
         ss << "Process " << args[0] << " not found\n";
         return;
     }
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
 
     if (args.size() >= 2) {
         if (!c.menus.lookup(args[1], svp)) {
@@ -579,7 +579,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -597,14 +597,14 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 	outfile = args[0] + ".bfsp";
     }
 
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
     lts->basic(outfile, ss);
 }
 
 void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -616,14 +616,14 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
     lts->printAlphabet(ss);
 }
 
 void Shell::see(const vector<string> &args, stringstream& ss)
 {
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
     string tmp_name;
     pid_t drawer;
 
@@ -642,7 +642,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
 
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
@@ -673,7 +673,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 void Shell::print(const vector<string> &args, stringstream& ss)
 {
     Symbol * svp;
-    yy::Lts * lts;
+    fsp::Lts * lts;
     string format = "png";
     string filename;
 
@@ -688,7 +688,7 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     }
     filename = args[0] + ".gv";
 
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
     lts->graphvizOutput(filename.c_str());
 
     if (args.size() > 1) {
@@ -766,7 +766,7 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
 void Shell::minimize(const vector<string> &args, stringstream& ss)
 {
     Symbol *svp;
-    yy::Lts *lts;
+    fsp::Lts *lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -778,7 +778,7 @@ void Shell::minimize(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = is<yy::Lts>(svp);
+    lts = is<fsp::Lts>(svp);
     lts->minimize(ss);
 }
 

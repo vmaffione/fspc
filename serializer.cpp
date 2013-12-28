@@ -187,7 +187,7 @@ void Deserializer::actions_table(ActionsTable &at, bool raw)
     
 }
 
-void serializeLtsVisitFunction(int state, const yy::Lts& lts,
+void serializeLtsVisitFunction(int state, const fsp::Lts& lts,
                                const struct LtsNode& node, void * opaque)
 {
     Serializer * serp = static_cast<Serializer *>(opaque);
@@ -199,9 +199,9 @@ void serializeLtsVisitFunction(int state, const yy::Lts& lts,
     }
 }
 
-void Serializer::lts(const yy::Lts& lts, bool raw)
+void Serializer::lts(const fsp::Lts& lts, bool raw)
 {
-    yy::LtsVisitObject lvo;
+    fsp::LtsVisitObject lvo;
     uint32_t end = ~0;
     uint32_t error = ~0;
 
@@ -237,7 +237,7 @@ void Serializer::lts(const yy::Lts& lts, bool raw)
     }
 }
 
-void Deserializer::lts(yy::Lts &lts, bool raw)
+void Deserializer::lts(fsp::Lts &lts, bool raw)
 {
     char type;
     uint32_t x, y, z, end, error;

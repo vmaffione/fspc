@@ -43,16 +43,16 @@ Makefile.gen: Makefile.ske
 
 # Generate the parser with GNU Bison.
 parser.cpp parser.hpp location.hh position.hh: fsp.ypp fsp.y parser.diff
-	bison $(REPORT) fsp.ypp
+	bison -p fsp $(REPORT) fsp.ypp
 	patch parser.cpp < parser.diff
 
 # Generate the scanner with Flex.
 scanner.cpp: fsp.lex parser.hpp
-	flex fsp.lex
+	flex -P fsp fsp.lex
 
 # Generate the preprocessor with Flex.
 preproc.cpp: preproc.lex
-	flex preproc.lex
+	flex -P fsp preproc.lex
 
 # Blackbox test against the testset.
 testing: normal

@@ -35,7 +35,7 @@ using namespace std;
 /* Global variable shared between all the compilation units. */
 CircularBuffer last_tokens;
 
-string location_context(const string& filename, const yy::location& loc)
+string location_context(const string& filename, const fsp::location& loc)
 {
     string ret;
     fstream fin;
@@ -74,7 +74,7 @@ string location_context(const string& filename, const yy::location& loc)
     return ret;
 }
 
-static void print_error_location(const yy::location& loc, int col)
+static void print_error_location(const fsp::location& loc, int col)
 {
     assert(loc.begin.filename);
 
@@ -94,13 +94,13 @@ static void print_error_location(const yy::location& loc, int col)
 	last_tokens.print(context, col);
 }
 
-void print_error_location_pretty(const yy::location& loc)
+void print_error_location_pretty(const fsp::location& loc)
 {
     print_error_location(loc, loc.begin.column);
 }
 
 static void common_error(FspDriver& driver, const stringstream& ss,
-                         const yy::location& loc, const char *errtype)
+                         const fsp::location& loc, const char *errtype)
 {
     print_error_location_pretty(loc);
     cout << errtype << " error: " << ss.str() << "\n";
@@ -109,13 +109,13 @@ static void common_error(FspDriver& driver, const stringstream& ss,
 }
 
 void semantic_error(FspDriver& driver, const stringstream& ss,
-                    const yy::location& loc)
+                    const fsp::location& loc)
 {
     common_error(driver, ss, loc, "Semantic");
 }
 
 void general_error(FspDriver& driver, const stringstream& ss,
-                   const yy::location& loc)
+                   const fsp::location& loc)
 {
     common_error(driver, ss, loc, "General");
 }

@@ -25,14 +25,14 @@ using namespace std;
 
 /* Tell Flex the lexer's prototype... */
 #define YY_DECL                                        \
-  yy::FspParser::token_type                         \
-  yylex(yy::FspParser::semantic_type* yylval,      \
-         yy::FspParser::location_type* yylloc,      \
+  fsp::FspParser::token_type                         \
+  fsplex(fsp::FspParser::semantic_type* fsplval,      \
+         fsp::FspParser::location_type* fsplloc,      \
          FspDriver& driver)
 /* ... and declare it for the parser's sake. */
 YY_DECL;
 
-namespace yy {
+namespace fsp {
     class TreeNode;
 };
 
@@ -89,7 +89,7 @@ class FspDriver
         void nesting_restore();
 
         /* The parsing result. */
-        yy::TreeNode *tree;
+        fsp::TreeNode *tree;
 
         /* Preprocessed file, input to the parser. */
 	string remove_file;
@@ -112,7 +112,7 @@ class FspDriver
         void translateDeclarations();
 
 	/* Error handling. */
-	void error(const yy::location& l, const std::string& m);
+	void error(const fsp::location& l, const std::string& m);
 	void error(const std::string& m);
 };
 
