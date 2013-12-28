@@ -1744,8 +1744,10 @@ bool fsp::Lts::endcat(const fsp::Lts& lts)
     unsigned int offset;
     unsigned int x;
 
+    assert(lts.numStates() > 0);
+
     /* Find the End node (well, the first that we run into, but this
-       method should be invoked after the mergeEndNodes method). */
+       method should be invoked after the mergeEndNodes() method). */
     for (x=0; x<nodes.size(); x++) {
         if (get_type(x) == LtsNode::End) {
             break;
@@ -1753,7 +1755,17 @@ bool fsp::Lts::endcat(const fsp::Lts& lts)
     }
 
     if (x == nodes.size()) {
+        /* No END node found. */
         return false;
+    }
+
+    if (lts.numStates() == 1) {
+        /* Special case, in which the code below doesn't apply.
+           If 'lts' has only one state we just replace *this[x]
+           with that state (lts[0]). */
+        copy_node_in(x, lts, 0);
+
+        return true;
     }
 
     /* Append everithing but the 'lts[0]'. */

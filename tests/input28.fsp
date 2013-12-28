@@ -1,0 +1,2 @@
+const N=3
+SEQ(I=1) = if (I<=N) then (act[I]-> SEQ(I+1);END) else END.
