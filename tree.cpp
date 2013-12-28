@@ -1226,9 +1226,9 @@ Result *yy::ArgumentsNode::translate(FspDriver& c)
     return argl;
 }
 
-void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
-                                            const vector<int> *args,
-                                            yy::LtsPtr *res)
+void yy::process_ref_translate(FspDriver& c, const location& loc,
+                               const string& name, const vector<int> *args,
+                               yy::LtsPtr *res)
 {
     Symbol *svp;
     ParametricProcess *pp;
@@ -1331,7 +1331,8 @@ Result *yy::ProcessRefSeqNode::translate(FspDriver& c)
         args = temp;
     }
 
-    process_ref_translate(c, id->val, args ? &args->val : NULL, &lts->val);
+    process_ref_translate(c, loc, id->val, args ? &args->val : NULL,
+                          &lts->val);
 
     delete id;
     if (args) {
@@ -1803,7 +1804,8 @@ Result *yy::ProcessRefNode::translate(FspDriver& c)
         args = temp;
     }
 
-    process_ref_translate(c, id->val, args ? &args->val : NULL, &lts->val);
+    process_ref_translate(c, loc, id->val, args ? &args->val : NULL,
+                          &lts->val);
 
     delete id;
     if (args) {

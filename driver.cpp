@@ -164,7 +164,8 @@ void FspDriver::translateProcessesDefinitions()
            This function also setups and restore the translator context,
            taking care of the default process parameters and overridden
            identifiers. */
-        ltn->process_ref_translate(*this, id->val, NULL, &result->val);
+        process_ref_translate(*this, ltn->getLocation(), id->val,
+                              NULL, &result->val);
         delete id;
         delete result;
     }

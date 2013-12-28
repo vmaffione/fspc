@@ -32,6 +32,11 @@
 #include "location.hh"
 
 
+/* A hierarchy of types used with translate() methods. An object belonging
+   to the base class is returned by each translate() methods. Depending
+   on the translated node, the returned type belongs to one of the
+   subclasses.
+*/
 class Result {
     public:
         virtual ~Result() { }
@@ -184,19 +189,15 @@ class TreeNode : public ParametricTranslator {
         virtual void clear() { }
         void getNodesByClasses(const vector<string>& classes,
                                 vector<TreeNode *>& results);
-        /* TODO ? when everything will work, remove this method and
-           declare a ProcessRefBase class from which ProcessRefNode an
-           ProcessRefSeq derive, and define the translate method of the
-           base class with the code contained in process_ref_translate. */
-        void process_ref_translate(FspDriver& c, const string& name,
-                                            const vector<int> *arguments,
-                                            yy::LtsPtr *res);
 };
 
+void process_ref_translate(FspDriver& c, const location &loc,
+                           const string& name, const vector<int> *arguments,
+                           yy::LtsPtr *res);
 
 /* ======================== FIRST DERIVATION LEVEL =========================
-   The first derivation level adds the content to a parse tree node. This
-   content can be an integer, a string, or other object types. */
+   The first derivation level adds a first specialization to a parse tree
+   node. */
 
 class IntTreeNode : public TreeNode {
     public:
