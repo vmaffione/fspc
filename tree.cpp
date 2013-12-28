@@ -158,24 +158,6 @@ void yy::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-void yy::TreeNode::translate_children(FspDriver& c)
-{
-    for (unsigned int i=0; i<children.size(); i++) {
-        if (children[i]) {
-            children[i]->translate(c);
-        }
-    }
-}
-
-void yy::TreeNode::clear_children()
-{
-    for (unsigned int i=0; i<children.size(); i++) {
-        if (children[i]) {
-            children[i]->clear();
-        }
-    }
-}
-
 Result *yy::TreeNode::translate(FspDriver& c)
 {
     /* Never get to here. */
@@ -661,18 +643,14 @@ static void for_each_combination(FspDriver& c, Result *r,
             SetResult *ar = result_downcast<SetResult>(re);
 
             (void)an;
-            if (ar) {  /* TODO remove the if, it's useless */
-                index_string += "." + ar->val[ indexes[j] ];
-                if (ar->val.hasVariable()) {
-                    if (!c.ctx.insert(ar->val.variable,
-                                ar->val[ indexes[j] ])) {
-                        cout << "ERROR: ctx.insert()\n";
-                    }
+            index_string += "." + ar->val[ indexes[j] ];
+            if (ar->val.hasVariable()) {
+                if (!c.ctx.insert(ar->val.variable,
+                            ar->val[ indexes[j] ])) {
+                    cout << "ERROR: ctx.insert()\n";
                 }
-                limits[j] = ar->val.size();
-            } else {
-                assert(0);
             }
+            limits[j] = ar->val.size();
             delete re;
         }
 

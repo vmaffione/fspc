@@ -181,8 +181,6 @@ class TreeNode : public ParametricTranslator {
                                  string index, bool first) { }
         virtual string getClassName() const;
         virtual void clear() { }
-        void translate_children(FspDriver& dr);
-        void clear_children();
         void getNodesByClasses(const vector<string>& classes,
                                 vector<TreeNode *>& results);
         /* TODO ? when everything will work, remove this method and
