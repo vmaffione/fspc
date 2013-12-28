@@ -1975,6 +1975,55 @@ void fsp::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
 }
 
 
+/* =========================== PtrCheckTable ========================= */
+
+fsp::PtrCheckTable *fsp::PtrCheckTable::instance = NULL;
+
+fsp::PtrCheckTable *fsp::PtrCheckTable::get()
+{
+    if (!instance) {
+        instance = new PtrCheckTable;
+    }
+
+    return instance;
+}
+
+void fsp::PtrCheckTable::check()
+{
+    map<void *, unsigned int>::iterator it;
+
+    DBR(cout << "Check for dangling references..\n");
+    for (it = t.begin(); it != t.end(); it++) {
+        DBR(cout << "[" << it->first << "] = " << it->second << "\n");
+        assert(it->second == 0);
+    }
+    DBR(cout << "References are ok!\n");
+}
+
+void fsp::PtrCheckTable::ref(void *ptr)
+{
+    pair< map<void *, unsigned int>::iterator, bool > ret;
+
+    ret = t.insert(make_pair<void *, unsigned int>(ptr, 1));
+    if (!ret.second) {
+        ret.first->second++;
+    }
+    DBR(cout << "++[" << ret.first->first << "] = " <<
+                ret.first->second << "\n");
+}
+
+void fsp::PtrCheckTable::unref(void *ptr)
+{
+    map<void *, unsigned int>::iterator it;
+
+    it = t.find(ptr);
+    assert(it != t.end());
+    assert(it->second > 0);
+    it->second--;
+    DBR(cout << "--[" << it->first << "] = " << it->second << "\n");
+}
+
+
 /* =========================== LtsPtr ============================== */
 
 fsp::LtsPtr::LtsPtr() : ptr(NULL)
@@ -1997,6 +2046,7 @@ void fsp::LtsPtr::get(const char *nm)
         DBR(cout << nm << ":"<< ptr << ":" <<
             ptr->refcount - ptr->delegated  << "+" <<
             ptr->delegated << "\n");
+        DBRT(PtrCheckTable::get()->ref(ptr));
     }
 }
 
@@ -2010,6 +2060,7 @@ void fsp::LtsPtr::put(const char *nm)
         DBR(cout << nm << ":"<< ptr << ":" <<
             ptr->refcount - ptr->delegated  << "+" <<
             ptr->delegated << "\n");
+        DBRT(PtrCheckTable::get()->unref(ptr));
         assert(ptr->refcount >= 0);
         if (ptr->refcount == 0) {
             delete ptr;
@@ -2077,6 +2128,7 @@ fsp::Lts* fsp::LtsPtr::delegate()
 {
     get(__func__);
     DBR(if (ptr) ptr->delegated++);
+    DBRT(if (ptr) PtrCheckTable::get()->unref(ptr));
 
     return ptr;
 }

@@ -92,13 +92,44 @@ struct LtsVisitObject {
     void *opaque;
 };
 
-/* Debug the Lts::refcount. */
-//#define DBG_REFCNT
-#ifdef DBG_REFCNT
+/* Debug the Lts::refcount.
+    0 --> no check is performed
+    1 --> we check against memory leaks
+    2 --> we check against memory leaks, being verbose
+ */
+#define DBG_REFCNT 1
+
+#if (DBG_REFCNT >= 2)
 #define DBR(x) x
 #else
 #define DBR(x)
 #endif
+
+#if (DBG_REFCNT >= 1)
+#define DBRT(x) x
+#else
+#define DBRT(x)
+#endif
+
+/* A singleton class containing a table which maps pointers to reference
+   counters.
+   The methods ref() and unref() are called by the smart pointers
+   to debug/record their operations. When check() is called (this is done
+   once when the compilation is done) it checks that all the reference
+   counters stored in the table are 0, meaning that all the objects
+   have correctly destroyed. */
+class PtrCheckTable {
+        map<void *, unsigned int> t;
+        static PtrCheckTable *instance;
+        PtrCheckTable() { }
+
+    public:
+        static PtrCheckTable *get();
+        void ref(void *ptr);
+        void unref(void *ptr);
+        void check();
+};
+
 
 /* An LTS. */
 class Lts: public Symbol {

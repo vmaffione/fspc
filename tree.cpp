@@ -2019,6 +2019,7 @@ Result *fsp::ParallelCompNode::translate(FspDriver& c)
         RDC(LtsResult, cb, children[i]->translate(c));
 
         result->val.push_back(cb->val);
+        delete cb;
     }
 
     return result;

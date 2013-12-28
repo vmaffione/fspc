@@ -222,6 +222,8 @@ int FspDriver::parse(const CompilerOptions& co)
         /* Collect and translate the process definitions. */
         translateProcessesDefinitions();
 
+        DBRT(fsp::PtrCheckTable::get()->check());
+
         if (co.output_file) {
 	    serp = new Serializer(co.output_file);
         }
