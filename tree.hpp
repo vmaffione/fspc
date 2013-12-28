@@ -126,6 +126,7 @@ class LtsVecResult : public Result {
 template <class T>
 T* result_downcast_safe(Result *r)
 {
+    /* Observe that if r == NULL, dynamic_cast returns NULL. */
     T *ret = dynamic_cast<T*>(r);
 
     return ret;
@@ -141,22 +142,9 @@ T* result_downcast(Result *r)
     return ret;
 }
 
-template <class T>
-T* result_downcast_null(Result *r)
-{
-    if (!r) {
-        return NULL;
-    }
-    return result_downcast<T>(r);
-}
-
 /* Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
 #define DRC(_t, _n, _x) \
     _t *_n = result_downcast<_t>(_x);
-
-/* Same as the previous one, but using the safe downcast function. */
-#define DRCS(_t, _n, _x) \
-    _t *_n = result_downcast_safe<_t>(_x);
 
 
 struct FspDriver;
@@ -213,31 +201,23 @@ class TreeNode : public ParametricTranslator {
 
 class IntTreeNode : public TreeNode {
     public:
-        int res;
-
         IntTreeNode() : TreeNode() { }
 };
 
 class FloatTreeNode : public TreeNode {
     public:
-        float res;
-
         FloatTreeNode() : TreeNode() { }
 };
 
 class StringTreeNode : public TreeNode {
     public:
-        std::string res;
-
         StringTreeNode() : TreeNode() { }
 };
 
 class LtsTreeNode : public TreeNode {
     public:
-        yy::LtsPtr res;
-
         LtsTreeNode() : TreeNode() { }
-        void clear() { res.clear(); }
+        void clear() { }
 };
 
 
@@ -257,6 +237,8 @@ class BaseExpressionNode : public IntTreeNode {
 
 class IntegerNode : public IntTreeNode {
     public:
+        int value;
+
         static string className() { return "Integer"; }
         string getClassName() const { return className(); }
         IntegerNode() : IntTreeNode() { }
@@ -264,16 +246,22 @@ class IntegerNode : public IntTreeNode {
 
 class LowerCaseIdNode : public StringTreeNode {
     public:
+        string content;
+
         static string className() { return "LowerCaseId"; }
         string getClassName() const { return className(); }
         LowerCaseIdNode() : StringTreeNode() { }
+        Result *translate(FspDriver &dr);
 };
 
 class UpperCaseIdNode : public StringTreeNode {
     public:
+        string content;
+
         static string className() { return "UpperCaseId"; }
         string getClassName() const { return className(); }
         UpperCaseIdNode() : StringTreeNode() { }
+        Result *translate(FspDriver &dr);
 };
 
 class VariableIdNode : public LowerCaseIdNode {
@@ -413,8 +401,6 @@ class MenuKwdNode : public TreeNode {
 
 class HidingInterfNode : public TreeNode {
     public:
-        HidingS res;
-
         static string className() { return "HidingInterf"; }
         string getClassName() const { return className(); }
         HidingInterfNode() : TreeNode() { }
@@ -437,8 +423,6 @@ class InterfNode : public TreeNode {
 
 class RelabelDefNode : public TreeNode {
     public:
-        RelabelingS res;
-
         static string className() { return "RelabelDef"; }
         string getClassName() const { return className(); }
         RelabelDefNode() : TreeNode() { }
@@ -463,8 +447,6 @@ class ForallNode : public TreeNode {
 
 class RelabelDefsNode : public TreeNode {
     public:
-        RelabelingS res;
-
         RelabelDefsNode() : TreeNode() { }
         static string className() { return "RelabelDefs"; }
         string getClassName() const { return className(); }
@@ -494,8 +476,6 @@ class CloseCurlyNode : public TreeNode {
 
 class BracesRelabelDefsNode : public TreeNode {
     public:
-        RelabelingS res;
-
         static string className() { return "BracesRelabelDefs"; }
         string getClassName() const { return className(); }
         BracesRelabelDefsNode() : TreeNode() { }
@@ -539,8 +519,6 @@ class ColonNode : public TreeNode {
 
 class LabelingNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "Labeling"; }
         string getClassName() const { return className(); }
         LabelingNode() : TreeNode() { }
@@ -556,8 +534,6 @@ class DoubleColonNode : public TreeNode {
 
 class SharingNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "Sharing"; }
         string getClassName() const { return className(); }
         SharingNode() : TreeNode() { }
@@ -574,8 +550,6 @@ class ProcessRefNode : public LtsTreeNode {
 
 class ParallelCompNode : public TreeNode {
     public:
-        vector<LtsPtr> res;
-
         static string className() { return "ParallelComp"; }
         string getClassName() const { return className(); }
         ParallelCompNode() : TreeNode() { }
@@ -631,8 +605,6 @@ class CompositeDefNode : public LtsTreeNode {
 
 class ArgumentListNode : public TreeNode {
     public:
-        vector<int> res;
-
         static string className() { return "ArgumentList"; }
         string getClassName() const { return className(); }
         ArgumentListNode() : TreeNode() { }
@@ -641,8 +613,6 @@ class ArgumentListNode : public TreeNode {
 
 class ArgumentsNode : public TreeNode {
     public:
-        vector<int> res;
-
         static string className() { return "Arguments"; }
         string getClassName() const { return className(); }
         ArgumentsNode() : TreeNode() { }
@@ -682,8 +652,6 @@ class SeqCompNode : public LtsTreeNode {
 
 class IndexRangesNode : public TreeNode {
     public:
-        vector<TreeNode *> res;
-
         static string className() { return "IndexRanges"; }
         string getClassName() const { return className(); }
         IndexRangesNode() : TreeNode() { }
@@ -728,8 +696,6 @@ class WhenNode : public TreeNode {
 
 class PrefixActionsNode : public TreeNode {
     public:
-        vector<TreeNode *> res;
-
         static string className() { return "PrefixActions"; }
         string getClassName() const { return className(); }
         PrefixActionsNode() : TreeNode() { }
@@ -806,8 +772,6 @@ class LocalProcessNode : public LtsTreeNode {
 
 class AlphaExtNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "AlphaExt"; }
         string getClassName() const { return className(); }
         AlphaExtNode() : TreeNode() { }
@@ -857,8 +821,6 @@ class PeriodNode : public TreeNode {
 
 class SetElementsNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "SetElements"; }
         string getClassName() const { return className(); }
         SetElementsNode() : TreeNode() { }
@@ -919,8 +881,6 @@ class ConstKwdNode : public TreeNode {
 
 class RangeExprNode : public TreeNode {
     public:
-        RangeS res;
-
         static string className() { return "RangeExpr"; }
         string getClassName() const { return className(); }
         RangeExprNode() : TreeNode() { }
@@ -929,8 +889,6 @@ class RangeExprNode : public TreeNode {
 
 class ActionRangeNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "ActionRange"; }
         string getClassName() const { return className(); }
         ActionRangeNode() : TreeNode() { }
@@ -939,8 +897,6 @@ class ActionRangeNode : public TreeNode {
 
 class RangeNode : public TreeNode {
     public:
-        RangeS res;
-
         static string className() { return "Range"; }
         string getClassName() const { return className(); }
         RangeNode() : TreeNode() { }
@@ -949,8 +905,6 @@ class RangeNode : public TreeNode {
 
 class SetExprNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "SetExpr"; }
         string getClassName() const { return className(); }
         SetExprNode() : TreeNode() { }
@@ -959,8 +913,6 @@ class SetExprNode : public TreeNode {
 
 class SetNode : public TreeNode {
     public:
-        SetS res;
-
         static string className() { return "Set"; }
         string getClassName() const { return className(); }
         SetNode() : TreeNode() { }
@@ -969,8 +921,6 @@ class SetNode : public TreeNode {
 
 class ActionLabelsNode : public TreeNode {
     public:
-        vector<TreeNode *> res;
-
         static string className() { return "ActionLabels"; }
         string getClassName() const { return className(); }
         ActionLabelsNode() : TreeNode() { }
@@ -986,8 +936,6 @@ class RootNode : public TreeNode {
 
 class PrioritySNode : public TreeNode {
     public:
-        PriorityS res;
-
         static string className() { return "PriorityS"; }
         string getClassName() const { return className(); }
         PrioritySNode() : TreeNode() { }
@@ -996,8 +944,6 @@ class PrioritySNode : public TreeNode {
 
 class RelabelingNode : public TreeNode {
     public:
-        RelabelingS res;
-
         static string className() { return "Relabeling"; }
         string getClassName() const { return className(); }
         RelabelingNode() : TreeNode() { }

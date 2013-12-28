@@ -216,7 +216,7 @@ using namespace yy;
 %initial-action
 {
   /* Initialize the initial location. */
-  @$.begin.filename = @$.end.filename = &driver.current_file;
+  @$.begin.filename = @$.end.filename = &driver.remove_file;
 }
 
 %%
@@ -1099,7 +1099,7 @@ base_expression:
 integer: INTEGER {
         IntegerNode *in = new IntegerNode();
 
-        in->res = $1;
+        in->value = $1;
         $$ = in;
     };
 
@@ -1107,7 +1107,7 @@ integer: INTEGER {
 lower_case_id: LowerCaseID {
         LowerCaseIdNode *lc = new LowerCaseIdNode();
 
-        lc->res = *$1;
+        lc->content = *$1;
         $$ = lc;
 };
 
@@ -1115,7 +1115,7 @@ lower_case_id: LowerCaseID {
 upper_case_id: UpperCaseID {
         UpperCaseIdNode *uc = new UpperCaseIdNode();
 
-        uc->res = *$1;
+        uc->content = *$1;
         $$ = uc;
 };
 

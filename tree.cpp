@@ -127,7 +127,7 @@ void yy::TreeNode::print(ofstream& os)
         if (current) {
             LowerCaseIdNode *ln;
             UpperCaseIdNode *un;
-            IntTreeNode *in;
+            IntegerNode *in;
 
             label = current->getClassName();
             ln = tree_downcast_safe<LowerCaseIdNode>(current);
@@ -135,11 +135,11 @@ void yy::TreeNode::print(ofstream& os)
             in = tree_downcast_safe<IntegerNode>(current);
             assert(!(in && ln) && !(ln && un) && !(un && in));
             if (ln && label == "LowerCaseId") {
-                label = ln->res;
+                label = ln->content;
             } else if (un && label == "UpperCaseId") {
-                label = un->res;
+                label = un->content;
             } else if (in) {
-                label = int2string(in->res);
+                label = int2string(in->value);
             }
         }
         if (current || print_nulls)
@@ -178,7 +178,8 @@ void yy::TreeNode::clear_children()
 
 Result *yy::TreeNode::translate(FspDriver& c)
 {
-    translate_children(c);
+    /* Never get to here. */
+    assert(0);
 
     return NULL;
 }
@@ -212,6 +213,24 @@ void yy::TreeNode::getNodesByClasses(const vector<string>& classes,
 }
 
 /* ========================== Translation methods ======================== */
+
+Result *yy::LowerCaseIdNode::translate(FspDriver& c)
+{
+    StringResult *str = new StringResult;
+
+    str->val = content;
+
+    return str;
+}
+
+Result *yy::UpperCaseIdNode::translate(FspDriver& c)
+{
+    StringResult *str = new StringResult;
+
+    str->val = content;
+
+    return str;
+}
 
 Result *yy::VariableIdNode::translate(FspDriver& c)
 {
@@ -370,9 +389,12 @@ Result *yy::BaseExpressionNode::translate(FspDriver& c)
     DTCS(ConstParameterIdNode, cn, children[0]);
 
     if (in) {
-        DRC(IntResult, expr, children[0]->translate(c));
+        IntResult *result = new IntResult;
 
-        return expr;
+        /* We don't need to translate here, we have a literal integer. */
+        result->val = in->value;
+
+        return result;
     } else if (vn) {
         DRC(StringResult, id, children[0]->translate(c));
         string val;
@@ -554,7 +576,8 @@ void yy::ProgressDefNode::combination(FspDriver& c, Result *r,
 }
 
 static bool next_set_indexes(const vector<TreeNode *>& elements,
-                             vector<unsigned int>& indexes)
+                             vector<unsigned int>& indexes,
+                             vector<unsigned int>& limits)
 {
     unsigned int j = indexes.size() - 1;
 
@@ -575,7 +598,7 @@ static bool next_set_indexes(const vector<TreeNode *>& elements,
                Just pass to the next element. */
         } else if (setn) {
             indexes[j]++;
-            if (indexes[j] == setn->res.size()) {
+            if (indexes[j] == limits[j]) {
                 /* Wraparaund: continue with the next element. */
                 indexes[j] = 0;
             } else {
@@ -584,7 +607,7 @@ static bool next_set_indexes(const vector<TreeNode *>& elements,
             }
         } else if (an) {
             indexes[j]++;
-            if (indexes[j] == an->res.size()) {
+            if (indexes[j] == limits[j]) {
                 /* Wraparaund: continue with the next element. */
                 indexes[j] = 0;
             } else {
@@ -612,6 +635,7 @@ static void for_each_combination(FspDriver& c, Result *r,
                                  TreeNode *n)
 {
     vector<unsigned int> indexes(elements.size());
+    vector<unsigned int> limits(elements.size());
     Context ctx = c.ctx;  /* Save the original context. */
     bool first = true;
 
@@ -619,6 +643,7 @@ static void for_each_combination(FspDriver& c, Result *r,
        possible index combinations. */
     for (unsigned int j=0; j<elements.size(); j++) {
         indexes[j] = 0;
+        limits[j] = 1;
     }
 
     do {
@@ -627,22 +652,28 @@ static void for_each_combination(FspDriver& c, Result *r,
         /* Scan the ranges from the left to the right, computing the
            '[x][y][z]...' string corresponding to 'indexes'. */
         for (unsigned int j=0; j<elements.size(); j++) {
+            Result *re;
+
             /* Here we do the translation that was deferred in the lower
                layers. */
-            elements[j]->translate(c);
+            re = elements[j]->translate(c);
             DTC(ActionRangeNode, an, elements[j]);
+            SetResult *ar = result_downcast<SetResult>(re);
 
-            if (an) {
-                index_string += "." + an->res[ indexes[j] ];
-                if (an->res.hasVariable()) {
-                    if (!c.ctx.insert(an->res.variable,
-                                an->res[ indexes[j] ])) {
+            (void)an;
+            if (ar) {  /* TODO remove the if, it's useless */
+                index_string += "." + ar->val[ indexes[j] ];
+                if (ar->val.hasVariable()) {
+                    if (!c.ctx.insert(ar->val.variable,
+                                ar->val[ indexes[j] ])) {
                         cout << "ERROR: ctx.insert()\n";
                     }
                 }
+                limits[j] = ar->val.size();
             } else {
                 assert(0);
             }
+            delete re;
         }
 
         n->combination(c, r, index_string, first);
@@ -653,7 +684,7 @@ static void for_each_combination(FspDriver& c, Result *r,
 
         /* Increment 'indexes' for the next 'index_string', and exits if
            there are no more combinations. */
-    } while (next_set_indexes(elements, indexes));
+    } while (next_set_indexes(elements, indexes, limits));
 }
 
 Result *yy::ProgressDefNode::translate(FspDriver& c)
@@ -736,15 +767,15 @@ SetS yy::TreeNode::computeActionLabels(FspDriver& c, SetS base,
         DTCS(ActionRangeNode, an, elements[idx]);
 
         if (strn) {
-            StringResult *str = result_downcast_safe<StringResult>(r);
+            StringResult *str = result_downcast<StringResult>(r);
 
             base.dotcat(str->val);
         } else if (setn) {
-            SetResult *se = result_downcast_safe<SetResult>(r);
+            SetResult *se = result_downcast<SetResult>(r);
 
             base.dotcat(se->val);
         } else if (an) {
-            SetResult *ar = result_downcast_safe<SetResult>(r);
+            SetResult *ar = result_downcast<SetResult>(r);
 
             if (!ar->val.hasVariable() || idx+1 >= elements.size()) {
                 /* When an action range doesn't define a variable, or when
@@ -861,17 +892,23 @@ Result *yy::ActionRangeNode::translate(FspDriver& c)
 
     if (children.size() == 1) {
         /* Build a set of actions from an integer, a range or a set. */
-        DRCS(IntResult, expr, children[0]->translate(c));
-        DRCS(RangeResult, range, children[0]->translate(c));
-        DRCS(SetResult, se, children[0]->translate(c));
+        DTCS(ExpressionNode, en, children[0]);
+        DTCS(RangeNode, rn, children[0]);
+        DTCS(SetNode, sn, children[0]);
 
-        if (expr) {
+        if (en) {
+            DRC(IntResult, expr, children[0]->translate(c));
+
             result->val += int2string(expr->val);
             delete expr;
-        } else if (range) {
+        } else if (rn) {
+            DRC(RangeResult, range, children[0]->translate(c));
+
             range->val.set(result->val);
             delete range;
-        } else if (se) {
+        } else if (sn) {
+            DRC(SetResult, se, children[0]->translate(c));
+
             result->val = se->val;
             delete se;
         } else {
@@ -880,13 +917,17 @@ Result *yy::ActionRangeNode::translate(FspDriver& c)
     } else if (children.size() == 3) {
         /* Do the same with variable declarations. */
         DRC(StringResult, id, children[0]->translate(c));
-        DRCS(RangeResult, range, children[2]->translate(c));
-        DRCS(SetResult, se, children[2]->translate(c));
+        DTCS(RangeNode, rn, children[2]);
+        DTCS(SetNode, sn, children[2]);
 
-        if (range) {
+        if (rn) {
+            DRC(RangeResult, range, children[2]->translate(c));
+
             range->val.set(result->val);
             delete range;
-        } else if (se) {
+        } else if (sn) {
+            DRC(SetResult, se, children[2]->translate(c));
+
             result->val = se->val;
             delete se;
         } else {
@@ -970,14 +1011,17 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
 {
     assert(idx < als.size());
     DTC(ActionLabelsNode, an, als[idx]);
-    const vector<TreeNode *>& elements = an->res;
+    DRC(TreeNodeVecResult, vec, an->translate(c));
+    const vector<TreeNode *>& elements = vec->val;
     vector<unsigned int> indexes(elements.size());
+    vector<unsigned int> limits(elements.size());
     LtsPtr lts = new Lts(LtsNode::Normal, &c.actions);
     Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
     for (unsigned int j=0; j<elements.size(); j++) {
         indexes[j] = 0;
+        limits[j] = 1;
     }
 
     do {
@@ -1009,6 +1053,7 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
                 } else if (se) {
                     /* A set of actions. */
                     label = se->val[ indexes[j] ];
+                    limits[j] = se->val.size();
                 } else {
                     assert(0);
                 }
@@ -1027,6 +1072,7 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
                     SetResult *se = result_downcast_safe<SetResult>(r);
 
                     label += "." + se->val[ indexes[j] ];
+                    limits[j] = se->val.size();
                 } else if (an) {
                     SetResult *ar = result_downcast_safe<SetResult>(r);
 
@@ -1037,6 +1083,7 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
                             cout << "ERROR: ctx.insert()\n";
                         }
                     }
+                    limits[j] = ar->val.size();
                 } else {
                     assert(0);
                 }
@@ -1075,7 +1122,7 @@ yy::LtsPtr yy::TreeNode::computePrefixActions(FspDriver& c,
 
         /* Increment indexes for the next 'label', and exits if there
            are no more combinations. */
-    } while (next_set_indexes(elements, indexes));
+    } while (next_set_indexes(elements, indexes, limits));
 
     return lts;
 }
@@ -1129,15 +1176,17 @@ Result *yy::BaseLocalProcessNode::translate(FspDriver& c)
     } else if (ern) {
         result->val = new Lts(LtsNode::Error, &c.actions);
     } else {
-        /* process_id indices */
+        /* process_id indices_OPT */
         DRC(StringResult, id, children[0]->translate(c));
-        DRCS(StringResult, idx, children[1]->translate(c));
+        DTCS(IndicesNode, ixn, children[1]);
         string name = id->val;
 
         /* Create an LTS containing a single unresolved
            node. */
         result->val = new Lts(LtsNode::Unresolved, &c.actions);
-        if (idx) {
+        if (ixn) {
+            DRC(StringResult, idx, children[1]->translate(c));
+
             name += idx->val;
             delete idx;
         }
@@ -1292,12 +1341,20 @@ void yy::TreeNode::process_ref_translate(FspDriver& c, const string& name,
 
 Result *yy::ProcessRefSeqNode::translate(FspDriver& c)
 {
-    /* process_id arguments */
+    /* process_id arguments_OPT */
     DRC(StringResult, id, children[0]->translate(c));
-    DRCS(IntVecResult, args, children[1]->translate(c));
+    DTCS(ArgumentsNode, an, children[1]);
     LtsResult *lts = new LtsResult;
+    IntVecResult *args = NULL;
+
+    if (an) {
+        DRC(IntVecResult, temp, children[1]->translate(c));
+
+        args = temp;
+    }
 
     process_ref_translate(c, id->val, args ? &args->val : NULL, &lts->val);
+
     delete id;
     if (args) {
         delete args;
@@ -1395,9 +1452,16 @@ Result *yy::ActionPrefixNode::translate(FspDriver& c)
     LtsResult *result = new LtsResult;
 
     /* guard_OPT prefix_actions local_process */
-    DRCS(IntResult, guard, children[0]->translate(c));
+    DTCS(GuardNode, gn, children[0]);
     DRC(TreeNodeVecResult, pa, children[1]->translate(c));
     DTC(LocalProcessNode, lp, children[3]);
+    IntResult *guard = NULL;
+
+    if (gn) {
+        DRC(IntResult, temp, children[0]->translate(c));
+
+        guard = temp;
+    }
 
     /* Don't translate 'lp', since it will be translated into the loop,
        with proper context. */
@@ -1665,9 +1729,9 @@ Result *yy::ProcessDefNode::translate(FspDriver& c)
     DTCS(PropertyNode, prn, children[0]);
     DRC(StringResult, id, children[1]->translate(c));
     DRC(LtsResult, body, children[4]->translate(c));
-    DRCS(SetResult, alpha, children[5]->translate(c));
-    DRCS(RelabelingResult, rl, children[6]->translate(c));
-    DRCS(HidingResult, hi, children[7]->translate(c));
+    DTCS(AlphaExtNode, aen, children[5]);
+    DTCS(RelabelingNode, rln, children[6]);
+    DTCS(HidingInterfNode, hin, children[7]);
     unsigned unres;
 
     /* The base is the process body. */
@@ -1698,7 +1762,8 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     body->val->mergeEndNodes();
 
     /* Extend the alphabet. */
-    if (alpha) {
+    if (aen) {
+        DRC(SetResult, alpha, aen->translate(c));
         SetS& sv = alpha->val;
 
         for (unsigned int i=0; i<sv.size(); i++) {
@@ -1708,7 +1773,8 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     }
 
     /* Apply the relabeling operator. */
-    if (rl) {
+    if (rln) {
+        DRC(RelabelingResult, rl, rln->translate(c));
         RelabelingS& rlv = rl->val;
 
         for (unsigned int i=0; i<rlv.size(); i++) {
@@ -1718,7 +1784,8 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     }
 
     /* Apply the hiding/interface operator. */
-    if (hi) {
+    if (hin) {
+        DRC(HidingResult, hi, hin->translate(c));
         HidingS& hv = hi->val;
 
         body->val->hiding(hv.setv, hv.interface);
@@ -1746,12 +1813,20 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
 Result *yy::ProcessRefNode::translate(FspDriver& c)
 {
-    /* process_id arguments */
+    /* process_id arguments_OPT */
     DRC(StringResult, id, children[0]->translate(c));
-    DRCS(IntVecResult, args, children[1]->translate(c));
+    DTCS(ArgumentsNode, an, children[1]);
     LtsResult *lts = new LtsResult;
+    IntVecResult *args = NULL;
+
+    if (an) {
+        DRC(IntVecResult, temp, children[1]->translate(c));
+
+        args = temp;
+    }
 
     process_ref_translate(c, id->val, args ? &args->val : NULL, &lts->val);
+
     delete id;
     if (args) {
         delete args;
@@ -1823,25 +1898,30 @@ Result *yy::CompositeBodyNode::translate(FspDriver& c)
 {
     if (children.size() == 4) {
         /* sharing_OPT labeling_OPT process_ref relabel_OPT */
-        DRCS(SetResult, sh, children[0]->translate(c));
-        DRCS(SetResult, lb, children[1]->translate(c));
+        DTCS(SharingNode, shn, children[0]);
+        DTCS(LabelingNode, lbn, children[1]);
         DRC(LtsResult, pr, children[2]->translate(c));
-        DRCS(RelabelingResult, rl, children[3]->translate(c));
+        DTCS(RelabelingNode, rln, children[3]);
 
         /* Apply the process labeling operator. */
-        if (lb) {
+        if (lbn) {
+            DRC(SetResult, lb, lbn->translate(c));
+
             pr->val->labeling(lb->val);
             delete lb;
         }
 
         /* Apply the process sharing operator. */
-        if (sh) {
+        if (shn) {
+            DRC(SetResult, sh, shn->translate(c));
+
             pr->val->sharing(sh->val);
             delete sh;
         }
 
         /* Apply the relabeling operator. */
-        if (rl) {
+        if (rln) {
+            DRC(RelabelingResult, rl, rln->translate(c));
             RelabelingS& rlv = rl->val;
 
             for (unsigned int i=0; i<rlv.size(); i++) {
@@ -1875,15 +1955,17 @@ Result *yy::CompositeBodyNode::translate(FspDriver& c)
     } else if (children.size() == 6) {
         /* sharing_OPT labeling_OPT ( parallel_composition ) relabeling_OPT
          */
-        DRCS(SetResult, sh, children[0]->translate(c));
-        DRCS(SetResult, lb, children[1]->translate(c));
+        DTCS(SharingNode, shn, children[0]);
+        DTCS(LabelingNode, lbn, children[1]);
         DRC(LtsVecResult, pc, children[3]->translate(c));
-        DRCS(RelabelingResult, rl, children[5]->translate(c));
+        DTCS(RelabelingNode, rln, children[5]);
         LtsResult *lts = new LtsResult;
 
         /* Apply the process labeling operator to each component process
            separately, before parallel composition. */
-        if (lb) {
+        if (lbn) {
+            DRC(SetResult, lb, lbn->translate(c));
+
             for (unsigned int k=0; k<pc->val.size(); k++) {
                 pc->val[k]->labeling(lb->val);
             }
@@ -1891,14 +1973,17 @@ Result *yy::CompositeBodyNode::translate(FspDriver& c)
         }
 
         /* Apply the process sharing operator (same way). */
-        if (sh) {
+        if (shn) {
+            DRC(SetResult, sh, shn->translate(c));
+
             for (unsigned int k=0; k<pc->val.size(); k++) {
                 pc->val[k]->sharing(sh->val);
             }
             delete sh;
         }
         /* Apply the relabeling operator (same way). */
-        if (rl) {
+        if (rln) {
+            DRC(RelabelingResult, rl, rln->translate(c));
             RelabelingS& rlv = rl->val;
 
             for (unsigned int k=0; k<pc->val.size(); k++) {
@@ -1961,22 +2046,25 @@ Result *yy::ParallelCompNode::translate(FspDriver& c)
 
 Result *yy::CompositeDefNode::translate(FspDriver& c)
 {
-    /* process_id composite_body priority_OPT hiding_OPT */
+    /* || process_id param_OPT = composite_body priority_OPT hiding_OPT . */
     DRC(StringResult, id, children[1]->translate(c));
     DRC(LtsResult, body, children[4]->translate(c));
-    DRCS(PriorityResult, pr, children[5]->translate(c));
-    DRCS(HidingResult, hi, children[6]->translate(c));
+    DTCS(PrioritySNode, prn, children[5]);
+    DTCS(HidingInterfNode, hin, children[6]);
 
     /* The base is the composite body. */
 
     /* Apply the priority operator. */
-    if (pr) {
+    if (prn) {
+        DRC(PriorityResult, pr, prn->translate(c));
+
         body->val->priority(pr->val.setv, pr->val.low);
         delete pr;
     }
 
     /* Apply the hiding/interface operator. */
-    if (hi) {
+    if (hin) {
+        DRC(HidingResult, hi, hin->translate(c));
         HidingS& hv = hi->val;
 
         body->val->hiding(hv.setv, hv.interface);
