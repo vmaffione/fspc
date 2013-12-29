@@ -1500,6 +1500,22 @@ void fsp::Lts::minimize(stringstream& ss)
     seen[0] = true;
 
     for (;;) {
+#if 0
+        ss << "[***] Current: ";
+        for (unsigned int i = 0; i < current.size(); i++) {
+            ss << current[i] << " ";
+        }
+        ss << "\nFrontier: ";
+        for (set<unsigned int>::iterator it = frontier.begin();
+                                    it != frontier.end(); it++) {
+            ss << *it << " ";
+        }
+        ss << "\nSeen: ";
+        for (unsigned int i = 0; i < seen.size(); i++) {
+            ss << seen[i] << " ";
+        }
+        ss << "\n";
+#endif
         /* In the generic iteration, we first try to extract a node from
            'current' which has not been visited yet (although it may have
            been seen many times). */
@@ -1507,8 +1523,8 @@ void fsp::Lts::minimize(stringstream& ss)
             st = current[cur_idx++];
         } else {
            /* If all the nodes in 'current' have been visited, it means the
-              'current' is a tau-reachable set that can be replaced by a single
-              state in a minimized LTS.
+              'current' is a tau-reachable set that can be replaced by a
+              single state in a minimized LTS.
               We then try to extract a node from 'frontier'.
             */
             ss << "New set found: {";
@@ -1518,7 +1534,8 @@ void fsp::Lts::minimize(stringstream& ss)
             ss << "}\n";
 
             if (frontier.empty()) {
-                /* Frontier is empty, we've done with the minimizing visit. */
+                /* Frontier is empty, we've done with the minimizing
+                   visit. */
                 break;
             }
 
@@ -1544,10 +1561,11 @@ void fsp::Lts::minimize(stringstream& ss)
                 /* This is a tau-transition. */
                 if (seen[e.dest] && frontier.count(e.dest)) {
                     /* This happens if we "mistakenly" added the destination
-                       to 'frontier', because of a previous non-tau-transition
-                       towards the same destination. Make up for the mistake,
-                       removing the destination from 'frontier', and pretending
-                       that the destination has never been seen before. It will
+                       to 'frontier', because of a previous
+                       non-tau-transition towards the same destination.
+                       Make up for the mistake, removing the destination
+                       from 'frontier', and pretending that the destination
+                       has never been seen before. It will
                        be added to 'current' below. */
                     frontier.erase(e.dest);
                     seen[e.dest] = false;
@@ -1558,8 +1576,8 @@ void fsp::Lts::minimize(stringstream& ss)
                     current.push_back(e.dest);
                 }
             } else if (!seen[e.dest]) {
-                /* This transition has a regular action. Add the destination to
-                   frontier if it has not been seen previously. */
+                /* This transition has a regular action. Add the destination
+                   to frontier if it has not been seen previously. */
                 frontier.insert(e.dest);
             }
             /* Whatever happened in this inner loop iteration, mark the
