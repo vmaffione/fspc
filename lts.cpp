@@ -1587,6 +1587,44 @@ void fsp::Lts::minimize(stringstream& ss)
     }
 }
 
+void fsp::Lts::__traces(stringstream &ss, set<CEdge>& marked,
+                        vector<unsigned int>& trace, unsigned int s)
+{
+    pair< set<CEdge>::iterator, bool > ret;
+    CEdge ce;
+
+    ce.src = s;
+
+    for (unsigned int i = 0; i < nodes[s].children.size(); i++) {
+        const Edge& e = nodes[s].children[i];
+
+        ce.action = e.action;
+        ce.dest = e.dest;
+
+        ret = marked.insert(ce);
+        if (!ret.second) {
+            ss << "{ ";
+            for (unsigned int j = 0; j < trace.size(); j++) {
+                ss << ati(atp, trace[j], false) << " ";
+            }
+            ss << "}\n";
+        } else {
+            trace.push_back(e.action);
+            __traces(ss, marked, trace, e.dest);
+            marked.erase(ret.first);
+            trace.pop_back();
+        }
+    }
+}
+
+void fsp::Lts::traces(stringstream& ss)
+{
+    set<CEdge> marked;
+    vector<unsigned int> trace;
+
+    __traces(ss, marked, trace, 0);
+}
+
 void LtsNode::offset(int offset)
 {
     for (unsigned int j=0; j<children.size(); j++) {

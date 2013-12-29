@@ -111,6 +111,7 @@ class Shell {
         void lsprop(const vector<string>& args, stringstream& ss);
         void lsmenu(const vector<string>& args, stringstream& ss);
         void minimize(const vector<string>& args, stringstream& ss);
+        void traces(const vector<string>& args, stringstream& ss);
         void help(const vector<string>& args, stringstream& ss);
 
     public:

@@ -46,6 +46,26 @@ struct Edge {
     uint32_t action;
 };
 
+/* A complete LTS edge (includes source node).
+   Only used internally. */
+class CEdge {
+    public:
+        uint32_t src;
+        uint32_t action;
+        uint32_t dest;
+
+        bool operator==(const CEdge& e) const
+        {
+            return src == e.src && action == e.action && dest == e.dest;
+        }
+        bool operator<(const CEdge& e) const
+        {
+            return (src < e.src) ||
+                    (src == e.src && action < e.action) ||
+                    (src == e.src && action == e.action && dest < e.dest);
+        }
+};
+
 /* An LTS node, containing a list of edges. */
 struct LtsNode {
     vector<Edge> children;
@@ -168,6 +188,9 @@ class Lts: public Symbol {
     void removeType(unsigned int type, unsigned int zero_idx,
                     bool call_reduce);
 
+    void __traces(stringstream &ss, set<CEdge>& marked,
+                  vector<unsigned int>& trace, unsigned int state);
+
     friend class ::Serializer;
     friend class ::Deserializer;
 
@@ -202,6 +225,7 @@ class Lts: public Symbol {
     void simulate(Shell& sh, const ActionSetS *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
     void minimize(stringstream& ss);
+    void traces(stringstream& ss);
 
     void updateAlphabet(int action);
     int lookupAlphabet(int action) const;

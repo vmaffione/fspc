@@ -68,7 +68,11 @@ specified FSP using GraphViz";
                         "FSP_NAME.FORMAT";
     help_map["lsprop"] = "lsprop: show a list of compiled properties";
     help_map["lsmenu"] = "lsmenu: show a list of available menus";
-    help_map["minimize"] = "minimize FSP_NAME: minimize the specified FSP";
+    /* help_map["minimize"] = "minimize FSP_NAME: minimize the "
+                              "specified FSP"; */
+    help_map["traces"] = "traces FSP_NAME: find all the action traces for "
+                         "the specified process, stopping when there "
+                         "are cycles";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
@@ -82,7 +86,8 @@ specified FSP using GraphViz";
     cmd_map["print"] = &Shell::print;
     cmd_map["lsprop"] = &Shell::lsprop;
     cmd_map["lsmenu"] = &Shell::lsmenu;
-    cmd_map["minimize"] = &Shell::minimize;
+    /* cmd_map["minimize"] = &Shell::minimize; */
+    cmd_map["traces"] = &Shell::traces;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -780,6 +785,25 @@ void Shell::minimize(const vector<string> &args, stringstream& ss)
 
     lts = is<fsp::Lts>(svp);
     lts->minimize(ss);
+}
+
+void Shell::traces(const vector<string> &args, stringstream& ss)
+{
+    Symbol *svp;
+    fsp::Lts *lts;
+
+    if (!args.size()) {
+	ss << "Invalid command: try 'help'\n";
+	return;
+    }
+
+    if (!c.processes.lookup(args[0], svp)) {
+	ss << "Process " << args[0] << " not found\n";
+	return;
+    }
+
+    lts = is<fsp::Lts>(svp);
+    lts->traces(ss);
 }
 
 void Shell::help(const vector<string> &args, stringstream& ss)

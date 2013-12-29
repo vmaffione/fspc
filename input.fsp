@@ -1,3 +1,26 @@
-/* A recursive process. */
-P(K=3) = (a[K]->L),
-   L = if (K==0) then END else P(K-1);END.
+/*
+P = P0,
+    P0 = (tau->P1 | a->P2),
+    P1 = (b->P0 | c->P3),
+    P2 = (d->P2 | tau->P2),
+    P3 = (tau->P2 | e->P2).
+*/
+
+P=(a->P0),
+P0 = (b->P1 | g->P),
+P1 = (c->P0 | d->P2),
+P2 = (e->P2 | f->P1) \{b}.
+
+PM=(a->P0),
+P0 = (c->P0 | g->PM | d->P2),
+P2 = (e->P2 | f->P0) \{b}.
+
+
+Q=(a->P0),
+P0 = (b->P1),
+P1 = (c->P0 | d->P2),
+P2 = (e->P2 | f->P1) \{b}.
+
+QM=(a->P0),
+P0 = (c->P0 | d->P2),
+P2 = (e->P2 | f->P0) \{b}.
