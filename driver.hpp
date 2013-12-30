@@ -50,6 +50,7 @@ class DependencyGraph {
 
     public:
         bool add(const string& depends, const string& on);
+        void findDependencies(const string& depends, vector<string>& result);
         void print();
 };
 
@@ -124,6 +125,7 @@ class FspDriver
 	bool trace_parsing;
 
         void translateDeclarations();
+        bool shouldTranslateNow(const string& name);
         void findParametricProcesses();
         void computeDependencyGraph();
         void doProcessesTranslation();

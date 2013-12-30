@@ -21,6 +21,7 @@
 /* The parse tree structures. */
 #include "tree.hpp"
 
+#include <queue>
 
 using namespace std;
 
@@ -69,6 +70,43 @@ static bool isCompositeDefinition(ParametricProcess *pp)
     assert(cdn || pdn);
 
     return cdn != NULL;
+}
+
+bool FspDriver::shouldTranslateNow(const string& name)
+{
+    vector<string> dependencies;
+    Symbol *svp;
+    ParametricProcess *pp;
+
+    if (!cop.shell) {
+        /* Not in interactive mode? Translate everything. */
+        return true;
+    }
+
+    /* When in interactive mode, defer composite processes translation. */
+    if (!parametric_processes.lookup(name, svp)) {
+        assert(0);
+    }
+    pp = is<ParametricProcess>(svp);
+
+    if (isCompositeDefinition(pp)) {
+        return false;
+    }
+
+    /* Also defer translation for those simple processes which depends
+       at least on a composite process. */
+    deps.findDependencies(name, dependencies);
+    for (unsigned int i = 0; i < dependencies.size(); i++) {
+        if (!parametric_processes.lookup(dependencies[i], svp)) {
+            assert(0);
+        }
+        pp = is<ParametricProcess>(svp);
+        if (isCompositeDefinition(pp)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void FspDriver::translateDeclarations()
@@ -200,6 +238,7 @@ void FspDriver::computeDependencyGraph()
             RDC(StringResult, id,
                     references[j]->getChild(0)->translate(*this));
 
+            /* Insert the dependency into the graph. */
             deps.add(it->first, id->val);
 
             delete id;
@@ -218,6 +257,8 @@ void FspDriver::doProcessesTranslation()
         ParametricProcess *pp = is<ParametricProcess>(it->second);
         LtsResult *result = new LtsResult;
         fsp::LtsTreeNode *ltn;
+
+        //XXX cout << it->first << " should = " << shouldTranslateNow(it->first) << "\n";
 
         ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
         assert(ltn);
@@ -499,6 +540,45 @@ bool DependencyGraph::add(const string& depends, const string& on)
     mit->second.push_back(on);
 
     return true;
+}
+
+void DependencyGraph::findDependencies(const string& depends,
+                                       vector<string>& result)
+{
+    /* BFS on the dependency graph. The graph is __almost__ acyclic,
+       that is is acyclic if we don't consider recursive dependencies. */
+    queue<string> frontier;
+
+    result.clear();
+    frontier.push(depends);
+
+    while (!frontier.empty()) {
+        const string& id = frontier.front();
+        table_iterator mit;
+
+        result.push_back(id);
+        mit = table.find(id);
+        if (mit != table.end()) {
+            for (unsigned int i = 0; i < mit->second.size(); i++) {
+                /* This check is against recursive processes, which depends
+                   on themselves, in order to avoid entering a
+                   non-terminating loop. */
+                if (mit->second[i] != id) {
+                    frontier.push(mit->second[i]);
+                }
+            }
+        }
+        frontier.pop();
+    }
+
+    /* Reverse the order of the dependencies found, so that the caller can
+       translate in order and always hit the 'processes' cache. */
+    for (unsigned int i = 0; i < result.size()/2; i++) {
+        string tmp = result[i];
+
+        result[i] = result[result.size() - 1 - i];
+        result[result.size() - 1 - i] = tmp;
+    }
 }
 
 void DependencyGraph::print()
