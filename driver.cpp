@@ -58,6 +58,19 @@ void FspDriver::clear()
     }
 }
 
+static bool isCompositeDefinition(ParametricProcess *pp)
+{
+    fsp::ProcessDefNode *pdn;
+    fsp::CompositeDefNode *cdn;
+
+    assert(pp && pp->translator);
+    pdn = dynamic_cast<fsp::ProcessDefNode *>(pp->translator);
+    cdn = dynamic_cast<fsp::CompositeDefNode *>(pp->translator);
+    assert(cdn || pdn);
+
+    return cdn != NULL;
+}
+
 void FspDriver::translateDeclarations()
 {
     vector<string> classes;
@@ -82,7 +95,7 @@ void FspDriver::translateDeclarations()
     }
 }
 
-void FspDriver::translateProcessesDefinitions()
+void FspDriver::findParametricProcesses()
 {
     vector<string> classes;
     vector<fsp::TreeNode *> definitions;
@@ -101,11 +114,9 @@ void FspDriver::translateProcessesDefinitions()
            symbols table. */
         TDCS(fsp::ProcessDefNode, pdn, definitions[i]);
         TDCS(fsp::CompositeDefNode, cdn, definitions[i]);
-        fsp::LtsTreeNode *ltn;
         fsp::ProcessIdNode *pid;
         fsp::ParamNode *pan;
         ParametricProcess *pp = new ParametricProcess;
-        LtsResult *result = new LtsResult;
 
         /* Find the ProcessIdNode and ParamNode depending on the process
            definition type. */
@@ -113,12 +124,10 @@ void FspDriver::translateProcessesDefinitions()
             pid = fsp::tree_downcast<fsp::ProcessIdNode>(pdn->getChild(1));
             pan = fsp::tree_downcast_null<fsp::ParamNode>(pdn->getChild(2));
             pp->set_translator(pdn);
-            ltn = pdn;
         } else if (cdn) {
             pid = fsp::tree_downcast<fsp::ProcessIdNode>(cdn->getChild(1));
             pan = fsp::tree_downcast_null<fsp::ParamNode>(cdn->getChild(2));
             pp->set_translator(cdn);
-            ltn = cdn;
         } else {
             assert(0);
         }
@@ -157,18 +166,81 @@ void FspDriver::translateProcessesDefinitions()
             semantic_error(*this, errstream, pid->getLocation());
         }
 
+        delete id;
+    }
+}
+
+/* Computes this->deps. */
+void FspDriver::computeDependencyGraph()
+{
+    map<string, Symbol*>::iterator it;
+    vector<string> classes;
+
+    classes.push_back(fsp::ProcessRefSeqNode::className());
+    classes.push_back(fsp::ProcessRefNode::className());
+
+    /* Scan all the parametric processes table. */
+    for (it = parametric_processes.table.begin();
+                    it != parametric_processes.table.end(); it++) {
+        ParametricProcess *pp = is<ParametricProcess>(it->second);
+        vector<fsp::TreeNode *> references;
+        fsp::TreeNode *ltn = dynamic_cast<fsp::LtsTreeNode* >(pp->translator);
+
+        assert(ltn);
+        /* Find all the (non local) processes referenced by this (non local)
+           process. */
+        ltn->getNodesByClasses(classes, references);
+        for (unsigned int j = 0; j < references.size(); j++) {
+            TDCS(fsp::ProcessRefSeqNode, seq, references[j]);
+            TDCS(fsp::ProcessRefNode, ref, references[j]);
+
+            assert(seq || ref);
+            assert(references[j]->getChild(0));
+
+            RDC(StringResult, id,
+                    references[j]->getChild(0)->translate(*this));
+
+            deps.add(it->first, id->val);
+
+            delete id;
+        }
+    }
+
+    IFD(deps.print());
+}
+
+void FspDriver::doProcessesTranslation()
+{
+    /* Do the translation. */
+    for (map<string, Symbol*>::iterator it =
+            parametric_processes.table.begin();
+                it != parametric_processes.table.end(); it++) {
+        ParametricProcess *pp = is<ParametricProcess>(it->second);
+        LtsResult *result = new LtsResult;
+        fsp::LtsTreeNode *ltn;
+
+        ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
+        assert(ltn);
         /* Translate the process definition, filling in the 'processes'
            symbol table. Note that we don't call 'ltn->translate(*this)'
            directly, but we use the 'process_ref_translate()' wrapper
-           function (which is also used with process references like ).
+           function (which is also used with process references).
            This function also setups and restore the translator context,
            taking care of the default process parameters and overridden
            identifiers. */
-        process_ref_translate(*this, ltn->getLocation(), id->val,
+        process_ref_translate(*this, ltn->getLocation(), it->first,
                               NULL, &result->val);
-        delete id;
+
         delete result;
     }
+}
+
+void FspDriver::translateProcessesDefinitions()
+{
+    /* These three functions must be called in this order. */
+    findParametricProcesses();
+    computeDependencyGraph();
+    doProcessesTranslation();
 }
 
 int FspDriver::parse(const CompilerOptions& co)
@@ -402,5 +474,41 @@ void FspDriver::error(const fsp::location& l, const std::string& m)
 void FspDriver::error(const std::string& m)
 {
     cerr << m << endl;
+}
+
+
+bool DependencyGraph::add(const string& depends, const string& on)
+{
+    table_iterator mit;
+
+    mit = table.find(depends);
+    if (mit == table.end()) {
+        pair<table_iterator, bool> ret;
+
+        ret = table.insert(make_pair(depends, vector<string>()));
+        assert(ret.second);
+        mit = ret.first;
+    }
+
+    /* Check against duplicates. */
+    for (unsigned int i = 0; i < mit->second.size(); i++) {
+        if (on == mit->second[i]) {
+            return false;
+        }
+    }
+    mit->second.push_back(on);
+
+    return true;
+}
+
+void DependencyGraph::print()
+{
+    for (table_iterator mit = table.begin(); mit != table.end(); mit++) {
+        cout << mit->first << " --> ";
+        for (unsigned int i = 0; i < mit->second.size(); i++) {
+            cout << mit->second[i] << " ";
+        }
+        cout << "\n";
+    }
 }
 

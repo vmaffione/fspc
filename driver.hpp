@@ -44,6 +44,15 @@ struct NestingContext {
     vector<Symbol *> overridden_values;
 };
 
+class DependencyGraph {
+        map<string, vector<string> > table;
+        typedef map< string, vector<string> >::iterator table_iterator;
+
+    public:
+        bool add(const string& depends, const string& on);
+        void print();
+};
+
 /* Conducting the whole scanning and parsing of fspcc. */
 class FspDriver
 {
@@ -65,6 +74,12 @@ class FspDriver
         /* Menu sets. */
         struct SymbolsTable menus;
 
+        /* Dependency graph of non local processes. */
+        DependencyGraph deps;
+
+        /* Stores the root node of each non local process definition
+           (both simple and composite processes) along with default
+           parameter values. */
 	struct SymbolsTable parametric_processes;
 
         /* Current value of variables (e.g. action/process indexes). */
@@ -108,8 +123,11 @@ class FspDriver
 	int parse(const CompilerOptions& co);
 	bool trace_parsing;
 
-        void translateProcessesDefinitions();
         void translateDeclarations();
+        void findParametricProcesses();
+        void computeDependencyGraph();
+        void doProcessesTranslation();
+        void translateProcessesDefinitions();
 
 	/* Error handling. */
 	void error(const fsp::location& l, const std::string& m);
