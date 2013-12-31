@@ -495,18 +495,20 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
 void Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, Symbol *>::iterator it;
-    Symbol * svp;
-    fsp::Lts * lts;
 
     if (args.size()) {
+        fsp::LtsPtr lts;
+
 	/* Deadlock analysis on args[0]. */
-	if (!c.processes.lookup(args[0], svp)) {
+        lts = c.getLts(args[0]);
+        if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
-	} else {
-	    lts = is<fsp::Lts>(svp);
-	    lts->deadlockAnalysis(ss);
-	}
+            return;
+        }
+        lts->deadlockAnalysis(ss);
     } else {
+        fsp::Lts *lts;
+
 	/* Deadlock analysis on every process. */
 	for (it=c.processes.table.begin();
 		    it!=c.processes.table.end(); it++) {
@@ -520,23 +522,25 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 {
     map<string, Symbol *>::iterator it;
     map<string, Symbol *>::iterator jt;
-    Symbol *svp;
     ProgressS *pv;
-    fsp::Lts *lts;
 
     if (args.size()) {
+        fsp::LtsPtr lts;
+
 	/* Progress analysis on args[0]. */
-	if (!c.processes.lookup(args[0], svp)) {
+        lts = c.getLts(args[0]);
+        if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
-	} else {
-	    lts = is<fsp::Lts>(svp);
-	    for (it=c.progresses.table.begin();
-		    it!=c.progresses.table.end(); it++) {
-		pv = is<ProgressS>(it->second);
-		lts->progress(it->first, *pv, ss);
-	    }
-	}
+            return;
+        }
+        for (it=c.progresses.table.begin();
+                it!=c.progresses.table.end(); it++) {
+            pv = is<ProgressS>(it->second);
+            lts->progress(it->first, *pv, ss);
+        }
     } else {
+        fsp::Lts *lts;
+
 	/* Progress analysis on every process. */
 	for (it=c.processes.table.begin(); 
 		    it!=c.processes.table.end(); it++) {
@@ -552,8 +556,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
-    Symbol * svp;
-    fsp::Lts * lts;
+    fsp::LtsPtr lts;
     ActionSetS *menu = NULL;
 
     if (!args.size()) {
@@ -561,13 +564,15 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
         return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
         ss << "Process " << args[0] << " not found\n";
         return;
     }
-    lts = is<fsp::Lts>(svp);
 
     if (args.size() >= 2) {
+        Symbol *svp;
+
         if (!c.menus.lookup(args[1], svp)) {
             ss << "Menu " << args[1] << " not found\n";
             return;
@@ -583,17 +588,17 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
 void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
-    Symbol * svp;
-    fsp::Lts * lts;
+    fsp::LtsPtr lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
-	ss << "Process " << args[0] << " not found\n";
-	return;
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
+        ss << "Process " << args[0] << " not found\n";
+        return;
     }
 
     if (args.size() >= 2) {
@@ -602,33 +607,30 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 	outfile = args[0] + ".bfsp";
     }
 
-    lts = is<fsp::Lts>(svp);
     lts->basic(outfile, ss);
 }
 
 void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
-    Symbol * svp;
-    fsp::Lts * lts;
+    fsp::LtsPtr lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
-    lts = is<fsp::Lts>(svp);
     lts->printAlphabet(ss);
 }
 
 void Shell::see(const vector<string> &args, stringstream& ss)
 {
-    Symbol * svp;
-    fsp::Lts * lts;
+    fsp::LtsPtr lts;
     string tmp_name;
     pid_t drawer;
 
@@ -642,12 +644,11 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
     }
-
-    lts = is<fsp::Lts>(svp);
 
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
@@ -677,8 +678,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 
 void Shell::print(const vector<string> &args, stringstream& ss)
 {
-    Symbol * svp;
-    fsp::Lts * lts;
+    fsp::LtsPtr lts;
     string format = "png";
     string filename;
 
@@ -687,13 +687,13 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
     }
     filename = args[0] + ".gv";
 
-    lts = is<fsp::Lts>(svp);
     lts->graphvizOutput(filename.c_str());
 
     if (args.size() > 1) {
@@ -770,39 +770,37 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
 
 void Shell::minimize(const vector<string> &args, stringstream& ss)
 {
-    Symbol *svp;
-    fsp::Lts *lts;
+    fsp::LtsPtr lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
-    lts = is<fsp::Lts>(svp);
     lts->minimize(ss);
 }
 
 void Shell::traces(const vector<string> &args, stringstream& ss)
 {
-    Symbol *svp;
-    fsp::Lts *lts;
+    fsp::LtsPtr lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
 	return;
     }
 
-    if (!c.processes.lookup(args[0], svp)) {
+    lts = c.getLts(args[0]);
+    if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
     }
 
-    lts = is<fsp::Lts>(svp);
     lts->traces(ss);
 }
 

@@ -21,6 +21,8 @@
 /* The parse tree structures. */
 #include "tree.hpp"
 
+#include "helpers.hpp"
+
 #include <queue>
 
 using namespace std;
@@ -506,6 +508,132 @@ void FspDriver::nesting_restore()
     nesting_stack.pop_back();
 }
 
+static bool parse_extended_name(const string& name, string& base,
+                                vector<int>& args)
+{
+    size_t ope;
+
+    args.clear();
+
+    ope = name.find_first_of('(');
+    if (ope == string::npos) {
+        /* No parameters specified. */
+        if (name.find_first_of(')') != string::npos) {
+            return false;
+        }
+        base = name;
+    } else {
+        size_t clo;
+
+        /* Some parameters have been specified. */
+        if (ope == 0) {
+            return false;
+        }
+        if (name.find_last_of('(') != ope) {
+            /* More than one '('. */
+            return false;
+        }
+        clo = name.find_first_of(')');
+        if (clo == string::npos) {
+            return false;
+        }
+        if (name.find_last_of(')') != clo) {
+            /* More than one ')'. */
+            return false;
+        }
+        if (ope >= clo) {
+            return false;
+        }
+        /* Space outside the () are not allowed. */
+        for (unsigned int i = 0; i < ope; i++) {
+            if (name[i] == ' ' || name[i] == '\t') {
+                return false;
+            }
+        }
+        for (unsigned int i = clo+1; i < name.size(); i++) {
+            if (name[i] != ' ' && name[i] != '\t') {
+                return false;
+            }
+        }
+
+        /* Extract the base name. */
+        base = name.substr(0, ope);
+
+        /* Extract the parameters. */
+        size_t a = ope + 1;
+
+        for (;;) {
+            size_t b = name.find_first_of(',', a);
+            int x;
+
+            if (b == string::npos) {
+                b = clo;
+            }
+            x = string2int(name.substr(a, b - a));
+            args.push_back(x);
+
+            if (b == clo) {
+                break;
+            }
+            a = b + 1;
+        }
+    }
+
+/*cout << base << "\n";
+for (unsigned int i = 0; i < args.size(); i++) {
+    cout << args[i] << " ";
+}
+cout << "\n";*/
+
+    return true;
+}
+
+/* Get an LTS. */
+fsp::LtsPtr FspDriver::getLts(const string& name)
+{
+    Symbol *svp;
+    ParametricProcess *pp;
+    fsp::LtsPtr lts;
+    fsp::LtsTreeNode *ltn;
+    string base;
+    vector<int> args;
+
+    /* The user-specified string 'name' shuould be in the form
+        'FSPNAME(VAL1,VAL2,VAL3,...)'. This helper function extracts
+       'FSPNAME' into base and extracts the integers VAL1, VAL2, ... into
+       'args'.
+    */
+    if (!parse_extended_name(name, base, args)) {
+        /* The user string is not valid. */
+        return NULL;
+    }
+
+    if (!parametric_processes.lookup(base, svp)) {
+        /* String valid, but the user just made up a process name. */
+        return NULL;
+    }
+    pp = is<ParametricProcess>(svp);
+
+    /* If 'name' specifies some parameters, their number must match
+       the requested number of parameters. We do this check here to avoid
+       a semantic_error. */
+    if (args.size() && args.size() != pp->defaults.size()) {
+        return NULL;
+    }
+    /* If 'name' doesn't specify parameters, use defaults. */
+    if (!args.size()) {
+        args = pp->defaults;
+    }
+
+    /* Everything is ok: Take the translator and use it. */
+    ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
+    assert(ltn);
+    process_ref_translate(*this, ltn->getLocation(), base,
+            &args, &lts);
+
+    return lts;
+}
+
 void FspDriver::error(const fsp::location& l, const std::string& m)
 {
     print_error_location_pretty(l);
@@ -517,6 +645,8 @@ void FspDriver::error(const std::string& m)
     cerr << m << endl;
 }
 
+
+/* ======================= DependencyGraph ======================= */
 
 bool DependencyGraph::add(const string& depends, const string& on)
 {

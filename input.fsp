@@ -1,4 +1,4 @@
-P = (a->END).
+P(K=4) = (a[K]->END).
 U = (u->U0),
     U0 = P;END.
 

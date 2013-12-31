@@ -1,3 +1,4 @@
+[O] string2int int2string can fail!!
 [O] Smart pointers for Result
 [O] printAlphabet() should sort the output
 [O] serializer must do non-blocking reads!

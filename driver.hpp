@@ -18,6 +18,7 @@
 #include "parser.hpp"
 #include "interface.hpp"
 #include "unresolved.hpp"
+#include "lts.hpp"
 
 
 using namespace std;
@@ -130,6 +131,8 @@ class FspDriver
         void computeDependencyGraph();
         void doProcessesTranslation();
         void translateProcessesDefinitions();
+
+        fsp::LtsPtr getLts(const string& name);
 
 	/* Error handling. */
 	void error(const fsp::location& l, const std::string& m);
