@@ -481,14 +481,28 @@ void Shell::readline(string& line)
 void Shell::ls(const vector<string> &args, stringstream& ss)
 {
     map<string, Symbol *>::iterator it;
-    fsp::Lts * lts;
+    fsp::Lts *lts;
 
-    ss << "Compiled FSPs:\n";
-    for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
+    ss << "Available FSPs:\n";
+    /* Compiled processes (e.g. all the processes in the 'processes'
+       cache table). */
+    for (it = c.processes.table.begin();
+                it != c.processes.table.end(); it++) {
 	lts = is<fsp::Lts>(it->second);
 	ss << "   " << it->first << ": " << lts->numStates()
 	    << " states, " << lts->numTransitions() << " transitions, "
 	    << lts->alphabetSize() << " actions in alphabet\n";
+    }
+    /* Processes defined in the FSP input file that have not been
+       translated yet. */
+    for (it = c.parametric_processes.table.begin();
+                it != c.parametric_processes.table.end(); it++) {
+        /* We try to see if the parametric process 'it->first', with
+           default parameters, is in the 'processes' cache. If not, we
+           don't force the translation. */
+        if (c.getLts(it->first, false) == NULL) {
+            ss << "   " << it->first << ": NOT TRANSLATED\n";
+        }
     }
 }
 
@@ -500,7 +514,7 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
         fsp::LtsPtr lts;
 
 	/* Deadlock analysis on args[0]. */
-        lts = c.getLts(args[0]);
+        lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
             return;
@@ -528,7 +542,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
         fsp::LtsPtr lts;
 
 	/* Progress analysis on args[0]. */
-        lts = c.getLts(args[0]);
+        lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
             return;
@@ -564,7 +578,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
         return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
         ss << "Process " << args[0] << " not found\n";
         return;
@@ -595,7 +609,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
         ss << "Process " << args[0] << " not found\n";
         return;
@@ -619,7 +633,7 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
@@ -644,7 +658,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
@@ -687,7 +701,7 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
@@ -777,7 +791,7 @@ void Shell::minimize(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;
@@ -795,7 +809,7 @@ void Shell::traces(const vector<string> &args, stringstream& ss)
 	return;
     }
 
-    lts = c.getLts(args[0]);
+    lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
 	return;

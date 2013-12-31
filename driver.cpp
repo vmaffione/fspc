@@ -257,24 +257,22 @@ void FspDriver::doProcessesTranslation()
             parametric_processes.table.begin();
                 it != parametric_processes.table.end(); it++) {
         ParametricProcess *pp = is<ParametricProcess>(it->second);
-        LtsResult *result = new LtsResult;
         fsp::LtsTreeNode *ltn;
+        fsp::LtsPtr lts;
 
-        //XXX cout << it->first << " should = " << shouldTranslateNow(it->first) << "\n";
-
-        ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
-        assert(ltn);
-        /* Translate the process definition, filling in the 'processes'
-           symbol table. Note that we don't call 'ltn->translate(*this)'
-           directly, but we use the 'process_ref_translate()' wrapper
-           function (which is also used with process references).
-           This function also setups and restore the translator context,
-           taking care of the default process parameters and overridden
-           identifiers. */
-        process_ref_translate(*this, ltn->getLocation(), it->first,
-                              NULL, &result->val);
-
-        delete result;
+        if (shouldTranslateNow(it->first)) {
+            ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
+            assert(ltn);
+            /* Translate the process definition, filling in the 'processes'
+               symbol table. Note that we don't call 'ltn->translate(*this)'
+               directly, but we use the 'process_ref_translate()' wrapper
+               function (which is also used with process references).
+               This function also setups and restore the translator context,
+               taking care of the default process parameters and overridden
+               identifiers. */
+            process_ref_translate(*this, ltn->getLocation(), it->first,
+                    NULL, &lts);
+        }
     }
 }
 
@@ -590,8 +588,12 @@ cout << "\n";*/
     return true;
 }
 
-/* Get an LTS. */
-fsp::LtsPtr FspDriver::getLts(const string& name)
+/* Ask the compiler for the LTS corresponding to the FSP reference
+   specified by 'name'.
+   If 'create' is 'true', the compiler will perform a translation, when
+   needed. If 'create' is 'false', the compiler doesn't perform
+   any translations, but only look up the 'processes' cache. */
+fsp::LtsPtr FspDriver::getLts(const string& name, bool create)
 {
     Symbol *svp;
     ParametricProcess *pp;
@@ -627,11 +629,25 @@ fsp::LtsPtr FspDriver::getLts(const string& name)
         args = pp->defaults;
     }
 
-    /* Everything is ok: Take the translator and use it. */
-    ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
-    assert(ltn);
-    process_ref_translate(*this, ltn->getLocation(), base,
-            &args, &lts);
+    if (create) {
+        /* Everything is ok and we can translate, if necessary:
+           Take the translator and use it. */
+        ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
+        assert(ltn);
+        process_ref_translate(*this, ltn->getLocation(), base,
+                &args, &lts);
+    } else {
+        /* Everything is ok, but we don't want to force the translation if
+           it has not already been done. */
+        Symbol *svp;
+        string extension;
+
+        lts_name_extension(args, extension);
+        if (!processes.lookup(base + extension, svp)) {
+            return NULL;
+        }
+        return is<fsp::Lts>(svp);
+    }
 
     return lts;
 }
