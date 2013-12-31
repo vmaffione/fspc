@@ -26,7 +26,7 @@ using namespace std;
 
 
 string int2string(int x);
-int string2int(const string& s);
+int string2int(const string& s, int& ret);
 void lts_name_extension(const vector<int>& values, string& extension);
 bool intersection_exists(const set<unsigned int>&,
                          const set<unsigned int>&);

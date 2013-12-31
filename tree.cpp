@@ -380,6 +380,7 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
     } else if (vn) {
         RDC(StringResult, id, children[0]->translate(c));
         string val;
+        int v;
 
         if (!c.ctx.lookup(id->val, val)) {
             stringstream errstream;
@@ -388,7 +389,13 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
         }
         delete id;
 
-        return new IntResult(string2int(val));
+        if (string2int(val, v)) {
+            stringstream errstream;
+            errstream << "string '" << val << "' is not a number";
+            semantic_error(c, errstream, loc);
+        }
+
+        return new IntResult(v);
     } else if (cn) {
         RDC(StringResult, id, children[0]->translate(c));
         Symbol *svp;

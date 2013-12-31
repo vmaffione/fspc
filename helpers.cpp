@@ -30,11 +30,18 @@ string int2string(int x)
     return sstr.str();
 }
 
-int string2int(const string& s)
+int string2int(const string& s, int& ret)
 {
-    int ret = atoi(s.c_str());
+    char *dummy;
+    const char *cstr = s.c_str();
 
-    return ret;
+    ret = strtoul(cstr, &dummy, 10);
+    if (!s.size() || *dummy != '\0') {
+        ret = ~0U;
+        return -1;
+    }
+
+    return 0;
 }
 
 void lts_name_extension(const vector<int>& values, string& extension)

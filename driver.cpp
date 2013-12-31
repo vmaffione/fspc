@@ -569,7 +569,9 @@ static bool parse_extended_name(const string& name, string& base,
             if (b == string::npos) {
                 b = clo;
             }
-            x = string2int(name.substr(a, b - a));
+            if (string2int(name.substr(a, b - a), x)) {
+                return false;
+            }
             args.push_back(x);
 
             if (b == clo) {
