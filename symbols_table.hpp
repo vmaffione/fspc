@@ -194,7 +194,7 @@ struct SymbolsTable {
     bool insert(const string& name, Symbol *);
     bool lookup(const string& name, Symbol*&) const;
     bool remove(const string& name);
-    int size() const { return table.size(); }
+    unsigned int size() const { return table.size(); }
     void clear();
     void print() const;
     ~SymbolsTable();

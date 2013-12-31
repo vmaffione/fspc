@@ -96,6 +96,9 @@ class Shell {
         /* Auto-completion. */
         AutoCompletion completion;
 
+        /* Keep trace of the last 'c.processes.size()' seen. */
+        unsigned int trace_processes_size;
+
         void common_init();
         void fill_completion();
         void getline_ncurses(string& line, const char * prompt);

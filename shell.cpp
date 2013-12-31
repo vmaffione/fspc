@@ -102,6 +102,8 @@ void Shell::fill_completion()
 	completion.insert(it->first);
     }
 
+    trace_processes_size = c.processes.size();
+
     /* fspc shell command names. */
     for (jt = help_map.begin(); jt != help_map.end(); jt++) {
         completion.insert(jt->first);
@@ -888,6 +890,16 @@ int Shell::run()
 	    (this->*fp)(tokens, ss);
 	}
 	putsstream(ss, true);
+
+        /* We are at the end of an iteration. If we detect that
+           'processes.size()' is changed w.r.t. the last iteration
+           (because of the command executed during this iteration), we
+           call 'fill_completion()', in order to update the
+           AutoCompletion object to the new 'processes' table. */
+        if (c.processes.size() != trace_processes_size) {
+            trace_processes_size = c.processes.size();
+            fill_completion();
+        }
     }
     
 }
