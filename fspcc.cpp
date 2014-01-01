@@ -130,7 +130,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
                 break;
 
             case 'v':
-                cout << "fspc 1.4 (November 2013)\n";
+                cout << "fspc 1.5 (January 2014)\n";
                 cout << "Copyright 2013 Vincenzo Maffione\n";
                 exit(0);
 	}
