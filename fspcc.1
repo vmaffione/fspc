@@ -7,10 +7,10 @@ fspcc \- An FSP compiler and LTS analysis tool
 
 .SH SYNOPSIS
 .B fspcc
-[\fI-dpgasSh\fR] \fI-i FILE\fR [\fI-o FILE\fR]
+[\fI-dpgasvh\fR] [\fI-S FILE\fR] [\fI-D NUM\fR] \fI-i FILE\fR [\fI-o FILE\fR]
 .br
 .B fspcc
-[\fI-dpgasSh\fR] \fI-l FILE\fR
+[\fI-dpgasvh\fR] [\fI-S FILE\fR] [\fI-D NUM\fR] \fI-l FILE\fR
 
 
 .SH DESCRIPTION
@@ -54,17 +54,20 @@ tool without compiling again.
 .RS 3
 Specifies an input file pathname containing FSP definitions to compile.
 .RE
+
 .PP
 \fB\-o\fR \fIPATHNAME\fR
 .RS 3
 Specifies the output file pathname where compiled LTSs are stored. If this
 option is not specified, the default output file name is 'output.lts'.
 .RE
+
 .PP
 \fB\-l\fR \fIPATHNAME\fR
 .RS 3
 Specifies the input file pathname containing compiled LTSs.
 .RE
+
 .PP
 \fB\-d\fR
 .RS 3
@@ -72,31 +75,35 @@ Runs deadlock/error analysis on every compiled LTS. A list of deadlocks/errors
 will be printed on the standard output. If there are no such problems, no
 output is produced.
 .RE
+
 .PP
 \fB\-p\fR
 .RS 3
 Runs all the specified progress checks on every compiled LTS. A list of
 progress violations will be printed on the standard output. If there are no
 such problems, no output is produced.
-
 .RE
+
 .PP
 \fB\-g\fR
 .RS 3
 Outputs a GraphViz representation file corrisponding to every LTS.
 For each process named 'P', a file called 'P.gv' is created.
 .RE
+
 .PP
 \fB\-a\fR
 .RS 3
 The same as \fB\-dpg\fR.
 .RE
+
 .PP
 \fB\-s\fR
 .RS 3
 Runs an LTS analysis interactive shell. The shell is run after compilation
 (if any).
 .RE
+
 .PP
 \fB\-S\fR \fIPATHNAME\fR
 .RS 3
@@ -104,6 +111,31 @@ Runs the LTS analysis script specified by the pathname. The script is
 run after the compilation (if any) but before invoking the interactive shell
 (when \fB\-s\fR is specified).
 .RE
+
+.PP
+\fB\-D\fR \fINUMBER\fR
+.RS 3
+Specifies the maximum accepted depth for process references. This is
+mainly useful to avoid problems with poorly written recursive processes.
+Example of a problematic process, which causes unterminated recursion:
+.PP
+.RS 4
+P(K=3) = if (K == 0) then END else P(K-1);P(K-2);END.
+.RE
+.RE
+
+.PP
+\fB\-v\fR
+.RS 3
+Show versioning information.
+.RE
+
+.PP
+\fB\-h\fR
+.RS 3
+Show the help.
+.RE
+
 
 .SH EXAMPLES
 Here is a simple example of FSP input file (say in.fsp):

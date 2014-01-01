@@ -61,7 +61,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     int il_options = 0;
 
     /* Set default values. */
-    co.input_file = "input.fsp";
+    co.input_file = NULL;
     co.input_type = CompilerOptions::InputTypeFsp;
     co.output_file = NULL;
     co.deadlock = false;
@@ -137,15 +137,22 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     }
 
     if (il_options > 1) {
-	cerr << "Error: Cannot specify more than one input file\n";
+	cerr << "Error: Cannot specify more than one input file\n\n";
+        help();
 	exit(-1);
+    }
+
+    if (!co.input_file) {
+        cerr << "Error: Missing input file\n\n";
+        help();
+        exit(-1);
     }
 
     if (!co.output_file && !co.shell && !co.script) {
         /* There's (normally) no point in running this program if one
            neither runs a shell nor a script nor generates a compiled
            output. Assume a default '-o' option. */
-        co.output_file = "default.lts";
+        co.output_file = "out.lts";
     }
 }
 #else	/* !GET_OPT */
