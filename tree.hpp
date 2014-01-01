@@ -32,6 +32,10 @@
 #include "location.hh"
 
 
+struct FspDriver;
+
+namespace fsp {
+
 /* A hierarchy of types used with translate() methods. An object belonging
    to the base class is returned by each translate() methods. Depending
    on the translated node, the returned type belongs to one of the
@@ -75,10 +79,10 @@ class SetResult : public Result {
 
 class LtsResult : public Result {
     public:
-        fsp::SmartPtr<fsp::Lts> val;
+        SmartPtr<Lts> val;
 
         LtsResult() { }
-        LtsResult(fsp::SmartPtr<fsp::Lts> v) : val(v) { }
+        LtsResult(SmartPtr<Lts> v) : val(v) { }
 };
 
 class IntVecResult : public Result {
@@ -102,13 +106,11 @@ class PriorityResult : public Result {
         PriorityResult() { }
 };
 
-namespace fsp {
-    class TreeNode;
-}
+class TreeNode;
 
 class TreeNodeVecResult : public Result {
     public:
-        vector<fsp::TreeNode *> val;
+        vector<TreeNode *> val;
 
         TreeNodeVecResult() { }
 };
@@ -122,7 +124,7 @@ class RelabelingResult : public Result {
 
 class LtsVecResult : public Result {
     public:
-        vector< fsp::SmartPtr<fsp::Lts> > val;
+        vector< SmartPtr<Lts> > val;
 
         LtsVecResult() { }
 };
@@ -150,12 +152,8 @@ T* result_downcast(Result *r)
 /* Result downcast declaration:
    Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
 #define RDC(_t, _n, _x) \
-    _t *_n = result_downcast<_t>(_x);
+    _t *_n = fsp::result_downcast<_t>(_x);
 
-
-struct FspDriver;
-
-namespace fsp {
 
 /* Parse tree node base class. It derives from ParametricTranslator,
    so that a TreeNode* can be used with the ParametricProcess class. */
@@ -167,12 +165,12 @@ class TreeNode : public ParametricTranslator {
         SetS computeActionLabels(FspDriver& c, SetS base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
-        fsp::SmartPtr<fsp::Lts> computePrefixActions(FspDriver& c,
+        SmartPtr<Lts> computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
                                      vector<Context>& ctxcache);
         void post_process_definition(FspDriver& c,
-                                     fsp::SmartPtr<fsp::Lts> res,
+                                     SmartPtr<Lts> res,
                                      const string& name);
 
     public:
@@ -194,7 +192,7 @@ class TreeNode : public ParametricTranslator {
 
 void process_ref_translate(FspDriver& c, const location &loc,
                            const string& name, const vector<int> *arguments,
-                           fsp::SmartPtr<fsp::Lts> *res);
+                           SmartPtr<Lts> *res);
 
 /* ======================== FIRST DERIVATION LEVEL =========================
    The first derivation level adds a first specialization to a parse tree
