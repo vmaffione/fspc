@@ -31,6 +31,7 @@
 
 #include "symbols_table.hpp"
 #include "location.hh"
+#include "smart_pointers.hpp"
 
 using namespace std;
 
@@ -112,44 +113,6 @@ struct LtsVisitObject {
     void *opaque;
 };
 
-/* Debug the Lts::refcount.
-    0 --> no check is performed
-    1 --> we check against memory leaks
-    2 --> we check against memory leaks, being verbose
- */
-#define DBG_REFCNT 1
-
-#if (DBG_REFCNT >= 2)
-#define DBR(x) x
-#else
-#define DBR(x)
-#endif
-
-#if (DBG_REFCNT >= 1)
-#define DBRT(x) x
-#else
-#define DBRT(x)
-#endif
-
-/* A singleton class containing a table which maps pointers to reference
-   counters.
-   The methods ref() and unref() are called by the smart pointers
-   to debug/record their operations. When check() is called (this is done
-   once when the compilation is done) it checks that all the reference
-   counters stored in the table are 0, meaning that all the objects
-   have correctly destroyed. */
-class PtrCheckTable {
-        map<void *, unsigned int> t;
-        static PtrCheckTable *instance;
-        PtrCheckTable() { }
-
-    public:
-        static PtrCheckTable *get();
-        void ref(void *ptr);
-        void unref(void *ptr);
-        void check();
-};
-
 
 /* An LTS. */
 class Lts: public Symbol {
@@ -197,7 +160,7 @@ class Lts: public Symbol {
   public:
     string name;
 
-    /* Reference counter used to implement the LtsPtr smart pointer class. */
+    /* Reference counter used to implement the fsp::SmartPtr<fsp::Lts> smart pointer class. */
     unsigned refcount;
     DBR(unsigned delegated);
 
@@ -258,27 +221,6 @@ class Lts: public Symbol {
 };
 
 fsp::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const fsp::location& loc);
-
-
-/* Smart pointer to an LTS object. */
-class LtsPtr {
-        Lts *ptr;
-
-        void get(const char *nm);
-        void put(const char *nm);
-
-    public:
-        LtsPtr();
-        LtsPtr(Lts *);
-        LtsPtr(const LtsPtr&);
-        LtsPtr& operator=(Lts* lts);
-        LtsPtr& operator=(LtsPtr&);
-        Lts* operator->() { return ptr; }
-        Lts* delegate();
-        operator Lts*();
-        ~LtsPtr();
-        void clear();
-};
 
 } /* namespace fsp */
 

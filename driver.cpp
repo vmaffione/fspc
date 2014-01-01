@@ -258,7 +258,7 @@ void FspDriver::doProcessesTranslation()
                 it != parametric_processes.table.end(); it++) {
         ParametricProcess *pp = is<ParametricProcess>(it->second);
         fsp::LtsTreeNode *ltn;
-        fsp::LtsPtr lts;
+        fsp::SmartPtr<fsp::Lts> lts;
 
         if (shouldTranslateNow(it->first)) {
             ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
@@ -348,13 +348,14 @@ int FspDriver::parse(const CompilerOptions& co)
 	desp->actions_table(actions, 0);
 	desp->integer(nlts, 0);
 	for (uint32_t i=0; i<nlts; i++) {
-	    fsp::LtsPtr lts = new fsp::Lts(LtsNode::End, &actions);
+	    fsp::SmartPtr<fsp::Lts> lts =
+                    new fsp::Lts(LtsNode::End, &actions);
 
 	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */
 	    if (!processes.insert(lts->name, lts.delegate())) {
-                /* This should never happen: Two LTSs are saved with the same name
-                   into the compiled file. */
+                /* This should never happen: Two LTSs are saved with the
+                   same name into the compiled file. */
 		assert(0);
 	    }
 	}
@@ -376,7 +377,7 @@ int FspDriver::parse(const CompilerOptions& co)
        the associated LTS and do the deadlock analysis. */
     map<string, Symbol *>::iterator it;
     map<string, Symbol *>::iterator jt;
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
     ProgressS *pv;
 
     if (serp) {
@@ -587,11 +588,11 @@ static bool parse_extended_name(const string& name, string& base,
    If 'create' is 'true', the compiler can perform a translation, when
    needed. If 'create' is 'false', the compiler doesn't perform
    any translations, but only look up the 'processes' cache. */
-fsp::LtsPtr FspDriver::getLts(const string& name, bool create)
+fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
 {
     Symbol *svp;
     ParametricProcess *pp;
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
     fsp::LtsTreeNode *ltn;
     string base;
     vector<int> args;

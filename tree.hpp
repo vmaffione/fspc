@@ -75,10 +75,10 @@ class SetResult : public Result {
 
 class LtsResult : public Result {
     public:
-        fsp::LtsPtr val;
+        fsp::SmartPtr<fsp::Lts> val;
 
         LtsResult() { }
-        LtsResult(fsp::LtsPtr v) : val(v) { }
+        LtsResult(fsp::SmartPtr<fsp::Lts> v) : val(v) { }
 };
 
 class IntVecResult : public Result {
@@ -122,7 +122,7 @@ class RelabelingResult : public Result {
 
 class LtsVecResult : public Result {
     public:
-        vector<fsp::LtsPtr> val;
+        vector< fsp::SmartPtr<fsp::Lts> > val;
 
         LtsVecResult() { }
 };
@@ -167,12 +167,13 @@ class TreeNode : public ParametricTranslator {
         SetS computeActionLabels(FspDriver& c, SetS base,
                                      const vector<TreeNode*>& elements,
                                      unsigned int idx);
-        fsp::LtsPtr computePrefixActions(FspDriver& c,
+        fsp::SmartPtr<fsp::Lts> computePrefixActions(FspDriver& c,
                                      const vector<TreeNode *>& als,
                                      unsigned int idx,
                                      vector<Context>& ctxcache);
-        void post_process_definition(FspDriver& c, fsp::LtsPtr res,
-                                           const string& name);
+        void post_process_definition(FspDriver& c,
+                                     fsp::SmartPtr<fsp::Lts> res,
+                                     const string& name);
 
     public:
         TreeNode() { }
@@ -193,7 +194,7 @@ class TreeNode : public ParametricTranslator {
 
 void process_ref_translate(FspDriver& c, const location &loc,
                            const string& name, const vector<int> *arguments,
-                           fsp::LtsPtr *res);
+                           fsp::SmartPtr<fsp::Lts> *res);
 
 /* ======================== FIRST DERIVATION LEVEL =========================
    The first derivation level adds a first specialization to a parse tree

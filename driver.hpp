@@ -132,7 +132,7 @@ class FspDriver
         void doProcessesTranslation();
         void translateProcessesDefinitions();
 
-        fsp::LtsPtr getLts(const string& name, bool create);
+        fsp::SmartPtr<fsp::Lts> getLts(const string& name, bool create);
 
 	/* Error handling. */
 	void error(const fsp::location& l, const std::string& m);

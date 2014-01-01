@@ -513,7 +513,7 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
     map<string, Symbol *>::iterator it;
 
     if (args.size()) {
-        fsp::LtsPtr lts;
+        fsp::SmartPtr<fsp::Lts> lts;
 
 	/* Deadlock analysis on args[0]. */
         lts = c.getLts(args[0], true);
@@ -541,7 +541,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
     ProgressS *pv;
 
     if (args.size()) {
-        fsp::LtsPtr lts;
+        fsp::SmartPtr<fsp::Lts> lts;
 
 	/* Progress analysis on args[0]. */
         lts = c.getLts(args[0], true);
@@ -572,7 +572,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
     ActionSetS *menu = NULL;
 
     if (!args.size()) {
@@ -604,7 +604,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
 void Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -628,7 +628,7 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
 
 void Shell::alpha(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -646,7 +646,7 @@ void Shell::alpha(const vector<string> &args, stringstream& ss)
 
 void Shell::see(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
     string tmp_name;
     pid_t drawer;
 
@@ -694,7 +694,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 
 void Shell::print(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
     string format = "png";
     string filename;
 
@@ -786,7 +786,7 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
 
 void Shell::minimize(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -804,7 +804,7 @@ void Shell::minimize(const vector<string> &args, stringstream& ss)
 
 void Shell::traces(const vector<string> &args, stringstream& ss)
 {
-    fsp::LtsPtr lts;
+    fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";

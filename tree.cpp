@@ -50,7 +50,8 @@ using namespace fsp;
          node
    define: true if 'name' is on the left side of an FSP assignement
 */
-static void update_unres(FspDriver& c, const string& name, fsp::LtsPtr lts,
+static void update_unres(FspDriver& c, const string& name,
+                         fsp::SmartPtr<fsp::Lts> lts,
                          bool define, const fsp::location& loc)
 {
     unsigned int ui;
@@ -989,7 +990,7 @@ Result *fsp::ActionLabelsNode::translate(FspDriver& c)
     return result;
 }
 
-fsp::LtsPtr fsp::TreeNode::computePrefixActions(FspDriver& c,
+fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
                                            const vector<TreeNode *>& als,
                                            unsigned int idx,
                                            vector<Context>& ctxcache)
@@ -1000,7 +1001,7 @@ fsp::LtsPtr fsp::TreeNode::computePrefixActions(FspDriver& c,
     const vector<TreeNode *>& elements = vec->val;
     vector<unsigned int> indexes(elements.size());
     vector<unsigned int> limits(elements.size());
-    LtsPtr lts = new Lts(LtsNode::Normal, &c.actions);
+    fsp::SmartPtr<fsp::Lts> lts = new Lts(LtsNode::Normal, &c.actions);
     Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
@@ -1076,7 +1077,7 @@ fsp::LtsPtr fsp::TreeNode::computePrefixActions(FspDriver& c,
             delete r;
         }
 
-        LtsPtr next;
+        fsp::SmartPtr<fsp::Lts> next;
         if (idx+1 >= als.size()) {
             /* This was the last ActionLabels in the chain: We create an
                incomplete node which represent an Lts which is the result
@@ -1235,7 +1236,7 @@ Result *fsp::ArgumentsNode::translate(FspDriver& c)
 
 void fsp::process_ref_translate(FspDriver& c, const location& loc,
                                const string& name, const vector<int> *args,
-                               fsp::LtsPtr *res)
+                               fsp::SmartPtr<fsp::Lts> *res)
 {
     Symbol *svp;
     ParametricProcess *pp;
@@ -1453,7 +1454,7 @@ Result *fsp::ActionPrefixNode::translate(FspDriver& c)
        with proper context. */
 
     if (!guard || guard->val) {
-        vector<Lts> processes; /* XXX can this be vector<LtsPtr> ?? */
+        vector<Lts> processes; /* XXX can this be vector<fsp::SmartPtr<fsp::Lts>> ?? */
 
         /* Compute an incomplete Lts, and the context related to
            each incomplete node (ctxcache). */
@@ -1683,7 +1684,8 @@ Result *fsp::LocalProcessDefsNode::translate(FspDriver& c)
     return result;
 }
 
-void fsp::TreeNode::post_process_definition(FspDriver& c, LtsPtr res,
+void fsp::TreeNode::post_process_definition(FspDriver& c,
+                                           fsp::SmartPtr<fsp::Lts> res,
                                            const string& name)
 {
     string extension;
