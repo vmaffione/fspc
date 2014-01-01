@@ -579,18 +579,12 @@ static bool parse_extended_name(const string& name, string& base,
         }
     }
 
-/*cout << base << "\n";
-for (unsigned int i = 0; i < args.size(); i++) {
-    cout << args[i] << " ";
-}
-cout << "\n";*/
-
     return true;
 }
 
 /* Ask the compiler for the LTS corresponding to the FSP reference
    specified by 'name'.
-   If 'create' is 'true', the compiler will perform a translation, when
+   If 'create' is 'true', the compiler can perform a translation, when
    needed. If 'create' is 'false', the compiler doesn't perform
    any translations, but only look up the 'processes' cache. */
 fsp::LtsPtr FspDriver::getLts(const string& name, bool create)
@@ -601,6 +595,7 @@ fsp::LtsPtr FspDriver::getLts(const string& name, bool create)
     fsp::LtsTreeNode *ltn;
     string base;
     vector<int> args;
+    bool have_parametric_processes = parametric_processes.size();
 
     /* The user-specified string 'name' shuould be in the form
         'FSPNAME(VAL1,VAL2,VAL3,...)'. This helper function extracts
@@ -612,33 +607,42 @@ fsp::LtsPtr FspDriver::getLts(const string& name, bool create)
         return NULL;
     }
 
-    if (!parametric_processes.lookup(base, svp)) {
-        /* String valid, but the user just made up a process name. */
-        return NULL;
-    }
-    pp = is<ParametricProcess>(svp);
+    /* If the fspcc input is an FSP file, then the 'parametric_processes'
+       table (usually) contains some elements, and it is therefore possible
+       to perform translations (it makes sense talking about translations).
+    */
+    if (have_parametric_processes) {
+        if (!parametric_processes.lookup(base, svp)) {
+            /* String valid, but the user just made up a process name. */
+            return NULL;
+        }
+        pp = is<ParametricProcess>(svp);
 
-    /* If 'name' specifies some parameters, their number must match
-       the requested number of parameters. We do this check here to avoid
-       a semantic_error. */
-    if (args.size() && args.size() != pp->defaults.size()) {
-        return NULL;
-    }
-    /* If 'name' doesn't specify parameters, use defaults. */
-    if (!args.size()) {
-        args = pp->defaults;
+        /* If 'name' specifies some parameters, their number must match
+           the requested number of parameters. We do this check here to
+           avoid a semantic_error. */
+        if (args.size() && args.size() != pp->defaults.size()) {
+            return NULL;
+        }
+        /* If 'name' doesn't specify parameters, use defaults. */
+        if (!args.size()) {
+            args = pp->defaults;
+        }
+
+        if (create) {
+            /* Everything is ok and we can translate, if necessary:
+               Take the translator and use it. */
+            ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
+            assert(ltn);
+            process_ref_translate(*this, ltn->getLocation(), base,
+                    &args, &lts);
+        }
     }
 
-    if (create) {
-        /* Everything is ok and we can translate, if necessary:
-           Take the translator and use it. */
-        ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
-        assert(ltn);
-        process_ref_translate(*this, ltn->getLocation(), base,
-                &args, &lts);
-    } else {
+    if (!have_parametric_processes || !create) {
         /* Everything is ok, but we don't want to force the translation if
-           it has not already been done. */
+           it has not already been done, either because the user doesn't
+           want or because 'parametric_processes' is empty. */
         Symbol *svp;
         string extension;
 
