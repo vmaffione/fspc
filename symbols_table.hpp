@@ -88,7 +88,7 @@ struct SetS: public Symbol {
     void output(stringstream& ss) const;
 };
 
-struct ConstS: public Symbol {
+struct IntS: public Symbol {
     int value;
 
     void print() const { cout << value; }

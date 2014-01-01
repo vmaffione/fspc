@@ -46,7 +46,7 @@ T* is(Symbol *svp)
     return ret;
 }
 
-/* Helper function used to get a ConstS* from a Symbol*. If the
+/* Helper function used to get a IntS* from a Symbol*. If the
    object pointed is not a constant, a semantic error is issued. */
 template <class T>
 T* err_if_not(FspDriver& c, Symbol *svp, const fsp::location& loc)

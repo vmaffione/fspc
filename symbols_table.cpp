@@ -162,16 +162,16 @@ void SymbolsTable::print() const
     }
 }
 
-/* ============================= ConstS =============================*/
-Symbol * ConstS::clone() const
+/* ============================= IntS =============================*/
+Symbol * IntS::clone() const
 {
-    ConstS * cv = new ConstS;
+    IntS * cv = new IntS;
     cv->value = value;
 
     return cv;
 }
 
-void ConstS::set(SetS& s) const
+void IntS::set(SetS& s) const
 {
     s.clear();
     s += int2string(value);

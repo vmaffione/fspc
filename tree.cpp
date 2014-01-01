@@ -400,14 +400,14 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
     } else if (cn) {
         RDC(StringResult, id, children[0]->translate(c));
         Symbol *svp;
-        ConstS *cvp;
+        IntS *cvp;
 
         if (!c.identifiers.lookup(id->val, svp)) {
             stringstream errstream;
             errstream << "const/parameter " << id->val << " undeclared";
             semantic_error(c, errstream, loc);
         }
-        cvp = err_if_not<ConstS>(c, svp, loc);
+        cvp = err_if_not<IntS>(c, svp, loc);
         delete id;
 
         return new IntResult(cvp->value);
@@ -469,7 +469,7 @@ Result *fsp::ConstantDefNode::translate(FspDriver& c)
 {
     RDC(StringResult, id, children[1]->translate(c));
     RDC(IntResult, expr, children[3]->translate(c));
-    ConstS *cvp = new ConstS;
+    IntS *cvp = new IntS;
 
     cvp->value = expr->val;
     if (!c.identifiers.insert(id->val, cvp)) {
@@ -1290,7 +1290,7 @@ void fsp::process_ref_translate(FspDriver& c, const location& loc,
            of overridden names. */
         for (unsigned int i=0; i<pp->names.size(); i++) {
             Symbol *svp;
-            ConstS *cvp = new ConstS();
+            IntS *cvp = new IntS();
 
             if (c.identifiers.lookup(pp->names[i], svp)) {
                 /* If there is already an identifier with the same name as
