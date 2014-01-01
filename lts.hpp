@@ -31,7 +31,6 @@
 
 #include "symbols_table.hpp"
 #include "location.hh"
-#include "smart_pointers.hpp"
 
 using namespace std;
 
@@ -160,11 +159,7 @@ class Lts: public Symbol {
   public:
     string name;
 
-    /* Reference counter used to implement the fsp::SmartPtr<fsp::Lts> smart pointer class. */
-    unsigned refcount;
-    DBR(unsigned delegated);
-
-    Lts() { atp = NULL; err = end = ~0U; refcount = 0; DBR(delegated = 0); }
+    Lts() { atp = NULL; err = end = ~0U; }
     Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }

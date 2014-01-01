@@ -27,6 +27,8 @@
 #include <map>
 #include <set>
 
+#include "smart_pointers.hpp"
+
 using namespace std;
 
 
@@ -47,9 +49,15 @@ struct ActionsTable {
 
 
 struct Symbol {
+    /* Reference counter used to implement the fsp::SmartPtr<fsp::Lts> smart pointer class. */
+    unsigned refcount;
+    DBR(unsigned delegated);
+
+    Symbol() { refcount = 0; DBR(delegated = 0); }
+
     virtual void print() const { };
     virtual const char *className() const = 0;
-    virtual Symbol *clone() const = 0;
+    virtual Symbol *clone() const { return NULL; }
     virtual int setVariable(const string& s) { return -1; }
     virtual ~Symbol() { }
 };

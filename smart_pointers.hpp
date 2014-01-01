@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <cassert>
 
 /* Debug the refcounts.
     0 --> no check is performed
