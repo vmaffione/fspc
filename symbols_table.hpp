@@ -97,11 +97,11 @@ struct SetS: public Symbol {
 };
 
 struct IntS: public Symbol {
-    int value;
+    int val;
 
-    IntS() : value(0) { }
-    IntS(int v) : value(v) { }
-    void print() const { cout << value; }
+    IntS() : val(0) { }
+    IntS(int v) : val(v) { }
+    void print() const { cout << val; }
     const char *className() const { return "Const"; }
     void set(SetS&) const;
     Symbol * clone() const;

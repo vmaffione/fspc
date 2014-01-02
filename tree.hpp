@@ -124,7 +124,7 @@ class BaseExpressionNode : public IntTreeNode {
 
 class IntegerNode : public IntTreeNode {
     public:
-        int value;
+        int val;
 
         static string className() { return "Integer"; }
         string getClassName() const { return className(); }

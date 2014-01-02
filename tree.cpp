@@ -140,7 +140,7 @@ void fsp::TreeNode::print(ofstream& os)
             } else if (un && label == "UpperCaseId") {
                 label = un->content;
             } else if (in) {
-                label = int2string(in->value);
+                label = int2string(in->val);
             }
         }
         if (current || print_nulls)
@@ -291,9 +291,9 @@ Symbol *fsp::ExpressionNode::translate(FspDriver& c)
 
         if (on->sign == "+") {
         } else if (on->sign == "-") {
-            expr->value = -expr->value;
+            expr->val = -expr->val;
         } else if (on->sign == "!") {
-            expr->value = !expr->value;
+            expr->val = !expr->val;
         } else {
             assert(0);
         }
@@ -315,41 +315,41 @@ Symbol *fsp::ExpressionNode::translate(FspDriver& c)
             IntS *expr = new IntS;
 
             if (o->sign == "||") {
-                expr->value = l->value || r->value;
+                expr->val = l->val || r->val;
             } else if (o->sign == "&&") {
-                expr->value = l->value && r->value;
+                expr->val = l->val && r->val;
             } else if (o->sign == "|") {
-                expr->value = l->value | r->value;
+                expr->val = l->val | r->val;
             } else if (o->sign == "^") {
-                expr->value = l->value ^ r->value;
+                expr->val = l->val ^ r->val;
             } else if (o->sign == "&") {
-                expr->value = l->value & r->value;
+                expr->val = l->val & r->val;
             } else if (o->sign == "==") {
-                expr->value = (l->value == r->value);
+                expr->val = (l->val == r->val);
             } else if (o->sign == "!=") {
-                expr->value = (l->value != r->value);
+                expr->val = (l->val != r->val);
             } else if (o->sign == "<") {
-                expr->value = (l->value < r->value);
+                expr->val = (l->val < r->val);
             } else if (o->sign == ">") {
-                expr->value = (l->value > r->value);
+                expr->val = (l->val > r->val);
             } else if (o->sign == "<=") {
-                expr->value = (l->value <= r->value);
+                expr->val = (l->val <= r->val);
             } else if (o->sign == ">=") {
-                expr->value = (l->value >= r->value);
+                expr->val = (l->val >= r->val);
             } else if (o->sign == "<<") {
-                expr->value = l->value << r->value;
+                expr->val = l->val << r->val;
             } else if (o->sign == ">>") {
-                expr->value = l->value >> r->value;
+                expr->val = l->val >> r->val;
             } else if (o->sign == "+") {
-                expr->value = l->value + r->value;
+                expr->val = l->val + r->val;
             } else if (o->sign == "-") {
-                expr->value = l->value - r->value;
+                expr->val = l->val - r->val;
             } else if (o->sign == "*") {
-                expr->value = l->value * r->value;
+                expr->val = l->val * r->val;
             } else if (o->sign == "/") {
-                expr->value = l->value / r->value;
+                expr->val = l->val / r->val;
             } else if (o->sign == "%") {
-                expr->value = l->value % r->value;
+                expr->val = l->val % r->val;
             } else {
                 assert(0);
             }
@@ -375,7 +375,7 @@ Symbol *fsp::BaseExpressionNode::translate(FspDriver& c)
         IntS *result = new IntS;
 
         /* We don't need to translate here, we have a literal integer. */
-        result->value = in->value;
+        result->val = in->val;
 
         return result;
     } else if (vn) {
@@ -410,7 +410,7 @@ Symbol *fsp::BaseExpressionNode::translate(FspDriver& c)
         cvp = err_if_not<IntS>(c, svp, loc);
         delete id;
 
-        return new IntS(cvp->value);
+        return new IntS(cvp->val);
     } else {
         assert(0);
     }
@@ -423,7 +423,7 @@ Symbol *fsp::RangeExprNode::translate(FspDriver& c)
     RDC(IntS, l, children[0]->translate(c));
     RDC(IntS, r, children[2]->translate(c));
     /* Build a range from two expressions. */
-    RangeS *range = new RangeS(l->value, r->value);
+    RangeS *range = new RangeS(l->val, r->val);
 
     delete l;
     delete r;
@@ -471,7 +471,7 @@ Symbol *fsp::ConstantDefNode::translate(FspDriver& c)
     RDC(IntS, expr, children[3]->translate(c));
     IntS *cvp = new IntS;
 
-    cvp->value = expr->value;
+    cvp->val = expr->val;
     if (!c.identifiers.insert(id->val, cvp)) {
         stringstream errstream;
         errstream << "const " << id->val << " declared twice";
@@ -490,7 +490,7 @@ Symbol *fsp::RangeDefNode::translate(FspDriver& c)
     RDC(StringS, id, children[1]->translate(c));
     RDC(IntS, l, children[3]->translate(c));
     RDC(IntS, r, children[5]->translate(c));
-    RangeS *rvp = new RangeS(l->value, r->value);
+    RangeS *rvp = new RangeS(l->val, r->val);
 
     if (!c.identifiers.insert(id->val, rvp)) {
         stringstream errstream;
@@ -880,7 +880,7 @@ Symbol *fsp::ActionRangeNode::translate(FspDriver& c)
         if (en) {
             RDC(IntS, expr, children[0]->translate(c));
 
-            *result += int2string(expr->value);
+            *result += int2string(expr->val);
             delete expr;
         } else if (rn) {
             RDC(RangeS, range, children[0]->translate(c));
@@ -1134,7 +1134,7 @@ Symbol *fsp::IndicesNode::translate(FspDriver& c)
     for (unsigned int i=0; i<children.size(); i+=3) {
         RDC(IntS, expr, children[i+1]->translate(c));
 
-        result->val += "." + int2string(expr->value);
+        result->val += "." + int2string(expr->val);
         delete expr;
     }
 
@@ -1212,7 +1212,7 @@ Symbol *fsp::ArgumentListNode::translate(FspDriver& c)
     for (unsigned int i = 0; i < children.size(); i += 2) {
         RDC(IntS, expr, children[i]->translate(c));
 
-        result->val.push_back(expr->value);
+        result->val.push_back(expr->val);
         delete expr;
     }
 
@@ -1294,7 +1294,7 @@ void fsp::process_ref_translate(FspDriver& c, const location& loc,
                 c.identifiers.remove(pp->names[i]);
             }
 
-            cvp->value = arguments[i];
+            cvp->val = arguments[i];
             if (!c.identifiers.insert(pp->names[i], cvp)) {
                 assert(0);
                 delete cvp;
@@ -1397,7 +1397,7 @@ Symbol *fsp::LocalProcessNode::translate(FspDriver& c)
         RDC(IntS, expr, children[1]->translate(c));
         TDCS(ProcessElseNode, pen, children[4]);
 
-        if (expr->value) {
+        if (expr->val) {
             RDC(LtsPtrS, localp, children[3]->translate(c));
 
             result = localp;
@@ -1446,7 +1446,7 @@ Symbol *fsp::ActionPrefixNode::translate(FspDriver& c)
     /* Don't translate 'lp', since it will be translated into the loop,
        with proper context. */
 
-    if (!guard || guard->value) {
+    if (!guard || guard->val) {
         vector<Lts> processes; /* XXX can this be vector<fsp::SmartPtr<fsp::Lts>> ?? */
 
         /* Compute an incomplete Lts, and the context related to
@@ -1915,7 +1915,7 @@ Symbol *fsp::CompositeBodyNode::translate(FspDriver& c)
         TDCS(CompositeElseNode, cen, children[4]);
         LtsPtrS *lts = NULL;
 
-        if (expr->value) {
+        if (expr->val) {
             RDC(LtsPtrS, cb, children[3]->translate(c));
 
             lts = cb;

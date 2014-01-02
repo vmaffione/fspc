@@ -186,7 +186,7 @@ void FspDriver::findParametricProcesses()
                                 p->getChild(0)->translate(*this));
                 RDC(IntS, expr, p->getChild(2)->translate(*this));
 
-                if (!pp->insert(paid->val, expr->value)) {
+                if (!pp->insert(paid->val, expr->val)) {
                     stringstream errstream;
                     errstream << "parameter " << paid->val <<
                                     " declared twice";

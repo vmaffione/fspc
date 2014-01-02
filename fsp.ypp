@@ -1099,7 +1099,7 @@ base_expression:
 integer: INTEGER {
         IntegerNode *in = new IntegerNode();
 
-        in->value = $1;
+        in->val = $1;
         $$ = in;
     };
 

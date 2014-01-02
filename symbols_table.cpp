@@ -165,7 +165,7 @@ void SymbolsTable::print() const
 /* ============================= IntS =============================*/
 Symbol * IntS::clone() const
 {
-    IntS *cv = new IntS(value);
+    IntS *cv = new IntS(val);
 
     return cv;
 }
@@ -173,7 +173,7 @@ Symbol * IntS::clone() const
 void IntS::set(SetS& s) const
 {
     s.clear();
-    s += int2string(value);
+    s += int2string(val);
 }
 
 /* ============================= RangeS =============================*/
