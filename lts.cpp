@@ -98,7 +98,7 @@ static inline void do_square_int(const string& in, string& out)
    above). */
 string ati(unsigned int index, bool square_ints)
 {
-    ActionsTable& at = ActionsTable::getref();
+    fsp::ActionsTable& at = fsp::ActionsTable::getref();
 
     if (square_ints) {
         string squared;  /* Prepare an empty string. */
@@ -821,7 +821,7 @@ bool fsp::Lts::isDeterministic() const
     return true;
 }
 
-Symbol * fsp::Lts::clone() const
+fsp::Symbol *fsp::Lts::clone() const
 {
     fsp::Lts * lv = new fsp::Lts(*this);
 

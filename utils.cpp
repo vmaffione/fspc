@@ -94,7 +94,7 @@ static void print_error_location(const fsp::location& loc, int col)
 	last_tokens.print(context, col);
 }
 
-void print_error_location_pretty(const fsp::location& loc)
+void fsp::print_error_location_pretty(const fsp::location& loc)
 {
     print_error_location(loc, loc.begin.column);
 }
@@ -108,13 +108,13 @@ static void common_error(FspDriver& driver, const stringstream& ss,
     exit(-1);
 }
 
-void semantic_error(FspDriver& driver, const stringstream& ss,
+void fsp::semantic_error(FspDriver& driver, const stringstream& ss,
                     const fsp::location& loc)
 {
     common_error(driver, ss, loc, "Semantic");
 }
 
-void general_error(FspDriver& driver, const stringstream& ss,
+void fsp::general_error(FspDriver& driver, const stringstream& ss,
                    const fsp::location& loc)
 {
     common_error(driver, ss, loc, "General");

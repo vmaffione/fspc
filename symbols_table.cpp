@@ -39,9 +39,9 @@
 
 
 /* ========================= ActionsTable ================================ */
-ActionsTable *ActionsTable::instance = NULL;
+fsp::ActionsTable *fsp::ActionsTable::instance = NULL;
 
-ActionsTable *ActionsTable::get()
+fsp::ActionsTable *fsp::ActionsTable::get()
 {
     if (instance == NULL) {
         instance = new ActionsTable("Global actions table");
@@ -50,14 +50,14 @@ ActionsTable *ActionsTable::get()
     return instance;
 }
 
-ActionsTable& ActionsTable::getref()
+fsp::ActionsTable& fsp::ActionsTable::getref()
 {
     ActionsTable *a = ActionsTable::get();
 
     return *a;
 }
 
-int ActionsTable::insert(const string& s)
+int fsp::ActionsTable::insert(const string& s)
 {
     pair< map<string, int>::iterator, bool > ins_ret;
 
@@ -69,7 +69,7 @@ int ActionsTable::insert(const string& s)
     return ins_ret.first->second;
 }
 
-int ActionsTable::lookup(const string& s) const
+int fsp::ActionsTable::lookup(const string& s) const
 {
     map<string, int>::const_iterator it = table.find(s);
 
@@ -79,14 +79,14 @@ int ActionsTable::lookup(const string& s) const
     return it->second;
 }
 
-string ActionsTable::lookup(unsigned int idx) const
+string fsp::ActionsTable::lookup(unsigned int idx) const
 {
     assert(idx < reverse.size());
 
     return reverse[idx];
 }
 
-void ActionsTable::print() const
+void fsp::ActionsTable::print() const
 {
     map<string, int>::const_iterator it;
 
@@ -98,7 +98,7 @@ void ActionsTable::print() const
 
 
 /*===================== SymbolsTable implementation ====================== */
-bool SymbolsTable::insert(const string& name, Symbol * ptr)
+bool fsp::SymbolsTable::insert(const string& name, Symbol * ptr)
 {
     pair< map<string, Symbol*>::iterator, bool > ret;
 
@@ -107,7 +107,7 @@ bool SymbolsTable::insert(const string& name, Symbol * ptr)
     return ret.second;
 }
 
-bool SymbolsTable::lookup(const string& name, Symbol*& value) const
+bool fsp::SymbolsTable::lookup(const string& name, Symbol*& value) const
 {
     map<string, Symbol*>::const_iterator it = table.find(name);
 
@@ -118,7 +118,7 @@ bool SymbolsTable::lookup(const string& name, Symbol*& value) const
     return true;
 }
 
-bool SymbolsTable::remove(const string& name)
+bool fsp::SymbolsTable::remove(const string& name)
 {
     map<string, Symbol*>::iterator it = table.find(name);
 
@@ -131,7 +131,7 @@ bool SymbolsTable::remove(const string& name)
     return true;
 }
 
-void SymbolsTable::clear()
+void fsp::SymbolsTable::clear()
 {
     map<string, Symbol*>::iterator it;
 
@@ -141,12 +141,12 @@ void SymbolsTable::clear()
     table.clear();
 }
 
-SymbolsTable::~SymbolsTable()
+fsp::SymbolsTable::~SymbolsTable()
 {
     clear();
 }
 
-void SymbolsTable::copyfrom(const SymbolsTable& st)
+void fsp::SymbolsTable::copyfrom(const fsp::SymbolsTable& st)
 {
     map<string, Symbol*>::const_iterator it;
 
@@ -162,12 +162,12 @@ void SymbolsTable::copyfrom(const SymbolsTable& st)
     }
 }
 
-SymbolsTable::SymbolsTable(const SymbolsTable& st)
+fsp::SymbolsTable::SymbolsTable(const fsp::SymbolsTable& st)
 {
     copyfrom(st);
 }
 
-SymbolsTable& SymbolsTable::operator=(const SymbolsTable& st)
+fsp::SymbolsTable& fsp::SymbolsTable::operator=(const fsp::SymbolsTable& st)
 {
     clear();
     copyfrom(st);
@@ -175,7 +175,7 @@ SymbolsTable& SymbolsTable::operator=(const SymbolsTable& st)
     return *this;
 }
 
-void SymbolsTable::print() const
+void fsp::SymbolsTable::print() const
 {
     map<string, Symbol*>::const_iterator it;
 
@@ -188,21 +188,21 @@ void SymbolsTable::print() const
 }
 
 /* ============================= IntS =============================*/
-Symbol * IntS::clone() const
+fsp::Symbol *fsp::IntS::clone() const
 {
     IntS *cv = new IntS(val);
 
     return cv;
 }
 
-void IntS::set(SetS& s) const
+void fsp::IntS::set(SetS& s) const
 {
     s.clear();
     s += int2string(val);
 }
 
 /* ============================= RangeS =============================*/
-Symbol * RangeS::clone() const
+fsp::Symbol *fsp::RangeS::clone() const
 {
     RangeS * rv = new RangeS;
     rv->low = low;
@@ -211,7 +211,7 @@ Symbol * RangeS::clone() const
     return rv;
 }
 
-void RangeS::set(SetS& s) const
+void fsp::RangeS::set(fsp::SetS& s) const
 {
     s.clear();
 
@@ -221,7 +221,7 @@ void RangeS::set(SetS& s) const
 }
 
 /* ============================= SetS ================================ */
-SetS& SetS::combine(const SetS& ss, bool dot)
+fsp::SetS& fsp::SetS::combine(const fsp::SetS& ss, bool dot)
 {
     int n = actions.size();
     int nss = ss.size();
@@ -240,7 +240,7 @@ SetS& SetS::combine(const SetS& ss, bool dot)
     return *this;
 }
 
-SetS& SetS::combine(const string& s, bool dot)
+fsp::SetS& fsp::SetS::combine(const string& s, bool dot)
 {
     string pre = dot ? "." : "[";
     string post = dot ? "" : "]";
@@ -251,17 +251,17 @@ SetS& SetS::combine(const string& s, bool dot)
     return *this;
 }
 
-SetS& SetS::dotcat(const string& s)
+fsp::SetS& fsp::SetS::dotcat(const string& s)
 {
     return combine(s, true);
 }
 
-SetS& SetS::dotcat(const SetS& ss)
+fsp::SetS& fsp::SetS::dotcat(const SetS& ss)
 {
     return combine(ss, true);
 }
 
-SetS& SetS::indexize(int index)
+fsp::SetS& fsp::SetS::indexize(int index)
 {
     stringstream sstr;
     sstr << index;
@@ -273,17 +273,17 @@ SetS& SetS::indexize(int index)
     return *this;
 }
 
-SetS& SetS::indexize(const SetS& ss)
+fsp::SetS& fsp::SetS::indexize(const SetS& ss)
 {
     return combine(ss, true);
 }
 
-SetS& SetS::indexize(const string& s)
+fsp::SetS& fsp::SetS::indexize(const string& s)
 {
     return dotcat(s);
 }
 
-SetS& SetS::indexize(int low, int high)
+fsp::SetS& fsp::SetS::indexize(int low, int high)
 {
     int n = actions.size();
     int nr = high - low + 1;
@@ -301,7 +301,7 @@ SetS& SetS::indexize(int low, int high)
     
 }
 
-SetS& SetS::operator +=(const SetS& ss)
+fsp::SetS& fsp::SetS::operator +=(const SetS& ss)
 {
     for (unsigned int i=0; i<ss.actions.size(); i++)
 	actions.push_back(ss[i]);
@@ -309,20 +309,20 @@ SetS& SetS::operator +=(const SetS& ss)
     return *this;
 }
 
-SetS& SetS::operator +=(const string& s)
+fsp::SetS& fsp::SetS::operator +=(const string& s)
 {
     actions.push_back(s);
 
     return *this;
 }
 
-void SetS::clear()
+void fsp::SetS::clear()
 {
     actions.clear();
     variable = string();
 }
 
-void SetS::toActionSetValue(ActionSetS& asv)
+void fsp::SetS::toActionSetValue(ActionSetS& asv)
 {
     ActionsTable& at = ActionsTable::getref();
 
@@ -332,14 +332,14 @@ void SetS::toActionSetValue(ActionSetS& asv)
     }
 }
 
-Symbol * SetS::clone() const
+fsp::Symbol *fsp::SetS::clone() const
 {
     SetS * sv = new SetS(*this);
 
     return sv;
 }
 
-void SetS::output(const string& name, const char * filename) const
+void fsp::SetS::output(const string& name, const char * filename) const
 {
     fstream fout(filename, fstream::out | fstream::app);
 
@@ -350,7 +350,7 @@ void SetS::output(const string& name, const char * filename) const
     fout << "\n";
 }
 
-void SetS::output(stringstream& ss) const
+void fsp::SetS::output(stringstream& ss) const
 {
     unsigned int i = 0;
 
@@ -364,7 +364,7 @@ void SetS::output(stringstream& ss) const
     ss << "}";
 }
 
-void SetS::print() const
+void fsp::SetS::print() const
 {
     cout << " {";
     for (unsigned int i=0; i<actions.size(); i++) {
@@ -375,7 +375,7 @@ void SetS::print() const
 
 
 /* =========================== RelabelingS =========================*/
-void RelabelingS::print() const
+void fsp::RelabelingS::print() const
 {
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	new_labels[i].print();
@@ -385,7 +385,7 @@ void RelabelingS::print() const
     }
 }
 
-Symbol * RelabelingS::clone() const
+fsp::Symbol *fsp::RelabelingS::clone() const
 {
     RelabelingS * rlv = new RelabelingS;
 
@@ -397,14 +397,14 @@ Symbol * RelabelingS::clone() const
     return rlv;
 }
 
-void RelabelingS::add(const SetS& new_setvp,
-                             const SetS& old_setvp)
+void fsp::RelabelingS::add(const fsp::SetS& new_setvp,
+                             const fsp::SetS& old_setvp)
 {
     old_labels.push_back(old_setvp);
     new_labels.push_back(new_setvp);
 }
 
-void RelabelingS::merge(RelabelingS& rlv)
+void fsp::RelabelingS::merge(fsp::RelabelingS& rlv)
 {
     for (unsigned int i=0; i<rlv.old_labels.size(); i++) {
         add(rlv.new_labels[i], rlv.old_labels[i]);
@@ -413,7 +413,7 @@ void RelabelingS::merge(RelabelingS& rlv)
 
 
 /* ============================ HidingS ===========================*/
-void HidingS::print() const
+void fsp::HidingS::print() const
 {
     cout << "Hiding: ";
     if (interface)
@@ -423,7 +423,7 @@ void HidingS::print() const
     setv.print();
 }
 
-Symbol * HidingS::clone() const
+fsp::Symbol *fsp::HidingS::clone() const
 {
     HidingS * hv = new HidingS;
 
@@ -435,7 +435,7 @@ Symbol * HidingS::clone() const
 
 
 /* =========================== PriorityS ========================= */
-void PriorityS::print() const
+void fsp::PriorityS::print() const
 {
     cout << "PriorityS: ";
     if (low)
@@ -445,7 +445,7 @@ void PriorityS::print() const
     setv.print();
 }
 
-Symbol *PriorityS::clone() const
+fsp::Symbol *fsp::PriorityS::clone() const
 {
     PriorityS *pv = new PriorityS;
 
@@ -456,22 +456,22 @@ Symbol *PriorityS::clone() const
 }
 
 /* =========================== ActionSetS ========================= */
-bool ActionSetS::add(unsigned int a)
+bool fsp::ActionSetS::add(unsigned int a)
 {
     return actions.insert(a).second;
 }
 
-bool ActionSetS::lookup(unsigned int a) const
+bool fsp::ActionSetS::lookup(unsigned int a) const
 {
     return actions.count(a) == 1;
 }
 
-void ActionSetS::clear()
+void fsp::ActionSetS::clear()
 {
     actions.clear();
 }
 
-void ActionSetS::toSetValue(SetS& setv)
+void fsp::ActionSetS::toSetValue(fsp::SetS& setv)
 {
     const ActionsTable& at = ActionsTable::getref();
 
@@ -483,7 +483,7 @@ void ActionSetS::toSetValue(SetS& setv)
     }
 }
 
-void ActionSetS::print() const
+void fsp::ActionSetS::print() const
 {
     cout << "ActionSet: ";
     cout << "{";
@@ -499,7 +499,7 @@ void ActionSetS::print() const
     cout << "}";
 }
 
-Symbol *ActionSetS::clone() const
+fsp::Symbol *fsp::ActionSetS::clone() const
 {
     ActionSetS *av = new ActionSetS;
 
@@ -510,7 +510,7 @@ Symbol *ActionSetS::clone() const
 
 
 /* ======================== ProgressS ========================= */
-void ProgressS::print() const
+void fsp::ProgressS::print() const
 {
     cout << "Progress: ";
     if (conditional) {
@@ -521,7 +521,7 @@ void ProgressS::print() const
     set.print();
 }
 
-Symbol *ProgressS::clone() const
+fsp::Symbol *fsp::ProgressS::clone() const
 {
     ProgressS *pv = new ProgressS;
 
@@ -534,7 +534,7 @@ Symbol *ProgressS::clone() const
 
 
 /* ======================== ParametricProcess ========================= */
-bool ParametricProcess::insert(const string& name, int default_value)
+bool fsp::ParametricProcess::insert(const string& name, int default_value)
 {
     for (unsigned int i=0; i<names.size(); i++) {
         if (names[i] == name) {
@@ -548,19 +548,19 @@ bool ParametricProcess::insert(const string& name, int default_value)
     return true;
 }
 
-void ParametricProcess::clear()
+void fsp::ParametricProcess::clear()
 {
     names.clear();
     defaults.clear();
 }
 
-void ParametricProcess::set_translator(ParametricTranslator *trans)
+void fsp::ParametricProcess::set_translator(ParametricTranslator *trans)
 {
     assert(trans);
     translator = trans;
 }
 
-void ParametricProcess::print() const
+void fsp::ParametricProcess::print() const
 {
     cout << "ParametricProcess: " << this;
     for (unsigned int i=0; i<names.size(); i++) {
@@ -568,7 +568,7 @@ void ParametricProcess::print() const
     }
 }
 
-Symbol * ParametricProcess::clone() const
+fsp::Symbol *fsp::ParametricProcess::clone() const
 {
     ParametricProcess * pp = new ParametricProcess;
 

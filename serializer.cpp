@@ -141,7 +141,7 @@ void Deserializer::stl_string(string &s, bool raw)
     s = string(buf);
 }
 
-void Serializer::actions_table(const struct ActionsTable& at, bool raw)
+void Serializer::actions_table(const class fsp::ActionsTable& at, bool raw)
 {
     map<string, int>::const_iterator it;
 
@@ -159,7 +159,7 @@ void Serializer::actions_table(const struct ActionsTable& at, bool raw)
     this->integer(at.serial, 1);
 }
 
-void Deserializer::actions_table(ActionsTable &at, bool raw)
+void Deserializer::actions_table(fsp::ActionsTable &at, bool raw)
 {
     char type;
     uint32_t size, x;
@@ -282,7 +282,7 @@ void Deserializer::lts(fsp::Lts &lts, bool raw)
     }
 }
 
-void Serializer::set_value(const struct SetS& setv, bool raw)
+void Serializer::set_value(const struct fsp::SetS& setv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerSetValue),
@@ -295,7 +295,7 @@ void Serializer::set_value(const struct SetS& setv, bool raw)
     }
 }
 
-void Deserializer::set_value(struct SetS& setv, bool raw)
+void Deserializer::set_value(struct fsp::SetS& setv, bool raw)
 {
     char type;
     uint32_t x;
@@ -315,7 +315,7 @@ void Deserializer::set_value(struct SetS& setv, bool raw)
     }
 }
 
-void Serializer::action_set_value(const struct ActionSetS& asv, bool raw)
+void Serializer::action_set_value(const struct fsp::ActionSetS& asv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerActionSetValue),
@@ -329,7 +329,7 @@ void Serializer::action_set_value(const struct ActionSetS& asv, bool raw)
     }
 }
 
-void Deserializer::action_set_value(struct ActionSetS& asv, bool raw)
+void Deserializer::action_set_value(struct fsp::ActionSetS& asv, bool raw)
 {
     char type;
     uint32_t x, y;
@@ -350,7 +350,7 @@ void Deserializer::action_set_value(struct ActionSetS& asv, bool raw)
     }
 }
 
-void Serializer::progress_value(const struct ProgressS& pv, bool raw)
+void Serializer::progress_value(const struct fsp::ProgressS& pv, bool raw)
 {
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerProgressValue),
@@ -364,7 +364,7 @@ void Serializer::progress_value(const struct ProgressS& pv, bool raw)
     }
 }
 
-void Deserializer::progress_value(struct ProgressS& pv, bool raw)
+void Deserializer::progress_value(struct fsp::ProgressS& pv, bool raw)
 {
     char type;
     uint8_t x;

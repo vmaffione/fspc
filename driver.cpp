@@ -61,7 +61,7 @@ void FspDriver::clear()
     }
 }
 
-static bool isCompositeDefinition(ParametricProcess *pp)
+static bool isCompositeDefinition(fsp::ParametricProcess *pp)
 {
     fsp::ProcessDefNode *pdn;
     fsp::CompositeDefNode *cdn;
@@ -77,8 +77,8 @@ static bool isCompositeDefinition(ParametricProcess *pp)
 bool FspDriver::shouldTranslateNow(const string& name)
 {
     vector<string> dependencies;
-    Symbol *svp;
-    ParametricProcess *pp;
+    fsp::Symbol *svp;
+    fsp::ParametricProcess *pp;
 
     if (!cop.shell) {
         /* Not in interactive mode? Translate everything. */
@@ -89,7 +89,7 @@ bool FspDriver::shouldTranslateNow(const string& name)
     if (!parametric_processes.lookup(name, svp)) {
         assert(0);
     }
-    pp = is<ParametricProcess>(svp);
+    pp = fsp::is<fsp::ParametricProcess>(svp);
 
     if (isCompositeDefinition(pp)) {
         return false;
@@ -102,7 +102,7 @@ bool FspDriver::shouldTranslateNow(const string& name)
         if (!parametric_processes.lookup(dependencies[i], svp)) {
             assert(0);
         }
-        pp = is<ParametricProcess>(svp);
+        pp = fsp::is<fsp::ParametricProcess>(svp);
         if (isCompositeDefinition(pp)) {
             return false;
         }
@@ -156,7 +156,7 @@ void FspDriver::findParametricProcesses()
         TDCS(fsp::CompositeDefNode, cdn, definitions[i]);
         fsp::ProcessIdNode *pid;
         fsp::ParamNode *pan;
-        ParametricProcess *pp = new ParametricProcess;
+        fsp::ParametricProcess *pp = new fsp::ParametricProcess;
 
         /* Find the ProcessIdNode and ParamNode depending on the process
            definition type. */
@@ -173,7 +173,7 @@ void FspDriver::findParametricProcesses()
         }
 
         /* Compute the name. */
-        RDC(StringS, id, pid->translate(*this));
+        RDC(fsp::StringS, id, pid->translate(*this));
 
         if (pan) {
             /* Find the parameters. */
@@ -182,9 +182,9 @@ void FspDriver::findParametricProcesses()
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
                 TDC(fsp::ParameterNode, p, pln->getChild(i));
                 /* parameter_id = EXPR */
-                RDC(StringS, paid,
+                RDC(fsp::StringS, paid,
                                 p->getChild(0)->translate(*this));
-                RDC(IntS, expr, p->getChild(2)->translate(*this));
+                RDC(fsp::IntS, expr, p->getChild(2)->translate(*this));
 
                 if (!pp->insert(paid->val, expr->val)) {
                     stringstream errstream;
@@ -214,7 +214,7 @@ void FspDriver::findParametricProcesses()
 /* Computes this->deps. */
 void FspDriver::computeDependencyGraph()
 {
-    map<string, Symbol*>::iterator it;
+    map<string, fsp::Symbol*>::iterator it;
     vector<string> classes;
 
     classes.push_back(fsp::ProcessRefSeqNode::className());
@@ -223,7 +223,7 @@ void FspDriver::computeDependencyGraph()
     /* Scan all the parametric processes table. */
     for (it = parametric_processes.table.begin();
                     it != parametric_processes.table.end(); it++) {
-        ParametricProcess *pp = is<ParametricProcess>(it->second);
+        fsp::ParametricProcess *pp = fsp::is<fsp::ParametricProcess>(it->second);
         vector<fsp::TreeNode *> references;
         fsp::TreeNode *ltn = dynamic_cast<fsp::LtsTreeNode* >(pp->translator);
 
@@ -238,7 +238,7 @@ void FspDriver::computeDependencyGraph()
             assert(seq || ref);
             assert(references[j]->getChild(0));
 
-            RDC(StringS, id,
+            RDC(fsp::StringS, id,
                     references[j]->getChild(0)->translate(*this));
 
             /* Insert the dependency into the graph. */
@@ -254,10 +254,10 @@ void FspDriver::computeDependencyGraph()
 void FspDriver::doProcessesTranslation()
 {
     /* Do the translation. */
-    for (map<string, Symbol*>::iterator it =
+    for (map<string, fsp::Symbol*>::iterator it =
             parametric_processes.table.begin();
                 it != parametric_processes.table.end(); it++) {
-        ParametricProcess *pp = is<ParametricProcess>(it->second);
+        fsp::ParametricProcess *pp = fsp::is<fsp::ParametricProcess>(it->second);
         fsp::LtsTreeNode *ltn;
         fsp::SmartPtr<fsp::Lts> lts;
 
@@ -287,7 +287,7 @@ void FspDriver::translateProcessesDefinitions()
 
 int FspDriver::parse(const CompilerOptions& co)
 {
-    ActionsTable& actions = ActionsTable::getref();
+    fsp::ActionsTable& actions = fsp::ActionsTable::getref();
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
     stringstream ss;
@@ -364,7 +364,7 @@ int FspDriver::parse(const CompilerOptions& co)
 
 	desp->integer(nprogr, 0);
 	for (uint32_t i=0; i<nprogr; i++) {
-	    ProgressS *pv = new ProgressS;
+	    fsp::ProgressS *pv = new fsp::ProgressS;
 	    string name;
 
 	    desp->stl_string(name, 0);
@@ -377,17 +377,17 @@ int FspDriver::parse(const CompilerOptions& co)
 
     /* Scan the 'processes' symbols table. For each process, output
        the associated LTS and do the deadlock analysis. */
-    map<string, Symbol *>::iterator it;
-    map<string, Symbol *>::iterator jt;
+    map<string, fsp::Symbol *>::iterator it;
+    map<string, fsp::Symbol *>::iterator jt;
     fsp::SmartPtr<fsp::Lts> lts;
-    ProgressS *pv;
+    fsp::ProgressS *pv;
 
     if (serp) {
 	serp->actions_table(actions, 0);
 	serp->integer(processes.table.size(), 0);
     }
     for (it=processes.table.begin(); it!=processes.table.end(); it++) {
-	lts = is<fsp::Lts>(it->second);
+	lts = fsp::is<fsp::Lts>(it->second);
 
 	/* We output an LTS file only if the input is not an LTS file. */
 	if (serp) {
@@ -409,11 +409,11 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Do each progress check against all the global processes. */
     for (it=progresses.table.begin(); it!=progresses.table.end();
 	    it++) {
-	pv = is<ProgressS>(it->second);
+	pv = fsp::is<fsp::ProgressS>(it->second);
 	if (co.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
-		lts = is<fsp::Lts>(jt->second);
+		lts = fsp::is<fsp::Lts>(jt->second);
 		lts->progress(it->first, *pv, ss);
 	    }
 	}
@@ -592,8 +592,8 @@ static bool parse_extended_name(const string& name, string& base,
    any translations, but only look up the 'processes' cache. */
 fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
 {
-    Symbol *svp;
-    ParametricProcess *pp;
+    fsp::Symbol *svp;
+    fsp::ParametricProcess *pp;
     fsp::SmartPtr<fsp::Lts> lts;
     fsp::LtsTreeNode *ltn;
     string base;
@@ -619,7 +619,7 @@ fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
             /* String valid, but the user just made up a process name. */
             return NULL;
         }
-        pp = is<ParametricProcess>(svp);
+        pp = fsp::is<fsp::ParametricProcess>(svp);
 
         /* If 'name' specifies some parameters, their number must match
            the requested number of parameters. We do this check here to
@@ -646,14 +646,14 @@ fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
         /* Everything is ok, but we don't want to force the translation if
            it has not already been done, either because the user doesn't
            want or because 'parametric_processes' is empty. */
-        Symbol *svp;
+        fsp::Symbol *svp;
         string extension;
 
         lts_name_extension(args, extension);
         if (!processes.lookup(base + extension, svp)) {
             return NULL;
         }
-        return is<fsp::Lts>(svp);
+        return fsp::is<fsp::Lts>(svp);
     }
 
     return lts;

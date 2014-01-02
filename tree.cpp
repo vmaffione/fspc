@@ -1277,7 +1277,7 @@ void fsp::process_ref_translate(FspDriver& c, const location& loc,
             stringstream errstream;
             errstream << "Max reference depth exceeded while translating "
                         "process " << name + extension;
-            general_error(c, errstream, loc);
+            fsp::general_error(c, errstream, loc);
         }
         /* Insert the arguments into the identifiers table, taking care
            of overridden names. */

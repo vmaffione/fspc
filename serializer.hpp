@@ -32,8 +32,8 @@ using namespace std;
 
 namespace fsp {
     class Lts;
+    class ActionsTable;
 }
-struct ActionsTable;
 
 class Serializer {
 	ofstream fout;
@@ -43,11 +43,11 @@ class Serializer {
 	void byte(uint8_t i, bool raw);
 	void integer(uint32_t i, bool raw);
 	void stl_string(const string& s, bool raw);
-	void actions_table(const struct ActionsTable& at, bool raw);
+	void actions_table(const class fsp::ActionsTable& at, bool raw);
 	void lts(const fsp::Lts& lts, bool raw);
-	void set_value(const struct SetS& setv, bool raw);
-        void action_set_value(const struct ActionSetS& as, bool raw);
-        void progress_value(const struct ProgressS& pv, bool raw);
+	void set_value(const struct fsp::SetS& setv, bool raw);
+        void action_set_value(const struct fsp::ActionSetS& as, bool raw);
+        void progress_value(const struct fsp::ProgressS& pv, bool raw);
 	~Serializer();
 
 	static const char SerInteger;
@@ -69,11 +69,11 @@ class Deserializer {
 	void byte(uint8_t &v, bool raw);
 	void integer(uint32_t &v, bool raw);
 	void stl_string(string& s, bool raw);
-	void actions_table(struct ActionsTable& at, bool raw);
+	void actions_table(class fsp::ActionsTable& at, bool raw);
 	void lts(fsp::Lts& lts, bool raw);
-	void set_value(struct SetS& setv, bool raw);
-        void action_set_value(struct ActionSetS& asv, bool raw);
-        void progress_value(struct ProgressS& pv, bool raw);
+	void set_value(struct fsp::SetS& setv, bool raw);
+        void action_set_value(struct fsp::ActionSetS& asv, bool raw);
+        void progress_value(struct fsp::ProgressS& pv, bool raw);
 	~Deserializer();
 };
 

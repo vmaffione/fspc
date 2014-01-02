@@ -29,11 +29,12 @@ using namespace std;
 #include "symbols_table.hpp"
 #include "parser.hpp"
 
+namespace fsp {
 
 void semantic_error(FspDriver& driver, const stringstream& ss,
                     const fsp::location& loc);
 void general_error(FspDriver& driver, const stringstream& ss,
-                   const fsp::location& loc);
+                   const location& loc);
 void print_error_location_pretty(const fsp::location& loc);
 
 template <class T>
@@ -61,5 +62,7 @@ T* err_if_not(FspDriver& c, Symbol *svp, const fsp::location& loc)
 
     return ret;
 }
+
+}  /* namespace fsp */
 
 #endif

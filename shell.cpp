@@ -94,7 +94,7 @@ specified FSP using GraphViz";
 /* This function must be called after common_init(). */
 void Shell::fill_completion()
 {
-    map<string, Symbol *>::iterator it;
+    map<string, fsp::Symbol *>::iterator it;
     map<string, const char *>::iterator jt;
 
     /* Process names. */
@@ -482,7 +482,7 @@ void Shell::readline(string& line)
 
 void Shell::ls(const vector<string> &args, stringstream& ss)
 {
-    map<string, Symbol *>::iterator it;
+    map<string, fsp::Symbol *>::iterator it;
     fsp::Lts *lts;
 
     ss << "Available FSPs:\n";
@@ -490,7 +490,7 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
        cache table). */
     for (it = c.processes.table.begin();
                 it != c.processes.table.end(); it++) {
-	lts = is<fsp::Lts>(it->second);
+	lts = fsp::is<fsp::Lts>(it->second);
 	ss << "   " << it->first << ": " << lts->numStates()
 	    << " states, " << lts->numTransitions() << " transitions, "
 	    << lts->alphabetSize() << " actions in alphabet\n";
@@ -510,7 +510,7 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
 
 void Shell::safety(const vector<string> &args, stringstream& ss)
 {
-    map<string, Symbol *>::iterator it;
+    map<string, fsp::Symbol *>::iterator it;
 
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
@@ -528,7 +528,7 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 	/* Deadlock analysis on every process. */
 	for (it=c.processes.table.begin();
 		    it!=c.processes.table.end(); it++) {
-	    lts = is<fsp::Lts>(it->second);
+	    lts = fsp::is<fsp::Lts>(it->second);
 	    lts->deadlockAnalysis(ss);
 	}
     }
@@ -536,9 +536,9 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 
 void Shell::progress(const vector<string> &args, stringstream& ss)
 {
-    map<string, Symbol *>::iterator it;
-    map<string, Symbol *>::iterator jt;
-    ProgressS *pv;
+    map<string, fsp::Symbol *>::iterator it;
+    map<string, fsp::Symbol *>::iterator jt;
+    fsp::ProgressS *pv;
 
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
@@ -551,7 +551,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
         }
         for (it=c.progresses.table.begin();
                 it!=c.progresses.table.end(); it++) {
-            pv = is<ProgressS>(it->second);
+            pv = fsp::is<fsp::ProgressS>(it->second);
             lts->progress(it->first, *pv, ss);
         }
     } else {
@@ -560,10 +560,10 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	/* Progress analysis on every process. */
 	for (it=c.processes.table.begin(); 
 		    it!=c.processes.table.end(); it++) {
-	    lts = is<fsp::Lts>(it->second);
+	    lts = fsp::is<fsp::Lts>(it->second);
 	    for (jt=c.progresses.table.begin();
 		    jt!=c.progresses.table.end(); jt++) {
-		pv = is<ProgressS>(jt->second);
+		pv = fsp::is<fsp::ProgressS>(jt->second);
 		lts->progress(jt->first, *pv, ss);
 	    }
 	}
@@ -573,7 +573,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 void Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
-    ActionSetS *menu = NULL;
+    fsp::ActionSetS *menu = NULL;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
@@ -587,13 +587,13 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
     }
 
     if (args.size() >= 2) {
-        Symbol *svp;
+        fsp::Symbol *svp;
 
         if (!c.menus.lookup(args[1], svp)) {
             ss << "Menu " << args[1] << " not found\n";
             return;
         }
-        menu = is<ActionSetS>(svp);
+        menu = fsp::is<fsp::ActionSetS>(svp);
     }
 
     history_enable(false);
@@ -743,15 +743,15 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 
 void Shell::lsprop(const vector<string> &args, stringstream& ss)
 {
-    map<string, Symbol *>::iterator it;
-    ProgressS *pv;
+    map<string, fsp::Symbol *>::iterator it;
+    fsp::ProgressS *pv;
 
     ss << "Progresses:\n";
     for (it=c.progresses.table.begin(); it!=c.progresses.table.end(); it++) {
-        SetS set;
-        SetS cond;
+        fsp::SetS set;
+        fsp::SetS cond;
 
-        pv = is<ProgressS>(it->second);
+        pv = fsp::is<fsp::ProgressS>(it->second);
         pv->set.toSetValue(set);
         if (pv->conditional) {
             pv->condition.toSetValue(cond);
@@ -769,14 +769,14 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
 
 void Shell::lsmenu(const vector<string> &args, stringstream& ss)
 {
-    map<string, Symbol *>::iterator it;
-    ActionSetS *as;
+    map<string, fsp::Symbol *>::iterator it;
+    fsp::ActionSetS *as;
 
     ss << "Menus:\n";
     for (it=c.menus.table.begin(); it!=c.menus.table.end(); it++) {
-        SetS setv;
+        fsp::SetS setv;
 
-        as = is<ActionSetS>(it->second);
+        as = fsp::is<fsp::ActionSetS>(it->second);
         as->toSetValue(setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);

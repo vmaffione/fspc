@@ -40,9 +40,9 @@ namespace fsp {
 struct NestingContext {
     Context ctx;
     UnresolvedNames unres;
-    ParametricProcess parameters;
+    fsp::ParametricProcess parameters;
     vector<string> overridden_names;
-    vector<Symbol *> overridden_values;
+    vector<fsp::Symbol *> overridden_values;
 };
 
 class DependencyGraph {
@@ -62,16 +62,16 @@ class FspDriver
         CompilerOptions cop;
 
 	/* Const, Range, Set and Parameter objects. */
-	SymbolsTable identifiers;
+	fsp::SymbolsTable identifiers;
 
 	/* Global processes. */
-	SymbolsTable processes;
+	fsp::SymbolsTable processes;
 
 	/* Progress properties. */
-	SymbolsTable progresses;
+	fsp::SymbolsTable progresses;
 
         /* Menu sets. */
-        SymbolsTable menus;
+        fsp::SymbolsTable menus;
 
         /* Dependency graph of non local processes. */
         DependencyGraph deps;
@@ -79,7 +79,7 @@ class FspDriver
         /* Stores the root node of each non local process definition
            (both simple and composite processes) along with default
            parameter values. */
-	SymbolsTable parametric_processes;
+	fsp::SymbolsTable parametric_processes;
 
         /* Current value of variables (e.g. action/process indexes). */
         Context ctx;
@@ -91,11 +91,11 @@ class FspDriver
            translation. This is used to (1) restore the previous
            translator context and (2) compute the extended name of
            an LTS. */
-        ParametricProcess parameters;
+        fsp::ParametricProcess parameters;
 
         /* Overridden names support. */
         vector<string> overridden_names;
-        vector<Symbol *> overridden_values;
+        vector<fsp::Symbol *> overridden_values;
 
         /* Nesting support for parametric process references. */
         vector<NestingContext> nesting_stack;

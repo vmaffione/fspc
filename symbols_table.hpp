@@ -31,6 +31,7 @@
 
 using namespace std;
 
+namespace fsp {
 
 class ActionsTable {
     /* Singleton implementation. */
@@ -244,7 +245,7 @@ T* symbol_downcast(Symbol *r)
 /* Symbol downcast declaration:
    Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
 #define RDC(_t, _n, _x) \
-    _t *_n = symbol_downcast<_t>(_x);
+    _t *_n = fsp::symbol_downcast<_t>(_x);
 
 
 /* A class implementing a symbols table. */
@@ -264,5 +265,7 @@ struct SymbolsTable {
     void print() const;
     ~SymbolsTable();
 };
+
+}  /* namespace fsp */
 
 #endif
