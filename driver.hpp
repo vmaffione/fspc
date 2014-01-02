@@ -62,16 +62,16 @@ class FspDriver
         CompilerOptions cop;
 
 	/* Const, Range, Set and Parameter objects. */
-	struct SymbolsTable identifiers;
+	SymbolsTable identifiers;
 
 	/* Global processes. */
-	struct SymbolsTable processes;
+	SymbolsTable processes;
 
 	/* Progress properties. */
-	struct SymbolsTable progresses;
+	SymbolsTable progresses;
 
         /* Menu sets. */
-        struct SymbolsTable menus;
+        SymbolsTable menus;
 
         /* Dependency graph of non local processes. */
         DependencyGraph deps;
@@ -79,7 +79,7 @@ class FspDriver
         /* Stores the root node of each non local process definition
            (both simple and composite processes) along with default
            parameter values. */
-	struct SymbolsTable parametric_processes;
+	SymbolsTable parametric_processes;
 
         /* Current value of variables (e.g. action/process indexes). */
         Context ctx;
