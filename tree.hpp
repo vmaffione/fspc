@@ -194,6 +194,13 @@ void process_ref_translate(FspDriver& c, const location &loc,
                            const string& name, const vector<int> *arguments,
                            SmartPtr<Lts> *res);
 
+struct TreeNodeVecS : public Symbol {
+    std::vector<TreeNode *> val;
+
+    const char *className() const { return "TreeNodeVec"; }
+};
+
+
 /* ======================== FIRST DERIVATION LEVEL =========================
    The first derivation level adds a first specialization to a parse tree
    node. */

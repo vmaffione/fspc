@@ -217,6 +217,18 @@ class Lts: public Symbol {
 
 fsp::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const fsp::location& loc);
 
+struct LtsPtrS : public Symbol {
+    SmartPtr<Lts> val;
+
+    const char *className() const { return "LtsPtr"; }
+};
+
+struct LtsVecS : public Symbol {
+    vector< SmartPtr<Lts> > val;
+
+    const char *className() const { return "LtsVec"; }
+};
+
 } /* namespace fsp */
 
 #endif

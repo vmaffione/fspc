@@ -191,6 +191,19 @@ struct ParametricProcess : public Symbol {
     Symbol *clone() const;
 };
 
+struct StringS : public Symbol {
+    std::string val;
+
+    const char *className() const { return "String"; }
+};
+
+struct IntVecS : public Symbol {
+    std::vector<int> val;
+
+    const char *className() const { return "IntVec"; }
+};
+
+
 struct SymbolsTable {
     map<string, Symbol*> table;
 
