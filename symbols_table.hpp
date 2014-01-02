@@ -107,7 +107,7 @@ struct SetS: public Symbol {
     void clear();
 
     void toActionSetValue(ActionSetS& asv);
-    void output(const string& name, const char * filename) const;
+    void output(const string& name, const char *filename) const;
     void output(stringstream& ss) const;
 };
 
@@ -119,7 +119,7 @@ struct IntS: public Symbol {
     void print() const { cout << val; }
     const char *className() const { return "Const"; }
     void set(SetS&) const;
-    Symbol * clone() const;
+    Symbol *clone() const;
 };
 
 struct RangeS: public Symbol {
@@ -132,7 +132,7 @@ struct RangeS: public Symbol {
     void print() const { cout << "[" << low << ", " << high << "]"; }
     const char *className() const { return "Range"; }
     void set(SetS&) const;
-    Symbol * clone() const;
+    Symbol *clone() const;
     virtual int setVariable(const string& s) { variable = s; return 0; }
 };
 
@@ -145,7 +145,7 @@ struct RelabelingS: public Symbol {
     unsigned int size() const { return old_labels.size(); }
     void print() const;
     const char *className() const { return "Relabeling"; }
-    Symbol * clone() const;
+    Symbol *clone() const;
 };
 
 struct HidingS: public Symbol {
@@ -155,7 +155,7 @@ struct HidingS: public Symbol {
     HidingS() : interface(false) { }
     void print() const;
     const char *className() const { return "Hiding"; }
-    Symbol * clone() const;
+    Symbol *clone() const;
 };
 
 struct PriorityS: public Symbol {
@@ -165,7 +165,7 @@ struct PriorityS: public Symbol {
     PriorityS() : low(false) { }
     void print() const;
     const char *className() const { return "Priority"; }
-    Symbol * clone() const;
+    Symbol *clone() const;
 };
 
 struct ActionSetS : public Symbol {
@@ -199,7 +199,7 @@ class ParametricTranslator {
 struct ParametricProcess : public Symbol {
     vector<string> names;
     vector<int> defaults;
-    ParametricTranslator * translator;
+    ParametricTranslator *translator;
 
     ParametricProcess() : translator(NULL) { }
     bool insert(const string& name, int default_value);

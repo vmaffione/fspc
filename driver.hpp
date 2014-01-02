@@ -114,7 +114,7 @@ class FspDriver
 	void clear();	/* Destructor like */
 
 	/* Handling the scanner. */
-	void scan_begin(const char * filename);
+	void scan_begin(const char *filename);
 	void scan_end();
 	bool trace_scanning;
 

@@ -40,7 +40,7 @@ const char Serializer::SerSetValue = 'U';
 const char Serializer::SerActionSetValue = 'A';
 const char Serializer::SerProgressValue = 'P';
 
-Serializer::Serializer(const char * filename)
+Serializer::Serializer(const char *filename)
 {
     fout.open(filename, ios::binary);
 }
@@ -104,7 +104,7 @@ void Deserializer::integer(uint32_t &v, bool raw)
 
 void Serializer::stl_string(const string &s, bool raw)
 {
-    const char * cs = s.c_str();
+    const char *cs = s.c_str();
     uint8_t len = s.size();
 
     if (s.size() > 255) {
@@ -188,9 +188,9 @@ void Deserializer::actions_table(fsp::ActionsTable &at, bool raw)
 }
 
 void serializeLtsVisitFunction(int state, const fsp::Lts& lts,
-                               const struct LtsNode& node, void * opaque)
+                               const struct LtsNode& node, void *opaque)
 {
-    Serializer * serp = static_cast<Serializer *>(opaque);
+    Serializer *serp = static_cast<Serializer *>(opaque);
 
     for (unsigned int i=0; i<node.children.size(); i++) {
 	serp->integer(state, 1);
@@ -387,7 +387,7 @@ void Deserializer::progress_value(struct fsp::ProgressS& pv, bool raw)
 }
 
 /* ============================ Deserializer ============================= */
-Deserializer::Deserializer(const char * filename)
+Deserializer::Deserializer(const char *filename)
 {
     fin.open(filename, ios::binary);
 }

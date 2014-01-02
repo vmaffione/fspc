@@ -177,7 +177,7 @@ class Lts: public Symbol {
     int progress(const string& progress_name, const ProgressS& pr,
 		    stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
-    void graphvizOutput(const char * filename) const;
+    void graphvizOutput(const char *filename) const;
     void simulate(Shell& sh, const ActionSetS *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
     void minimize(stringstream& ss);
@@ -210,10 +210,10 @@ class Lts: public Symbol {
     /* Methods to implement because of the base class. */
     void print() const;
     const char *className() const { return "Lts"; }
-    Symbol * clone() const;
+    Symbol *clone() const;
 };
 
-fsp::Lts * err_if_not_lts(FspDriver& driver, Symbol * svp, const fsp::location& loc);
+fsp::Lts *err_if_not_lts(FspDriver& driver, Symbol *svp, const fsp::location& loc);
 
 struct LtsPtrS : public Symbol {
     SmartPtr<Lts> val;

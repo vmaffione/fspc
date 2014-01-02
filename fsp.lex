@@ -276,7 +276,7 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 /* User code: Functions that can be exported. */
 
-void FspDriver::scan_begin(const char * filename)
+void FspDriver::scan_begin(const char *filename)
 {
     fsp_flex_debug = trace_scanning;
     if (filename == NULL /* || strcmp(file,"-") == 0 */) {

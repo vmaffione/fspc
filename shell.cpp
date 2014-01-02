@@ -251,7 +251,7 @@ static void right_split(string& base, string& back)
     base = base.substr(0, p + 1);
 }
 
-void Shell::getline_ncurses(string& line, const char * prompt)
+void Shell::getline_ncurses(string& line, const char *prompt)
 {
     int ch;
 

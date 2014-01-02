@@ -173,7 +173,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     /* Scan input arguments. */
     while (i < argc) {
 	int len = strlen(argv[i]);
-	const char * arg = argv[i];
+	const char *arg = argv[i];
 	if (len != 2 || len == 2 && arg[0] != '-') {
 	    cerr << "Error: Unrecognized option\n";
 	    exit(-1);

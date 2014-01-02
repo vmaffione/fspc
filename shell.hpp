@@ -101,7 +101,7 @@ class Shell {
 
         void common_init();
         void fill_completion();
-        void getline_ncurses(string& line, const char * prompt);
+        void getline_ncurses(string& line, const char *prompt);
 
         void ls(const vector<string>& args, stringstream& ss);
         void safety(const vector<string>& args, stringstream& ss);

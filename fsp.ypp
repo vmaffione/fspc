@@ -93,7 +93,7 @@ namespace fsp {
     int int_value;
     float float_value;
     std::string *string_ptr;
-    TreeNode * node_ptr;
+    TreeNode *node_ptr;
 }
 
 

@@ -23,9 +23,9 @@
 
 /* Options that a client can pass to the FSP compiler. */
 struct CompilerOptions {
-    const char * input_file;
+    const char *input_file;
     int input_type;
-    const char * output_file;
+    const char *output_file;
     bool deadlock;
     bool progress;
     bool graphviz;

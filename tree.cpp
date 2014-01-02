@@ -345,7 +345,7 @@ Symbol *fsp::ExpressionNode::translate(FspDriver& c)
             } else if (o->sign == "-") {
                 expr->val = l->val - r->val;
             } else if (o->sign == "*") {
-                expr->val = l->val * r->val;
+                expr->val = l->val *r->val;
             } else if (o->sign == "/") {
                 expr->val = l->val / r->val;
             } else if (o->sign == "%") {

@@ -33,7 +33,7 @@ class CircularBuffer {
     CircularBuffer() : head(0), tail(0), line_aligned(true), column(0) { }
     int used() const;
     int available() const;
-    void insert(const char * token, int len);
+    void insert(const char *token, int len);
     void flush();
     void print(const string& context, int col) const;
     void print(const string& context) const;

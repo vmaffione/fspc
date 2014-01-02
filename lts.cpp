@@ -315,7 +315,7 @@ void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
        p*nq+q (exactly how a matrix is mapped onto a vector. */
     np = p.numStates();
     nq = q.numStates();
-    product.nodes.resize(np * nq);
+    product.nodes.resize(np *nq);
 
     /* Scan the P graph and combine P actions with Q states. */
     for (unsigned int ip=0; ip<p.nodes.size(); ip++) {
@@ -330,7 +330,7 @@ void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
                    action can be executed by P independently on the state
                    of Q. */
                 for (unsigned int iq=0; iq<nq; iq++) {
-                    e.dest = ep.dest * nq + iq;
+                    e.dest = ep.dest *nq + iq;
                     product.nodes[ip*nq+iq].children.push_back(e);
                 }
             } else {
@@ -341,7 +341,7 @@ void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
                         const Edge& eq = q.nodes[iq].children[jq];
 
                         if (eq.action == ep.action) {
-                            e.dest = ep.dest * nq + eq.dest;
+                            e.dest = ep.dest *nq + eq.dest;
                             product.nodes[ip*nq+iq].children.push_back(e);
                         }
                     }
@@ -363,7 +363,7 @@ void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
                    action can be executed by Q independently on the state
                    of P. */
                 for (unsigned int ip=0; ip<np; ip++) {
-                    e.dest = ip * nq + eq.dest;
+                    e.dest = ip *nq + eq.dest;
                     product.nodes[ip*nq+iq].children.push_back(e);
                 }
             } /* else case has already been covered by the previous scan. */
@@ -823,7 +823,7 @@ bool fsp::Lts::isDeterministic() const
 
 fsp::Symbol *fsp::Lts::clone() const
 {
-    fsp::Lts * lv = new fsp::Lts(*this);
+    fsp::Lts *lv = new fsp::Lts(*this);
 
     return lv;
 }
@@ -1222,10 +1222,10 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 }
 
 struct OutputData {
-    fstream * fsptr;
+    fstream *fsptr;
 };
 
-void fsp::Lts::graphvizOutput(const char * filename) const
+void fsp::Lts::graphvizOutput(const char *filename) const
 {
     fstream fout;
 
@@ -1293,7 +1293,7 @@ void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
 	set<unsigned int> elegible_actions_set;
 	vector<unsigned int> elegible_actions;
         vector<unsigned int> system_actions;
-	char * dummy;
+	char *dummy;
 	unsigned long idx;
 	vector<int> dest;
         unsigned int a;
@@ -1374,10 +1374,10 @@ choose:
 }
 
 static void basicVisitFunction(int state, const fsp::Lts& lts, const struct LtsNode& node,
-				void * opaque)
+				void *opaque)
 {
-    OutputData * bvd = static_cast<OutputData *>(opaque);
-    fstream * fsptr = bvd->fsptr;
+    OutputData *bvd = static_cast<OutputData *>(opaque);
+    fstream *fsptr = bvd->fsptr;
     int size = node.children.size();
 
     *fsptr << ",\nS" << state << " = ";

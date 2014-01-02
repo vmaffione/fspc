@@ -288,8 +288,8 @@ void FspDriver::translateProcessesDefinitions()
 int FspDriver::parse(const CompilerOptions& co)
 {
     fsp::ActionsTable& actions = fsp::ActionsTable::getref();
-    Serializer * serp = NULL;
-    Deserializer * desp = NULL;
+    Serializer *serp = NULL;
+    Deserializer *desp = NULL;
     stringstream ss;
 
     /* Copy in the options. */

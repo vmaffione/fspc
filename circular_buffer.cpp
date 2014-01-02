@@ -47,7 +47,7 @@ int CircularBuffer::available() const
     return avail;
 }
 
-void CircularBuffer::insert(const char * token, int len)
+void CircularBuffer::insert(const char *token, int len)
 {
     int avail = available();
     int copy;

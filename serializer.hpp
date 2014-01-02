@@ -39,7 +39,7 @@ class Serializer {
 	ofstream fout;
 
     public:
-	Serializer(const char * filename);
+	Serializer(const char *filename);
 	void byte(uint8_t i, bool raw);
 	void integer(uint32_t i, bool raw);
 	void stl_string(const string& s, bool raw);
@@ -65,7 +65,7 @@ class Deserializer {
         ifstream fin;
 
     public:
-	Deserializer(const char * filename);
+	Deserializer(const char *filename);
 	void byte(uint8_t &v, bool raw);
 	void integer(uint32_t &v, bool raw);
 	void stl_string(string& s, bool raw);

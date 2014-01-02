@@ -98,7 +98,7 @@ void fsp::ActionsTable::print() const
 
 
 /*===================== SymbolsTable implementation ====================== */
-bool fsp::SymbolsTable::insert(const string& name, Symbol * ptr)
+bool fsp::SymbolsTable::insert(const string& name, Symbol *ptr)
 {
     pair< map<string, Symbol*>::iterator, bool > ret;
 
@@ -204,7 +204,7 @@ void fsp::IntS::set(SetS& s) const
 /* ============================= RangeS =============================*/
 fsp::Symbol *fsp::RangeS::clone() const
 {
-    RangeS * rv = new RangeS;
+    RangeS *rv = new RangeS;
     rv->low = low;
     rv->high = high;
 
@@ -228,7 +228,7 @@ fsp::SetS& fsp::SetS::combine(const fsp::SetS& ss, bool dot)
     string pre = dot ? "." : "[";
     string post = dot ? "" : "]";
 
-    actions.resize(n * nss);
+    actions.resize(n *nss);
 
     for (int j=1; j<nss; j++)
 	for (int i=0; i<n; i++)
@@ -288,7 +288,7 @@ fsp::SetS& fsp::SetS::indexize(int low, int high)
     int n = actions.size();
     int nr = high - low + 1;
 
-    actions.resize(n * nr);
+    actions.resize(n *nr);
 
     for (int j=1; j<nr; j++)
 	for (int i=0; i<n; i++)
@@ -334,12 +334,12 @@ void fsp::SetS::toActionSetValue(ActionSetS& asv)
 
 fsp::Symbol *fsp::SetS::clone() const
 {
-    SetS * sv = new SetS(*this);
+    SetS *sv = new SetS(*this);
 
     return sv;
 }
 
-void fsp::SetS::output(const string& name, const char * filename) const
+void fsp::SetS::output(const string& name, const char *filename) const
 {
     fstream fout(filename, fstream::out | fstream::app);
 
@@ -387,7 +387,7 @@ void fsp::RelabelingS::print() const
 
 fsp::Symbol *fsp::RelabelingS::clone() const
 {
-    RelabelingS * rlv = new RelabelingS;
+    RelabelingS *rlv = new RelabelingS;
 
     for (unsigned int i=0; i<old_labels.size(); i++) {
 	rlv->old_labels.push_back(old_labels[i]);
@@ -425,7 +425,7 @@ void fsp::HidingS::print() const
 
 fsp::Symbol *fsp::HidingS::clone() const
 {
-    HidingS * hv = new HidingS;
+    HidingS *hv = new HidingS;
 
     hv->interface = interface;
     hv->setv = setv;
@@ -570,7 +570,7 @@ void fsp::ParametricProcess::print() const
 
 fsp::Symbol *fsp::ParametricProcess::clone() const
 {
-    ParametricProcess * pp = new ParametricProcess;
+    ParametricProcess *pp = new ParametricProcess;
 
     pp->names = names;
     pp->defaults = defaults;
