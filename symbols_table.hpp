@@ -99,6 +99,8 @@ struct SetS: public Symbol {
 struct IntS: public Symbol {
     int value;
 
+    IntS() : value(0) { }
+    IntS(int v) : value(v) { }
     void print() const { cout << value; }
     const char *className() const { return "Const"; }
     void set(SetS&) const;
@@ -110,6 +112,8 @@ struct RangeS: public Symbol {
     int high;
     string variable;
 
+    RangeS() { }
+    RangeS(int l, int h) : low(l), high(h) { }
     void print() const { cout << "[" << low << ", " << high << "]"; }
     const char *className() const { return "Range"; }
     void set(SetS&) const;
@@ -203,7 +207,33 @@ struct IntVecS : public Symbol {
     const char *className() const { return "IntVec"; }
 };
 
+/* Helper functions for Symbol* downcasting. */
+template <class T>
+T* symbol_downcast_safe(Symbol *r)
+{
+    /* Observe that if r == NULL, dynamic_cast returns NULL. */
+    T *ret = dynamic_cast<T*>(r);
 
+    return ret;
+}
+
+template <class T>
+T* symbol_downcast(Symbol *r)
+{
+    T *ret = symbol_downcast_safe<T>(r);
+
+    assert(ret);
+
+    return ret;
+}
+
+/* Symbol downcast declaration:
+   Declare "_n" as a "_t"*, and assign to it the downcasted "_x". */
+#define RDC(_t, _n, _x) \
+    _t *_n = symbol_downcast<_t>(_x);
+
+
+/* A class implementing a symbols table. */
 struct SymbolsTable {
     map<string, Symbol*> table;
 

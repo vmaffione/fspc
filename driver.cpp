@@ -173,7 +173,7 @@ void FspDriver::findParametricProcesses()
         }
 
         /* Compute the name. */
-        RDC(fsp::StringResult, id, pid->translate(*this));
+        RDC(StringS, id, pid->translate(*this));
 
         if (pan) {
             /* Find the parameters. */
@@ -182,11 +182,11 @@ void FspDriver::findParametricProcesses()
             for (unsigned int i = 0; i < pln->numChildren(); i += 2) {
                 TDC(fsp::ParameterNode, p, pln->getChild(i));
                 /* parameter_id = EXPR */
-                RDC(fsp::StringResult, paid,
+                RDC(StringS, paid,
                                 p->getChild(0)->translate(*this));
-                RDC(fsp::IntResult, expr, p->getChild(2)->translate(*this));
+                RDC(IntS, expr, p->getChild(2)->translate(*this));
 
-                if (!pp->insert(paid->val, expr->val)) {
+                if (!pp->insert(paid->val, expr->value)) {
                     stringstream errstream;
                     errstream << "parameter " << paid->val <<
                                     " declared twice";
@@ -238,7 +238,7 @@ void FspDriver::computeDependencyGraph()
             assert(seq || ref);
             assert(references[j]->getChild(0));
 
-            RDC(fsp::StringResult, id,
+            RDC(StringS, id,
                     references[j]->getChild(0)->translate(*this));
 
             /* Insert the dependency into the graph. */

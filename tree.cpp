@@ -159,7 +159,7 @@ void fsp::TreeNode::print(ofstream& os)
     os << "}\n";
 }
 
-Result *fsp::TreeNode::translate(FspDriver& c)
+Symbol *fsp::TreeNode::translate(FspDriver& c)
 {
     /* Never get to here. */
     assert(0);
@@ -197,103 +197,103 @@ void fsp::TreeNode::getNodesByClasses(const vector<string>& classes,
 
 /* ========================== Translation methods ======================== */
 
-Result *fsp::LowerCaseIdNode::translate(FspDriver& c)
+Symbol *fsp::LowerCaseIdNode::translate(FspDriver& c)
 {
-    StringResult *str = new StringResult;
+    StringS *str = new StringS;
 
     str->val = content;
 
     return str;
 }
 
-Result *fsp::UpperCaseIdNode::translate(FspDriver& c)
+Symbol *fsp::UpperCaseIdNode::translate(FspDriver& c)
 {
-    StringResult *str = new StringResult;
+    StringS *str = new StringS;
 
     str->val = content;
 
     return str;
 }
 
-Result *fsp::VariableIdNode::translate(FspDriver& c)
+Symbol *fsp::VariableIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ConstantIdNode::translate(FspDriver& c)
+Symbol *fsp::ConstantIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::RangeIdNode::translate(FspDriver& c)
+Symbol *fsp::RangeIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::SetIdNode::translate(FspDriver& c)
+Symbol *fsp::SetIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ConstParameterIdNode::translate(FspDriver& c)
+Symbol *fsp::ConstParameterIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ParameterIdNode::translate(FspDriver& c)
+Symbol *fsp::ParameterIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ProcessIdNode::translate(FspDriver& c)
+Symbol *fsp::ProcessIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ProgressIdNode::translate(FspDriver& c)
+Symbol *fsp::ProgressIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::MenuIdNode::translate(FspDriver& c)
+Symbol *fsp::MenuIdNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
 
     return id;
 }
 
-Result *fsp::ExpressionNode::translate(FspDriver& c)
+Symbol *fsp::ExpressionNode::translate(FspDriver& c)
 {
     if (children.size() == 1) {
-        RDC(IntResult, expr, children[0]->translate(c));
+        RDC(IntS, expr, children[0]->translate(c));
 
         return expr;
     } else if (children.size() == 2) {
         /* OPERATOR EXPR */
         TDC(OperatorNode, on, children[0]);
-        RDC(IntResult, expr, children[1]->translate(c));
+        RDC(IntS, expr, children[1]->translate(c));
 
         if (on->sign == "+") {
         } else if (on->sign == "-") {
-            expr->val = -expr->val;
+            expr->value = -expr->value;
         } else if (on->sign == "!") {
-            expr->val = !expr->val;
+            expr->value = !expr->value;
         } else {
             assert(0);
         }
@@ -304,52 +304,52 @@ Result *fsp::ExpressionNode::translate(FspDriver& c)
 
         if (pn) {
             /* ( EXPR ) */
-            RDC(IntResult, expr, children[1]->translate(c));
+            RDC(IntS, expr, children[1]->translate(c));
 
             return expr;
         } else {
             /* EXPR OPERATOR EXPR */
-            RDC(IntResult, l, children[0]->translate(c));
+            RDC(IntS, l, children[0]->translate(c));
             TDC(OperatorNode, o, children[1]);
-            RDC(IntResult, r, children[2]->translate(c));
-            IntResult *expr = new IntResult;
+            RDC(IntS, r, children[2]->translate(c));
+            IntS *expr = new IntS;
 
             if (o->sign == "||") {
-                expr->val = l->val || r->val;
+                expr->value = l->value || r->value;
             } else if (o->sign == "&&") {
-                expr->val = l->val && r->val;
+                expr->value = l->value && r->value;
             } else if (o->sign == "|") {
-                expr->val = l->val | r->val;
+                expr->value = l->value | r->value;
             } else if (o->sign == "^") {
-                expr->val = l->val ^ r->val;
+                expr->value = l->value ^ r->value;
             } else if (o->sign == "&") {
-                expr->val = l->val & r->val;
+                expr->value = l->value & r->value;
             } else if (o->sign == "==") {
-                expr->val = (l->val == r->val);
+                expr->value = (l->value == r->value);
             } else if (o->sign == "!=") {
-                expr->val = (l->val != r->val);
+                expr->value = (l->value != r->value);
             } else if (o->sign == "<") {
-                expr->val = (l->val < r->val);
+                expr->value = (l->value < r->value);
             } else if (o->sign == ">") {
-                expr->val = (l->val > r->val);
+                expr->value = (l->value > r->value);
             } else if (o->sign == "<=") {
-                expr->val = (l->val <= r->val);
+                expr->value = (l->value <= r->value);
             } else if (o->sign == ">=") {
-                expr->val = (l->val >= r->val);
+                expr->value = (l->value >= r->value);
             } else if (o->sign == "<<") {
-                expr->val = l->val << r->val;
+                expr->value = l->value << r->value;
             } else if (o->sign == ">>") {
-                expr->val = l->val >> r->val;
+                expr->value = l->value >> r->value;
             } else if (o->sign == "+") {
-                expr->val = l->val + r->val;
+                expr->value = l->value + r->value;
             } else if (o->sign == "-") {
-                expr->val = l->val - r->val;
+                expr->value = l->value - r->value;
             } else if (o->sign == "*") {
-                expr->val = l->val * r->val;
+                expr->value = l->value * r->value;
             } else if (o->sign == "/") {
-                expr->val = l->val / r->val;
+                expr->value = l->value / r->value;
             } else if (o->sign == "%") {
-                expr->val = l->val % r->val;
+                expr->value = l->value % r->value;
             } else {
                 assert(0);
             }
@@ -365,21 +365,21 @@ Result *fsp::ExpressionNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::BaseExpressionNode::translate(FspDriver& c)
+Symbol *fsp::BaseExpressionNode::translate(FspDriver& c)
 {
     TDCS(IntegerNode, in, children[0]);
     TDCS(VariableIdNode, vn, children[0]);
     TDCS(ConstParameterIdNode, cn, children[0]);
 
     if (in) {
-        IntResult *result = new IntResult;
+        IntS *result = new IntS;
 
         /* We don't need to translate here, we have a literal integer. */
-        result->val = in->value;
+        result->value = in->value;
 
         return result;
     } else if (vn) {
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         string val;
         int v;
 
@@ -396,9 +396,9 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
             semantic_error(c, errstream, loc);
         }
 
-        return new IntResult(v);
+        return new IntS(v);
     } else if (cn) {
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         Symbol *svp;
         IntS *cvp;
 
@@ -410,7 +410,7 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
         cvp = err_if_not<IntS>(c, svp, loc);
         delete id;
 
-        return new IntResult(cvp->value);
+        return new IntS(cvp->value);
     } else {
         assert(0);
     }
@@ -418,12 +418,12 @@ Result *fsp::BaseExpressionNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::RangeExprNode::translate(FspDriver& c)
+Symbol *fsp::RangeExprNode::translate(FspDriver& c)
 {
-    RDC(IntResult, l, children[0]->translate(c));
-    RDC(IntResult, r, children[2]->translate(c));
+    RDC(IntS, l, children[0]->translate(c));
+    RDC(IntS, r, children[2]->translate(c));
     /* Build a range from two expressions. */
-    RangeResult *range = new RangeResult(l->val, r->val);
+    RangeS *range = new RangeS(l->value, r->value);
 
     delete l;
     delete r;
@@ -431,17 +431,17 @@ Result *fsp::RangeExprNode::translate(FspDriver& c)
     return range;
 }
 
-Result *fsp::RangeNode::translate(FspDriver& c)
+Symbol *fsp::RangeNode::translate(FspDriver& c)
 {
     TDCS(RangeIdNode, ri, children[0]);
     TDCS(RangeExprNode, re, children[0]);
 
     if (ri) {
         /* Lookup the range identifier. */
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         Symbol *svp;
         RangeS *rvp;
-        RangeResult *range = new RangeResult;
+        RangeS *range = new RangeS;
 
         if (!c.identifiers.lookup(id->val, svp)) {
             stringstream errstream;
@@ -449,13 +449,13 @@ Result *fsp::RangeNode::translate(FspDriver& c)
             semantic_error(c, errstream, loc);
         }
         rvp = err_if_not<RangeS>(c, svp, loc);
-        range->val = *rvp;
+        *range = *rvp;
         delete id;
 
         return range;
     } else if (re) {
         /* Return the range expression. */
-        RDC(RangeResult, range, children[0]->translate(c));
+        RDC(RangeS, range, children[0]->translate(c));
 
         return range;
     } else {
@@ -465,13 +465,13 @@ Result *fsp::RangeNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::ConstantDefNode::translate(FspDriver& c)
+Symbol *fsp::ConstantDefNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(IntResult, expr, children[3]->translate(c));
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(IntS, expr, children[3]->translate(c));
     IntS *cvp = new IntS;
 
-    cvp->value = expr->val;
+    cvp->value = expr->value;
     if (!c.identifiers.insert(id->val, cvp)) {
         stringstream errstream;
         errstream << "const " << id->val << " declared twice";
@@ -485,15 +485,13 @@ Result *fsp::ConstantDefNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::RangeDefNode::translate(FspDriver& c)
+Symbol *fsp::RangeDefNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(IntResult, l, children[3]->translate(c));
-    RDC(IntResult, r, children[5]->translate(c));
-    RangeS *rvp = new RangeS;
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(IntS, l, children[3]->translate(c));
+    RDC(IntS, r, children[5]->translate(c));
+    RangeS *rvp = new RangeS(l->value, r->value);
 
-    rvp->low = l->val;
-    rvp->high = r->val;
     if (!c.identifiers.insert(id->val, rvp)) {
         stringstream errstream;
         errstream << "range " << id->val << " declared twice";
@@ -508,48 +506,45 @@ Result *fsp::RangeDefNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::SetDefNode::translate(FspDriver& c)
+Symbol *fsp::SetDefNode::translate(FspDriver& c)
 {
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(SetResult, se, children[3]->translate(c));
-    SetS *svp = new SetS;
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(SetS, se, children[3]->translate(c));
 
-    *svp = se->val;
-    if (!c.identifiers.insert(id->val, svp)) {
+    if (!c.identifiers.insert(id->val, se)) {
         stringstream errstream;
         errstream << "set " << id->val << " declared twice";
-        delete svp;
+        delete se;
         semantic_error(c, errstream, loc);
     }
 
     delete id;
-    delete se;
 
     return NULL;
 }
 
-void fsp::ProgressDefNode::combination(FspDriver& c, Result *r,
+void fsp::ProgressDefNode::combination(FspDriver& c, Symbol *r,
                                       string index, bool first)
 {
-    RDC(StringResult, id, children[1]->translate(c));
+    RDC(StringS, id, children[1]->translate(c));
     ProgressS *pv = new ProgressS;
     string name = id->val + index;
 
     if (children.size() == 5) {
         /* Progress definition in unconditional form (normal form). */
-        RDC(SetResult, se, children[4]->translate(c));
+        RDC(SetS, se, children[4]->translate(c));
 
         pv->conditional = false;
-        se->val.toActionSetValue(c.actions, pv->set);
+        se->toActionSetValue(c.actions, pv->set);
         delete se;
     } else if (children.size() == 8) {
         /* Progress definition in conditional form. */
-        RDC(SetResult, cse, children[5]->translate(c));
-        RDC(SetResult, se, children[7]->translate(c));
+        RDC(SetS, cse, children[5]->translate(c));
+        RDC(SetS, se, children[7]->translate(c));
 
         pv->conditional = true;
-        cse->val.toActionSetValue(c.actions, pv->condition);
-        se->val.toActionSetValue(c.actions, pv->set);
+        cse->toActionSetValue(c.actions, pv->condition);
+        se->toActionSetValue(c.actions, pv->set);
         delete se;
         delete cse;
     } else {
@@ -620,7 +615,7 @@ static bool next_set_indexes(const vector<TreeNode *>& elements,
     return true; /* There are more combinations. */
 }
 
-static void for_each_combination(FspDriver& c, Result *r,
+static void for_each_combination(FspDriver& c, Symbol *r,
                                  const vector<TreeNode *>& elements,
                                  TreeNode *n)
 {
@@ -642,23 +637,23 @@ static void for_each_combination(FspDriver& c, Result *r,
         /* Scan the ranges from the left to the right, computing the
            '[x][y][z]...' string corresponding to 'indexes'. */
         for (unsigned int j=0; j<elements.size(); j++) {
-            Result *re;
+            Symbol *re;
 
             /* Here we do the translation that was deferred in the lower
                layers. */
             re = elements[j]->translate(c);
             TDC(ActionRangeNode, an, elements[j]);
-            SetResult *ar = result_downcast<SetResult>(re);
+            SetS *ar = symbol_downcast<SetS>(re);
 
             (void)an;
-            index_string += "." + ar->val[ indexes[j] ];
-            if (ar->val.hasVariable()) {
-                if (!c.ctx.insert(ar->val.variable,
-                            ar->val[ indexes[j] ])) {
+            index_string += "." + (*ar)[ indexes[j] ];
+            if (ar->hasVariable()) {
+                if (!c.ctx.insert(ar->variable,
+                            (*ar)[ indexes[j] ])) {
                     cout << "ERROR: ctx.insert()\n";
                 }
             }
-            limits[j] = ar->val.size();
+            limits[j] = ar->size();
             delete re;
         }
 
@@ -673,9 +668,9 @@ static void for_each_combination(FspDriver& c, Result *r,
     } while (next_set_indexes(elements, indexes, limits));
 }
 
-Result *fsp::ProgressDefNode::translate(FspDriver& c)
+Symbol *fsp::ProgressDefNode::translate(FspDriver& c)
 {
-    RDC(TreeNodeVecResult, ir, children[2]->translate(c));
+    RDC(TreeNodeVecS, ir, children[2]->translate(c));
 
     for_each_combination(c, NULL, ir->val, this);
 
@@ -684,16 +679,16 @@ Result *fsp::ProgressDefNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::MenuDefNode::translate(FspDriver &c)
+Symbol *fsp::MenuDefNode::translate(FspDriver &c)
 {
     /* menu_id set */
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(SetResult, se, children[3]->translate(c));
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(SetS, se, children[3]->translate(c));
     ActionSetS *asv = new ActionSetS;
 
     /* Turn the SetS contained into the SetNode into an
        ActionSetS. */
-    se->val.toActionSetValue(c.actions, *asv);
+    se->toActionSetValue(c.actions, *asv);
 
     if (!c.menus.insert(id->val, asv)) {
         stringstream errstream;
@@ -715,7 +710,7 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
                                            const vector<TreeNode*>& elements,
                                            unsigned int idx)
 {
-    Result *r;
+    Symbol *r;
 
     assert(idx < elements.size());
 
@@ -731,8 +726,8 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
     if (idx == 0) {
         /* This is the first element of a label expression. We set 'base'
            to its initial value. */
-        StringResult *str = result_downcast_safe<StringResult>(r);
-        SetResult *se = result_downcast_safe<SetResult>(r);
+        StringS *str = symbol_downcast_safe<StringS>(r);
+        SetS *se = symbol_downcast_safe<SetS>(r);
 
         base = SetS();
         if (str) {
@@ -740,7 +735,7 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
             base += str->val;
          } else if (se) {
             /* A set of actions. */
-            base += se->val;
+            base += *se;
         } else {
             assert(0);
         }
@@ -753,21 +748,21 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
         TDCS(ActionRangeNode, an, elements[idx]);
 
         if (strn) {
-            StringResult *str = result_downcast<StringResult>(r);
+            StringS *str = symbol_downcast<StringS>(r);
 
             base.dotcat(str->val);
         } else if (setn) {
-            SetResult *se = result_downcast<SetResult>(r);
+            SetS *se = symbol_downcast<SetS>(r);
 
-            base.dotcat(se->val);
+            base.dotcat(*se);
         } else if (an) {
-            SetResult *ar = result_downcast<SetResult>(r);
+            SetS *ar = symbol_downcast<SetS>(r);
 
-            if (!ar->val.hasVariable() || idx+1 >= elements.size()) {
+            if (!ar->hasVariable() || idx+1 >= elements.size()) {
                 /* When an action range doesn't define a variable, or when
                    such a declaration is useless since this is the end of
                    the expression, we just extend the current 'base'. */
-                base.indexize(ar->val);
+                base.indexize(*ar);
             } else {
                 /* When an action range does define a variable, we must split
                    the computation in N parts, one for each action in the
@@ -779,15 +774,15 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
                 SetS next_base;
                 bool ok;
 
-                for (unsigned int j=0; j<ar->val.size(); j++) {
+                for (unsigned int j=0; j<ar->size(); j++) {
                     next_base = base;
-                    next_base.indexize(ar->val[j]);
-                    if (!c.ctx.insert(ar->val.variable, ar->val[j])) {
+                    next_base.indexize((*ar)[j]);
+                    if (!c.ctx.insert(ar->variable, (*ar)[j])) {
                         cout << "ERROR: ctx.insert()\n";
                     }
                     ret += computeActionLabels(c, next_base,
                                                elements, idx+1);
-                    ok = c.ctx.remove(ar->val.variable);
+                    ok = c.ctx.remove(ar->variable);
                     assert(ok);
                 }
                 delete r;
@@ -812,43 +807,43 @@ SetS fsp::TreeNode::computeActionLabels(FspDriver& c, SetS base,
     return computeActionLabels(c, base, elements, idx+1);
 }
 
-Result *fsp::SetElementsNode::translate(FspDriver& c)
+Symbol *fsp::SetElementsNode::translate(FspDriver& c)
 {
-    SetResult *se = new SetResult;
+    SetS *se = new SetS;
 
     /* Here we have a list of ActionLabels. We compute the set of actions
        corresponding to each element by using the computeActionLabels()
        protected method, and concatenate all the results. */
 
     for (unsigned int i = 0; i < children.size(); i += 2) {
-        RDC(TreeNodeVecResult, al, children[i]->translate(c));
+        RDC(TreeNodeVecS, al, children[i]->translate(c));
 
-        se->val += computeActionLabels(c, SetS(), al->val, 0);
+        *se += computeActionLabels(c, SetS(), al->val, 0);
         delete al;
     }
 
     return se;
 }
 
-Result *fsp::SetExprNode::translate(FspDriver& c)
+Symbol *fsp::SetExprNode::translate(FspDriver& c)
 {
     /* { SetElementsNode } */
-    RDC(SetResult, se, children[1]->translate(c));
+    RDC(SetS, se, children[1]->translate(c));
 
     return se;
 }
 
-Result *fsp::SetNode::translate(FspDriver& c)
+Symbol *fsp::SetNode::translate(FspDriver& c)
 {
     TDCS(SetIdNode, sin, children[0]);
     TDCS(SetExprNode, sen, children[0]);
 
     if (sin) {
         /* Lookup the set identifier. */
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         Symbol *svp;
         SetS *setvp;
-        SetResult *se = new SetResult;
+        SetS *se = new SetS;
 
         if (!c.identifiers.lookup(id->val, svp)) {
             stringstream errstream;
@@ -857,12 +852,12 @@ Result *fsp::SetNode::translate(FspDriver& c)
         }
         setvp = err_if_not<SetS>(c, svp, loc);
         delete id;
-        se->val = *setvp;
+        *se = *setvp;
 
         return se;
     } else if (sen) {
         /* Return the set expression. */
-        RDC(SetResult, se, children[0]->translate(c));
+        RDC(SetS, se, children[0]->translate(c));
 
         return se;
     } else {
@@ -872,9 +867,9 @@ Result *fsp::SetNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::ActionRangeNode::translate(FspDriver& c)
+Symbol *fsp::ActionRangeNode::translate(FspDriver& c)
 {
-    SetResult *result = new SetResult;
+    SetS *result = new SetS;
 
     if (children.size() == 1) {
         /* Build a set of actions from an integer, a range or a set. */
@@ -883,43 +878,41 @@ Result *fsp::ActionRangeNode::translate(FspDriver& c)
         TDCS(SetNode, sn, children[0]);
 
         if (en) {
-            RDC(IntResult, expr, children[0]->translate(c));
+            RDC(IntS, expr, children[0]->translate(c));
 
-            result->val += int2string(expr->val);
+            *result += int2string(expr->value);
             delete expr;
         } else if (rn) {
-            RDC(RangeResult, range, children[0]->translate(c));
+            RDC(RangeS, range, children[0]->translate(c));
 
-            range->val.set(result->val);
+            range->set(*result);
             delete range;
         } else if (sn) {
-            RDC(SetResult, se, children[0]->translate(c));
+            RDC(SetS, se, children[0]->translate(c));
 
-            result->val = se->val;
-            delete se;
+            result = se;
         } else {
             assert(0);
         }
     } else if (children.size() == 3) {
         /* Do the same with variable declarations. */
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         TDCS(RangeNode, rn, children[2]);
         TDCS(SetNode, sn, children[2]);
 
         if (rn) {
-            RDC(RangeResult, range, children[2]->translate(c));
+            RDC(RangeS, range, children[2]->translate(c));
 
-            range->val.set(result->val);
+            range->set(*result);
             delete range;
         } else if (sn) {
-            RDC(SetResult, se, children[2]->translate(c));
+            RDC(SetS, se, children[2]->translate(c));
 
-            result->val = se->val;
-            delete se;
+            result = se;
         } else {
             assert(0);
         }
-        result->val.variable = id->val;
+        result->variable = id->val;
         delete id;
     } else {
         assert(0);
@@ -928,7 +921,7 @@ Result *fsp::ActionRangeNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::ActionLabelsNode::translate(FspDriver& c)
+Symbol *fsp::ActionLabelsNode::translate(FspDriver& c)
 {
     /* Given an arbitrary complex label expression, e.g.
             'a[i:1..2].b.{h,j,k}.c[3][j:i..2*i][j*i+3]'
@@ -938,7 +931,7 @@ Result *fsp::ActionLabelsNode::translate(FspDriver& c)
        It's not necessary to call translate the children, since they
        will be translated in the upper layers.
     */
-    TreeNodeVecResult *result = new TreeNodeVecResult;
+    TreeNodeVecS *result = new TreeNodeVecS;
 
     /* The leftmost part of the label expression: A single action
        or a set of actions. */
@@ -997,7 +990,7 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
 {
     assert(idx < als.size());
     TDC(ActionLabelsNode, an, als[idx]);
-    RDC(TreeNodeVecResult, vec, an->translate(c));
+    RDC(TreeNodeVecS, vec, an->translate(c));
     const vector<TreeNode *>& elements = vec->val;
     vector<unsigned int> indexes(elements.size());
     vector<unsigned int> limits(elements.size());
@@ -1025,21 +1018,21 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
                elements on the right many times, once for each
                possibile variable value.
             */
-            Result *r;
+            Symbol *r;
 
             r = elements[j]->translate(c);
             if (j == 0) {
                 /* This is the first element of a label expression. */
-                StringResult *str = result_downcast_safe<StringResult>(r);
-                SetResult *se = result_downcast_safe<SetResult>(r);
+                StringS *str = symbol_downcast_safe<StringS>(r);
+                SetS *se = symbol_downcast_safe<SetS>(r);
 
                 if (str) {
                     /* Single action. */
                     label = str->val;
                 } else if (se) {
                     /* A set of actions. */
-                    label = se->val[ indexes[j] ];
-                    limits[j] = se->val.size();
+                    label = (*se)[ indexes[j] ];
+                    limits[j] = se->size();
                 } else {
                     assert(0);
                 }
@@ -1051,25 +1044,25 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
                 TDCS(ActionRangeNode, an, elements[j]);
 
                 if (strn) {
-                    StringResult *str = result_downcast_safe<StringResult>(r);
+                    StringS *str = symbol_downcast_safe<StringS>(r);
 
                     label += "." + str->val;
                 } else if (setn) {
-                    SetResult *se = result_downcast_safe<SetResult>(r);
+                    SetS *se = symbol_downcast_safe<SetS>(r);
 
-                    label += "." + se->val[ indexes[j] ];
-                    limits[j] = se->val.size();
+                    label += "." + (*se)[ indexes[j] ];
+                    limits[j] = se->size();
                 } else if (an) {
-                    SetResult *ar = result_downcast_safe<SetResult>(r);
+                    SetS *ar = symbol_downcast_safe<SetS>(r);
 
-                    label += "." + ar->val[ indexes[j] ];
-                    if (ar->val.hasVariable()) {
-                        if (!c.ctx.insert(ar->val.variable,
-                                    ar->val[ indexes[j] ])) {
+                    label += "." + (*ar)[ indexes[j] ];
+                    if (ar->hasVariable()) {
+                        if (!c.ctx.insert(ar->variable,
+                                    (*ar)[ indexes[j] ])) {
                             cout << "ERROR: ctx.insert()\n";
                         }
                     }
-                    limits[j] = ar->val.size();
+                    limits[j] = ar->size();
                 } else {
                     assert(0);
                 }
@@ -1113,9 +1106,9 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
     return lts;
 }
 
-Result *fsp::PrefixActionsNode::translate(FspDriver& c)
+Symbol *fsp::PrefixActionsNode::translate(FspDriver& c)
 {
-    TreeNodeVecResult *result = new TreeNodeVecResult;
+    TreeNodeVecS *result = new TreeNodeVecS;
 
     /* Here we have a chain of ActionLabels, e.g.
             't[1..2] -> g.y7 -> f[j:1..2][9] -> a[j+3].a.y'
@@ -1133,27 +1126,27 @@ Result *fsp::PrefixActionsNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::IndicesNode::translate(FspDriver& c)
+Symbol *fsp::IndicesNode::translate(FspDriver& c)
 {
-    StringResult *result = new StringResult;
+    StringS *result = new StringS;
 
     /* [ EXPR ] [ EXPR ] ... [ EXPR ] */ 
     for (unsigned int i=0; i<children.size(); i+=3) {
-        RDC(IntResult, expr, children[i+1]->translate(c));
+        RDC(IntS, expr, children[i+1]->translate(c));
 
-        result->val += "." + int2string(expr->val);
+        result->val += "." + int2string(expr->value);
         delete expr;
     }
 
     return result;
 }
 
-Result *fsp::BaseLocalProcessNode::translate(FspDriver& c)
+Symbol *fsp::BaseLocalProcessNode::translate(FspDriver& c)
 {
     TDCS(EndNode, en, children[0]);
     TDCS(StopNode, sn, children[0]);
     TDCS(ErrorNode, ern, children[0]);
-    LtsResult *result = new LtsResult;
+    fsp::LtsPtrS *result = new fsp::LtsPtrS;
 
     if (en) {
         result->val = new Lts(LtsNode::End, &c.actions);
@@ -1163,7 +1156,7 @@ Result *fsp::BaseLocalProcessNode::translate(FspDriver& c)
         result->val = new Lts(LtsNode::Error, &c.actions);
     } else {
         /* process_id indices_OPT */
-        RDC(StringResult, id, children[0]->translate(c));
+        RDC(StringS, id, children[0]->translate(c));
         TDCS(IndicesNode, ixn, children[1]);
         string name = id->val;
 
@@ -1171,7 +1164,7 @@ Result *fsp::BaseLocalProcessNode::translate(FspDriver& c)
            node. */
         result->val = new Lts(LtsNode::Unresolved, &c.actions);
         if (ixn) {
-            RDC(StringResult, idx, children[1]->translate(c));
+            RDC(StringS, idx, children[1]->translate(c));
 
             name += idx->val;
             delete idx;
@@ -1188,21 +1181,21 @@ Result *fsp::BaseLocalProcessNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::ChoiceNode::translate(FspDriver& c)
+Symbol *fsp::ChoiceNode::translate(FspDriver& c)
 {
-    LtsResult *result;
+    LtsPtrS *result;
 
     assert(children.size());
 
     /* action_prefix | action_prefix | ... | action_prefix */
     do {
-        RDC(LtsResult, ap, children[0]->translate(c));
+        RDC(LtsPtrS, ap, children[0]->translate(c));
 
         result = ap;
     } while (0);
 
     for (unsigned int i=2; i<children.size(); i+=2) {
-        RDC(LtsResult, ap, children[i]->translate(c));
+        RDC(LtsPtrS, ap, children[i]->translate(c));
 
         result->val->zeromerge(*ap->val);
         delete ap;
@@ -1211,25 +1204,25 @@ Result *fsp::ChoiceNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::ArgumentListNode::translate(FspDriver& c)
+Symbol *fsp::ArgumentListNode::translate(FspDriver& c)
 {
-    IntVecResult *result = new IntVecResult;
+    IntVecS *result = new IntVecS;
 
     /* EXPR , EXPR , ... , EXPR */
     for (unsigned int i = 0; i < children.size(); i += 2) {
-        RDC(IntResult, expr, children[i]->translate(c));
+        RDC(IntS, expr, children[i]->translate(c));
 
-        result->val.push_back(expr->val);
+        result->val.push_back(expr->value);
         delete expr;
     }
 
     return result;
 }
 
-Result *fsp::ArgumentsNode::translate(FspDriver& c)
+Symbol *fsp::ArgumentsNode::translate(FspDriver& c)
 {
     /* ( argument_list ) */
-    RDC(IntVecResult, argl, children[1]->translate(c));
+    RDC(IntVecS, argl, children[1]->translate(c));
 
     return argl;
 }
@@ -1325,16 +1318,16 @@ void fsp::process_ref_translate(FspDriver& c, const location& loc,
     }
 }
 
-Result *fsp::ProcessRefSeqNode::translate(FspDriver& c)
+Symbol *fsp::ProcessRefSeqNode::translate(FspDriver& c)
 {
     /* process_id arguments_OPT */
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
     TDCS(ArgumentsNode, an, children[1]);
-    LtsResult *lts = new LtsResult;
-    IntVecResult *args = NULL;
+    LtsPtrS *lts = new LtsPtrS;
+    IntVecS *args = NULL;
 
     if (an) {
-        RDC(IntVecResult, temp, children[1]->translate(c));
+        RDC(IntVecS, temp, children[1]->translate(c));
 
         args = temp;
     }
@@ -1350,19 +1343,19 @@ Result *fsp::ProcessRefSeqNode::translate(FspDriver& c)
     return lts;
 }
 
-Result *fsp::SeqProcessListNode::translate(FspDriver& c)
+Symbol *fsp::SeqProcessListNode::translate(FspDriver& c)
 {
-    LtsResult *result;
+    LtsPtrS *result;
 
     /* process_ref_seq ; process_ref_seq ; ... process_ref_seq */
     do {
-        RDC(LtsResult, pr, children[0]->translate(c));
+        RDC(LtsPtrS, pr, children[0]->translate(c));
 
         result = pr;
     } while (0);
 
     for (unsigned int i=2; i<children.size(); i+=2) {
-        RDC(LtsResult, pr, children[i]->translate(c));
+        RDC(LtsPtrS, pr, children[i]->translate(c));
 
         result->val->endcat(*pr->val);
         delete pr;
@@ -1371,11 +1364,11 @@ Result *fsp::SeqProcessListNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::SeqCompNode::translate(FspDriver& c)
+Symbol *fsp::SeqCompNode::translate(FspDriver& c)
 {
     /* seq_process_list ; base_local_process */
-    RDC(LtsResult, plist, children[0]->translate(c));
-    RDC(LtsResult, localp, children[2]->translate(c));
+    RDC(LtsPtrS, plist, children[0]->translate(c));
+    RDC(LtsPtrS, localp, children[2]->translate(c));
 
     plist->val->endcat(*localp->val);
     delete localp;
@@ -1383,37 +1376,37 @@ Result *fsp::SeqCompNode::translate(FspDriver& c)
     return plist;
 }
 
-Result *fsp::LocalProcessNode::translate(FspDriver& c)
+Symbol *fsp::LocalProcessNode::translate(FspDriver& c)
 {
-    LtsResult *result;
+    LtsPtrS *result;
 
     if (children.size() == 1) {
         TDCS(BaseLocalProcessNode, b, children[0]);
         TDCS(SeqCompNode, sc, children[0]);
-        RDC(LtsResult, lts, children[0]->translate(c));
+        RDC(LtsPtrS, lts, children[0]->translate(c));
 
         assert(b || sc);
         result = lts;
     } else if (children.size() == 3) {
         /* ( choice ) */
-        RDC(LtsResult, lts, children[1]->translate(c));
+        RDC(LtsPtrS, lts, children[1]->translate(c));
 
         result = lts;
     } else if (children.size() == 5) {
         /* IF expression THEN local_process else_OPT. */
-        RDC(IntResult, expr, children[1]->translate(c));
+        RDC(IntS, expr, children[1]->translate(c));
         TDCS(ProcessElseNode, pen, children[4]);
 
-        if (expr->val) {
-            RDC(LtsResult, localp, children[3]->translate(c));
+        if (expr->value) {
+            RDC(LtsPtrS, localp, children[3]->translate(c));
 
             result = localp;
         } else if (pen) {
-            RDC(LtsResult, elsep, children[4]->translate(c));
+            RDC(LtsPtrS, elsep, children[4]->translate(c));
 
             result = elsep;
         } else {
-            result = new LtsResult;
+            result = new LtsPtrS;
             result->val = new Lts(LtsNode::Normal, &c.actions);
         }
         delete expr;
@@ -1424,28 +1417,28 @@ Result *fsp::LocalProcessNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::ProcessElseNode::translate(FspDriver& c)
+Symbol *fsp::ProcessElseNode::translate(FspDriver& c)
 {
     /* ELSE local_process */
-    RDC(LtsResult, localp, children[1]->translate(c));
+    RDC(LtsPtrS, localp, children[1]->translate(c));
 
     return localp;
 }
 
-Result *fsp::ActionPrefixNode::translate(FspDriver& c)
+Symbol *fsp::ActionPrefixNode::translate(FspDriver& c)
 {
     vector<Context> ctxcache;
     Context saved_ctx = c.ctx;
-    LtsResult *result = new LtsResult;
+    LtsPtrS *result = new LtsPtrS;
 
     /* guard_OPT prefix_actions local_process */
     TDCS(GuardNode, gn, children[0]);
-    RDC(TreeNodeVecResult, pa, children[1]->translate(c));
+    RDC(TreeNodeVecS, pa, children[1]->translate(c));
     TDC(LocalProcessNode, lp, children[3]);
-    IntResult *guard = NULL;
+    IntS *guard = NULL;
 
     if (gn) {
-        RDC(IntResult, temp, children[0]->translate(c));
+        RDC(IntS, temp, children[0]->translate(c));
 
         guard = temp;
     }
@@ -1453,7 +1446,7 @@ Result *fsp::ActionPrefixNode::translate(FspDriver& c)
     /* Don't translate 'lp', since it will be translated into the loop,
        with proper context. */
 
-    if (!guard || guard->val) {
+    if (!guard || guard->value) {
         vector<Lts> processes; /* XXX can this be vector<fsp::SmartPtr<fsp::Lts>> ?? */
 
         /* Compute an incomplete Lts, and the context related to
@@ -1461,10 +1454,10 @@ Result *fsp::ActionPrefixNode::translate(FspDriver& c)
         result->val = computePrefixActions(c, pa->val, 0, ctxcache);
         /* Translate 'lp' under all the contexts in ctxcache. */
         for (unsigned int i=0; i<ctxcache.size(); i++) {
-            LtsResult *lts;
+            LtsPtrS *lts;
 
             c.ctx = ctxcache[i];
-            lts = result_downcast<LtsResult>(lp->translate(c));
+            lts = symbol_downcast<LtsPtrS>(lp->translate(c));
             processes.push_back(*lts->val);
             delete lts;
         }
@@ -1482,14 +1475,14 @@ Result *fsp::ActionPrefixNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::ProcessBodyNode::translate(FspDriver& c)
+Symbol *fsp::ProcessBodyNode::translate(FspDriver& c)
 {
-    RDC(LtsResult, localp, children[0]->translate(c)); /* local_process */
+    RDC(LtsPtrS, localp, children[0]->translate(c)); /* local_process */
 
     if (children.size() == 1) {
     } else if (children.size() == 3) {
         /* local_process , local_process_defs */
-        RDC(LtsResult, ldefs, children[2]->translate(c));
+        RDC(LtsPtrS, ldefs, children[2]->translate(c));
 
         localp->val->append(*ldefs->val, 0);
         delete ldefs;
@@ -1500,48 +1493,48 @@ Result *fsp::ProcessBodyNode::translate(FspDriver& c)
     return localp;
 }
 
-Result *fsp::AlphaExtNode::translate(FspDriver& c)
+Symbol *fsp::AlphaExtNode::translate(FspDriver& c)
 {
     /* + set */
-    RDC(SetResult, se, children[1]->translate(c));
+    RDC(SetS, se, children[1]->translate(c));
 
     return se;
 }
 
-void fsp::RelabelDefNode::combination(FspDriver& c, Result *r,
+void fsp::RelabelDefNode::combination(FspDriver& c, Symbol *r,
                                      string index, bool first)
 {
-    RDC(RelabelingResult, relab, children[2]->translate(c));
-    RelabelingResult *result = result_downcast<RelabelingResult>(r);
+    RDC(RelabelingS, relab, children[2]->translate(c));
+    RelabelingS *result = symbol_downcast<RelabelingS>(r);
 
     if (first) {
-        result->val = relab->val;
+        *result = *relab;
     } else {
-        result->val.merge(relab->val);
+        result->merge(*relab);
     }
     delete relab;
 }
 
-Result *fsp::RelabelDefNode::translate(FspDriver& c)
+Symbol *fsp::RelabelDefNode::translate(FspDriver& c)
 {
     assert(children.size() == 3);
 
     TDCS(ActionLabelsNode, left, children[0]);
     TDCS(ForallNode, fan, children[0]);
-    RelabelingResult *relab = new RelabelingResult;
+    RelabelingS *relab = new RelabelingS;
 
     if (left) {
         /* action_labels / action_labels */
-        RDC(TreeNodeVecResult, l, children[0]->translate(c));
-        RDC(TreeNodeVecResult, r, children[2]->translate(c));
+        RDC(TreeNodeVecS, l, children[0]->translate(c));
+        RDC(TreeNodeVecS, r, children[2]->translate(c));
 
-        relab->val.add(computeActionLabels(c, SetS(), l->val, 0),
+        relab->add(computeActionLabels(c, SetS(), l->val, 0),
                        computeActionLabels(c, SetS(), r->val, 0));
         delete l;
         delete r;
     } else if (fan) {
         /* FORALL index_ranges braces_relabel_defs */
-        RDC(TreeNodeVecResult, ir, children[1]->translate(c));
+        RDC(TreeNodeVecS, ir, children[1]->translate(c));
 
         /* Translate 'index_ranges' only, and rely on deferred translation
            for 'brace_relabel_defs'. */
@@ -1554,67 +1547,67 @@ Result *fsp::RelabelDefNode::translate(FspDriver& c)
     return relab;
 }
 
-Result *fsp::RelabelDefsNode::translate(FspDriver& c)
+Symbol *fsp::RelabelDefsNode::translate(FspDriver& c)
 {
-    RelabelingResult *result;
+    RelabelingS *result;
 
     /* relabel_def , relabel_def , ... , relabel_def */
     do {
-        RDC(RelabelingResult, rl, children[0]->translate(c));
+        RDC(RelabelingS, rl, children[0]->translate(c));
 
         result = rl;
     } while (0);
 
     for (unsigned int i = 2; i < children.size(); i += 2) {
-        RDC(RelabelingResult, rl, children[i]->translate(c));
+        RDC(RelabelingS, rl, children[i]->translate(c));
 
-        result->val.merge(rl->val);
+        result->merge(*rl);
     }
 
     return result;
 }
 
-Result *fsp::BracesRelabelDefsNode::translate(FspDriver& c)
+Symbol *fsp::BracesRelabelDefsNode::translate(FspDriver& c)
 {
     /* { relabel_defs }*/
-    RDC(RelabelingResult, rl, children[1]->translate(c));
+    RDC(RelabelingS, rl, children[1]->translate(c));
 
     return rl;
 }
 
-Result *fsp::RelabelingNode::translate(FspDriver& c)
+Symbol *fsp::RelabelingNode::translate(FspDriver& c)
 {
     /* / braces_relabel_defs */
-    RDC(RelabelingResult, rl, children[1]->translate(c));
+    RDC(RelabelingS, rl, children[1]->translate(c));
 
     return rl;
 }
 
-Result *fsp::HidingInterfNode::translate(FspDriver& c)
+Symbol *fsp::HidingInterfNode::translate(FspDriver& c)
 {
     TDCS(HidingNode, hn, children[0]);
     TDCS(InterfNode, in, children[0]);
-    RDC(SetResult, se, children[1]->translate(c));
-    HidingResult *result = new HidingResult;
+    RDC(SetS, se, children[1]->translate(c));
+    HidingS *result = new HidingS;
 
     if (hn) {
-        result->val.interface = false;
+        result->interface = false;
     } else if (in) {
-        result->val.interface = true;
+        result->interface = true;
     } else {
         assert(0);
     }
 
-    result->val.setv = se->val;
+    result->setv = *se;
     delete se;
 
     return result;
 }
 
-Result *fsp::IndexRangesNode::translate(FspDriver& c)
+Symbol *fsp::IndexRangesNode::translate(FspDriver& c)
 {
     /* [ action_range ][ action_range] ... [action_range] */
-    TreeNodeVecResult *result = new TreeNodeVecResult;
+    TreeNodeVecS *result = new TreeNodeVecS;
 
     /* Translation is deferred: Just collect the children. */
     for (unsigned int i=0; i<children.size(); i+=3) {
@@ -1626,13 +1619,13 @@ Result *fsp::IndexRangesNode::translate(FspDriver& c)
     return result;
 }
 
-void fsp::LocalProcessDefNode::combination(FspDriver& c, Result *r,
+void fsp::LocalProcessDefNode::combination(FspDriver& c, Symbol *r,
                                           string index, bool first)
 {
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
     /* Translate the LocalProcess using the current context. */
-    RDC(LtsResult, lts, children[3]->translate(c));
-    LtsResult *result = result_downcast<LtsResult>(r);
+    RDC(LtsPtrS, lts, children[3]->translate(c));
+    LtsPtrS *result = symbol_downcast<LtsPtrS>(r);
 
     /* Register the local process name (which is the concatenation of
        'process_id' and the 'index_string', e.g. 'P' + '[3][1]') into
@@ -1650,10 +1643,10 @@ void fsp::LocalProcessDefNode::combination(FspDriver& c, Result *r,
     delete lts;
 }
 
-Result *fsp::LocalProcessDefNode::translate(FspDriver& c)
+Symbol *fsp::LocalProcessDefNode::translate(FspDriver& c)
 {
-    RDC(TreeNodeVecResult, ir, children[1]->translate(c));
-    LtsResult *lts = new LtsResult;
+    RDC(TreeNodeVecS, ir, children[1]->translate(c));
+    LtsPtrS *lts = new LtsPtrS;
 
     /* Only translate 'index_ranges', while 'process_id' and 'local_process'
        will be translated in the loop below. */
@@ -1663,19 +1656,19 @@ Result *fsp::LocalProcessDefNode::translate(FspDriver& c)
     return lts;
 }
 
-Result *fsp::LocalProcessDefsNode::translate(FspDriver& c)
+Symbol *fsp::LocalProcessDefsNode::translate(FspDriver& c)
 {
     /* local_process_def , local_process_def, ... , local_process_def */
-    LtsResult *result;
+    LtsPtrS *result;
 
     do {
-        RDC(LtsResult, lpd, children[0]->translate(c));
+        RDC(LtsPtrS, lpd, children[0]->translate(c));
 
         result = lpd;
     } while (0);
 
     for (unsigned int i=2; i<children.size(); i+=2) {
-        RDC(LtsResult, lpd, children[i]->translate(c));
+        RDC(LtsPtrS, lpd, children[i]->translate(c));
 
         result->val->append(*lpd->val, 0);
         delete lpd;
@@ -1710,13 +1703,13 @@ void fsp::TreeNode::post_process_definition(FspDriver& c,
     }
 }
 
-Result *fsp::ProcessDefNode::translate(FspDriver& c)
+Symbol *fsp::ProcessDefNode::translate(FspDriver& c)
 {
     /* property_OPT process_id process_body alpha_ext_OPT
        relabeling_OPT hiding_OPT */
     TDCS(PropertyNode, prn, children[0]);
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(LtsResult, body, children[4]->translate(c));
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(LtsPtrS, body, children[4]->translate(c));
     TDCS(AlphaExtNode, aen, children[5]);
     TDCS(RelabelingNode, rln, children[6]);
     TDCS(HidingInterfNode, hin, children[7]);
@@ -1751,32 +1744,29 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
 
     /* Extend the alphabet. */
     if (aen) {
-        RDC(SetResult, alpha, aen->translate(c));
-        SetS& sv = alpha->val;
+        RDC(SetS, alpha, aen->translate(c));
 
-        for (unsigned int i=0; i<sv.size(); i++) {
-            body->val->updateAlphabet(c.actions.insert(sv[i]));
+        for (unsigned int i=0; i<alpha->size(); i++) {
+            body->val->updateAlphabet(c.actions.insert((*alpha)[i]));
         }
         delete alpha;
     }
 
     /* Apply the relabeling operator. */
     if (rln) {
-        RDC(RelabelingResult, rl, rln->translate(c));
-        RelabelingS& rlv = rl->val;
+        RDC(RelabelingS, rl, rln->translate(c));
 
-        for (unsigned int i=0; i<rlv.size(); i++) {
-            body->val->relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+        for (unsigned int i=0; i<rl->size(); i++) {
+            body->val->relabeling(rl->new_labels[i], rl->old_labels[i]);
         }
         delete rl;
     }
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        RDC(HidingResult, hi, hin->translate(c));
-        HidingS& hv = hi->val;
+        RDC(HidingS, hi, hin->translate(c));
 
-        body->val->hiding(hv.setv, hv.interface);
+        body->val->hiding(hi->setv, hi->interface);
         delete hi;
     }
 
@@ -1799,16 +1789,16 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     return NULL;
 }
 
-Result *fsp::ProcessRefNode::translate(FspDriver& c)
+Symbol *fsp::ProcessRefNode::translate(FspDriver& c)
 {
     /* process_id arguments_OPT */
-    RDC(StringResult, id, children[0]->translate(c));
+    RDC(StringS, id, children[0]->translate(c));
     TDCS(ArgumentsNode, an, children[1]);
-    LtsResult *lts = new LtsResult;
-    IntVecResult *args = NULL;
+    LtsPtrS *lts = new LtsPtrS;
+    IntVecS *args = NULL;
 
     if (an) {
-        RDC(IntVecResult, temp, children[1]->translate(c));
+        RDC(IntVecS, temp, children[1]->translate(c));
 
         args = temp;
     }
@@ -1824,55 +1814,55 @@ Result *fsp::ProcessRefNode::translate(FspDriver& c)
     return lts;
 }
 
-Result *fsp::SharingNode::translate(FspDriver& c)
+Symbol *fsp::SharingNode::translate(FspDriver& c)
 {
     /* action_labels :: */
-    RDC(TreeNodeVecResult, al, children[0]->translate(c));
-    SetResult *result = new SetResult;
+    RDC(TreeNodeVecS, al, children[0]->translate(c));
+    SetS *result = new SetS;
 
-    result->val = computeActionLabels(c, SetS(), al->val, 0);
+    *result = computeActionLabels(c, SetS(), al->val, 0);
     delete al;
 
     return result;
 }
 
-Result *fsp::LabelingNode::translate(FspDriver& c)
+Symbol *fsp::LabelingNode::translate(FspDriver& c)
 {
     /* action_labels : */
-    RDC(TreeNodeVecResult, al, children[0]->translate(c));
-    SetResult *result = new SetResult;
+    RDC(TreeNodeVecS, al, children[0]->translate(c));
+    SetS *result = new SetS;
 
-    result->val = computeActionLabels(c, SetS(), al->val, 0);
+    *result = computeActionLabels(c, SetS(), al->val, 0);
     delete al;
 
     return result;
 }
 
-Result *fsp::PrioritySNode::translate(FspDriver& c)
+Symbol *fsp::PrioritySNode::translate(FspDriver& c)
 {
     TDC(OperatorNode, on, children[0]);
-    RDC(SetResult, se, children[1]->translate(c));
-    PriorityResult *result = new PriorityResult;
+    RDC(SetS, se, children[1]->translate(c));
+    PriorityS *result = new PriorityS;
 
     if (on->sign == ">>") {
-        result->val.low = true;
+        result->low = true;
     } else if (on->sign == "<<") {
-        result->val.low = false;
+        result->low = false;
     } else {
         assert(0);
     }
-    result->val.setv = se->val;
+    result->setv = *se;
     delete se;
 
     return result;
 }
 
-void fsp::CompositeBodyNode::combination(FspDriver& c, Result *r,
+void fsp::CompositeBodyNode::combination(FspDriver& c, Symbol *r,
                                         string index, bool first)
 {
     /* Translate the CompositedBodyNode using the current context. */
-    RDC(LtsResult, cb, children[2]->translate(c));
-    LtsResult *result = result_downcast<LtsResult>(r);
+    RDC(LtsPtrS, cb, children[2]->translate(c));
+    LtsPtrS *result = symbol_downcast<LtsPtrS>(r);
 
     if (first) {
         first = false;
@@ -1883,38 +1873,37 @@ void fsp::CompositeBodyNode::combination(FspDriver& c, Result *r,
     delete cb;
 }
 
-Result *fsp::CompositeBodyNode::translate(FspDriver& c)
+Symbol *fsp::CompositeBodyNode::translate(FspDriver& c)
 {
     if (children.size() == 4) {
         /* sharing_OPT labeling_OPT process_ref relabel_OPT */
         TDCS(SharingNode, shn, children[0]);
         TDCS(LabelingNode, lbn, children[1]);
-        RDC(LtsResult, pr, children[2]->translate(c));
+        RDC(LtsPtrS, pr, children[2]->translate(c));
         TDCS(RelabelingNode, rln, children[3]);
 
         /* Apply the process labeling operator. */
         if (lbn) {
-            RDC(SetResult, lb, lbn->translate(c));
+            RDC(SetS, lb, lbn->translate(c));
 
-            pr->val->labeling(lb->val);
+            pr->val->labeling(*lb);
             delete lb;
         }
 
         /* Apply the process sharing operator. */
         if (shn) {
-            RDC(SetResult, sh, shn->translate(c));
+            RDC(SetS, sh, shn->translate(c));
 
-            pr->val->sharing(sh->val);
+            pr->val->sharing(*sh);
             delete sh;
         }
 
         /* Apply the relabeling operator. */
         if (rln) {
-            RDC(RelabelingResult, rl, rln->translate(c));
-            RelabelingS& rlv = rl->val;
+            RDC(RelabelingS, rl, rln->translate(c));
 
-            for (unsigned int i=0; i<rlv.size(); i++) {
-                pr->val->relabeling(rlv.new_labels[i], rlv.old_labels[i]);
+            for (unsigned int i=0; i<rl->size(); i++) {
+                pr->val->relabeling(rl->new_labels[i], rl->old_labels[i]);
             }
             delete rl;
         }
@@ -1922,20 +1911,20 @@ Result *fsp::CompositeBodyNode::translate(FspDriver& c)
         return pr;
     } else if (children.size() == 5) {
         /* IF expression THEN composity_body composite_else_OPT */
-        RDC(IntResult, expr, children[1]->translate(c));
+        RDC(IntS, expr, children[1]->translate(c));
         TDCS(CompositeElseNode, cen, children[4]);
-        LtsResult *lts = NULL;
+        LtsPtrS *lts = NULL;
 
-        if (expr->val) {
-            RDC(LtsResult, cb, children[3]->translate(c));
+        if (expr->value) {
+            RDC(LtsPtrS, cb, children[3]->translate(c));
 
             lts = cb;
         } else if (cen) {
-            RDC(LtsResult, ce, children[4]->translate(c));
+            RDC(LtsPtrS, ce, children[4]->translate(c));
 
             lts = ce;
         } else {
-            lts = new LtsResult;
+            lts = new LtsPtrS;
             lts->val = new Lts(LtsNode::Normal, &c.actions);
         }
         delete expr;
@@ -1946,39 +1935,38 @@ Result *fsp::CompositeBodyNode::translate(FspDriver& c)
          */
         TDCS(SharingNode, shn, children[0]);
         TDCS(LabelingNode, lbn, children[1]);
-        RDC(LtsVecResult, pc, children[3]->translate(c));
+        RDC(LtsVecS, pc, children[3]->translate(c));
         TDCS(RelabelingNode, rln, children[5]);
-        LtsResult *lts = new LtsResult;
+        LtsPtrS *lts = new LtsPtrS;
 
         /* Apply the process labeling operator to each component process
            separately, before parallel composition. */
         if (lbn) {
-            RDC(SetResult, lb, lbn->translate(c));
+            RDC(SetS, lb, lbn->translate(c));
 
             for (unsigned int k=0; k<pc->val.size(); k++) {
-                pc->val[k]->labeling(lb->val);
+                pc->val[k]->labeling(*lb);
             }
             delete lb;
         }
 
         /* Apply the process sharing operator (same way). */
         if (shn) {
-            RDC(SetResult, sh, shn->translate(c));
+            RDC(SetS, sh, shn->translate(c));
 
             for (unsigned int k=0; k<pc->val.size(); k++) {
-                pc->val[k]->sharing(sh->val);
+                pc->val[k]->sharing(*sh);
             }
             delete sh;
         }
         /* Apply the relabeling operator (same way). */
         if (rln) {
-            RDC(RelabelingResult, rl, rln->translate(c));
-            RelabelingS& rlv = rl->val;
+            RDC(RelabelingS, rl, rln->translate(c));
 
             for (unsigned int k=0; k<pc->val.size(); k++) {
-                for (unsigned int i=0; i<rlv.size(); i++) {
-                    pc->val[k]->relabeling(rlv.new_labels[i],
-                                           rlv.old_labels[i]);
+                for (unsigned int i=0; i<rl->size(); i++) {
+                    pc->val[k]->relabeling(rl->new_labels[i],
+                                           rl->old_labels[i]);
                 }
             }
             delete rl;
@@ -1995,8 +1983,8 @@ Result *fsp::CompositeBodyNode::translate(FspDriver& c)
         return lts;
     } else if (children.size() == 3) {
         /* FORALL index_ranges composite_body */
-        RDC(TreeNodeVecResult, ir, children[1]->translate(c));
-        LtsResult *lts = new LtsResult;
+        RDC(TreeNodeVecS, ir, children[1]->translate(c));
+        LtsPtrS *lts = new LtsPtrS;
 
         /* Only translate 'index_ranges', while 'composite_body'
            will be translated in the loop below. */
@@ -2011,21 +1999,21 @@ Result *fsp::CompositeBodyNode::translate(FspDriver& c)
     return NULL;
 }
 
-Result *fsp::CompositeElseNode::translate(FspDriver& c)
+Symbol *fsp::CompositeElseNode::translate(FspDriver& c)
 {
     /* ELSE composite_body */
-    RDC(LtsResult, cb, children[1]->translate(c));
+    RDC(LtsPtrS, cb, children[1]->translate(c));
 
     return cb;
 }
 
-Result *fsp::ParallelCompNode::translate(FspDriver& c)
+Symbol *fsp::ParallelCompNode::translate(FspDriver& c)
 {
     /* composite_body || composite_body || .. || composite_body */
-    LtsVecResult *result = new LtsVecResult;
+    LtsVecS *result = new LtsVecS;
 
     for (unsigned int i=0; i<children.size(); i+=2) {
-        RDC(LtsResult, cb, children[i]->translate(c));
+        RDC(LtsPtrS, cb, children[i]->translate(c));
 
         result->val.push_back(cb->val);
         delete cb;
@@ -2034,11 +2022,11 @@ Result *fsp::ParallelCompNode::translate(FspDriver& c)
     return result;
 }
 
-Result *fsp::CompositeDefNode::translate(FspDriver& c)
+Symbol *fsp::CompositeDefNode::translate(FspDriver& c)
 {
     /* || process_id param_OPT = composite_body priority_OPT hiding_OPT . */
-    RDC(StringResult, id, children[1]->translate(c));
-    RDC(LtsResult, body, children[4]->translate(c));
+    RDC(StringS, id, children[1]->translate(c));
+    RDC(LtsPtrS, body, children[4]->translate(c));
     TDCS(PrioritySNode, prn, children[5]);
     TDCS(HidingInterfNode, hin, children[6]);
 
@@ -2046,18 +2034,17 @@ Result *fsp::CompositeDefNode::translate(FspDriver& c)
 
     /* Apply the priority operator. */
     if (prn) {
-        RDC(PriorityResult, pr, prn->translate(c));
+        RDC(PriorityS, pr, prn->translate(c));
 
-        body->val->priority(pr->val.setv, pr->val.low);
+        body->val->priority(pr->setv, pr->low);
         delete pr;
     }
 
     /* Apply the hiding/interface operator. */
     if (hin) {
-        RDC(HidingResult, hi, hin->translate(c));
-        HidingS& hv = hi->val;
+        RDC(HidingS, hi, hin->translate(c));
 
-        body->val->hiding(hv.setv, hv.interface);
+        body->val->hiding(hi->setv, hi->interface);
         delete hi;
     }
 

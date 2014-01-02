@@ -165,8 +165,7 @@ void SymbolsTable::print() const
 /* ============================= IntS =============================*/
 Symbol * IntS::clone() const
 {
-    IntS * cv = new IntS;
-    cv->value = value;
+    IntS *cv = new IntS(value);
 
     return cv;
 }
