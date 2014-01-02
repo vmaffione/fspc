@@ -61,6 +61,13 @@ int ActionsTable::lookup(const string& s) const
     return it->second;
 }
 
+string ActionsTable::lookup(unsigned int idx) const
+{
+    assert(idx < reverse.size());
+
+    return reverse[idx];
+}
+
 void ActionsTable::print() const
 {
     map<string, int>::const_iterator it;
@@ -450,7 +457,7 @@ void ActionSetS::toSetValue(const ActionsTable& at, SetS& setv)
 
     for (set<unsigned int>::iterator it = actions.begin();
                     it != actions.end(); it++) {
-        setv += at.reverse[*it];
+        setv += at.lookup(*it);
     }
 }
 

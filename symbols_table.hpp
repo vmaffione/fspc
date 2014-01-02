@@ -38,10 +38,13 @@ struct ActionsTable {
     vector<string> reverse;
     int serial;
 
+public:
     ActionsTable() { }
     ActionsTable(const string& nm) { serial = 0; name = nm; insert("tau"); }
     int insert(const string& s);
     int lookup(const string& s) const;
+    string lookup(unsigned int idx) const;
+    unsigned int size() const { return reverse.size(); }
     void print() const;
 
     ~ActionsTable() { table.clear(); reverse.clear(); }

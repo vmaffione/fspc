@@ -98,18 +98,15 @@ static inline void do_square_int(const string& in, string& out)
    above). */
 string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
 {
-    if (index >= atp->reverse.size())
-        return "UNKN";
-
     if (square_ints) {
         string squared;  /* Prepare an empty string. */
 
-        do_square_int(atp->reverse[index], squared);
+        do_square_int(atp->lookup(index), squared);
 
         return squared;
     }
 
-    return atp->reverse[index];
+    return atp->lookup(index);
 }
 
 #define CHECKATP(RET) \
@@ -606,7 +603,7 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 int fsp::Lts::terminalSets()
 {
     int n = nodes.size();
-    int na = atp->reverse.size();
+    int na = atp->size();
     int nts = 0;
 
     if (terminal_sets_computed)
@@ -918,7 +915,7 @@ fsp::Lts& fsp::Lts::labeling(const string& label)
 	int new_index;
 
 	old_index = *it;
-	new_index = atp->insert(label + "." + atp->reverse[old_index]);
+	new_index = atp->insert(label + "." + atp->lookup(old_index));
 	new_alphabet.insert(new_index);
 	mapping.insert(make_pair(old_index, new_index));
     }
@@ -951,7 +948,7 @@ fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 	old_index = *it;
 	for (unsigned int i=0; i<labels.size(); i++) {
 	    new_index = atp->insert(labels[i] + "." +
-		                    atp->reverse[old_index]);
+		                    atp->lookup(old_index));
 	    new_alphabet.insert(new_index);
 	    new_indexes.push_back(new_index);
 	}
@@ -997,7 +994,7 @@ fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 	pair<string::const_iterator, string::iterator> mm;
 
 	old_index = *it;
-	action = atp->reverse[old_index];
+	action = atp->lookup(old_index);
 	/* Prefix match: check if 'oldlabel' is a prefix of 'action'. */
 	mm = mismatch(oldlabel.begin(), oldlabel.end(), action.begin());
 	if (mm.first == oldlabel.end()) {
