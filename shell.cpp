@@ -752,9 +752,9 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
         SetS cond;
 
         pv = is<ProgressS>(it->second);
-        pv->set.toSetValue(c.actions, set);
+        pv->set.toSetValue(set);
         if (pv->conditional) {
-            pv->condition.toSetValue(c.actions, cond);
+            pv->condition.toSetValue(cond);
         }
 	ss << "   " << it->first << ": ";
         if (pv->conditional) {
@@ -777,7 +777,7 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
         SetS setv;
 
         as = is<ActionSetS>(it->second);
-        as->toSetValue(c.actions, setv);
+        as->toSetValue(setv);
 	ss << "   " << it->first << ": ";
         setv.output(ss);
         ss << "\n";

@@ -535,7 +535,7 @@ void fsp::ProgressDefNode::combination(FspDriver& c, Symbol *r,
         RDC(SetS, se, children[4]->translate(c));
 
         pv->conditional = false;
-        se->toActionSetValue(c.actions, pv->set);
+        se->toActionSetValue(pv->set);
         delete se;
     } else if (children.size() == 8) {
         /* Progress definition in conditional form. */
@@ -543,8 +543,8 @@ void fsp::ProgressDefNode::combination(FspDriver& c, Symbol *r,
         RDC(SetS, se, children[7]->translate(c));
 
         pv->conditional = true;
-        cse->toActionSetValue(c.actions, pv->condition);
-        se->toActionSetValue(c.actions, pv->set);
+        cse->toActionSetValue(pv->condition);
+        se->toActionSetValue(pv->set);
         delete se;
         delete cse;
     } else {
@@ -688,7 +688,7 @@ Symbol *fsp::MenuDefNode::translate(FspDriver &c)
 
     /* Turn the SetS contained into the SetNode into an
        ActionSetS. */
-    se->toActionSetValue(c.actions, *asv);
+    se->toActionSetValue(*asv);
 
     if (!c.menus.insert(id->val, asv)) {
         stringstream errstream;
@@ -994,7 +994,7 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
     const vector<TreeNode *>& elements = vec->val;
     vector<unsigned int> indexes(elements.size());
     vector<unsigned int> limits(elements.size());
-    fsp::SmartPtr<fsp::Lts> lts = new Lts(LtsNode::Normal, &c.actions);
+    fsp::SmartPtr<fsp::Lts> lts = new Lts(LtsNode::Normal);
     Context ctx = c.ctx;
 
     /* Initialize the 'indexes' vector. */
@@ -1084,7 +1084,7 @@ fsp::SmartPtr<fsp::Lts> fsp::TreeNode::computePrefixActions(FspDriver& c,
                    context. */
                 ctxcache.push_back(c.ctx);
             }
-            next = new Lts(LtsNode::Incomplete, &c.actions);
+            next = new Lts(LtsNode::Incomplete);
             /* Store the index in the 'priv' field. */
             next->set_priv(0, ctxcache.size() - 1);
         } else {
@@ -1149,11 +1149,11 @@ Symbol *fsp::BaseLocalProcessNode::translate(FspDriver& c)
     fsp::LtsPtrS *result = new fsp::LtsPtrS;
 
     if (en) {
-        result->val = new Lts(LtsNode::End, &c.actions);
+        result->val = new Lts(LtsNode::End);
     } else if (sn) {
-        result->val = new Lts(LtsNode::Normal, &c.actions);
+        result->val = new Lts(LtsNode::Normal);
     } else if (ern) {
-        result->val = new Lts(LtsNode::Error, &c.actions);
+        result->val = new Lts(LtsNode::Error);
     } else {
         /* process_id indices_OPT */
         RDC(StringS, id, children[0]->translate(c));
@@ -1162,7 +1162,7 @@ Symbol *fsp::BaseLocalProcessNode::translate(FspDriver& c)
 
         /* Create an LTS containing a single unresolved
            node. */
-        result->val = new Lts(LtsNode::Unresolved, &c.actions);
+        result->val = new Lts(LtsNode::Unresolved);
         if (ixn) {
             RDC(StringS, idx, children[1]->translate(c));
 
@@ -1407,7 +1407,7 @@ Symbol *fsp::LocalProcessNode::translate(FspDriver& c)
             result = elsep;
         } else {
             result = new LtsPtrS;
-            result->val = new Lts(LtsNode::Normal, &c.actions);
+            result->val = new Lts(LtsNode::Normal);
         }
         delete expr;
     } else {
@@ -1745,9 +1745,10 @@ for (unsigned int i=0; i<c.unres.size(); i++) {
     /* Extend the alphabet. */
     if (aen) {
         RDC(SetS, alpha, aen->translate(c));
+        ActionsTable& at = ActionsTable::getref();
 
         for (unsigned int i=0; i<alpha->size(); i++) {
-            body->val->updateAlphabet(c.actions.insert((*alpha)[i]));
+            body->val->updateAlphabet(at.insert((*alpha)[i]));
         }
         delete alpha;
     }
@@ -1925,7 +1926,7 @@ Symbol *fsp::CompositeBodyNode::translate(FspDriver& c)
             lts = ce;
         } else {
             lts = new LtsPtrS;
-            lts->val = new Lts(LtsNode::Normal, &c.actions);
+            lts->val = new Lts(LtsNode::Normal);
         }
         delete expr;
 

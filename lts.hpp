@@ -120,8 +120,6 @@ class Lts: public Symbol {
     unsigned int end;
     unsigned int err;
 
-    ActionsTable * atp;
-
     set<int> alphabet;
 
     vector<TerminalSet> terminal_sets;
@@ -159,8 +157,8 @@ class Lts: public Symbol {
   public:
     string name;
 
-    Lts() { atp = NULL; err = end = ~0U; }
-    Lts(int, struct ActionsTable *); /* One state Lts: Stop, End or Error */
+    Lts() { err = end = ~0U; }
+    Lts(int); /* One state Lts: Stop, End or Error */
     Lts(const Lts& p, const Lts& q); /* Parallel composition */
     int numStates() const { return nodes.size(); }
     int numTransitions() const;

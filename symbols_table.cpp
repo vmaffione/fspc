@@ -39,6 +39,24 @@
 
 
 /* ========================= ActionsTable ================================ */
+ActionsTable *ActionsTable::instance = NULL;
+
+ActionsTable *ActionsTable::get()
+{
+    if (instance == NULL) {
+        instance = new ActionsTable("Global actions table");
+    }
+
+    return instance;
+}
+
+ActionsTable& ActionsTable::getref()
+{
+    ActionsTable *a = ActionsTable::get();
+
+    return *a;
+}
+
 int ActionsTable::insert(const string& s)
 {
     pair< map<string, int>::iterator, bool > ins_ret;
@@ -304,8 +322,10 @@ void SetS::clear()
     variable = string();
 }
 
-void SetS::toActionSetValue(ActionsTable& at, ActionSetS& asv)
+void SetS::toActionSetValue(ActionSetS& asv)
 {
+    ActionsTable& at = ActionsTable::getref();
+
     asv.clear();
     for (unsigned int i = 0; i < actions.size(); i++) {
         asv.add(at.insert(actions[i]));
@@ -451,8 +471,10 @@ void ActionSetS::clear()
     actions.clear();
 }
 
-void ActionSetS::toSetValue(const ActionsTable& at, SetS& setv)
+void ActionSetS::toSetValue(SetS& setv)
 {
+    const ActionsTable& at = ActionsTable::getref();
+
     setv.clear();
 
     for (set<unsigned int>::iterator it = actions.begin();

@@ -38,7 +38,7 @@ using namespace std;
 
 /* ============================== FspDriver ============================= */
 
-FspDriver::FspDriver() : actions("Global actions table")
+FspDriver::FspDriver()
 {
     trace_scanning = trace_parsing = false;
     tree = NULL;
@@ -287,6 +287,7 @@ void FspDriver::translateProcessesDefinitions()
 
 int FspDriver::parse(const CompilerOptions& co)
 {
+    ActionsTable& actions = ActionsTable::getref();
     Serializer * serp = NULL;
     Deserializer * desp = NULL;
     stringstream ss;
@@ -350,7 +351,7 @@ int FspDriver::parse(const CompilerOptions& co)
 	desp->integer(nlts, 0);
 	for (uint32_t i=0; i<nlts; i++) {
 	    fsp::SmartPtr<fsp::Lts> lts =
-                    new fsp::Lts(LtsNode::End, &actions);
+                    new fsp::Lts(LtsNode::End);
 
 	    desp->lts(*lts, 0);
 	    /* Insert lts into the global 'processes' table. */

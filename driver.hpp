@@ -61,9 +61,6 @@ class FspDriver
     public:
         CompilerOptions cop;
 
-	/* Main actions table. */
-	struct ActionsTable actions;
-
 	/* Const, Range, Set and Parameter objects. */
 	struct SymbolsTable identifiers;
 

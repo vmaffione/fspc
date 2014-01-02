@@ -96,24 +96,20 @@ static inline void do_square_int(const string& in, string& out)
 /* Access an action label by its index. If 'square_ints' is true, the
    stored action label is processed using do_square_int() routine (see
    above). */
-string ati(struct ActionsTable * atp, unsigned int index, bool square_ints)
+string ati(unsigned int index, bool square_ints)
 {
+    ActionsTable& at = ActionsTable::getref();
+
     if (square_ints) {
         string squared;  /* Prepare an empty string. */
 
-        do_square_int(atp->lookup(index), squared);
+        do_square_int(at.lookup(index), squared);
 
         return squared;
     }
 
-    return atp->lookup(index);
+    return at.lookup(index);
 }
-
-#define CHECKATP(RET) \
-    if (atp == NULL) { \
-        cout << "[" << __LINE__ << "] Null atp\n"; \
-        return RET; \
-    }
 
 
 /* ====================== class Lts implementation ===================== */
@@ -152,15 +148,13 @@ void fsp::Lts::printAlphabet(stringstream& ss) const
 {
     set<int>::iterator it;
 
-    CHECKATP();
-
     ss << "Alphabet: {";
     for (it=alphabet.begin(); it != alphabet.end(); it++)    
-	ss << ati(atp, *it, false) << ", ";
+	ss << ati(*it, false) << ", ";
     ss << "}\n";
 }
 
-fsp::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
+fsp::Lts::Lts(int type)
 {
     struct LtsNode node;
 
@@ -173,18 +167,18 @@ fsp::Lts::Lts(int type, struct ActionsTable * p) : atp(p)
     DBR(delegated = 0);
 }
 
-void fsp::Lts::print() const {
+void fsp::Lts::print() const
+{
+    ActionsTable& at = ActionsTable::getref();
     stringstream ss;
 
-    CHECKATP();
-
-    atp->print();
+    at.print();
     cout << "LTS " << name << "\n";
     for (unsigned int i=0; i<nodes.size(); i++) {
 	cout << "State " << i << "(priv=" << get_priv(i) << ", type=" <<
             get_type(i) << "):\n";
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
-	    cout << "    " << ati(atp, nodes[i].children[j].action, false)
+	    cout << "    " << ati(nodes[i].children[j].action, false)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
     printAlphabet(ss); cout << ss.str();
@@ -313,8 +307,6 @@ void fsp::Lts::compose_declarative(const fsp::Lts& p, const fsp::Lts& q)
     Edge e;
     Lts product;
 
-    assert(p.atp == atp && q.atp == atp);
-
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
     this->clear();
 
@@ -442,8 +434,6 @@ void fsp::Lts::compose_operational(const fsp::Lts& p, const fsp::Lts& q)
     unsigned ip, iq;
     Edge e;
 
-    assert(p.atp == atp && q.atp == atp);
-
     /* First of all we reset *this, like Lts(ActionsTable *) would do. */
     nodes.clear();
     terminal_sets_computed = false;
@@ -506,8 +496,6 @@ void fsp::Lts::compose(const fsp::Lts& p, const fsp::Lts& q)
 
 fsp::Lts::Lts(const fsp::Lts& p, const fsp::Lts& q)
 {
-    assert(p.atp && q.atp == p.atp);
-    atp = p.atp;
     compose(p, q);
     refcount = 0;
     DBR(delegated = 0);
@@ -533,8 +521,6 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
     vector<bool> seen(n);     /* seen[i] is set if state i has been enqueued */
     vector<int> action_trace(n);
     int pop, push;  /* Queue indexes */
-
-    CHECKATP(0);
 
     if (!n) {
         return 0;
@@ -590,7 +576,7 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 	    }
 	    ss << "	Trace to " << ed << ": ";
 	    for (j--; j>=0; j--)
-		ss << ati(atp, action_trace[j], false) << "->";
+		ss << ati(action_trace[j], false) << "->";
 	    ss << "\n\n";
 	    nd++;
 	}
@@ -603,7 +589,7 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 int fsp::Lts::terminalSets()
 {
     int n = nodes.size();
-    int na = atp->size();
+    int na = ActionsTable::getref().size();
     int nts = 0;
 
     if (terminal_sets_computed)
@@ -632,8 +618,6 @@ int fsp::Lts::terminalSets()
     vector<bool> tarjan_state_in_component(n);
     vector<int> tarjan_component_actions(na);
     vector<bool> tarjan_action_in_component(na);
-
-    CHECKATP(0);
 
     /* Initialize DFS structures: at the beginning only the 0 node is on
        the state stack */
@@ -776,12 +760,12 @@ int fsp::Lts::terminalSets()
 		    }
 		    IFD(cout << "Trace to the terminal set:\n");
 		    for (j--; j>=0; j--) {
-			IFD(cout << "    " << ati(atp, action_trace[j], false) << "\n");
+			IFD(cout << "    " << ati(action_trace[j], false) << "\n");
 			ts.trace.push_back(action_trace[j]);
 		    }
 		    IFD(cout << "Actions in the terminal set: {");
 		    for (j=0; j<nca; j++) {
-			IFD(cout << ati(atp, tarjan_component_actions[j], false) << ", ");
+			IFD(cout << ati(tarjan_component_actions[j], false) << ", ");
 			ts.actions.insert(tarjan_component_actions[j]);
 		    }
 		    IFD(cout << "}\n");
@@ -901,10 +885,9 @@ fsp::Lts& fsp::Lts::labeling(const SetS& labels)
 
 fsp::Lts& fsp::Lts::labeling(const string& label)
 {
+    ActionsTable& at = ActionsTable::getref();
     set<int> new_alphabet;
     map<int, int> mapping;
-
-    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -915,7 +898,7 @@ fsp::Lts& fsp::Lts::labeling(const string& label)
 	int new_index;
 
 	old_index = *it;
-	new_index = atp->insert(label + "." + atp->lookup(old_index));
+	new_index = at.insert(label + "." + at.lookup(old_index));
 	new_alphabet.insert(new_index);
 	mapping.insert(make_pair(old_index, new_index));
     }
@@ -931,10 +914,9 @@ fsp::Lts& fsp::Lts::labeling(const string& label)
 
 fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 {
+    ActionsTable& at = ActionsTable::getref();
     set<int> new_alphabet;
     map<int, vector<int> > mapping;
-
-    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -947,8 +929,8 @@ fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 
 	old_index = *it;
 	for (unsigned int i=0; i<labels.size(); i++) {
-	    new_index = atp->insert(labels[i] + "." +
-		                    atp->lookup(old_index));
+	    new_index = at.insert(labels[i] + "." +
+		                    at.lookup(old_index));
 	    new_alphabet.insert(new_index);
 	    new_indexes.push_back(new_index);
 	}
@@ -977,10 +959,9 @@ fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 
 fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 {
+    ActionsTable& at = ActionsTable::getref();
     map<int, vector<int> > mapping;
     set<int> new_alphabet = alphabet;
-
-    CHECKATP(*this);
 
     terminal_sets_computed = false;
 
@@ -994,7 +975,7 @@ fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 	pair<string::const_iterator, string::iterator> mm;
 
 	old_index = *it;
-	action = atp->lookup(old_index);
+	action = at.lookup(old_index);
 	/* Prefix match: check if 'oldlabel' is a prefix of 'action'. */
 	mm = mismatch(oldlabel.begin(), oldlabel.end(), action.begin());
 	if (mm.first == oldlabel.end()) {
@@ -1002,7 +983,7 @@ fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 		string new_action = action;
 
 		new_action.replace(0, oldlabel.size(), newlabels[i]);
-		new_index = atp->insert(new_action);
+		new_index = at.insert(new_action);
 		new_alphabet.insert(new_index);
 		new_indexes.push_back(new_index);
 	    }
@@ -1049,8 +1030,6 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 {
     set<int> new_alphabet;
 
-    CHECKATP(*this);
-
     terminal_sets_computed = false;
 
     /* Update the alphabet. */
@@ -1060,7 +1039,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(atp, *it, false);
+		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
                 string cand = s[i];
 
@@ -1077,7 +1056,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 	    /* The action s[i] can hide multiple alphabet elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(atp, *it, false);
+		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
                 string cand = s[i];
 
@@ -1095,7 +1074,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
     for (unsigned int i=0; i<nodes.size(); i++)
 	for (unsigned int j=0; j<nodes[i].children.size(); j++)
 	    if (!alphabet.count(nodes[i].children[j].action))
-		/* We are sure that atp->lookup("tau") == 0. */
+		/* We are sure that at->lookup("tau") == 0. */
 		nodes[i].children[j].action = 0;
 
     return *this;
@@ -1107,8 +1086,6 @@ fsp::Lts& fsp::Lts::priority(const SetS& s, bool low)
     set<int> priority_actions;
     Lts new_lts;
 
-    CHECKATP(*this);
-
     new_lts.nodes.resize(nodes.size());
 
     terminal_sets_computed = false;
@@ -1118,7 +1095,7 @@ fsp::Lts& fsp::Lts::priority(const SetS& s, bool low)
 	       elements. */
 	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
-		string action = ati(atp, *it, false);
+		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
                 string cand = s[i];
 
@@ -1205,8 +1182,6 @@ fsp::Lts& fsp::Lts::property()
 int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 					    stringstream& ss)
 {
-    CHECKATP(0);
-
     terminalSets();
 
     for (unsigned int i=0; i<terminal_sets.size(); i++) {
@@ -1232,12 +1207,12 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 		<< " and progress property " << progress_name << ":\n";
 	    ss << "	Trace to violation: ";
 	    for (unsigned int j=0; j<ts.trace.size(); j++)
-		ss << ati(atp, ts.trace[j], false) << "-> ";
+		ss << ati(ts.trace[j], false) << "-> ";
 	    ss << "\n";
 	    ss << "	Actions in terminal set: {";
 	    for (set<unsigned int>::iterator it=ts.actions.begin();
 		    it!=ts.actions.end(); it++)
-		ss << ati(atp, *it, false) << ", ";
+		ss << ati(*it, false) << ", ";
 	    ss << "}\n\n";
 	    
 	}
@@ -1248,14 +1223,11 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 
 struct OutputData {
     fstream * fsptr;
-    ActionsTable * atp;
 };
 
 void fsp::Lts::graphvizOutput(const char * filename) const
 {
     fstream fout;
-
-    CHECKATP();
 
     fout.open(filename, fstream::out);
     fout << "digraph G {\n";
@@ -1286,7 +1258,7 @@ void fsp::Lts::graphvizOutput(const char * filename) const
             const Edge& e = nodes[i].children[j];
 
 	    fout << i << " -> " << e.dest
-	            << " [label = \"" << ati(atp, e.action, false) << "\"];\n";
+	            << " [label = \"" << ati(e.action, false) << "\"];\n";
         }
     }
 
@@ -1298,17 +1270,15 @@ void fsp::Lts::print_trace(const vector<int>& trace, stringstream& ss) const
 {
     int size = trace.size();
 
-    CHECKATP();
-
     if (!size)
 	return;
 
     ss << "    Current trace:\n";
     ss << "        ";
     for (int i=0; i<size-1; i++) {
-	ss << ati(atp, trace[i], false) << " -> ";
+	ss << ati(trace[i], false) << " -> ";
     }
-    ss << ati(atp, trace[size-1], false) << "\n";
+    ss << ati(trace[size-1], false) << "\n";
 }
 
 void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
@@ -1316,8 +1286,6 @@ void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
     stringstream ss;
     int state = 0;
     vector<int> trace;
-
-    CHECKATP();
 
     for (;;) {
 	unsigned int i;
@@ -1362,7 +1330,7 @@ choose:
 	ss << "    Elegible actions: \n";
 	for (i=0; i<elegible_actions.size(); i++) {
 	    ss << "	    (" << i+1 << ") "
-		    << ati(atp, elegible_actions[i], false) << "\n";
+		    << ati(elegible_actions[i], false) << "\n";
 	}
         if (system_actions.size()) {
             /* There are actions excluded from the menu) */
@@ -1409,7 +1377,6 @@ static void basicVisitFunction(int state, const fsp::Lts& lts, const struct LtsN
 				void * opaque)
 {
     OutputData * bvd = static_cast<OutputData *>(opaque);
-    ActionsTable * atp = bvd->atp;
     fstream * fsptr = bvd->fsptr;
     int size = node.children.size();
 
@@ -1430,10 +1397,10 @@ static void basicVisitFunction(int state, const fsp::Lts& lts, const struct LtsN
 	*fsptr << "(";
 
 	for (int i=0; i<size-1; i++) {
-	    *fsptr << ati(atp, node.children[i].action, true)
+	    *fsptr << ati(node.children[i].action, true)
 		<< " -> S" << node.children[i].dest << "\n  | ";
 	}
-	*fsptr << ati(atp, node.children[size-1].action, true)
+	*fsptr << ati(node.children[size-1].action, true)
 	    << " -> S" << node.children[size-1].dest << ")";
     }
 }
@@ -1444,12 +1411,9 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
     LtsVisitObject lvo;
     OutputData bvd;
 
-    CHECKATP();
-
     fout << name << " = S0";
 
     lvo.vfp = basicVisitFunction;
-    bvd.atp = atp;
     bvd.fsptr = &fout;
     lvo.opaque = &bvd;
     visit(lvo);
@@ -1602,7 +1566,7 @@ void fsp::Lts::__traces(stringstream &ss, set<CEdge>& marked,
         if (!ret.second) {
             ss << "{ ";
             for (unsigned int j = 0; j < trace.size(); j++) {
-                ss << ati(atp, trace[j], false) << " ";
+                ss << ati(trace[j], false) << " ";
             }
             ss << "}\n";
         } else {
@@ -1658,14 +1622,13 @@ unsigned int fsp::Lts::append(const fsp::Lts& lts, unsigned int first)
 */
 fsp::Lts& fsp::Lts::zerocat(const fsp::Lts& lts, const string& label)
 {
+    ActionsTable& at = ActionsTable::getref();
     unsigned int offset = append(lts, 0);
     Edge e;
 
-    CHECKATP(*this);
-
     /* Make the connection. */
     e.dest = offset;
-    e.action = atp->insert(label);
+    e.action = at.insert(label);
     alphabet.insert(e.action);
     nodes[0].children.push_back(e);
 

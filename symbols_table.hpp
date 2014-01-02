@@ -32,15 +32,26 @@
 using namespace std;
 
 
-struct ActionsTable {
-    string name;
-    map<string, int> table;
-    vector<string> reverse;
-    int serial;
-
-public:
+class ActionsTable {
+    /* Singleton implementation. */
     ActionsTable() { }
     ActionsTable(const string& nm) { serial = 0; name = nm; insert("tau"); }
+    static ActionsTable *instance;
+
+/* This 'public' tag should go away, we are keeping it only to avoid
+   Serializer/Deserializer friend declarations. */
+public:
+    string name;
+    int serial;
+    map<string, int> table;
+    vector<string> reverse;
+
+public:
+    /* Singleton API. */
+    static ActionsTable *get();
+    static ActionsTable& getref();
+
+    /* Manipulation API. */
     int insert(const string& s);
     int lookup(const string& s) const;
     string lookup(unsigned int idx) const;
@@ -94,7 +105,7 @@ struct SetS: public Symbol {
     SetS& operator +=(const string&);
     void clear();
 
-    void toActionSetValue(ActionsTable& at, ActionSetS& asv);
+    void toActionSetValue(ActionSetS& asv);
     void output(const string& name, const char * filename) const;
     void output(stringstream& ss) const;
 };
@@ -162,7 +173,7 @@ struct ActionSetS : public Symbol {
     bool add(unsigned int a);
     bool lookup(unsigned int a) const;
     void clear();
-    void toSetValue(const ActionsTable& at, SetS& sv);
+    void toSetValue(SetS& sv);
     void print() const;
     const char *className() const { return "ActionSet"; }
     Symbol *clone() const;
