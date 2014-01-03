@@ -191,7 +191,7 @@ class Lts: public Symbol {
     void printAlphabet(stringstream& ss) const;
     unsigned int append(const Lts&, unsigned int first);
     Lts& zerocat(const Lts& lts, const string& label);
-    Lts& incompcat(const vector<Lts>& ltsv);
+    Lts& incompcat(const vector< SmartPtr<Lts> >& ltsv);
     Lts& zeromerge(const Lts& lts);
     unsigned int resolve();
     Lts& mergeEndNodes();

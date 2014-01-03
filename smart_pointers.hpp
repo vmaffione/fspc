@@ -57,9 +57,9 @@ class SmartPtr {
         SmartPtr(const SmartPtr&);
         SmartPtr& operator=(T* p);
         SmartPtr& operator=(SmartPtr&);
-        T* operator->() { return ptr; }
+        T* operator->() const { return ptr; }
         T* delegate();
-        operator T*();
+        operator T*() const;
         ~SmartPtr();
         void clear();
 };
@@ -158,7 +158,7 @@ fsp::SmartPtr<T>& fsp::SmartPtr<T>::operator=(T *p)
    object (see fsp::SmartPtr<fsp::Lts>::delegate).
    */
 template <class T>
-fsp::SmartPtr<T>::operator T*()
+fsp::SmartPtr<T>::operator T*() const
 {
     return ptr;
 }

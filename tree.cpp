@@ -1447,7 +1447,7 @@ Symbol *fsp::ActionPrefixNode::translate(FspDriver& c)
        with proper context. */
 
     if (!guard || guard->val) {
-        vector<Lts> processes; /* XXX can this be vector<fsp::SmartPtr<fsp::Lts>> ?? */
+        vector< SmartPtr<Lts> > processes;
 
         /* Compute an incomplete Lts, and the context related to
            each incomplete node (ctxcache). */
@@ -1458,7 +1458,7 @@ Symbol *fsp::ActionPrefixNode::translate(FspDriver& c)
 
             c.ctx = ctxcache[i];
             lts = symbol_downcast<LtsPtrS>(lp->translate(c));
-            processes.push_back(*lts->val);
+            processes.push_back(lts->val);
             delete lts;
         }
 

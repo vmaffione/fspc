@@ -1695,7 +1695,7 @@ void fsp::Lts::removeType(unsigned int type, unsigned int zero_idx,
    'x -> ltsv[k][0]', where 'lts[k][0]' is the zero node of 'ltsv[k]'.
    The incomplete nodes in *this are then removed from *this.
 */
-fsp::Lts& fsp::Lts::incompcat(const vector<fsp::Lts>& ltsv)
+fsp::Lts& fsp::Lts::incompcat(const vector< fsp::SmartPtr<fsp::Lts> >& ltsv)
 {
     unsigned int num_nodes = nodes.size();
     vector<unsigned int> offsets(ltsv.size());
@@ -1719,7 +1719,9 @@ fsp::Lts& fsp::Lts::incompcat(const vector<fsp::Lts>& ltsv)
                 priv = get_priv(e.dest);
                 assert(priv < offsets.size());
                 if (offsets[priv] == ~0U) {
-                    offsets[priv] = append(ltsv[priv], 0);
+                    const Lts *lts = ltsv[priv];
+
+                    offsets[priv] = append(*lts, 0);
                 }
                 /* Replace incomplete node destinations with the zero
                    node of 'ltsv[priv]'. */
