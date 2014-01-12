@@ -9,7 +9,7 @@ else
 fi
 
 ##################### tests on correct input ##################
-for i in {1..28}
+for i in {1..29}
 do
     if [ ! -f "tests/input${i}.fsp" ]; then
 	echo "error: tests/input${i}.fsp not found"

@@ -161,6 +161,8 @@ void fsp::TreeNode::print(ofstream& os)
 
 Symbol *fsp::TreeNode::translate(FspDriver& c)
 {
+    cout << "While translating " << getClassName() << ":\n";
+
     /* Never get to here. */
     assert(0);
 
@@ -1141,6 +1143,13 @@ Symbol *fsp::IndicesNode::translate(FspDriver& c)
     return result;
 }
 
+Symbol *fsp::GuardNode::translate(FspDriver& c)
+{
+    RDC(IntS, expr, children[1]->translate(c));
+
+    return expr;
+}
+
 Symbol *fsp::BaseLocalProcessNode::translate(FspDriver& c)
 {
     TDCS(EndNode, en, children[0]);
@@ -1183,22 +1192,35 @@ Symbol *fsp::BaseLocalProcessNode::translate(FspDriver& c)
 
 Symbol *fsp::ChoiceNode::translate(FspDriver& c)
 {
-    LtsPtrS *result;
+    LtsPtrS *result = NULL;
 
     assert(children.size());
 
     /* action_prefix | action_prefix | ... | action_prefix */
-    do {
-        RDC(LtsPtrS, ap, children[0]->translate(c));
-
-        result = ap;
-    } while (0);
-
-    for (unsigned int i=2; i<children.size(); i+=2) {
+    for (unsigned int i = 0; i < children.size(); i += 2) {
         RDC(LtsPtrS, ap, children[i]->translate(c));
 
-        result->val->zeromerge(*ap->val);
-        delete ap;
+        /* The translated ActionPrefix can be NULL because of a false
+           WHEN clause: Skip it just in case. */
+        if (ap->val) {
+            if (!result) {
+                /* This is the first non-NULL ActionPrefix. */
+                result = ap;
+            } else {
+                /* Zeromerge this other non-NULL ActionPrefix. */
+                result->val->zeromerge(*ap->val);
+                delete ap;
+            }
+        } else {
+            delete ap;
+        }
+    }
+
+    if (!result) {
+        /* All the ActionPrefix were NULL. In this corner case we return
+           an LTS stop node. */
+        result = new LtsPtrS;
+        result->val = new Lts(LtsNode::Normal);
     }
 
     return result;

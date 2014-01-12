@@ -1,0 +1,4 @@
+V1 = (when 0 v1->END).
+V2 = (when 1 v2->END).
+V3 = (when 0 v3->END | v3x->END).
+V4 = (when 1 v4->END | v4x->END).

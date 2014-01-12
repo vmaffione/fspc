@@ -572,6 +572,7 @@ class GuardNode : public IntTreeNode {
         static string className() { return "Guard"; }
         string getClassName() const { return className(); }
         GuardNode() : IntTreeNode() { }
+        Symbol *translate(FspDriver& c);
 };
 
 class WhenNode : public TreeNode {
