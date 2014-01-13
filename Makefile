@@ -1,4 +1,4 @@
-VER=1.5
+VER=1.6
 
 # Generated C++ source files (to be updated manually)
 GENERATED=parser.cpp parser.hpp scanner.cpp preproc.cpp location.hh position.hh
