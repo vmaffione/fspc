@@ -542,7 +542,7 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
     while (pop != push) {
 	unsigned int i;
 
-	/* Pop a state and examine all its child. */
+	/* Pop a state and examine all its children. */
 	state = frontier[pop];
 	for (i=0; i<nodes[state].children.size(); i++) {
 	    int child = nodes[state].children[i].dest;
