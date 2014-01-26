@@ -78,7 +78,7 @@ class Shell {
         /* A mapping of command names to the help strings. */
         map<string, const char*> help_map;
 
-        typedef void (Shell::*ShellCmdFunc)(const vector<string>& args, stringstream& ss);
+        typedef int (Shell::*ShellCmdFunc)(const vector<string>& args, stringstream& ss);
 
         /* A mapping of command names to command callbacks. */
         map<string, ShellCmdFunc> cmd_map;
@@ -103,19 +103,19 @@ class Shell {
         void fill_completion();
         void getline_ncurses(string& line, const char *prompt);
 
-        void ls(const vector<string>& args, stringstream& ss);
-        void safety(const vector<string>& args, stringstream& ss);
-        void progress(const vector<string>& args, stringstream& ss);
-        void simulate(const vector<string>& args, stringstream& ss);
-        void basic(const vector<string>& args, stringstream& ss);
-        void alpha(const vector<string>& args, stringstream& ss);
-        void see(const vector<string>& args, stringstream& ss);
-        void print(const vector<string>& args, stringstream& ss);
-        void lsprop(const vector<string>& args, stringstream& ss);
-        void lsmenu(const vector<string>& args, stringstream& ss);
-        void minimize(const vector<string>& args, stringstream& ss);
-        void traces(const vector<string>& args, stringstream& ss);
-        void help(const vector<string>& args, stringstream& ss);
+        int ls(const vector<string>& args, stringstream& ss);
+        int safety(const vector<string>& args, stringstream& ss);
+        int progress(const vector<string>& args, stringstream& ss);
+        int simulate(const vector<string>& args, stringstream& ss);
+        int basic(const vector<string>& args, stringstream& ss);
+        int alpha(const vector<string>& args, stringstream& ss);
+        int see(const vector<string>& args, stringstream& ss);
+        int print(const vector<string>& args, stringstream& ss);
+        int lsprop(const vector<string>& args, stringstream& ss);
+        int lsmenu(const vector<string>& args, stringstream& ss);
+        int minimize(const vector<string>& args, stringstream& ss);
+        int traces(const vector<string>& args, stringstream& ss);
+        int help(const vector<string>& args, stringstream& ss);
 
     public:
         Shell(FspDriver& cr, istream& inr);

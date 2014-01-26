@@ -480,7 +480,7 @@ void Shell::readline(string& line)
     }
 }
 
-void Shell::ls(const vector<string> &args, stringstream& ss)
+int Shell::ls(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
     fsp::Lts *lts;
@@ -506,9 +506,11 @@ void Shell::ls(const vector<string> &args, stringstream& ss)
             ss << "   " << it->first << ": NOT TRANSLATED\n";
         }
     }
+
+    return 0;
 }
 
-void Shell::safety(const vector<string> &args, stringstream& ss)
+int Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
 
@@ -519,7 +521,7 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
-            return;
+            return -1;
         }
         lts->deadlockAnalysis(ss);
     } else {
@@ -532,9 +534,11 @@ void Shell::safety(const vector<string> &args, stringstream& ss)
 	    lts->deadlockAnalysis(ss);
 	}
     }
+
+    return 0;
 }
 
-void Shell::progress(const vector<string> &args, stringstream& ss)
+int Shell::progress(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
     map<string, fsp::Symbol *>::iterator jt;
@@ -547,7 +551,7 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
-            return;
+            return -1;
         }
         for (it=c.progresses.table.begin();
                 it!=c.progresses.table.end(); it++) {
@@ -568,22 +572,24 @@ void Shell::progress(const vector<string> &args, stringstream& ss)
 	    }
 	}
     }
+
+    return 0;
 }
 
-void Shell::simulate(const vector<string> &args, stringstream& ss)
+int Shell::simulate(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
     fsp::ActionSetS *menu = NULL;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-        return;
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
         ss << "Process " << args[0] << " not found\n";
-        return;
+        return -1;
     }
 
     if (args.size() >= 2) {
@@ -591,7 +597,7 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
 
         if (!c.menus.lookup(args[1], svp)) {
             ss << "Menu " << args[1] << " not found\n";
-            return;
+            return -1;
         }
         menu = fsp::is<fsp::ActionSetS>(svp);
     }
@@ -599,22 +605,24 @@ void Shell::simulate(const vector<string> &args, stringstream& ss)
     history_enable(false);
     lts->simulate(*this, menu);
     history_enable(true);
+
+    return 0;
 }
 
-void Shell::basic(const vector<string> &args, stringstream& ss)
+int Shell::basic(const vector<string> &args, stringstream& ss)
 {
     string outfile;
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
         ss << "Process " << args[0] << " not found\n";
-        return;
+        return -1;
     }
 
     if (args.size() >= 2) {
@@ -624,27 +632,31 @@ void Shell::basic(const vector<string> &args, stringstream& ss)
     }
 
     lts->basic(outfile, ss);
+
+    return 0;
 }
 
-void Shell::alpha(const vector<string> &args, stringstream& ss)
+int Shell::alpha(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
-	return;
+	return -1;
     }
 
     lts->printAlphabet(ss);
+
+    return 0;
 }
 
-void Shell::see(const vector<string> &args, stringstream& ss)
+int Shell::see(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
     string tmp_name;
@@ -652,18 +664,18 @@ void Shell::see(const vector<string> &args, stringstream& ss)
 
     if (!interactive) {
 	ss << "Cannot use 'see' command in scripts\n";
-	return;
+	return -1;
     }
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
-	return;
+	return -1;
     }
 
     /* Generate the graphivz output into a temporary file (whose name does
@@ -677,7 +689,7 @@ void Shell::see(const vector<string> &args, stringstream& ss)
     switch (drawer) {
 	case -1:
 	    ss << "fork() error\n";
-	    return;
+	    return -1;
 	    break;
 	case 0:
 	    execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
@@ -690,9 +702,11 @@ void Shell::see(const vector<string> &args, stringstream& ss)
     }
 
     remove(tmp_name.c_str());
+
+    return 0;
 }
 
-void Shell::print(const vector<string> &args, stringstream& ss)
+int Shell::print(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
     string format = "png";
@@ -700,13 +714,13 @@ void Shell::print(const vector<string> &args, stringstream& ss)
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
-	return;
+	return -1;
     }
     filename = args[0] + ".gv";
 
@@ -715,7 +729,7 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     if (args.size() > 1) {
         if (args[1] != "png" && args[1] != "pdf") {
             ss << "Format '" << args[1] << "' unknown\n";
-            return;
+            return -1;
         }
         format = args[1];
     }
@@ -726,7 +740,7 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     switch (drawer) {
 	case -1:
 	    ss << "fork() error\n";
-	    return;
+	    return -1;
 	    break;
 	case 0:
 	    execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
@@ -739,9 +753,11 @@ void Shell::print(const vector<string> &args, stringstream& ss)
     }
 
     remove(filename.c_str());
+
+    return 0;
 }
 
-void Shell::lsprop(const vector<string> &args, stringstream& ss)
+int Shell::lsprop(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
     fsp::ProgressS *pv;
@@ -765,9 +781,11 @@ void Shell::lsprop(const vector<string> &args, stringstream& ss)
         set.output(ss);
         ss << "\n";
     }
+
+    return 0;
 }
 
-void Shell::lsmenu(const vector<string> &args, stringstream& ss)
+int Shell::lsmenu(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
     fsp::ActionSetS *as;
@@ -782,45 +800,51 @@ void Shell::lsmenu(const vector<string> &args, stringstream& ss)
         setv.output(ss);
         ss << "\n";
     }
+
+    return 0;
 }
 
-void Shell::minimize(const vector<string> &args, stringstream& ss)
+int Shell::minimize(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
-	return;
+	return -1;
     }
 
     lts->minimize(ss);
+
+    return 0;
 }
 
-void Shell::traces(const vector<string> &args, stringstream& ss)
+int Shell::traces(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
 	ss << "Invalid command: try 'help'\n";
-	return;
+	return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
 	ss << "Process " << args[0] << " not found\n";
-	return;
+	return -1;
     }
 
     lts->traces(ss);
+
+    return 0;
 }
 
-void Shell::help(const vector<string> &args, stringstream& ss)
+int Shell::help(const vector<string> &args, stringstream& ss)
 {
     map<string, const char *>::iterator it;
 
@@ -828,7 +852,7 @@ void Shell::help(const vector<string> &args, stringstream& ss)
 	it = help_map.find(args[0]);
 	if (it == help_map.end()) {
 	    ss << "	No command named like that\n";
-	    return;
+	    return -1;
 	}
 	ss << "   " << it->second << "\n";
     } else {
@@ -837,6 +861,8 @@ void Shell::help(const vector<string> &args, stringstream& ss)
 	    ss << "   " << it->second << "\n";
 	}
     }
+
+    return 0;
 }
 
 void Shell::history_enable(bool enable)
