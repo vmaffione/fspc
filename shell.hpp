@@ -29,6 +29,8 @@
 
 using namespace std;
 
+#include "symbols_table.hpp"
+
 
 /* An helper class which implements the command history for the
    Shell class. */
@@ -99,6 +101,9 @@ class Shell {
         /* Keep trace of the last 'c.processes.size()' seen. */
         unsigned int trace_processes_size;
 
+        /* Shell variables. */
+        map<string, int> variables;
+
         void common_init();
         void fill_completion();
         void getline_ncurses(string& line, const char *prompt);
@@ -115,6 +120,7 @@ class Shell {
         int lsmenu(const vector<string>& args, stringstream& ss);
         int minimize(const vector<string>& args, stringstream& ss);
         int traces(const vector<string>& args, stringstream& ss);
+        int echo(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
     public:

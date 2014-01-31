@@ -73,6 +73,8 @@ specified FSP using GraphViz";
     help_map["traces"] = "traces FSP_NAME: find all the action traces for "
                          "the specified process, stopping when there "
                          "are cycles";
+    help_map["echo"] = "echo VAR_NAME: print the value of the variable"
+                        "VAR_NAME";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
@@ -88,6 +90,7 @@ specified FSP using GraphViz";
     cmd_map["lsmenu"] = &Shell::lsmenu;
     /* cmd_map["minimize"] = &Shell::minimize; */
     cmd_map["traces"] = &Shell::traces;
+    cmd_map["echo"] = &Shell::echo;
     cmd_map["help"] = &Shell::help;
 }
 
@@ -844,6 +847,22 @@ int Shell::traces(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
+int Shell::echo(const vector<string> &args, stringstream& ss)
+{
+    if (!args.size()) {
+	ss << "Invalid command: try 'help'\n";
+	return -1;
+    }
+
+    if (!variables.count(args[0])) {
+        ss << "Variable " << args[0] << " undefined\n";
+        return -1;
+    }
+    ss << "    " << args[0] << " = " << variables[args[0]] << "\n";
+
+    return 0;
+}
+
 int Shell::help(const vector<string> &args, stringstream& ss)
 {
     map<string, const char *>::iterator it;
@@ -875,6 +894,7 @@ int Shell::run()
     for (;;) {
 	string line;
 	string token;
+        string var;
 	vector<string> tokens;
 	map<string, ShellCmdFunc>::iterator it;
 	stringstream ss;
@@ -894,6 +914,7 @@ int Shell::run()
 
 	istringstream iss(line);
 
+        /* Split the input line into space separated tokens. */
 	while (iss >> token) {
 	    tokens.push_back(token);
 	}
@@ -902,19 +923,36 @@ int Shell::run()
 	    continue;
 	}
 
+        /* Recognize variable assignments (e.g. 'VARNAME = CMD ... ')
+           and extract the variable's name. */
+        if (tokens.size() >= 3 && tokens[1] == "=") {
+            var = tokens[0];
+            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());
+        }
+
+        /* Extract the command name. */
 	token = tokens[0];
 	tokens.erase(tokens.begin());
 
 	if (token == "quit" || token == "exit")
 	    return 0;
+
+        /* Command lookup and execution. */
 	it = cmd_map.find(token);
 	if (it == cmd_map.end()) {
 	    ss << "	Unrecognized command\n";
 	} else {
 	    ShellCmdFunc fp = it->second;
+            int ret;
 
-	    (this->*fp)(tokens, ss);
+	    ret = (this->*fp)(tokens, ss);
+
+            if (var.size()) {
+                variables[var] = ret;
+            }
 	}
+        /* Flush command output. */
 	putsstream(ss, true);
 
         /* We are at the end of an iteration. If we detect that
