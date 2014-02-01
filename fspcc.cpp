@@ -28,6 +28,7 @@ using namespace std;
 
 /* Main FspDriver class, instantiating the parser. */
 #include "driver.hpp"
+#include "code_generator.hpp"//cosimo
 
 
 void help()
@@ -72,58 +73,58 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     co.max_reference_depth = 1000;
 
     while ((ch = getopt(argc, argv, "i:l:o:adpghsvS:D:")) != -1) {
-	switch (ch) {
-	    default:
-		cout << "\n";
-		help();
-		exit(1);
-		break;
+  switch (ch) {
+      default:
+    cout << "\n";
+    help();
+    exit(1);
+    break;
 
-	    case 'i':
-		il_options++;
-		co.input_file = optarg;
-		co.input_type = CompilerOptions::InputTypeFsp;
-		break;
+      case 'i':
+    il_options++;
+    co.input_file = optarg;
+    co.input_type = CompilerOptions::InputTypeFsp;
+    break;
 
-	    case 'l':
-		il_options++;
-		co.input_file = optarg;
-		co.input_type = CompilerOptions::InputTypeLts;
-		break;
+      case 'l':
+    il_options++;
+    co.input_file = optarg;
+    co.input_type = CompilerOptions::InputTypeLts;
+    break;
 
-	    case 'o':
+      case 'o':
                 co.output_file = optarg;
                 break;
 
-	    case 'a':
-		co.deadlock = co.progress = co.graphviz = true;
-		break;
+      case 'a':
+    co.deadlock = co.progress = co.graphviz = true;
+    break;
 
-	    case 'd':
-		co.deadlock = true;
-		break;
+      case 'd':
+    co.deadlock = true;
+    break;
 
-	    case 'p':
-		co.progress = true;
-		break;
+      case 'p':
+    co.progress = true;
+    break;
 
-	    case 'g':
-		co.graphviz = true;
-		break;
+      case 'g':
+    co.graphviz = true;
+    break;
 
-	    case 'h':
-		help();
-		exit(0);
-		break;
+      case 'h':
+    help();
+    exit(0);
+    break;
 
-	    case 's':
-		co.shell = true;
-		break;
+      case 's':
+    co.shell = true;
+    break;
 
-	    case 'S':
-		co.script = true;
-		co.script_file = optarg;
-		break;
+      case 'S':
+    co.script = true;
+    co.script_file = optarg;
+    break;
 
             case 'D':
                 co.max_reference_depth = atoi(optarg);
@@ -133,13 +134,13 @@ void process_args(CompilerOptions& co, int argc, char **argv)
                 cout << "fspc 1.6 (January 2014)\n";
                 cout << "Copyright 2013 Vincenzo Maffione\n";
                 exit(0);
-	}
+  }
     }
 
     if (il_options > 1) {
-	cerr << "Error: Cannot specify more than one input file\n\n";
+  cerr << "Error: Cannot specify more than one input file\n\n";
         help();
-	exit(-1);
+  exit(-1);
     }
 
     if (!co.input_file) {
@@ -155,7 +156,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
         co.output_file = "out.lts";
     }
 }
-#else	/* !GET_OPT */
+#else /* !GET_OPT */
 void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int i = 1;
@@ -172,70 +173,70 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
     /* Scan input arguments. */
     while (i < argc) {
-	int len = strlen(argv[i]);
-	const char *arg = argv[i];
-	if (len != 2 || len == 2 && arg[0] != '-') {
-	    cerr << "Error: Unrecognized option\n";
-	    exit(-1);
-	}
-	switch (arg[1]) {
-	    case 'a':
-		co.deadlock = co.progress = co.graphviz = true;
-		break;
-	    case 'd':
-		co.deadlock = true;
-		break;
-	    case 'p':
-		co.progress = true;
-		break;
-	    case 'g':
-		co.graphviz = true;
-		break;
-	    case 'h':
-		help();
-		exit(0);
-		break;
-	    case 'i':
-	    case 'l':
-	    case 'o':
-		i++;
-		if (i == argc) {
-		    cerr << "Error: Expected filename after -"<< arg[1] 
-			    << " option\n";
-		    exit(-1);
-		}
-		switch (arg[1]) {
-		    case 'i':
-			il_options++;
-			co.input_file = argv[i];
-			break;
-		    case 'l':
-			il_options++;
-			co.input_file = argv[i];
-			co.input_type = CompilerOptions::InputTypeLts;
-			break;
-		    case 'o':
-			co.output_file = argv[i];
-			break;
-		}
-		break;
-	    case 's':
-		co.shell = true;
-		break;
+  int len = strlen(argv[i]);
+  const char *arg = argv[i];
+  if (len != 2 || len == 2 && arg[0] != '-') {
+      cerr << "Error: Unrecognized option\n";
+      exit(-1);
+  }
+  switch (arg[1]) {
+      case 'a':
+    co.deadlock = co.progress = co.graphviz = true;
+    break;
+      case 'd':
+    co.deadlock = true;
+    break;
+      case 'p':
+    co.progress = true;
+    break;
+      case 'g':
+    co.graphviz = true;
+    break;
+      case 'h':
+    help();
+    exit(0);
+    break;
+      case 'i':
+      case 'l':
+      case 'o':
+    i++;
+    if (i == argc) {
+        cerr << "Error: Expected filename after -"<< arg[1]
+          << " option\n";
+        exit(-1);
+    }
+    switch (arg[1]) {
+        case 'i':
+      il_options++;
+      co.input_file = argv[i];
+      break;
+        case 'l':
+      il_options++;
+      co.input_file = argv[i];
+      co.input_type = CompilerOptions::InputTypeLts;
+      break;
+        case 'o':
+      co.output_file = argv[i];
+      break;
+    }
+    break;
+      case 's':
+    co.shell = true;
+    break;
 
-	    default:
-		cerr << "Unrecognized option " << arg[1] << "\n";
-		exit(-1);
-	}
-	i++;
+      default:
+    cerr << "Unrecognized option " << arg[1] << "\n";
+    exit(-1);
+  }
+  i++;
     }
 
     if (il_options > 1) {
-	cerr << "Error: Cannot specify both 'i' and 'l' options\n";
-	exit(-1);
+  cerr << "Error: Cannot specify both 'i' and 'l' options\n";
+  exit(-1);
     }
 }
-#endif	/* !GET_OPT */
+#endif  /* !GET_OPT */
 
 
 int main (int argc, char ** argv)
@@ -243,7 +244,7 @@ int main (int argc, char ** argv)
     FspDriver driver;
     CompilerOptions co;
     int ret;
-    
+
     process_args(co, argc, argv);
 
     ret = driver.parse(co);
