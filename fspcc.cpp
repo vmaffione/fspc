@@ -1,7 +1,7 @@
 /*
  *  fspc - A Finite State Process compiler and LTS analyzer
  *
- *  Copyright (C) 2013  Vincenzo Maffione
+ *  Copyright (C) 2013-2014  Vincenzo Maffione
  *  Email contact: <v.maffione@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -130,7 +130,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
             case 'v':
                 cout << "fspc 1.6 (January 2014)\n";
-                cout << "Copyright 2013 Vincenzo Maffione\n";
+                cout << "Copyright 2013-2014 Vincenzo Maffione\n";
                 exit(0);
   }
     }

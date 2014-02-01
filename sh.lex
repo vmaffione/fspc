@@ -1,7 +1,7 @@
 /*
  *  shell lexical analyzer FLEX template
  *
- *  Copyright (C) 2013  Vincenzo Maffione
+ *  Copyright (C) 2013-2014  Vincenzo Maffione
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
