@@ -906,6 +906,8 @@ int Shell::traces(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
+#include "sh_driver.hpp"
+
 int Shell::echo(const vector<string> &args, stringstream& ss)
 {
     if (!args.size()) {

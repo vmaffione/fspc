@@ -27,12 +27,12 @@
 #include <fstream>
 #include <assert.h>
 
-/* Include tha parser main class definition. */
-# include "sh_driver.hpp"
-
 /* Include the bison-generated parser header, in order to get the token
    types definition that we return. */
-# include "sh_parser.hpp"
+#include "sh_parser.hpp"
+
+/* The lex prototype. */
+#include "shlex_declaration.hpp"
 
 using namespace std;
 
@@ -171,7 +171,7 @@ ID	        [_a-zA-Z][_a-zA-Z0-9]*
 
 /* User code: Functions that can be exported. */
 
-void ShDriver::scan_begin(const string& s)
+void sh_scan_begin(const string& s, int trace_scanning)
 {
     const char *filename = "prova";
 
@@ -187,7 +187,7 @@ void ShDriver::scan_begin(const string& s)
     }
 }
 
-void ShDriver::scan_end()
+void sh_scan_end()
 {
     fclose(shin);
 }

@@ -49,7 +49,7 @@ using namespace std;
 
 /* The parsing context. */
 %parse-param { ShDriver& driver }
-%lex-param   { ShDriver& driver }
+//%lex-param   { ShDriver& driver }
 /* %locations */
 %debug
 %error-verbose
@@ -100,7 +100,7 @@ class ShDriver;
 %token <int_value> INTEGER "integer"
 
 /* Non-terminal symbols. */
-%type <int_value> expression base_expression
+%type <int_value> expression base_expression start
 
 %printer    { yyoutput << $$; } <int_value>
 
@@ -108,6 +108,9 @@ class ShDriver;
 
 /* Definition of the FspTranslator class & callbacks */
 #include "sh_driver.hpp"
+
+/* The lex prototype. */
+#include "shlex_declaration.hpp"
 
 /* Interactive shell */
 #include "shell.hpp"
@@ -125,6 +128,12 @@ using namespace sh;
 %%
 
 /* Start symbol. */
+start:
+    expression {
+        $$ = $1;
+        driver.result = $$;
+    }
+    ;
 
 %left OR;
 %left AND;
