@@ -20,23 +20,11 @@
 %code top {
 /* This piece of code goes verbatim at the the top of the generated
    parser implementation. */
-#include <cstdio>
-#include <iostream>
-#include <sstream>
-#include <cstdlib>
-#include <set>
-#include <vector>
-#include <string>
 
 using namespace std;
 
-//#define NDEBUG
-#include <assert.h>
-
 //#define YYERROR_VERBOSE
 
-/* Symbols tables. */
-#include "symbols_table.hpp"
 }
 
 %skeleton "glr.cc" /* -*- C++ -*- */
@@ -173,43 +161,13 @@ namespace fsp {
 
 %{
 
-/* Inline utilities. */
-#include "utils.hpp"
-
-/* Context, ContextsSet and ContextsSetStack. */
-#include "context.hpp"
-
 /* Definition of the FspTranslator class & callbacks */
 #include "fsp_driver.hpp"
-
-/* Lts definitions and operations. */
-#include "lts.hpp"
-
-/* Compiler options. */
-#include "interface.hpp"
-
-/* Serialization and deserialization support. */
-#include "serializer.hpp"
-
-/* Interactive shell */
-#include "shell.hpp"
 
 /* TreeNode classes and subclasses. */
 #include "tree.hpp"
 
-#include "helpers.hpp"
-
 using namespace fsp;
-
-
-//#define DEBUG
-#ifdef DEBUG
-#define PROX(x) cout<<"PROX: ";x;cout<<"\n"
-#define PROP(x) cout<<"PROP:==============================================================\n      " << x << "\n"
-#else
-#define PROP(x)
-#define PROX(x)
-#endif
 
 %}
 
