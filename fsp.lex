@@ -26,12 +26,12 @@
 #include <iostream>
 #include <assert.h>
 
-/* Include tha parser main class definition. */
-# include "fsp_driver.hpp"
-
 /* Include the bison-generated parser header, in order to get the token
    types definition that we return. */
-# include "fsp_parser.hpp"
+#include "fsp_parser.hpp"
+
+/* The lex prototype. */
+#include "fsplex_declaration.hpp"
 
 /* Circular tokens buffer for good error reporting. */
 #include "circular_buffer.hpp"
@@ -276,7 +276,7 @@ ERROR { IFD(cout << "ERROR\n"); return token::ERROR; }
 
 /* User code: Functions that can be exported. */
 
-void FspDriver::scan_begin(const char *filename)
+void fsp_scan_begin(const char *filename, int trace_scanning)
 {
     fsp_flex_debug = trace_scanning;
     if (filename == NULL /* || strcmp(file,"-") == 0 */) {
@@ -288,7 +288,7 @@ void FspDriver::scan_begin(const char *filename)
     }
 }
 
-void FspDriver::scan_end ()
+void fsp_scan_end()
 {
     fclose(fspin);
 }

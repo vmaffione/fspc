@@ -36,6 +36,9 @@ using namespace std;
 #endif
 
 
+void fsp_scan_begin(const char *filename, int trace_scanning);
+void fsp_scan_end();
+
 /* ============================== FspDriver ============================= */
 
 FspDriver::FspDriver()
@@ -309,11 +312,11 @@ int FspDriver::parse(const CompilerOptions& co)
 	this->remove_file = temp;
 
 	/* Parse the preprocessed temporary file. */
-	scan_begin(temp.c_str());
+	fsp_scan_begin(temp.c_str(), trace_scanning);
 	fsp::FspParser parser(*this);
 	parser.set_debug_level(trace_parsing);
 	ret = parser.parse();
-	scan_end();
+	fsp_scan_end();
 
 	/* Remove the temporary file. */
 	remove(temp.c_str());

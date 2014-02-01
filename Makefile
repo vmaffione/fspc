@@ -4,7 +4,7 @@ VER=1.6
 GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp fsp_location.hh fsp_position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
 
 # Non-generated C++ source files (to be updated manually).
-NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp fsp_driver.cpp fsp_driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp code_generator.cpp code_generator.hpp shlex_declaration.hpp
+NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp fsp_driver.cpp fsp_driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp code_generator.cpp code_generator.hpp shlex_declaration.hpp fsplex_declaration.hpp
 
 # All the C++ source files.
 SOURCES=$(NONGEN) $(GENERATED)

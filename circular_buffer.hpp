@@ -21,6 +21,11 @@
 #ifndef __CIRCULAR__BUFFER__HH
 #define __CIRCULAR__BUFFER__HH
 
+#include <string>
+
+using namespace std;
+
+
 class CircularBuffer {
     static const int Size = 30;
 

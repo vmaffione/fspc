@@ -50,7 +50,6 @@ using namespace std;
 
 /* The parsing context. */
 %parse-param { FspDriver& driver }
-%lex-param   { FspDriver& driver }
 %locations
 %debug
 %error-verbose
@@ -163,6 +162,9 @@ namespace fsp {
 
 /* Definition of the FspTranslator class & callbacks */
 #include "fsp_driver.hpp"
+
+/* The lex prototype. */
+#include "fsplex_declaration.hpp"
 
 /* TreeNode classes and subclasses. */
 #include "tree.hpp"

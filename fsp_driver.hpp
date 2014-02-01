@@ -20,18 +20,8 @@
 #include "unresolved.hpp"
 #include "lts.hpp"
 
-
 using namespace std;
 
-
-/* Tell Flex the lexer's prototype... */
-#define YY_DECL                                        \
-  fsp::FspParser::token_type                         \
-  fsplex(fsp::FspParser::semantic_type* fsplval,      \
-         fsp::FspParser::location_type* fsplloc,      \
-         FspDriver& driver)
-/* ... and declare it for the parser's sake. */
-YY_DECL;
 
 namespace fsp {
     class TreeNode;
