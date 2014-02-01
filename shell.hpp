@@ -26,6 +26,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include "code_generator.hpp"//cosimo
 
 using namespace std;
 
@@ -73,9 +74,15 @@ class AutoCompletion {
 
 
 class FspDriver;
+/*<cosimo>*/
+namespace codegen{
+  class CodeGenerator;
+}
+/*</cosimo>*/
 
 class Shell {
         FspDriver& c;
+        codegen::CodeGenerator coder; //cosimo
 
         /* A mapping of command names to the help strings. */
         map<string, const char*> help_map;
@@ -113,6 +120,7 @@ class Shell {
         int progress(const vector<string>& args, stringstream& ss);
         int simulate(const vector<string>& args, stringstream& ss);
         int basic(const vector<string>& args, stringstream& ss);
+        int monitor(const vector<string>& args, stringstream& ss);
         int alpha(const vector<string>& args, stringstream& ss);
         int see(const vector<string>& args, stringstream& ss);
         int print(const vector<string>& args, stringstream& ss);

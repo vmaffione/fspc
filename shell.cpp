@@ -18,10 +18,12 @@
  */
 
 
+#include <string>//cosimo
+#include <list>//cosimo
 #include <sstream>
 #include <cstdio>
-#include <unistd.h>	/* fork() */
-#include <sys/wait.h>	/* waitpid() */
+#include <unistd.h> /* fork() */
+#include <sys/wait.h> /* waitpid() */
 #include <ncurses.h>
 
 #include "shell.hpp"
@@ -37,7 +39,7 @@
 
 #define DEBUG
 #ifdef DEBUG
-#define IFD(x)	(x)
+#define IFD(x)  (x)
 #else
 #define IFD(x)
 #endif
@@ -59,6 +61,9 @@ the specified FSP or on every FSP";
 the specified FSP";
     help_map["basic"] = "basic FSP_NAME FILE_NAME: write a basic process \
 description of the specified FSP into the specified output file";
+    help_map["monitor"] = "monitor FSP_NAME INTERACTIONS [-o FILE]: write, \
+if possible, the Monitor Normal Form of the specified FSP into the specified \
+output file";
     help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
 FSP";
     help_map["see"] = "see FSP_NAME: show a graphical representation of the \
@@ -83,6 +88,7 @@ specified FSP using GraphViz";
     cmd_map["progress"] = &Shell::progress;
     cmd_map["simulate"] = &Shell::simulate;
     cmd_map["basic"] = &Shell::basic;
+    cmd_map["monitor"] = &Shell::monitor; //monitor
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
@@ -102,7 +108,7 @@ void Shell::fill_completion()
 
     /* Process names. */
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-	completion.insert(it->first);
+  completion.insert(it->first);
     }
 
     trace_processes_size = c.processes.size();
@@ -146,7 +152,7 @@ Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), in(inr)
 Shell::~Shell()
 {
     if (interactive)
-	endwin();   /* Exit curses mode. */
+  endwin();   /* Exit curses mode. */
 }
 
 static void scroll_screen(int n, int y, int x)
@@ -157,14 +163,14 @@ static void scroll_screen(int n, int y, int x)
 
     getmaxyx(stdscr, rows, cols);
     if (n >= rows)
-	return;
+  return;
 
     /* Shift everything n rows up. */
     for (r_i=n; r_i<rows; r_i++) {
-	for (c_i=0; c_i<cols; c_i++) {
-	    ch = mvinch(r_i, c_i);
-	    mvaddch(r_i-n, c_i, ch);
-	}
+  for (c_i=0; c_i<cols; c_i++) {
+      ch = mvinch(r_i, c_i);
+      mvaddch(r_i-n, c_i, ch);
+  }
     }
 
     /* Clear the last n rows. */
@@ -177,58 +183,58 @@ static void scroll_screen(int n, int y, int x)
 }
 
 /* eol: if false a newline will not be printed together with the last
-	line in 'ss'. */
+  line in 'ss'. */
 void Shell::putsstream(stringstream& ss, bool eol) {
 
     if (interactive) {
-	string line;
-	int y, x;
-	int rows, cols;
-	bool first_line = true;
+  string line;
+  int y, x;
+  int rows, cols;
+  bool first_line = true;
 
-	getmaxyx(stdscr, rows, cols);
+  getmaxyx(stdscr, rows, cols);
 
-	/* Split the stringstream content in lines (using '\n' as
-	   separator. */
-	while (getline(ss, line)) {
-	    int rows_required;
+  /* Split the stringstream content in lines (using '\n' as
+     separator. */
+  while (getline(ss, line)) {
+      int rows_required;
 
-	    if (!first_line) {
-		/* Newline attached to the line printed in the previous
-		   iteration: We need to defer the newline insertion because
-		   of the 'eol' parameter. */
-		printw("\n");
-		refresh();
-	    }
-	    first_line = false;
+      if (!first_line) {
+    /* Newline attached to the line printed in the previous
+       iteration: We need to defer the newline insertion because
+       of the 'eol' parameter. */
+    printw("\n");
+    refresh();
+      }
+      first_line = false;
 
-	    /* Compute the number of rows that are necessary to print the
-	       line. */
-	    rows_required = line.size() / cols;
-	    if (line.size() % cols)
-		rows_required++;
+      /* Compute the number of rows that are necessary to print the
+         line. */
+      rows_required = line.size() / cols;
+      if (line.size() % cols)
+    rows_required++;
 
-	    getyx(stdscr, y, x);
-	    /* If there is not enough empty rows in the screen, we scroll as
-	       many times as needed to make enough room, and move the
-	       cursor at the beginning of the first empty row after
-	       scrolling. */
-	    if (y + rows_required >= rows)
-		scroll_screen(y + rows_required - rows + 1,
-				rows - rows_required-1, 0);
-	    /* Finally print the line. */
-	    printw("%s", line.c_str());
-	}
+      getyx(stdscr, y, x);
+      /* If there is not enough empty rows in the screen, we scroll as
+         many times as needed to make enough room, and move the
+         cursor at the beginning of the first empty row after
+         scrolling. */
+      if (y + rows_required >= rows)
+    scroll_screen(y + rows_required - rows + 1,
+        rows - rows_required-1, 0);
+      /* Finally print the line. */
+      printw("%s", line.c_str());
+  }
 
-	/* Put a newline after the last line in 'ss' only if asked by
-	   the user. */
-	if (eol)
-	    printw("\n");
+  /* Put a newline after the last line in 'ss' only if asked by
+     the user. */
+  if (eol)
+      printw("\n");
 
-	refresh();
+  refresh();
     }
     else {
-	cout << ss.str();
+  cout << ss.str();
     }
 }
 
@@ -281,10 +287,10 @@ void Shell::getline_ncurses(string& line, const char *prompt)
     /* Print the prompty (if any), and initialize the prompt position
        properly. */
     if (prompt) {
-	attron(COLOR_PAIR(2));
-	printw(prompt);
-	attroff(COLOR_PAIR(2));
-	refresh();
+  attron(COLOR_PAIR(2));
+  printw(prompt);
+  attroff(COLOR_PAIR(2));
+  refresh();
     }
     getyx(stdscr, prompt_y, prompt_x);
 
@@ -296,26 +302,26 @@ void Shell::getline_ncurses(string& line, const char *prompt)
     line = string();
 
     for (;;) {
-	ch = getch();
-	getyx(stdscr, y, x);
+  ch = getch();
+  getyx(stdscr, y, x);
 
-	switch (ch) {
-	    case '\r':
-	    case '\n':
-		move(frontier_y, frontier_x);
-		if (frontier_y == rows-1) {
-		    scroll_screen(1, frontier_y-1,frontier_x);
-		}
-		printw("\n");
-		refresh();
+  switch (ch) {
+      case '\r':
+      case '\n':
+    move(frontier_y, frontier_x);
+    if (frontier_y == rows-1) {
+        scroll_screen(1, frontier_y-1,frontier_x);
+    }
+    printw("\n");
+    refresh();
                 if (history_enabled) {
                     /* Update the history. */
                     history.add_command(line);
                 }
-		return;
+    return;
 
-	    case KEY_UP:
-	    case KEY_DOWN:
+      case KEY_UP:
+      case KEY_DOWN:
                 if (!history_enabled) {
                     break;
                 }
@@ -327,11 +333,11 @@ void Shell::getline_ncurses(string& line, const char *prompt)
                 history.get_current(line);
                 move(prompt_y, prompt_x);
                 printw("%s", line.c_str());
-		getyx(stdscr, frontier_y, frontier_x);
+    getyx(stdscr, frontier_y, frontier_x);
                 move(frontier_y, frontier_x);
                 str_cursor = line.size();
-		clrtobot();
-		break;
+    clrtobot();
+    break;
 
             case '\t':
                 /* Split the current 'line' into 'line' + 'arg', so that
@@ -355,120 +361,120 @@ void Shell::getline_ncurses(string& line, const char *prompt)
                 }
                 break;
 
-	    case KEY_LEFT:
-		if (y > prompt_y || x > prompt_x) {
-		    if (x) {
-			x--;
-		    } else {
-			y--;
-			x = cols-1;
-		    }
-		    move(y, x);
-		    str_cursor--;
-		}
-		break;
+      case KEY_LEFT:
+    if (y > prompt_y || x > prompt_x) {
+        if (x) {
+      x--;
+        } else {
+      y--;
+      x = cols-1;
+        }
+        move(y, x);
+        str_cursor--;
+    }
+    break;
 
-	    case KEY_RIGHT:
-		if (y < frontier_y || x < frontier_x) {
-		    if (x == cols-1) {
-			x = 0;
-			y++;
-		    } else {
-			x++;
-		    }
-		    move(y, x);
-		    str_cursor++;
-		}
-		break;
+      case KEY_RIGHT:
+    if (y < frontier_y || x < frontier_x) {
+        if (x == cols-1) {
+      x = 0;
+      y++;
+        } else {
+      x++;
+        }
+        move(y, x);
+        str_cursor++;
+    }
+    break;
 
-	    case KEY_HOME:
-		move(prompt_y, prompt_x);
-		str_cursor = 0;
-		break;
+      case KEY_HOME:
+    move(prompt_y, prompt_x);
+    str_cursor = 0;
+    break;
 
-	    case KEY_END:
-		move(frontier_y, frontier_x);
-		str_cursor = line.size();
-		break;
+      case KEY_END:
+    move(frontier_y, frontier_x);
+    str_cursor = line.size();
+    break;
 
-	    case 127:	/* Backspace. */
-	    case KEY_BACKSPACE:
-		if (str_cursor) {
-		    /* Compute the next cursor position. */
-		    if (x) {
-			x--;
-		    } else {
-			y--;
-			x = cols-1;
-		    }
-		    str_cursor--;
-		    /* Use the same implementation of KEY_DC. */
-		} else break;
+      case 127: /* Backspace. */
+      case KEY_BACKSPACE:
+    if (str_cursor) {
+        /* Compute the next cursor position. */
+        if (x) {
+      x--;
+        } else {
+      y--;
+      x = cols-1;
+        }
+        str_cursor--;
+        /* Use the same implementation of KEY_DC. */
+    } else break;
 
-	    case KEY_DC:    /* Canc */
-		if (line.size()) {
-		    line.erase(str_cursor, 1);
+      case KEY_DC:    /* Canc */
+    if (line.size()) {
+        line.erase(str_cursor, 1);
 
-		    /* Update the frontier. */
-		    if (frontier_x) {
-			frontier_x--;
-		    } else {
-			frontier_x = cols-1;
-			frontier_y--;
-		    }
+        /* Update the frontier. */
+        if (frontier_x) {
+      frontier_x--;
+        } else {
+      frontier_x = cols-1;
+      frontier_y--;
+        }
 
-		    /* Reflush the command string. */
-		    move(prompt_y, prompt_x);
-		    printw("%s", line.c_str());
+        /* Reflush the command string. */
+        move(prompt_y, prompt_x);
+        printw("%s", line.c_str());
 
-		    /* Clear up to the end of the screen, in order to remove
-		       old trailing character (they have been shifted). */
-		    clrtobot();
+        /* Clear up to the end of the screen, in order to remove
+           old trailing character (they have been shifted). */
+        clrtobot();
 
-		    /* Restore the cursor position. */
-		    move(y, x);
-		}
-		break;
+        /* Restore the cursor position. */
+        move(y, x);
+    }
+    break;
 
-	    default:
-		if (is_printable(ch)) {
-		    /* Insert a character in the command string at the
-		       current cursor position. */
-		    line.insert(str_cursor, 1, static_cast<char>(ch));
+      default:
+    if (is_printable(ch)) {
+        /* Insert a character in the command string at the
+           current cursor position. */
+        line.insert(str_cursor, 1, static_cast<char>(ch));
 
-		    /* Compute the new cursor position. */
-		    if (x == cols-1) {
-			x = 0;
-			if (y == rows-1) {
-			    prompt_y--;
-			    scroll_screen(1, rows - 1, 0);
-			    frontier_y = rows - 2;
-			} else {
-			    y++;
-			}
-		    } else {
-			x++;
-		    }
-		    str_cursor++;
+        /* Compute the new cursor position. */
+        if (x == cols-1) {
+      x = 0;
+      if (y == rows-1) {
+          prompt_y--;
+          scroll_screen(1, rows - 1, 0);
+          frontier_y = rows - 2;
+      } else {
+          y++;
+      }
+        } else {
+      x++;
+        }
+        str_cursor++;
 
-		    /* Reflush the whole command string. */
-		    move(prompt_y, prompt_x);
-		    printw("%s", line.c_str());
+        /* Reflush the whole command string. */
+        move(prompt_y, prompt_x);
+        printw("%s", line.c_str());
 
-		    /* Update the frontier. */
-		    getyx(stdscr, tmp_y, tmp_x);
-		    if (tmp_y > frontier_y) {
-			frontier_y = tmp_y;
-			frontier_x = 0;
-		    }
-		    if (tmp_y == frontier_y)
-			frontier_x = max(frontier_x, tmp_x);
+        /* Update the frontier. */
+        getyx(stdscr, tmp_y, tmp_x);
+        if (tmp_y > frontier_y) {
+      frontier_y = tmp_y;
+      frontier_x = 0;
+        }
+        if (tmp_y == frontier_y)
+      frontier_x = max(frontier_x, tmp_x);
 
-		    /* Restore the cursor position. */
-		    move(y, x);
-		}
-	}
-	refresh();
+        /* Restore the cursor position. */
+        move(y, x);
+    }
+  }
+  refresh();
     }
 
     assert(rows < 10000);
@@ -477,7 +483,7 @@ void Shell::getline_ncurses(string& line, const char *prompt)
 void Shell::readline(string& line)
 {
     if (interactive) {
-	getline_ncurses(line, NULL);
+  getline_ncurses(line, NULL);
     } else {
         getline(in, line);
     }
@@ -493,10 +499,10 @@ int Shell::ls(const vector<string> &args, stringstream& ss)
        cache table). */
     for (it = c.processes.table.begin();
                 it != c.processes.table.end(); it++) {
-	lts = fsp::is<fsp::Lts>(it->second);
-	ss << "   " << it->first << ": " << lts->numStates()
-	    << " states, " << lts->numTransitions() << " transitions, "
-	    << lts->alphabetSize() << " actions in alphabet\n";
+  lts = fsp::is<fsp::Lts>(it->second);
+  ss << "   " << it->first << ": " << lts->numStates()
+      << " states, " << lts->numTransitions() << " transitions, "
+      << lts->alphabetSize() << " actions in alphabet\n";
     }
     /* Processes defined in the FSP input file that have not been
        translated yet. */
@@ -520,7 +526,7 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
 
-	/* Deadlock analysis on args[0]. */
+  /* Deadlock analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
@@ -530,12 +536,12 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
     } else {
         fsp::Lts *lts;
 
-	/* Deadlock analysis on every process. */
-	for (it=c.processes.table.begin();
-		    it!=c.processes.table.end(); it++) {
-	    lts = fsp::is<fsp::Lts>(it->second);
-	    lts->deadlockAnalysis(ss);
-	}
+  /* Deadlock analysis on every process. */
+  for (it=c.processes.table.begin();
+        it!=c.processes.table.end(); it++) {
+      lts = fsp::is<fsp::Lts>(it->second);
+      lts->deadlockAnalysis(ss);
+  }
     }
 
     return 0;
@@ -550,7 +556,7 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
 
-	/* Progress analysis on args[0]. */
+  /* Progress analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
 	    ss << "Process " << args[0] << " not found\n";
@@ -564,16 +570,16 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
     } else {
         fsp::Lts *lts;
 
-	/* Progress analysis on every process. */
-	for (it=c.processes.table.begin(); 
-		    it!=c.processes.table.end(); it++) {
-	    lts = fsp::is<fsp::Lts>(it->second);
-	    for (jt=c.progresses.table.begin();
-		    jt!=c.progresses.table.end(); jt++) {
-		pv = fsp::is<fsp::ProgressS>(jt->second);
-		lts->progress(jt->first, *pv, ss);
-	    }
-	}
+  /* Progress analysis on every process. */
+  for (it=c.processes.table.begin();
+        it!=c.processes.table.end(); it++) {
+      lts = fsp::is<fsp::Lts>(it->second);
+      for (jt=c.progresses.table.begin();
+        jt!=c.progresses.table.end(); jt++) {
+    pv = fsp::is<fsp::ProgressS>(jt->second);
+    lts->progress(jt->first, *pv, ss);
+      }
+  }
     }
 
     return 0;
@@ -629,12 +635,65 @@ int Shell::basic(const vector<string> &args, stringstream& ss)
     }
 
     if (args.size() >= 2) {
-	outfile = args[1];
+  outfile = args[1];
     } else {
-	outfile = args[0] + ".bfsp";
+  outfile = args[0] + ".bfsp";
     }
 
     lts->basic(outfile, ss);
+
+    return 0;
+}
+
+int Shell::monitor(const vector<string>& args, stringstream& ss)
+{
+    string outfile(args[0] + ".mfsp");
+    fsp::SmartPtr<fsp::Lts> lts;
+
+    if (!args.size()) {
+        ss << "Invalid command: try 'help'\n";
+        return -1;
+    }
+
+    lts = c.getLts(args[0], true);
+    if (lts == NULL) {
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
+    }
+
+    std::list<std::string> interactions;
+    bool outputFlagSet = false;
+    bool fileNameRead = false;
+    std::string outputFlag("-o");
+
+    if (args.size() >= 2) {
+        /* outfile = args[1]; */
+        for (unsigned int i = 1; i < args.size(); i++) {
+            if (outputFlag.compare(args[i]) == 0 && (!outputFlagSet)) {
+                outputFlagSet = true;
+                continue;
+            } else if (outputFlagSet && (!fileNameRead)) {
+                outfile = string(args[i]);
+                fileNameRead = true;
+                continue;
+            }
+            interactions.push_back(std::string(args[i]));
+        }
+    }
+
+    fstream file;
+    file.open(outfile.c_str(), ios::out);
+    string representation;
+
+    if (!coder.get_monitor_representation(*lts, interactions,
+                                                representation)) {
+        ss << representation;
+        return -1;
+    }
+
+    if (!file.is_open() || !(file << representation)) {
+        ss << "Cannot open file " << outfile;
+    }
 
     return 0;
 }
@@ -775,7 +834,7 @@ int Shell::lsprop(const vector<string> &args, stringstream& ss)
         if (pv->conditional) {
             pv->condition.toSetValue(cond);
         }
-	ss << "   " << it->first << ": ";
+  ss << "   " << it->first << ": ";
         if (pv->conditional) {
             ss << "if ";
             cond.output(ss);
@@ -799,7 +858,7 @@ int Shell::lsmenu(const vector<string> &args, stringstream& ss)
 
         as = fsp::is<fsp::ActionSetS>(it->second);
         as->toSetValue(setv);
-	ss << "   " << it->first << ": ";
+  ss << "   " << it->first << ": ";
         setv.output(ss);
         ss << "\n";
     }
@@ -875,10 +934,10 @@ int Shell::help(const vector<string> &args, stringstream& ss)
 	}
 	ss << "   " << it->second << "\n";
     } else {
-	/* Show the help for every command. */
-	for (it=help_map.begin(); it!=help_map.end(); it++) {
-	    ss << "   " << it->second << "\n";
-	}
+  /* Show the help for every command. */
+  for (it=help_map.begin(); it!=help_map.end(); it++) {
+      ss << "   " << it->second << "\n";
+  }
     }
 
     return 0;
@@ -965,7 +1024,7 @@ int Shell::run()
             fill_completion();
         }
     }
-    
+
 }
 
 

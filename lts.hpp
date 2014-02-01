@@ -111,6 +111,65 @@ struct LtsVisitObject {
     LtsVisitFunction vfp;
     void *opaque;
 };
+/*<cosimo>
+int generate_ID()
+{
+    static int s_nID = 0;
+    return s_nID++;
+}
+
+struct KanellakisSmolkaState{
+    int state;
+    Lts* owner;
+    KanellakisSmolkaState(int s, Lts* l): state(s), owner(l){}
+    bool operator==(const KanellakisSmolkaState& other){
+        return state == other.state && owner == other.owner;
+    }
+};
+
+typedef set<KanellakisSmolkaState> Block;
+typedef int BlockId;
+
+struct UniqueBlock{
+  Block block;
+  BlockId blockId;
+  UniqueBlock(Block b, BlockId i): block(b), blockId(i){}
+};
+
+typedef map<KanellakisSmolkaState, UniqueBlock> Partition;
+
+set<BlockId> reached_blocks(KanellakisSmolkaState s, Partition& p){
+    vector<Edge> s_children = s.owner->get_children(s.state);
+    set<int> reached_blocks;
+    vector<Edge>::iterator i = s_children.begin()
+    for(; i != s_children.end(); i++){
+        if(i->action == label){
+            KanellakisSmolkaState reached(i->dest, s.owner);
+            reached_blocks.insert(p[reached].blockId);
+        }
+    }
+    return reached_blocks;
+}
+
+Partition Kanellakis_Smolka_split(UniqueBlock& b, int label, Partition& p)
+{
+    assert(!b.block.empty());
+    KanellakisSmolkaState s = *(b.block.begin());
+    set<BlockId> s_reached_blocks(s, p);
+    Block b1, b2;
+    for(Block::iterator i = b.begin(); i != b.end; i++){
+        KanellakisSmolkaState t = *i;
+        set<BlockId> t_reached_blocks(t, p);
+        if(s_reached_blocks == t_reached_blocks) b1.insert(t);
+        else b2.insert(t);
+    }
+    UniqueBlock ub1(b1, generate_ID());
+    if(!b2.empty()){
+        UniqueBlock ubi2(b2, generate_ID());
+        //DA FINIRE, FORSE
+    }
+}
+</cosimo>*/
 
 
 /* An LTS. */
@@ -175,7 +234,7 @@ class Lts: public Symbol {
     Lts& priority(const SetS& s, bool low);
     Lts& property();
     int progress(const string& progress_name, const ProgressS& pr,
-		    stringstream& ss);
+        stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
     void graphvizOutput(const char *filename) const;
     void simulate(Shell& sh, const ActionSetS *asv) const;
@@ -203,6 +262,15 @@ class Lts: public Symbol {
     unsigned int get_type(unsigned int state) const;
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
+
+    /*<cosimo>*/
+    vector<Edge> get_children(unsigned int state) const
+    {
+        assert(state >=0 && state < nodes.size());
+        return nodes[state].children;
+    }
+    unsigned int size() const {return nodes.size();}
+    /*</cosimo>*/
 
     void clear();
     void cleanup();
