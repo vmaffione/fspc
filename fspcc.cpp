@@ -27,7 +27,7 @@
 using namespace std;
 
 /* Main FspDriver class, instantiating the parser. */
-#include "driver.hpp"
+#include "fsp_driver.hpp"
 
 
 void help()
@@ -53,8 +53,6 @@ void help()
     cout << "   -h : Shows this help.\n";
 }
 
-#define GETOPT
-#ifdef GETOPT
 void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int ch;
@@ -155,87 +153,6 @@ void process_args(CompilerOptions& co, int argc, char **argv)
         co.output_file = "out.lts";
     }
 }
-#else	/* !GET_OPT */
-void process_args(CompilerOptions& co, int argc, char **argv)
-{
-    int i = 1;
-    int il_options = 0;
-
-    /* Set default values. */
-    co.input_file = "input.fsp";
-    co.input_type = CompilerOptions::InputTypeFsp;
-    co.output_file = "output.lts";
-    co.deadlock = false;
-    co.progress = false;
-    co.graphviz = false;
-    co.shell = false;
-
-    /* Scan input arguments. */
-    while (i < argc) {
-	int len = strlen(argv[i]);
-	const char *arg = argv[i];
-	if (len != 2 || len == 2 && arg[0] != '-') {
-	    cerr << "Error: Unrecognized option\n";
-	    exit(-1);
-	}
-	switch (arg[1]) {
-	    case 'a':
-		co.deadlock = co.progress = co.graphviz = true;
-		break;
-	    case 'd':
-		co.deadlock = true;
-		break;
-	    case 'p':
-		co.progress = true;
-		break;
-	    case 'g':
-		co.graphviz = true;
-		break;
-	    case 'h':
-		help();
-		exit(0);
-		break;
-	    case 'i':
-	    case 'l':
-	    case 'o':
-		i++;
-		if (i == argc) {
-		    cerr << "Error: Expected filename after -"<< arg[1] 
-			    << " option\n";
-		    exit(-1);
-		}
-		switch (arg[1]) {
-		    case 'i':
-			il_options++;
-			co.input_file = argv[i];
-			break;
-		    case 'l':
-			il_options++;
-			co.input_file = argv[i];
-			co.input_type = CompilerOptions::InputTypeLts;
-			break;
-		    case 'o':
-			co.output_file = argv[i];
-			break;
-		}
-		break;
-	    case 's':
-		co.shell = true;
-		break;
-
-	    default:
-		cerr << "Unrecognized option " << arg[1] << "\n";
-		exit(-1);
-	}
-	i++;
-    }
-
-    if (il_options > 1) {
-	cerr << "Error: Cannot specify both 'i' and 'l' options\n";
-	exit(-1);
-    }
-}
-#endif	/* !GET_OPT */
 
 
 int main (int argc, char ** argv)

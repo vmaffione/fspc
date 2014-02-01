@@ -15,7 +15,7 @@
 #include "context.hpp"
 #include "symbols_table.hpp"
 #include "utils.hpp"
-#include "parser.hpp"
+#include "fsp_parser.hpp"
 #include "interface.hpp"
 #include "unresolved.hpp"
 #include "lts.hpp"

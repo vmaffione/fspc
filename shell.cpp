@@ -27,7 +27,7 @@
 #include "shell.hpp"
 
 /* FspDriver class to access the compiler structure. */
-#include "driver.hpp"
+#include "fsp_driver.hpp"
 
 /* Lts definitions and operations. */
 #include "lts.hpp"

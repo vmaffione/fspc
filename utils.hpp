@@ -27,7 +27,7 @@
 using namespace std;
 
 #include "symbols_table.hpp"
-#include "parser.hpp"
+#include "fsp_parser.hpp"
 
 namespace fsp {
 

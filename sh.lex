@@ -1,0 +1,194 @@
+/*
+ *  shell lexical analyzer FLEX template
+ *
+ *  Copyright (C) 2013  Vincenzo Maffione
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+%{ /* -*- C++ -*- */
+# include <cstdlib>
+# include <cerrno>
+# include <climits>
+# include <string>
+#include <cstdio>
+#include <iostream>
+#include <fstream>
+#include <assert.h>
+
+/* Include tha parser main class definition. */
+# include "sh_driver.hpp"
+
+/* Include the bison-generated parser header, in order to get the token
+   types definition that we return. */
+# include "sh_parser.hpp"
+
+using namespace std;
+
+
+//#define DEBUG
+#ifdef DEBUG
+#define IFD(x) (x)
+#else
+#define IFD(x) 
+#endif
+
+/* Work around an incompatibility in flex (at least versions
+   2.5.31 through 2.5.33): it generates code that does
+   not conform to C89.  See Debian bug 333231
+   <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=333231>.  */
+# undef yywrap
+# define yywrap() 1
+
+/* By default shlex returns int, we use token_type.
+   Unfortunately shterminate by default returns 0, which is
+   not of token_type.  */
+#define yyterminate() return token::ENDOF
+
+
+/* The following is executed before each rule's action. */
+#define YY_USER_ACTION \
+    do { \
+        ; \
+    } while (0);
+
+
+%}
+
+/* We don't want to take a standard shwrap() from fl.so, and so we can
+   avoid linking the executable with -lfl. */
+%option noyywrap nounput batch debug
+%option outfile="sh_scanner.cpp"
+
+DIGIT		[0-9]
+ID	        [_a-zA-Z][_a-zA-Z0-9]*
+
+
+%%
+
+%{
+  /* This code, which appears before the first rule, is copied 
+     verbatim at the beginning of shlex(). At each shlex() 
+     invocation, therefore, we mark the current last position as the
+     start of the next token.  */
+
+    /* Shortcut typedef. */
+    typedef sh::ShParser::token token;
+%}
+
+{DIGIT}+ {
+    shlval->int_value = atoi(shtext); //TODO strtol()
+    IFD(cout << "INTEGER: " << shlval->int_value << "\n");
+    return token::INTEGER;
+}
+
+{ID} {
+    shlval->string_ptr = new string(shtext);
+    IFD(cout << "ID\n"); 
+    return token::ID;
+}
+
+"||" {
+    IFD(cout << "||\n"); 
+    return token::OR;
+}
+
+"&&" {
+    IFD(cout << "&&\n"); 
+    return token::AND;
+}
+
+"==" {
+    IFD(cout << "==\n"); 
+    return token::EQUAL;
+}
+
+"!=" {
+    IFD(cout << "!=\n"); 
+    return token::NOTEQUAL;
+}
+
+"<=" {
+    IFD(cout << "<=\n"); 
+    return token::LOE;
+}
+
+">=" {
+    IFD(cout << ">=\n"); 
+    return token::GOE;
+}
+
+">>" {
+    IFD(cout << ">>\n"); 
+    return token::RSHIFT;
+}
+
+"<<" {
+    IFD(cout << "aa\n"); 
+    return token::LSHIFT;
+}
+
+"|"|"^"|"&"|"<"|">" {
+    IFD(cout << shtext[0] << "\n"); 
+    return sh::ShParser::token_type(shtext[0]);
+}
+
+"+"|"-"|"*"|"/"|"%"|"!" {
+    IFD(cout << shtext[0] << "\n"); 
+    return sh::ShParser::token_type(shtext[0]);
+}
+
+"("|")"|"=" {
+    IFD(cout << shtext[0] << "\n"); 
+    return sh::ShParser::token_type(shtext[0]);
+}
+
+
+[ \t\r]+ {
+    /* Eat up whitespaces, and keep tracking positions. */
+}
+
+[\n]+ {
+    /* Update the line counter and step forward. */
+}
+
+. {
+    cerr << "Unrecognized character " << shtext << endl;
+    exit(1);
+}
+%%
+
+/* User code: Functions that can be exported. */
+
+void ShDriver::scan_begin(const string& s)
+{
+    const char *filename = "prova";
+
+    ofstream fout(filename);
+    fout << s << endl;
+    fout.close();
+
+    sh_flex_debug = trace_scanning;
+    if (!(shin = fopen(filename, "r"))) {
+	string err = "cannot open " + string(filename) + ": " + strerror(errno);
+	perror(err.c_str());
+	exit(EXIT_FAILURE);
+    }
+}
+
+void ShDriver::scan_end()
+{
+    fclose(shin);
+}
+

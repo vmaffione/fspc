@@ -29,7 +29,7 @@ using namespace std;
 #include "circular_buffer.hpp"
 
 /* Main class driver. */
-#include "driver.hpp"
+#include "fsp_driver.hpp"
 
 
 /* Global variable shared between all the compilation units. */

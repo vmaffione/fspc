@@ -27,11 +27,11 @@
 #include <assert.h>
 
 /* Include tha parser main class definition. */
-# include "driver.hpp"
+# include "fsp_driver.hpp"
 
 /* Include the bison-generated parser header, in order to get the token
    types definition that we return. */
-# include "parser.hpp"
+# include "fsp_parser.hpp"
 
 /* Circular tokens buffer for good error reporting. */
 #include "circular_buffer.hpp"
@@ -75,7 +75,7 @@ using namespace std;
 /* We don't want to take a standard fspwrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
 %option noyywrap nounput batch debug
-%option outfile="scanner.cpp"
+%option outfile="fsp_scanner.cpp"
 
 DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-zA-Z0-9]*

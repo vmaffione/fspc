@@ -1,19 +1,19 @@
 VER=1.6
 
 # Generated C++ source files (to be updated manually)
-GENERATED=parser.cpp parser.hpp scanner.cpp preproc.cpp location.hh position.hh
+GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp location.hh position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
 
 # Non-generated C++ source files (to be updated manually).
-NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp driver.cpp driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp
+NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp fsp_driver.cpp fsp_driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp
 
 # All the C++ source files.
 SOURCES=$(NONGEN) $(GENERATED)
 
 # All the non-generated files.
-WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh parser.diff fspcc.1 Makefile.ske
+WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh fsp_parser.diff fspcc.1 Makefile.ske sh.lex sh.ypp
 
 # The files included in the fspc tarball.
-TAR_CONTENT=$(SOURCES) ltsee csee.sh parser.diff fspcc.1 Makefile.gen
+TAR_CONTENT=$(SOURCES) ltsee csee.sh fsp_parser.diff fspcc.1 Makefile.gen
 
 #REPORT=--report=all
 REPORT=
@@ -41,18 +41,26 @@ deps.gv Makefile.gen: $(SOURCES)
 
 Makefile.gen: Makefile.ske
 
-# Generate the parser with GNU Bison.
-parser.cpp parser.hpp location.hh position.hh: fsp.ypp fsp.y parser.diff
+# Generate the fsp_parser with GNU Bison.
+fsp_parser.cpp fsp_parser.hpp location.hh position.hh: fsp.ypp fsp.y fsp_parser.diff
 	bison -p fsp $(REPORT) fsp.ypp
-	patch parser.cpp < parser.diff
+	patch fsp_parser.cpp < fsp_parser.diff
 
-# Generate the scanner with Flex.
-scanner.cpp: fsp.lex parser.hpp
+# Generate the fsp_scanner with Flex.
+fsp_scanner.cpp: fsp.lex fsp_parser.hpp
 	flex -P fsp fsp.lex
 
 # Generate the preprocessor with Flex.
 preproc.cpp: preproc.lex
 	flex -P fsp preproc.lex
+
+# Generate the shell fsp_parser with GNU Bison.
+sh_parser.cpp sh_parser.hpp: sh.ypp sh.ypp
+	bison -p sh $(REPORT) sh.ypp
+
+# Generate the shell fsp_scanner with Flex.
+sh_scanner.cpp: sh.lex sh_parser.hpp
+	flex -P sh sh.lex
 
 # Blackbox test against the testset.
 testing: normal
@@ -100,4 +108,4 @@ cleanaur:
 	-rm *.tar.gz PKGBUILD
 
 clc:
-	-rm *.gv *.lts *.png .*.png *.bfsp *.pdf
+	-rm *.gv *.lts *.png .*.png *.bfsp *.pdf $(GENERATED)

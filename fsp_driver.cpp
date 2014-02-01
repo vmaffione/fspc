@@ -1,4 +1,4 @@
-#include "driver.hpp"
+#include "fsp_driver.hpp"
 
 /* Inline utilities. */
 #include "utils.hpp"
@@ -16,7 +16,7 @@
 #include "preproc.hpp"
 
 /* Bison generated parser. */
-#include "parser.hpp"
+#include "fsp_parser.hpp"
 
 /* The parse tree structures. */
 #include "tree.hpp"

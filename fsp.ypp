@@ -51,7 +51,7 @@ using namespace std;
 %defines
 
 /* Name of the parser implementation file. */
-%output "parser.cpp"
+%output "fsp_parser.cpp"
 
 /* Write an extra output file containing verbose descriptions of the parser
     states and what is done for each type of lookahead token in that state
@@ -180,7 +180,7 @@ namespace fsp {
 #include "context.hpp"
 
 /* Definition of the FspTranslator class & callbacks */
-#include "driver.hpp"
+#include "fsp_driver.hpp"
 
 /* Lts definitions and operations. */
 #include "lts.hpp"
