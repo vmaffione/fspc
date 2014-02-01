@@ -1,7 +1,7 @@
 VER=1.6
 
 # Generated C++ source files (to be updated manually)
-GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp location.hh position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
+GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp fsp_location.hh fsp_position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
 
 # Non-generated C++ source files (to be updated manually).
 NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp fsp_driver.cpp fsp_driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp code_generator.cpp code_generator.hpp
@@ -41,10 +41,18 @@ deps.gv Makefile.gen: $(SOURCES)
 
 Makefile.gen: Makefile.ske
 
-# Generate the fsp_parser with GNU Bison.
-fsp_parser.cpp fsp_parser.hpp location.hh position.hh: fsp.ypp fsp.y fsp_parser.diff
+# Generate the fsp_parser with GNU Bison and apply a simple patch.
+# Unfortunately I couldn't find a way to tell Bison to generate
+# the 'location.hh' and 'position.hh' files into files with different
+# names: For this reason it's necessary to manually rename the files
+# and replace include directives.
+fsp_parser.cpp fsp_parser.hpp fsp_location.hh fsp_position.hh: fsp.ypp fsp.y fsp_parser.diff
 	bison -p fsp $(REPORT) fsp.ypp
 	patch fsp_parser.cpp < fsp_parser.diff
+	mv location.hh fsp_location.hh
+	mv position.hh fsp_position.hh
+	sed -i 's|\<location.hh|fsp_location.hh|g' *.hpp *.cpp *.hh
+	sed -i 's|\<position.hh|fsp_position.hh|g' *.hpp *.cpp *.hh
 
 # Generate the fsp_scanner with Flex.
 fsp_scanner.cpp: fsp.lex fsp_parser.hpp

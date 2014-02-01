@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 #include "symbols_table.hpp"
-#include "location.hh"
+#include "fsp_location.hh"
 
 using namespace std;
 
