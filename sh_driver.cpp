@@ -50,7 +50,9 @@ void FspDriver::error(const fsp::location& l, const std::string& m)
 
 void ShDriver::error(const std::string& m)
 {
+#if 0
     cerr << m << endl;
+#endif
 }
 
 bool ShDriver::lookup_variable(const string* name, int& val)

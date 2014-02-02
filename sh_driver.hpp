@@ -33,6 +33,8 @@ class ShDriver
         /* Run the parser.  Return 0 on success. */
         int parse(const string& expression);
         bool trace_parsing;
+
+        /* Store the result of the parsed expression. */
         int result;
 
         /* Error handling. */
