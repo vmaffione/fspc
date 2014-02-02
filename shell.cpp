@@ -941,8 +941,16 @@ int Shell::printvar(const vector<string> &args, stringstream& ss)
 int Shell::if_(const vector<string> &args, stringstream& ss)
 {
     if (!ifframes.top().accepting) {
+        /* We met an 'if' command while not accepting commands. It's
+           not necessary to evaluate the condition, because no command
+           in the new IfFrame will ever be executed. Therefore we just
+           push a new IfFrame, where we don't initially accept, but
+           pretend we have already accepted commands.
+        */
         ifframes.push(IfFrame(false, true, false));
     } else {
+        /* We met an 'if' command while accepting commands. We evaluate
+           the condition to initialize the nested IfFrame. */
         ShDriver shd(*this);
         string expression;
         int ret;
@@ -956,6 +964,9 @@ int Shell::if_(const vector<string> &args, stringstream& ss)
             return -1;
         }
 
+        /* Push a new frame, where 'else' has not met yet. The
+           nested commands are immediately accepted or not, depending
+           on the 'if' condition being true or false. */
         ifframes.push(IfFrame(!!shd.result, !!shd.result, false));
     }
 
@@ -965,14 +976,20 @@ int Shell::if_(const vector<string> &args, stringstream& ss)
 int Shell::elif_(const vector<string> &args, stringstream& ss)
 {
     if (ifframes.size() == 1 || ifframes.top().else_met) {
+        /* We haven't met an 'if' commands that match this 'elif' branch,
+           or we have already met an 'else'. This is a semantic error. */
         ss << "    Error: unmatched 'elif'\n";
 
         return -1;
     }
 
     if (ifframes.top().accepted) {
+        /* We have already accepted commands, so we cannot accept commands
+           in this branch, irrespective of the condition. */
         ifframes.top().accepting = false;
     } else {
+        /* Evaluate the condition to see whether we should start
+           accepting commands in this branch.  */
         ShDriver shd(*this);
         string expression;
         int ret;
@@ -1002,11 +1019,15 @@ int Shell::else_(const vector<string> &args, stringstream& ss)
     }
 
     if (ifframes.size() == 1 || ifframes.top().else_met) {
+        /* We haven't met an 'if' commands that match this 'else' branch,
+           or we have already met an 'else'. This is a semantic error. */
         ss << "    Error: unmatched 'else'\n";
 
         return -1;
     }
 
+    /* Start accepting in this 'else' branch if we haven't already accepted
+       in the past. */
     ifframes.top().accepting = !ifframes.top().accepted;
     ifframes.top().accepted = true;
     ifframes.top().else_met = true;
@@ -1023,11 +1044,13 @@ int Shell::fi_(const vector<string> &args, stringstream& ss)
     }
 
     if (ifframes.size() == 1) {
+        /* No 'if' matches this 'fi' statement: Semantic error. */
         ss << "    Error: unmatched 'fi'\n";
 
         return -1;
     }
 
+    /* Pop the current IfFrame, returning to the previous one. */
     ifframes.pop();
 
     return 0;
@@ -1105,6 +1128,10 @@ int Shell::run()
 	token = tokens[0];
 	tokens.erase(tokens.begin());
 
+        /* Check if we are accepting commands, looking at the current
+           IfFrame instance. The if/elif/else/fi commands are never
+           filtered here, because we have nonethless track the evolution
+           (ramification) of the branches. */
         if (ifframes.top().accepting || token == "if" || token == "fi" ||
                         token  == "elif" || token == "else") {
 	    if (token == "quit" || token == "exit") {

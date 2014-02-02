@@ -74,6 +74,82 @@ class AutoCompletion {
 };
 
 
+/* Using the if/elif/else/fi constructs, a script can nest conditional
+   command sequences to create an arbitrarily complex tree of if branches.
+
+   In this example:
+
+        B0  // a block of commands
+        if COND
+            B1
+            if COND
+                B2
+            elif COND
+                B3
+            else
+                B4
+            fi
+        else
+            B5
+            if COND
+                B6
+                if COND
+                    B7
+                    if COND
+                        B8
+                    fi
+                elif
+                    B9
+                    if COND
+                        B10
+                    else
+                        B11
+                    fi
+                fi
+            fi
+        fi
+
+    the tree is
+
+        B0 --- B1 --- B2
+            |      |
+            |      -- B3
+            |      |
+            |      -- B4
+            |
+            -- B5 --- B6 --- B7 --- B8
+                          |
+                          -- B9 --- B10
+                                 |
+                                 -- B11
+
+    The IfFrame structure keeps track of a single level of nesting: To be
+    more precise, it keeps track of a group of siblings. In the example,
+    the groups of siblings are {B1, B5}, {B2, B3, B4}, {B6}, {B7, B9},
+    {B8} and {B10, B11}. Note that B8 and B10 are not siblings, even if
+    they are on the same tree level (the same holds for B6 w.r.t. B2,
+    B3 and B4).
+
+    Let's say we have a group of siblings {b1, b2, ... bn}, in the specified
+    order.
+    Each block of commands comes with a explicit condition (if/elif), or an
+    implicit true condition (else) in the case of the last block. Only the
+    first block associated to a true condition will be executed.
+
+    The IfFrame instance associated to the group is initialized when
+    evaluating the 'if' statement associated to 'b1' and is updated by the
+    'elif' and 'else' statements associated to the other siblings.
+
+    The 'accepted' field is true when we have already met a true condition.
+    As an example, if 'c3' (condition associated to 'b3') is true, while
+    'c1' and 'c2' are not, 'accepted' would become true during the
+    evaluation of 'elif c3' and remain true as long as the IfFrame instance
+    lives.
+    The 'accepting' field is true while we are scanning/executing the commands
+    of the block selected for execution ('b3' in the example).
+    The 'else_met' field becomes true when an 'else' statement is met,
+    and is useful to catch semantic errors.
+ */
 struct IfFrame {
     bool accepting;
     bool accepted;
@@ -123,7 +199,9 @@ class Shell {
         /* Shell variables (values are integers). */
         map<string, int> variables;
 
-        /* Support for bash-like conditional statements (if/elif/else/fi). */
+        /* Support for bash-like conditional statements (if/elif/else/fi).
+           The evolution of the stack follows the ramification of the
+           shell script. */
         stack<IfFrame> ifframes;
 
         void common_init();
