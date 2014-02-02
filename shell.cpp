@@ -85,6 +85,20 @@ specified FSP using GraphViz";
     help_map["printvar"] = "printvar [VAR_NAME]: print the value of the "
                             "specified variable or of all the variables"
                         "VAR_NAME";
+    help_map["if"] = "if CONDITION: if the specified condition is true, "
+                        "the following commands will be executed (up to the "
+                        "next matching 'elif', 'else' or 'fi' command)";
+    help_map["elif"] = "elif CONDITION: if the specified condition is true "
+                        "and all the conditions associated to the previous "
+                        "branches were false, the following commands will "
+                        "be executed (up to the next matching 'elif', 'else'"
+                        "or 'fi' command)";
+    help_map["else"] = "else: if all the conditions associated to the "
+                        "previous branches were false, the following "
+                        "commands will be executed (up to the next matching "
+                        "'else' command)";
+    help_map["fi"] = "fi: close the last opened 'if', 'elif' or 'else' "
+                        "branch";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
 
