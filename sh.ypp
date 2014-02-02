@@ -88,7 +88,7 @@ class ShDriver;
 %token FI "fi"
 %token ELIF "elif"
 */
-%token ID "id"
+%token <string_ptr> ID "id"
 %token OR "||"
 %token AND "&&"
 %token EQUAL "=="
@@ -98,6 +98,7 @@ class ShDriver;
 %token LSHIFT "<<"
 %token RSHIFT ">>"
 %token <int_value> INTEGER "integer"
+%token <string_ptr> variable "variable"
 
 /* Non-terminal symbols. */
 %type <int_value> expression base_expression start
@@ -224,7 +225,13 @@ base_expression:
         $$ = $1;
     }
     | ID {
-        $$ = 5; //TODO lookup
+        int val;
+
+        if (driver.lookup_variable($1, val)) {
+            $$ = val;
+        } else {
+            YYABORT;
+        }
     }
     ;
 

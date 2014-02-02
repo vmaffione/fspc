@@ -26,6 +26,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <stack>
 #include "code_generator.hpp"//cosimo
 
 using namespace std;
@@ -73,21 +74,32 @@ class AutoCompletion {
 };
 
 
+struct IfFrame {
+    bool accepting;
+    bool accepted;
+    bool else_met;
+
+    IfFrame(bool accing, bool acced, bool emet) :
+                accepting(accing), accepted(acced), else_met(emet) {
+    }
+};
+
+
 class FspDriver;
-/*<cosimo>*/
-namespace codegen{
-  class CodeGenerator;
+
+namespace codegen {
+    class CodeGenerator;
 }
-/*</cosimo>*/
 
 class Shell {
         FspDriver& c;
-        codegen::CodeGenerator coder; //cosimo
+        codegen::CodeGenerator coder;
 
         /* A mapping of command names to the help strings. */
         map<string, const char*> help_map;
 
-        typedef int (Shell::*ShellCmdFunc)(const vector<string>& args, stringstream& ss);
+        typedef int (Shell::*ShellCmdFunc)(const vector<string>& args,
+                                            stringstream& ss);
 
         /* A mapping of command names to command callbacks. */
         map<string, ShellCmdFunc> cmd_map;
@@ -108,8 +120,11 @@ class Shell {
         /* Keep trace of the last 'c.processes.size()' seen. */
         unsigned int trace_processes_size;
 
-        /* Shell variables. */
+        /* Shell variables (values are integers). */
         map<string, int> variables;
+
+        /* Support for bash-like conditional statements (if/elif/else/fi). */
+        stack<IfFrame> ifframes;
 
         void common_init();
         void fill_completion();
@@ -128,7 +143,11 @@ class Shell {
         int lsmenu(const vector<string>& args, stringstream& ss);
         int minimize(const vector<string>& args, stringstream& ss);
         int traces(const vector<string>& args, stringstream& ss);
-        int echo(const vector<string>& args, stringstream& ss);
+        int printvar(const vector<string>& args, stringstream& ss);
+        int if_(const vector<string>& args, stringstream& ss);
+        int elif_(const vector<string>& args, stringstream& ss);
+        int else_(const vector<string>& args, stringstream& ss);
+        int fi_(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
     public:
@@ -139,6 +158,7 @@ class Shell {
         void readline(string& line);
         void putsstream(stringstream& ss, bool eol);
         void history_enable(bool enable);
+        bool lookup_variable(const string& name, int& val) const;
 
         ~Shell();
 };

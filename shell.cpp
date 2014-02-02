@@ -18,8 +18,8 @@
  */
 
 
-#include <string>//cosimo
-#include <list>//cosimo
+#include <string>
+#include <list>
 #include <sstream>
 #include <cstdio>
 #include <unistd.h> /* fork() */
@@ -36,6 +36,10 @@
 
 /* Helper functions. */
 #include "helpers.hpp"
+
+/* ShDriver class to access expression parser. */
+#include "sh_driver.hpp"
+
 
 #define DEBUG
 #ifdef DEBUG
@@ -78,7 +82,8 @@ specified FSP using GraphViz";
     help_map["traces"] = "traces FSP_NAME: find all the action traces for "
                          "the specified process, stopping when there "
                          "are cycles";
-    help_map["echo"] = "echo VAR_NAME: print the value of the variable"
+    help_map["printvar"] = "printvar [VAR_NAME]: print the value of the "
+                            "specified variable or of all the variables"
                         "VAR_NAME";
     help_map["help"] = "help: show this help";
     help_map["quit"] = "quit: exit the shell";
@@ -96,8 +101,14 @@ specified FSP using GraphViz";
     cmd_map["lsmenu"] = &Shell::lsmenu;
     /* cmd_map["minimize"] = &Shell::minimize; */
     cmd_map["traces"] = &Shell::traces;
-    cmd_map["echo"] = &Shell::echo;
+    cmd_map["printvar"] = &Shell::printvar;
+    cmd_map["if"] = &Shell::if_;
+    cmd_map["elif"] = &Shell::elif_;
+    cmd_map["else"] = &Shell::else_;
+    cmd_map["fi"] = &Shell::fi_;
     cmd_map["help"] = &Shell::help;
+
+    ifframes.push(IfFrame(true, false, false));
 }
 
 /* This function must be called after common_init(). */
@@ -906,20 +917,118 @@ int Shell::traces(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
-#include "sh_driver.hpp"
-
-int Shell::echo(const vector<string> &args, stringstream& ss)
+int Shell::printvar(const vector<string> &args, stringstream& ss)
 {
-    if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
+    if (args.size()) {
+        if (!variables.count(args[0])) {
+            ss << "Variable " << args[0] << " undefined\n";
+            return -1;
+        }
+        ss << "    " << args[0] << " = " << variables[args[0]] << "\n";
+
+        return 0;
+    }
+
+    map<string, int>::iterator mit;
+    ss << "Defined variables:\n";
+    for (mit = variables.begin(); mit != variables.end(); mit++) {
+        ss << "    " << mit->first << " = " << mit->second << "\n";
+    }
+
+    return 0;
+}
+
+int Shell::if_(const vector<string> &args, stringstream& ss)
+{
+    if (!ifframes.top().accepting) {
+        ifframes.push(IfFrame(false, true, false));
+    } else {
+        ShDriver shd(*this);
+        string expression;
+        int ret;
+
+        merge_string_vec(args, expression, " ");
+
+        ret = shd.parse(expression);
+        if (ret) {
+            ss << "    invalid expression '" << expression << "'\n";
+
+            return -1;
+        }
+
+        ifframes.push(IfFrame(!!shd.result, !!shd.result, false));
+    }
+
+    return 0;
+}
+
+int Shell::elif_(const vector<string> &args, stringstream& ss)
+{
+    if (ifframes.size() == 1 || ifframes.top().else_met) {
+        ss << "    Error: unmatched 'elif'\n";
+
+        return -1;
+    }
+
+    if (ifframes.top().accepted) {
+        ifframes.top().accepting = false;
+    } else {
+        ShDriver shd(*this);
+        string expression;
+        int ret;
+
+        merge_string_vec(args, expression, " ");
+
+        ret = shd.parse(expression);
+        if (ret) {
+            ss << "    invalid expression\n";
+
+            return -1;
+        }
+
+        ifframes.top().accepted = !!shd.result;
+        ifframes.top().accepting = !!shd.result;
+    }
+
+    return 0;
+}
+
+int Shell::else_(const vector<string> &args, stringstream& ss)
+{
+    if (args.size()) {
+	ss << "This command takes no arguments\n";
+
 	return -1;
     }
 
-    if (!variables.count(args[0])) {
-        ss << "Variable " << args[0] << " undefined\n";
+    if (ifframes.size() == 1 || ifframes.top().else_met) {
+        ss << "    Error: unmatched 'else'\n";
+
         return -1;
     }
-    ss << "    " << args[0] << " = " << variables[args[0]] << "\n";
+
+    ifframes.top().accepting = !ifframes.top().accepted;
+    ifframes.top().accepted = true;
+    ifframes.top().else_met = true;
+
+    return 0;
+}
+
+int Shell::fi_(const vector<string> &args, stringstream& ss)
+{
+    if (args.size()) {
+	ss << "This command takes no arguments\n";
+
+	return -1;
+    }
+
+    if (ifframes.size() == 1) {
+        ss << "    Error: unmatched 'fi'\n";
+
+        return -1;
+    }
+
+    ifframes.pop();
 
     return 0;
 }
@@ -996,39 +1105,56 @@ int Shell::run()
 	token = tokens[0];
 	tokens.erase(tokens.begin());
 
-	if (token == "quit" || token == "exit")
-	    return 0;
-
-        /* Command lookup and execution. */
-	it = cmd_map.find(token);
-	if (it == cmd_map.end()) {
-	    ss << "	Unrecognized command\n";
-	} else {
-	    ShellCmdFunc fp = it->second;
-            int ret;
-
-	    ret = (this->*fp)(tokens, ss);
-
-            if (var.size()) {
-                variables[var] = ret;
+        if (ifframes.top().accepting || token == "if" || token == "fi" ||
+                        token  == "elif" || token == "else") {
+	    if (token == "quit" || token == "exit") {
+	        return 0;
             }
-	}
-        /* Flush command output. */
-	putsstream(ss, true);
 
-        /* We are at the end of an iteration. If we detect that
-           'processes.size()' is changed w.r.t. the last iteration
-           (because of the command executed during this iteration), we
-           call 'fill_completion()', in order to update the
-           AutoCompletion object to the new 'processes' table. */
-        if (c.processes.size() != trace_processes_size) {
-            trace_processes_size = c.processes.size();
-            fill_completion();
+            /* Command lookup and execution. */
+            it = cmd_map.find(token);
+            if (it == cmd_map.end()) {
+                ss << "	Unrecognized command\n";
+            } else {
+                ShellCmdFunc fp = it->second;
+                int ret;
+
+                ret = (this->*fp)(tokens, ss);
+
+                if (var.size()) {
+                    variables[var] = ret;
+                }
+            }
+            /* Flush command output. */
+            putsstream(ss, true);
+
+            /* We are at the end of an iteration. If we detect that
+               'processes.size()' is changed w.r.t. the last iteration
+               (because of the command executed during this iteration),
+               we call 'fill_completion()', in order to update the
+               AutoCompletion object to the new 'processes' table. */
+            if (c.processes.size() != trace_processes_size) {
+                trace_processes_size = c.processes.size();
+                fill_completion();
+            }
         }
     }
 
 }
 
+bool Shell::lookup_variable(const string& name, int& val) const
+{
+    map<string, int>::const_iterator mit;
+
+    mit = variables.find(name);
+
+    if (mit == variables.end()) {
+        return false;
+    }
+    val = mit->second;
+
+    return true;
+}
 
 /* ====================== CommandHistory implementation ================= */
 CommandHistory::CommandHistory() {

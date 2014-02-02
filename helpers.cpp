@@ -77,3 +77,16 @@ bool intersection_exists(const set<unsigned int>& first,
     return false;
 }
 
+void merge_string_vec(const vector<string>& vec, string& res,
+                        const string& separator)
+{
+    res.clear();
+
+    for (unsigned int i = 0; i < vec.size(); i++) {
+        if (i) {
+            res += separator;
+        }
+        res += vec[i];
+    }
+}
+
