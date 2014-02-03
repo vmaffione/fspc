@@ -1,5 +1,7 @@
 #include <string>
+
 using namespace std;
+
 
 #ifndef __JAVA_TEMPLATES__HH
 #define __JAVA_TEMPLATES__HH

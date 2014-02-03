@@ -215,16 +215,16 @@ bool MNFExtractor::operator()(int state, MNF& mnf, int& reason, int nest_lev){
                 return false;
             }
             if(seen[state]){
-                //Sono giunto ad uno stato già visitato passando da una azione
+                //Sono giunto ad uno stato gia' visitato passando da una azione
                 //interna, quindi passando da un TRANSITORY. Scenari possibili:
-                //- lo stato raggiunto è un punto di sincronizzazione -> OK
-                //- lo stato raggiunto è transitorio ma conduce a un punto di
+                //- lo stato raggiunto e' un punto di sincronizzazione -> OK
+                //- lo stato raggiunto e' transitorio ma conduce a un punto di
                 //  sincronizzazione -> ok, appendi il path all'antecedente
-                //- lo stato raggiunto è un transitorio in ciclo diretto ->
+                //- lo stato raggiunto e' un transitorio in ciclo diretto ->
                 // errore! Ciclo infinito di azioni interne!
-                // Se entro qui, devo discernere quale dei tre casi è vero,
+                // Se entro qui, devo discernere quale dei tre casi e' vero,
                 // nel terzo dare errore, nel secondo fare lookahead del path,
-                // nel primo è sufficiente fare ricorsione. NB: dai un'occhiata
+                // nel primo e' sufficiente fare ricorsione. NB: dai un'occhiata
                 // all'algoritmo di Tarjan
                 return internal_actions_lookahead(state, mnf, reason);
             }
