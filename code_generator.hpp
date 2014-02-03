@@ -18,6 +18,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #ifndef __CODE_GENERATOR__HH
 #define __CODE_GENERATOR__HH
 
@@ -37,6 +38,7 @@ namespace codegen{
 /*MNF stands for Monitor Normal Form.*/
 typedef int State;
 typedef int Interaction;
+typedef int InternalAction;
 struct MNFAntecedent{
     State state;
     Interaction interaction;
@@ -48,7 +50,7 @@ bool operator<(const MNFAntecedent& a, const MNFAntecedent& b);
 ostream& operator<<(ostream& os, const MNFAntecedent& mnf_antecedent);
 
 struct MNFConsequent{
-    list<int> internal_actions;
+    list<InternalAction> internal_actions;
     int next_state;
     MNFConsequent(){
         next_state = -1;
@@ -103,6 +105,7 @@ class CodeGenerator{
                           MNFAntecedent& antecedent,
                           MNF& mnf, int nest_lev) const;*/
         void remap_states(MNF& mnf);
+        void indent(string& s);
     public:
         CodeGenerator() : actions(fsp::ActionsTable::getref()){}
         bool monitor(const fsp::Lts& lts, const list<string>& interactions,
@@ -110,6 +113,10 @@ class CodeGenerator{
         bool get_monitor_representation(const fsp::Lts& lts,
                                         const list<string>& interactions,
                                         string& representation);
+        bool instantiate_monitor_template(const fsp::Lts& lts,
+                                          const list<string>& synchpoints,
+                                          const string monitor_identifier,
+                                          string& monitor_code);
         //bool thread(const Lts& lts, const list<string>& interactions);
 };
 

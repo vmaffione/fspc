@@ -68,6 +68,7 @@ description of the specified FSP into the specified output file";
     help_map["monitor"] = "monitor FSP_NAME INTERACTIONS [-o FILE]: write, \
 if possible, the Monitor Normal Form of the specified FSP into the specified \
 output file";
+    help_map["code"] = "Fill in the description";
     help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
 FSP";
     help_map["see"] = "see FSP_NAME: show a graphical representation of the \
@@ -107,7 +108,8 @@ specified FSP using GraphViz";
     cmd_map["progress"] = &Shell::progress;
     cmd_map["simulate"] = &Shell::simulate;
     cmd_map["basic"] = &Shell::basic;
-    cmd_map["monitor"] = &Shell::monitor; //monitor
+    cmd_map["monitor"] = &Shell::monitor; //cosimo
+    cmd_map["code"] = &Shell::code; //cosimo
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
@@ -554,7 +556,7 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
   /* Deadlock analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
-	    ss << "Process " << args[0] << " not found\n";
+        ss << "Process " << args[0] << " not found\n";
             return -1;
         }
         lts->deadlockAnalysis(ss);
@@ -584,7 +586,7 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
   /* Progress analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
-	    ss << "Process " << args[0] << " not found\n";
+        ss << "Process " << args[0] << " not found\n";
             return -1;
         }
         for (it=c.progresses.table.begin();
@@ -616,7 +618,7 @@ int Shell::simulate(const vector<string> &args, stringstream& ss)
     fsp::ActionSetS *menu = NULL;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
+    ss << "Invalid command: try 'help'\n";
         return -1;
     }
 
@@ -649,8 +651,8 @@ int Shell::basic(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
@@ -706,20 +708,72 @@ int Shell::monitor(const vector<string>& args, stringstream& ss)
         }
     }
 
-    fstream file;
-    file.open(outfile.c_str(), ios::out);
     string representation;
 
     if (!coder.get_monitor_representation(*lts, interactions,
                                                 representation)) {
         ss << representation;
         return -1;
+    } else {
+        fstream file;
+        file.open(outfile.c_str(), ios::out);
+        if (!file.is_open() || !(file << representation)) {
+            ss << "Cannot open file " << outfile;
+        }
+        file.close();
+    }
+    return 0;
+}
+
+int Shell::code(const vector<string>& args, stringstream& ss)
+{
+    string outfile(args[0] + ".java");
+    fsp::SmartPtr<fsp::Lts> lts;
+
+    if (!args.size()) {
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
-    if (!file.is_open() || !(file << representation)) {
-        ss << "Cannot open file " << outfile;
+    lts = c.getLts(args[0], true);
+    if (lts == NULL) {
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
 
+    std::list<std::string> interactions;
+    bool outputFlagSet = false;
+    bool fileNameRead = false;
+    std::string outputFlag("-o");
+
+    if (args.size() >= 2) {
+        /* outfile = args[1]; */
+        for (unsigned int i = 1; i < args.size(); i++) {
+            if (outputFlag.compare(args[i]) == 0 && (!outputFlagSet)) {
+                outputFlagSet = true;
+                continue;
+            } else if (outputFlagSet && (!fileNameRead)) {
+                outfile = string(args[i]);
+                fileNameRead = true;
+                continue;
+            }
+            interactions.push_back(std::string(args[i]));
+        }
+    }
+
+    string code;
+
+    if (!coder.instantiate_monitor_template(*lts, interactions, args[0], code)) {
+        ss << code;
+        return -1;
+    } else {
+        fstream file;
+        file.open(outfile.c_str(), ios::out);
+        if (!file.is_open() || !(file << code)) {
+            ss << "Cannot open file " << outfile;
+        }
+        file.close();
+    }
     return 0;
 }
 
@@ -728,14 +782,14 @@ int Shell::alpha(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-	ss << "Process " << args[0] << " not found\n";
-	return -1;
+    ss << "Process " << args[0] << " not found\n";
+    return -1;
     }
 
     lts->printAlphabet(ss);
@@ -750,19 +804,19 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     pid_t drawer;
 
     if (!interactive) {
-	ss << "Cannot use 'see' command in scripts\n";
-	return -1;
+    ss << "Cannot use 'see' command in scripts\n";
+    return -1;
     }
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-	ss << "Process " << args[0] << " not found\n";
-	return -1;
+    ss << "Process " << args[0] << " not found\n";
+    return -1;
     }
 
     /* Generate the graphivz output into a temporary file (whose name does
@@ -774,18 +828,18 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     drawer = fork();
 
     switch (drawer) {
-	case -1:
-	    ss << "fork() error\n";
-	    return -1;
-	    break;
-	case 0:
-	    execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
-	    exit(0);
-	    break;
-	default:
-	    int status;
+    case -1:
+        ss << "fork() error\n";
+        return -1;
+        break;
+    case 0:
+        execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
+        exit(0);
+        break;
+    default:
+        int status;
 
-	    waitpid(-1, &status, 0);
+        waitpid(-1, &status, 0);
     }
 
     remove(tmp_name.c_str());
@@ -800,14 +854,14 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     string filename;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-	ss << "Process " << args[0] << " not found\n";
-	return -1;
+    ss << "Process " << args[0] << " not found\n";
+    return -1;
     }
     filename = args[0] + ".gv";
 
@@ -825,18 +879,18 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     pid_t drawer = fork();
 
     switch (drawer) {
-	case -1:
-	    ss << "fork() error\n";
-	    return -1;
-	    break;
-	case 0:
-	    execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
-	    exit(1);
-	    break;
-	default:
-	    int status;
+    case -1:
+        ss << "fork() error\n";
+        return -1;
+        break;
+    case 0:
+        execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
+        exit(1);
+        break;
+    default:
+        int status;
 
-	    waitpid(-1, &status, 0);
+        waitpid(-1, &status, 0);
     }
 
     remove(filename.c_str());
@@ -896,14 +950,14 @@ int Shell::minimize(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-	ss << "Process " << args[0] << " not found\n";
-	return -1;
+    ss << "Process " << args[0] << " not found\n";
+    return -1;
     }
 
     lts->minimize(ss);
@@ -916,14 +970,14 @@ int Shell::traces(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-	ss << "Invalid command: try 'help'\n";
-	return -1;
+    ss << "Invalid command: try 'help'\n";
+    return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-	ss << "Process " << args[0] << " not found\n";
-	return -1;
+    ss << "Process " << args[0] << " not found\n";
+    return -1;
     }
 
     lts->traces(ss);
@@ -1075,12 +1129,12 @@ int Shell::help(const vector<string> &args, stringstream& ss)
     map<string, const char *>::iterator it;
 
     if (args.size()) {
-	it = help_map.find(args[0]);
-	if (it == help_map.end()) {
-	    ss << "	No command named like that\n";
-	    return -1;
-	}
-	ss << "   " << it->second << "\n";
+    it = help_map.find(args[0]);
+    if (it == help_map.end()) {
+        ss << " No command named like that\n";
+        return -1;
+    }
+    ss << "   " << it->second << "\n";
     } else {
   /* Show the help for every command. */
   for (it=help_map.begin(); it!=help_map.end(); it++) {
@@ -1099,36 +1153,36 @@ void Shell::history_enable(bool enable)
 int Shell::run()
 {
     for (;;) {
-	string line;
-	string token;
+        string line;
+        string token;
         string var;
-	vector<string> tokens;
-	map<string, ShellCmdFunc>::iterator it;
-	stringstream ss;
+        vector<string> tokens;
+        map<string, ShellCmdFunc>::iterator it;
+        stringstream ss;
 
-	if (interactive)
-	    getline_ncurses(line, "fspcc >> ");
-	else
-	    getline(in, line);
+        if (interactive)
+            getline_ncurses(line, "fspcc >> ");
+        else
+            getline(in, line);
 
-	if (in.eof()) {
-	    return 0;
-	}
-	if (in.fail()) {
-	    cerr << "Shell input error\n";
-	    return -1;
-	}
+        if (in.eof()) {
+            return 0;
+        }
+        if (in.fail()) {
+            cerr << "Shell input error\n";
+            return -1;
+        }
 
-	istringstream iss(line);
+        istringstream iss(line);
 
         /* Split the input line into space separated tokens. */
-	while (iss >> token) {
-	    tokens.push_back(token);
-	}
+        while (iss >> token) {
+            tokens.push_back(token);
+        }
 
-	if (!tokens.size()) {
-	    continue;
-	}
+        if (!tokens.size()) {
+            continue;
+        }
 
         /* Recognize variable assignments (e.g. 'VARNAME = CMD ... ')
            and extract the variable's name. */
@@ -1139,17 +1193,17 @@ int Shell::run()
         }
 
         /* Extract the command name. */
-	token = tokens[0];
-	tokens.erase(tokens.begin());
+        token = tokens[0];
+        tokens.erase(tokens.begin());
 
         /* Check if we are accepting commands, looking at the current
            IfFrame instance. The if/elif/else/fi commands are never
            filtered here, because we have nonethless track the evolution
            (ramification) of the branches. */
         if (ifframes.top().accepting || token == "if" || token == "fi" ||
-                        token  == "elif" || token == "else") {
-	    if (token == "quit" || token == "exit") {
-	        return 0;
+                token  == "elif" || token == "else") {
+            if (token == "quit" || token == "exit") {
+                return 0;
             }
 
             /* Command lookup and execution. */
@@ -1180,7 +1234,6 @@ int Shell::run()
             }
         }
     }
-
 }
 
 bool Shell::lookup_variable(const string& name, int& val) const
