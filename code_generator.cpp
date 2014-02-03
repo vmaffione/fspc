@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include "code_generator.hpp"
+#include "java.hpp"
 
 using namespace std;
 using namespace fsp;
@@ -381,6 +382,7 @@ bool CodeGenerator::monitor(const Lts& lts,
     }
     MNFExtractor extractor(lts, interactions);
     if(extractor(0, monitorNormalForm, reason, 0)){
+        remap_states(monitorNormalForm);
         return true;
     }
     return false;
@@ -412,6 +414,27 @@ void CodeGenerator::remap_states(MNF& mnf){
     return;
 }
 
+void CodeGenerator::indent(string& s){
+    int level = 0;
+    string::size_type size = s.size();
+    for(string::size_type i = 0; i < size; i++){
+        switch(s[i]){
+            case '{':{
+                level++;
+                if(i < size-1 && s[i+1] == '}') level--;
+            } break;
+            case '\n':{
+                if(i < size-1 && s[i+1] == '}') level--;
+                s.insert(i+1, string(level, '\t'));
+                size += level;
+                i += level;
+            } break;
+            default: if(i < size-1 && s[i+1] == '}') level--;
+        }
+    }
+    return;
+}
+
 bool CodeGenerator::get_monitor_representation(const fsp::Lts& lts,
                                             const list<string>& interactions,
                                             string& representation)
@@ -419,7 +442,6 @@ bool CodeGenerator::get_monitor_representation(const fsp::Lts& lts,
     MNF monitorNormalForm;
     int reason = -1;
     if(monitor(lts, interactions, monitorNormalForm, reason)){
-        remap_states(monitorNormalForm);
         string body("");
         MNF::iterator i = monitorNormalForm.begin();
         for(;i != monitorNormalForm.end(); i++){
@@ -445,4 +467,94 @@ bool CodeGenerator::get_monitor_representation(const fsp::Lts& lts,
     }
     representation = string(MFN_fail_reasons[reason]);
     return false;
+}
+
+bool CodeGenerator::instantiate_monitor_template(const fsp::Lts& lts,
+                                                   const list<string>& synchpoints,
+                                                   const string monitor_identifier,
+                                                   string& monitor_code)
+{
+    MNF model;
+    int reason = -1;
+    if(!monitor(lts, synchpoints, model, reason)){
+        monitor_code = string(MFN_fail_reasons[reason]);
+        return false;
+    }
+    map<Interaction, set<State> > activation_states;
+    set<Interaction> interactions;
+    set<InternalAction> internal_actions;
+    for(MNF::const_iterator i = model.begin(); i != model.end(); i++){
+        map<Interaction, MNFConsequent>::const_iterator j = (i->second).begin();
+        for(; j != (i->second).end(); j++){
+            interactions.insert(j->first);
+            activation_states[j->first].insert(i->first);
+            list<InternalAction>::const_iterator k = (j->second).internal_actions.begin();
+            for(; k != (j->second).internal_actions.end(); k++){
+                internal_actions.insert(*k);
+            }
+        }
+    }
+    monitor_code = string(monitor_template);
+    instantiate_template_string(monitor_code, "$monitor_identifier",
+                               monitor_identifier);
+    string condition_variable_declarations("");
+    set<Interaction>::iterator i = interactions.begin();
+    for(; i != interactions.end(); i++){
+        string new_declaration(condition_variable_declaration_template);
+        instantiate_template_string(new_declaration,
+                                    "$interaction", actions.lookup(*i));
+        condition_variable_declarations += new_declaration;
+    }
+    instantiate_template_string(monitor_code, "$condition_variable_declarations",
+                               condition_variable_declarations);
+    string internal_action_definitions("");
+    set<InternalAction>::iterator l = internal_actions.begin();
+    for(; l != internal_actions.end(); l++){
+        string new_definition(internal_action_declaration_template);
+        instantiate_template_string(new_definition,
+                                    "$internal_action", actions.lookup(*l));
+        internal_action_definitions += new_definition;
+    }
+    instantiate_template_string(monitor_code, "$internal_action_definitions",
+                               internal_action_definitions);
+    string interaction_definitions("");
+    set<Interaction>::iterator m = interactions.begin();
+    for(; m != interactions.end(); m++){
+        string interaction_definition(interaction_template);
+        instantiate_template_string(interaction_definition, string("$interaction"), actions.lookup(*m));
+        string wait_condition("");
+        set<State>::iterator n = activation_states[*m].begin();
+        set<State>::size_type minterm_counter = 1;
+        for(; n != activation_states[*m].end(); n++){
+            string minterm(wait_condition_minterm_template);
+            instantiate_template_string(minterm, "$state", to_string(*n));
+            wait_condition += minterm;
+            if(minterm_counter < activation_states[*m].size()){
+                wait_condition += " && ";
+                minterm_counter++;
+            }
+        }
+        instantiate_template_string(interaction_definition, "$wait_condition", wait_condition);
+        string state_consequences("");
+        set<State>::iterator c = activation_states[*m].begin();
+        for(; c != activation_states[*m].end(); c++){
+            string case_definition(state_consequence_template);
+            instantiate_template_string(case_definition, "$state", to_string(*c));
+            string internal_actions_sequence("");
+            list<InternalAction>::iterator ia = model[*c][*m].internal_actions.begin();
+            for(; ia != model[*c][*m].internal_actions.end(); ia++){
+                string invocation(internal_action_invocation);
+                instantiate_template_string(invocation, "$internal_action", actions.lookup(*ia));
+                internal_actions_sequence += invocation;
+            }
+            instantiate_template_string(case_definition, "$internal_actions_sequence", internal_actions_sequence);
+            instantiate_template_string(case_definition, "$next_state", to_string(model[*c][*m].next_state));
+            state_consequences += case_definition;
+        }
+        instantiate_template_string(interaction_definition, "$state_consequences", state_consequences);
+        interaction_definitions += interaction_definition;
+    }
+    instantiate_template_string(monitor_code, "$interactions", interaction_definitions);
+    indent(monitor_code);
+    return true;
 }

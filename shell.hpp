@@ -121,6 +121,7 @@ class Shell {
         int simulate(const vector<string>& args, stringstream& ss);
         int basic(const vector<string>& args, stringstream& ss);
         int monitor(const vector<string>& args, stringstream& ss);
+        int code(const vector<string>& args, stringstream& ss);
         int alpha(const vector<string>& args, stringstream& ss);
         int see(const vector<string>& args, stringstream& ss);
         int print(const vector<string>& args, stringstream& ss);
