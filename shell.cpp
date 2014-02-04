@@ -101,7 +101,8 @@ specified FSP using GraphViz";
     help_map["fi"] = "fi: close the last opened 'if', 'elif' or 'else' "
                         "branch";
     help_map["help"] = "help: show this help";
-    help_map["quit"] = "quit: exit the shell";
+    help_map["exit"] = "exit [EXPRESSION]: exit the shell with the specified return code (default 0)";
+    help_map["quit"] = "force the shell to terminate";
 
     cmd_map["ls"] = &Shell::ls;
     cmd_map["safety"] = &Shell::safety;
@@ -122,6 +123,7 @@ specified FSP using GraphViz";
     cmd_map["elif"] = &Shell::elif_;
     cmd_map["else"] = &Shell::else_;
     cmd_map["fi"] = &Shell::fi_;
+    cmd_map["exit"] = &Shell::exit_;
     cmd_map["help"] = &Shell::help;
 
     ifframes.push(IfFrame(true, false, false));
@@ -1124,22 +1126,46 @@ int Shell::fi_(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
+int Shell::exit_(const vector<string> &args, stringstream& ss)
+{
+    return_value = 0;
+
+    if (args.size()) {
+        ShDriver shd(*this);
+        string expression;
+        int ret;
+
+        merge_string_vec(args, expression, " ");
+
+        ret = shd.parse(expression);
+        if (ret) {
+            ss << "    invalid expression\n";
+
+            return -1;
+        }
+
+        return_value = shd.result;
+    }
+
+    return 0;
+}
+
 int Shell::help(const vector<string> &args, stringstream& ss)
 {
     map<string, const char *>::iterator it;
 
     if (args.size()) {
-    it = help_map.find(args[0]);
-    if (it == help_map.end()) {
-        ss << " No command named like that\n";
-        return -1;
-    }
-    ss << "   " << it->second << "\n";
+        it = help_map.find(args[0]);
+        if (it == help_map.end()) {
+            ss << " No command named like that\n";
+            return -1;
+        }
+        ss << "   " << it->second << "\n";
     } else {
-  /* Show the help for every command. */
-  for (it=help_map.begin(); it!=help_map.end(); it++) {
-      ss << "   " << it->second << "\n";
-  }
+        /* Show the help for every command. */
+        for (it=help_map.begin(); it!=help_map.end(); it++) {
+            ss << "   " << it->second << "\n";
+        }
     }
 
     return 0;
@@ -1196,15 +1222,19 @@ int Shell::run()
         token = tokens[0];
         tokens.erase(tokens.begin());
 
+        /* The "quit" command is never filtered by the if/elif/else/if
+           commands. It is therefore useful with the interactive shell
+           to quit in whatever moment. */
+        if (token == "quit") {
+            return 0;
+        }
+
         /* Check if we are accepting commands, looking at the current
            IfFrame instance. The if/elif/else/fi commands are never
            filtered here, because we have nonethless track the evolution
            (ramification) of the branches. */
         if (ifframes.top().accepting || token == "if" || token == "fi" ||
                 token  == "elif" || token == "else") {
-            if (token == "quit" || token == "exit") {
-                return 0;
-            }
 
             /* Command lookup and execution. */
             it = cmd_map.find(token);
@@ -1231,6 +1261,10 @@ int Shell::run()
             if (c.processes.size() != trace_processes_size) {
                 trace_processes_size = c.processes.size();
                 fill_completion();
+            }
+
+            if (token == "exit") {
+                return return_value;
             }
         }
     }

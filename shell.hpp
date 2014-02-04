@@ -204,6 +204,9 @@ class Shell {
            shell script. */
         stack<IfFrame> ifframes;
 
+        /* Shell return value, set by the "exit" command. */
+        int return_value;
+
         void common_init();
         void fill_completion();
         void getline_ncurses(string& line, const char *prompt);
@@ -227,6 +230,7 @@ class Shell {
         int elif_(const vector<string>& args, stringstream& ss);
         int else_(const vector<string>& args, stringstream& ss);
         int fi_(const vector<string>& args, stringstream& ss);
+        int exit_(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
     public:
