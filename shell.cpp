@@ -835,7 +835,9 @@ int Shell::see(const vector<string> &args, stringstream& ss)
         return -1;
         break;
     case 0:
+        execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
         execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
+        perror("ltsee exec failed");
         exit(0);
         break;
     default:
@@ -887,6 +889,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
         break;
     case 0:
         execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
+        execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         exit(1);
         break;
     default:
