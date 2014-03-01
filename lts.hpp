@@ -111,7 +111,8 @@ struct LtsVisitObject {
     LtsVisitFunction vfp;
     void *opaque;
 };
-/*<cosimo>
+
+#if 0
 int generate_ID()
 {
     static int s_nID = 0;
@@ -169,7 +170,7 @@ Partition Kanellakis_Smolka_split(UniqueBlock& b, int label, Partition& p)
         //DA FINIRE, FORSE
     }
 }
-</cosimo>*/
+#endif
 
 
 /* An LTS. */
@@ -262,16 +263,7 @@ class Lts: public Symbol {
     unsigned int get_type(unsigned int state) const;
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
-
-    /*<cosimo>*/
-    vector<Edge> get_children(unsigned int state) const
-    {
-        assert(state >=0 && state < nodes.size());
-        return nodes[state].children;
-    }
-    unsigned int size() const {return nodes.size();}
-    /*</cosimo>*/
-
+    vector<Edge> get_children(unsigned int state) const;
     void clear();
     void cleanup();
 

@@ -94,7 +94,7 @@ MNFExtractor::MNFExtractor(const fsp::Lts& _lts,
                            const vector<uint32_t>& _interactions) :
                            actions(fsp::ActionsTable::getref()),
                            lts(_lts), interactions(_interactions),
-                           seen(lts.size(), false),
+                           seen(lts.numStates(), false),
                            nest_lev(0){
     sort(interactions.begin(), interactions.end());
 }

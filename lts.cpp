@@ -2004,3 +2004,10 @@ void fsp::Lts::replace_priv(unsigned int new_priv, unsigned int old_priv)
     }
 }
 
+vector<Edge> fsp::Lts::get_children(unsigned int state) const
+{
+    assert(state >= 0 && state < nodes.size());
+
+    return nodes[state].children;
+}
+
