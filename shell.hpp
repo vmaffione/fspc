@@ -28,11 +28,11 @@
 #include <vector>
 #include <stack>
 #include <cassert>
-#include "code_generator.hpp"
 
 using namespace std;
 
 #include "symbols_table.hpp"
+#include "code_generator.hpp"
 
 
 /* An helper class which implements the command history for the
