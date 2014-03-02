@@ -27,6 +27,7 @@
 #include <map>
 #include <vector>
 #include <stack>
+#include <cassert>
 #include "code_generator.hpp"
 
 using namespace std;
@@ -167,12 +168,22 @@ namespace codegen {
     class CodeGenerator;
 }
 
+struct HelpEntry {
+    const char *synopsis;
+    const char *desc;
+
+    HelpEntry() : synopsis("(empty)"), desc("(empty)") { }
+    HelpEntry(const char *s, const char *d) : synopsis(s), desc(d) {
+        assert(synopsis && desc);
+    }
+};
+
 class Shell {
         FspDriver& c;
         codegen::CodeGenerator coder;
 
         /* A mapping of command names to the help strings. */
-        map<string, const char*> help_map;
+        map<string, HelpEntry> help_map;
 
         typedef int (Shell::*ShellCmdFunc)(const vector<string>& args,
                                             stringstream& ss);

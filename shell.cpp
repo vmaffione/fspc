@@ -56,68 +56,80 @@ void Shell::common_init()
 {
     /* Initialize the help map. */
 
-    help_map["ls"] = "ls: show a list of compiled FSPs";
-    help_map["safety"] = "safety [FSP_NAME]: run deadlock/error analysis on \
-the specified FSP or on every FSP";
-    help_map["progress"] = "progress [FSP_NAME]: run progress analysis on \
-the specified FSP or on every FSP";
-    help_map["simulate"] = "simulate FSP_NAME: run an interactive simulation of \
-the specified FSP";
-    help_map["basic"] = "basic FSP_NAME FILE_NAME: write a basic process \
-description of the specified FSP into the specified output file";
-    help_map["monitor"] = "monitor FSP_NAME INTERACTIONS [-o FILE]: write, \
-if possible, the Monitor Normal Form of the specified FSP into the specified \
-output file";
-    help_map["code"] = "Fill in the description";
-    help_map["alpha"] = "alpha FSP_NAME: show the alphabet of the specified \
-FSP";
-    help_map["see"] = "see FSP_NAME: show a graphical representation of the \
-specified FSP using GraphViz";
-    help_map["print"] = "print FSP_NAME {png | pdf}: print the GraphViz "
-                        "representation of the specified fsp into a file "
-                        "FSP_NAME.FORMAT";
-    help_map["lsprop"] = "lsprop: show a list of compiled properties";
-    help_map["lsmenu"] = "lsmenu: show a list of available menus";
-    /* help_map["minimize"] = "minimize FSP_NAME: minimize the "
-                              "specified FSP"; */
-    help_map["traces"] = "traces FSP_NAME: find all the action traces for "
-                         "the specified process, stopping when there "
-                         "are cycles";
-    help_map["printvar"] = "printvar [VAR_NAME]: print the value of the "
-                            "specified variable or of all the variables"
-                        "VAR_NAME";
-    help_map["if"] = "if CONDITION: if the specified condition is true, "
+    help_map["ls"] = HelpEntry("ls", "Show a list of compiled FSPs");
+    help_map["safety"] = HelpEntry("safety [FSP_NAME]",
+                            "Run deadlock/error analysis on "
+                            "the specified FSP or on every FSP");
+    help_map["progress"] = HelpEntry("progress [FSP_NAME]",
+                            "Run progress analysis on "
+                            "the specified FSP or on every FSP");
+    help_map["simulate"] = HelpEntry("simulate FSP_NAME",
+                            "Run an interactive simulation of "
+                            "the specified FSP");
+    help_map["basic"] = HelpEntry("basic FSP_NAME FILE_NAME",
+                            "Write a basic process description of the "
+                            "specified FSP into the specified output file");
+    /* help_map["monitor"] = HelpEntry("monitor "
+                            "FSP_NAME INTERACTIONS [-o FILE]",
+                            "Write, if possible, the Monitor Normal Form "
+                            "of the specified FSP into the specified "
+                            "output file"); */
+    /* help_map["code"] = HelpEntry("UNKNOWN", "UNKNOWN"); */
+    help_map["alpha"] = HelpEntry("alpha FSP_NAME",
+                                "Show the alphabet of the specified FSP");
+    help_map["see"] = HelpEntry("see FSP_NAME",
+                            "Show a graphical representation of the "
+                            "specified FSP using GraphViz");
+    help_map["print"] = HelpEntry("print FSP_NAME {png | pdf}",
+                        "Print the GraphViz representation of the specified "
+                        "fsp into a file FSP_NAME.FORMAT");
+    help_map["lsprop"] = HelpEntry("lsprop",
+                            "Show a list of compiled properties");
+    help_map["lsmenu"] = HelpEntry("lsmenu",
+                            "Show a list of available menus");
+    /* help_map["minimize"] = HelpEntry("minimize FSP_NAME", "Minimize the "
+                              "specified FSP"); */
+    /* help_map["traces"] = HelpEntry("traces FSP_NAME",
+                            "Find all the action traces for the specified "
+                            "process, stopping when there are cycles"); */
+    help_map["printvar"] = HelpEntry("printvar [VAR_NAME]",
+                            "Print the value of the specified variable or "
+                            "of all the variables VAR_NAME");
+    help_map["if"] = HelpEntry("if CONDITION", "If the specified condition "
+                        "is true, the following commands will be executed "
+                        "(up to the next matching 'elif', 'else' or 'fi' "
+                        "command)");
+    help_map["elif"] = HelpEntry("elif CONDITION", "If the specified "
+                        "condition is true and all the conditions "
+                        "associated to the previous branches were false, "
                         "the following commands will be executed (up to the "
-                        "next matching 'elif', 'else' or 'fi' command)";
-    help_map["elif"] = "elif CONDITION: if the specified condition is true "
-                        "and all the conditions associated to the previous "
-                        "branches were false, the following commands will "
-                        "be executed (up to the next matching 'elif', 'else'"
-                        "or 'fi' command)";
-    help_map["else"] = "else: if all the conditions associated to the "
-                        "previous branches were false, the following "
+                        "next matching 'elif', 'else' or 'fi' command)");
+    help_map["else"] = HelpEntry("else", "If all the conditions associated "
+                        "to the previous branches were false, the following "
                         "commands will be executed (up to the next matching "
-                        "'else' command)";
-    help_map["fi"] = "fi: close the last opened 'if', 'elif' or 'else' "
-                        "branch";
-    help_map["help"] = "help: show this help";
-    help_map["exit"] = "exit [EXPRESSION]: exit the shell with the specified return code (default 0)";
-    help_map["quit"] = "force the shell to terminate";
+                        "'else' command)");
+    help_map["fi"] = HelpEntry("fi", "Close the last opened 'if', 'elif' or "
+                        "'else' branch");
+    help_map["help"] = HelpEntry("help",  "Show this help");
+    help_map["exit"] = HelpEntry("exit [EXPRESSION]",
+                            "Exit the shell with the specified return code "
+                            "(default 0)");
+    help_map["quit"] = HelpEntry("quit", "Force the shell to terminate");
 
     cmd_map["ls"] = &Shell::ls;
     cmd_map["safety"] = &Shell::safety;
     cmd_map["progress"] = &Shell::progress;
     cmd_map["simulate"] = &Shell::simulate;
     cmd_map["basic"] = &Shell::basic;
-    cmd_map["monitor"] = &Shell::monitor; //cosimo
-    cmd_map["code"] = &Shell::code; //cosimo
+    /* cmd_map["monitor"] = &Shell::monitor; */
+    /* cmd_map["code"] = &Shell::code; */
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
     cmd_map["lsprop"] = &Shell::lsprop;
     cmd_map["lsmenu"] = &Shell::lsmenu;
     /* cmd_map["minimize"] = &Shell::minimize; */
-    cmd_map["traces"] = &Shell::traces;
+    /* cmd_map["traces"] = &Shell::traces; */
     cmd_map["printvar"] = &Shell::printvar;
     cmd_map["if"] = &Shell::if_;
     cmd_map["elif"] = &Shell::elif_;
@@ -133,11 +145,11 @@ specified FSP using GraphViz";
 void Shell::fill_completion()
 {
     map<string, fsp::Symbol *>::iterator it;
-    map<string, const char *>::iterator jt;
+    map<string, HelpEntry>::iterator jt;
 
     /* Process names. */
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
-  completion.insert(it->first);
+        completion.insert(it->first);
     }
 
     trace_processes_size = c.processes.size();
@@ -1155,7 +1167,7 @@ int Shell::exit_(const vector<string> &args, stringstream& ss)
 
 int Shell::help(const vector<string> &args, stringstream& ss)
 {
-    map<string, const char *>::iterator it;
+    map<string, HelpEntry>::iterator it;
 
     if (args.size()) {
         it = help_map.find(args[0]);
@@ -1163,11 +1175,13 @@ int Shell::help(const vector<string> &args, stringstream& ss)
             ss << " No command named like that\n";
             return -1;
         }
-        ss << "   " << it->second << "\n";
+        ss << "   " << it->second.synopsis << ": " << it->second.desc
+                << "\n";
     } else {
-        /* Show the help for every command. */
-        for (it=help_map.begin(); it!=help_map.end(); it++) {
-            ss << "   " << it->second << "\n";
+        ss << "Available commands: (type 'help CMD' to get more info)\n";
+        /* Show the synopsis for every command. */
+        for (it = help_map.begin(); it != help_map.end(); it++) {
+            ss << "       " << it->second.synopsis << "\n";
         }
     }
 
