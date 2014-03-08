@@ -273,9 +273,12 @@ void FspDriver::doProcessesTranslation()
                function (which is also used with process references).
                This function also setups and restore the translator context,
                taking care of the default process parameters and overridden
-               identifiers. */
+               identifiers.
+               Note that the last argument is 'false', since we don't want
+               a clone returned into '*lts' (we don't even need to access it).
+            */
             process_ref_translate(*this, ltn->getLocation(), it->first,
-                    NULL, &lts);
+                    NULL, &lts, false);
         }
     }
 }
@@ -592,7 +595,10 @@ static bool parse_extended_name(const string& name, string& base,
    specified by 'name'.
    If 'create' is 'true', the compiler can perform a translation, when
    needed. If 'create' is 'false', the compiler doesn't perform
-   any translations, but only looks up the 'processes' cache. */
+   any translations, but only looks up the 'processes' cache.
+   If the return pointer is not NULL, the pointed Lts instance is the
+   the same contained in the 'processes' table: It is not a clone.
+*/
 fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
 {
     fsp::Symbol *svp;
@@ -637,11 +643,12 @@ fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
 
         if (create) {
             /* Everything is ok and we can translate, if necessary:
-               Take the translator and use it. */
+               Take the translator and use it. We don't ask for a clone,
+               (see the description of this method). */
             ltn = dynamic_cast<fsp::LtsTreeNode *>(pp->translator);
             assert(ltn);
             process_ref_translate(*this, ltn->getLocation(), base,
-                    &args, &lts);
+                    &args, &lts, false);
         }
     }
 

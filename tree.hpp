@@ -73,7 +73,7 @@ class TreeNode : public ParametricTranslator {
 
 void process_ref_translate(FspDriver& c, const location &loc,
                            const string& name, const vector<int> *arguments,
-                           SmartPtr<Lts> *res);
+                           SmartPtr<Lts> *res, bool clone);
 
 struct TreeNodeVecS : public Symbol {
     std::vector<TreeNode *> val;

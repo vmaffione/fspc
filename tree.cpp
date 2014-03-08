@@ -1251,7 +1251,7 @@ Symbol *fsp::ArgumentsNode::translate(FspDriver& c)
 
 void fsp::process_ref_translate(FspDriver& c, const location& loc,
                                const string& name, const vector<int> *args,
-                               fsp::SmartPtr<fsp::Lts> *res)
+                               fsp::SmartPtr<fsp::Lts> *res, bool clone)
 {
     Symbol *svp;
     ParametricProcess *pp;
@@ -1334,7 +1334,13 @@ void fsp::process_ref_translate(FspDriver& c, const location& loc,
 
     /* Use the LTS stored in the 'processes' table. */
     if (c.processes.lookup(name + extension, svp)) {
-	*res = is<fsp::Lts>(svp->clone());
+        if (clone) {
+            /* Clone the LTS contained in the 'processes' table only if
+               explicitely asked for. */
+            svp = svp->clone();
+        }
+
+	*res = is<fsp::Lts>(svp);
     } else {
         assert(0);
     }
@@ -1354,8 +1360,10 @@ Symbol *fsp::ProcessRefSeqNode::translate(FspDriver& c)
         args = temp;
     }
 
+    /* We need to clone the referenced LTS, since it will be used for
+       builing another LTS. */
     process_ref_translate(c, loc, id->val, args ? &args->val : NULL,
-                          &lts->val);
+                          &lts->val, true);
 
     delete id;
     if (args) {
@@ -1826,8 +1834,10 @@ Symbol *fsp::ProcessRefNode::translate(FspDriver& c)
         args = temp;
     }
 
+    /* We need to clone the referenced LTS, since it will be used for
+       builing another LTS. */
     process_ref_translate(c, loc, id->val, args ? &args->val : NULL,
-                          &lts->val);
+                          &lts->val, true);
 
     delete id;
     if (args) {
