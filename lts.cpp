@@ -1423,6 +1423,9 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
+/* Enable debug output for the minimization machinery. */
+//#define CONFIG_DEBUG_MINIMIZATION
+
 /* Helper function, expects 's' to be empty. */
 static void children_to_actions_set(const vector<Edge>& children,
                                     set<unsigned int>& s)
@@ -1432,6 +1435,7 @@ static void children_to_actions_set(const vector<Edge>& children,
     }
 }
 
+/* Helper function, expects 's' to be empty. */
 static void children_to_partitions_set(const vector<Edge>& children,
                             unsigned int action,
                             const vector<unsigned int>& partitions_map,
@@ -1488,18 +1492,12 @@ static void update_partitions_map(vector<unsigned int>& partitions_map,
     }
 }
 
-void fsp::Lts::minimize(stringstream& ss)
+/* Debug function used by Lts::minimize. */
+static void print_partitions(stringstream& ss,
+                      const vector< set<unsigned int> >& partitions,
+                      const vector<unsigned int>& partitions_map)
 {
-    vector< set<unsigned int> > partitions;
-    vector<unsigned int> partitions_map;
-
-    if (!nodes.size()) {
-        return;
-    }
-
-    initial_partitions(partitions, partitions_map);
-
-split:
+#ifdef CONFIG_DEBUG_MINIMIZATION
     ss << "Partitions:\n";
     for (unsigned int k=0; k<partitions.size(); k++) {
         ss << "{";
@@ -1514,8 +1512,23 @@ split:
         ss << k << "-->" << partitions_map[k] << ", ";
     }
     ss << "}\n";
+#endif /* CONFIG_DEBUG_MINIMIZATION */
+}
 
-    /* Scan all the current partitions looking for some split
+void fsp::Lts::minimize(stringstream& ss)
+{
+    vector< set<unsigned int> > partitions;
+    vector<unsigned int> partitions_map;
+
+    if (!nodes.size()) {
+        return;
+    }
+
+    initial_partitions(partitions, partitions_map);
+    print_partitions(ss, partitions, partitions_map);
+
+split:
+    /* Scan all the current partitions looking for a split
        condition. */
     for (unsigned int k=0; k<partitions.size(); k++) {
         set<unsigned int> actions;
@@ -1525,7 +1538,6 @@ split:
             continue;
         }
 
-        /* TODO reuse what computed by "initial_partitions". */
         children_to_actions_set(nodes[*partitions[k].begin()].children,
                 actions);
         for (set<unsigned int>::iterator ait = actions.begin();
@@ -1576,14 +1588,19 @@ split:
                 list< set<unsigned int> >::iterator
                     spit = sub_partitions.begin();
 
+#ifdef CONFIG_DEBUG_MINIMIZATION
                 ss << "Split wrt " << ati(*ait, false) << "\n";
-                for (list< set<unsigned int> >::iterator spit = sub_partitions.begin(); spit != sub_partitions.end(); spit++) {
+                for (list< set<unsigned int> >::iterator
+                        spit = sub_partitions.begin();
+                            spit != sub_partitions.end(); spit++) {
                     ss << "{";
-                    for (set<unsigned int>::iterator sit = spit->begin(); sit != spit->end(); sit++) {
+                    for (set<unsigned int>::iterator
+                            sit = spit->begin(); sit != spit->end(); sit++) {
                         ss << *sit << ", ";
                     }
                     ss << "}\n";
                 }
+#endif /* CONFIG_DEBUG_MINIMIZATION */
 
                 /* Replace the current partition with the first
                    sub-partition and enqueue back all the other
@@ -1596,11 +1613,17 @@ split:
                     update_partitions_map(partitions_map, *spit,
                                             partitions.size() - 1);
                 }
+
+                print_partitions(ss, partitions, partitions_map);
+                /* After the split we cannot continue the cycle, because
+                   data structures have changed: Let's start from scratch. */
                 goto split;
             }
         }
     }
 
+    /* When we arrive here, no more splits are possibile. We can therefore
+       reduce each final partition to a single state. */
     reduce_to_partitions(ss, partitions, partitions_map);
 }
 
