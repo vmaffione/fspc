@@ -77,6 +77,22 @@ bool intersection_exists(const set<unsigned int>& first,
     return false;
 }
 
+bool equal(const set<unsigned int>& first, const set<unsigned int>& second)
+{
+    if (first.size() != second.size()) {
+        return false;
+    }
+
+    for (set<unsigned int>::iterator it = first.begin();
+                it != first.end(); it++) {
+        if (!second.count(*it)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void merge_string_vec(const vector<string>& vec, string& res,
                         const string& separator)
 {

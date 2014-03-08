@@ -592,7 +592,7 @@ static bool parse_extended_name(const string& name, string& base,
    specified by 'name'.
    If 'create' is 'true', the compiler can perform a translation, when
    needed. If 'create' is 'false', the compiler doesn't perform
-   any translations, but only look up the 'processes' cache. */
+   any translations, but only looks up the 'processes' cache. */
 fsp::SmartPtr<fsp::Lts> FspDriver::getLts(const string& name, bool create)
 {
     fsp::Symbol *svp;

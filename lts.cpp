@@ -1423,129 +1423,229 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-/* Minimize the number of states of the LTS. For now the
-   algorithm only aggregates states that are reacheable
-   through a finite tau-steps. */
+/* Helper function, expects 's' to be empty. */
+static void children_to_actions_set(const vector<Edge>& children,
+                                    set<unsigned int>& s)
+{
+    for (unsigned int j = 0; j < children.size(); j++) {
+        s.insert(children[j].action);
+    }
+}
+
+static void children_to_partitions_set(const vector<Edge>& children,
+                            unsigned int action,
+                            const vector<unsigned int>& partitions_map,
+                            set<unsigned int>& s)
+{
+    for (unsigned int j = 0; j < children.size(); j++) {
+        if (children[j].action == action) {
+            s.insert(partitions_map[children[j].dest]);
+        }
+    }
+}
+
+void fsp::Lts::initial_partitions(vector< set<unsigned int> >& partitions,
+                                    vector<unsigned int>& partitions_map)
+{
+    list< set<unsigned int> > action_sets;
+    list< set<unsigned int> >::iterator lit;
+
+    partitions_map.resize(nodes.size()); /* TODO use an array here. */
+
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        set<unsigned int> s;
+        bool match = false;
+
+        children_to_actions_set(nodes[i].children, s);
+
+        lit = action_sets.begin();
+        for (unsigned k = 0; lit != action_sets.end(); k++, lit++) {
+            if (equal(*lit, s)) {
+                partitions[k].insert(i);
+                partitions_map[i] = k;
+                match = true;
+                break;
+            }
+        }
+
+        if (!match) {
+            /* Create a new partition containing the node 'i'. */
+            partitions.push_back(set<unsigned int>());
+            partitions.back().insert(i);
+            partitions_map[i] = partitions.size() - 1;
+            action_sets.push_back(s);
+        }
+    }
+}
+
+static void update_partitions_map(vector<unsigned int>& partitions_map,
+                                    const set<unsigned int>& sub,
+                                    unsigned int idx)
+{
+    for (set<unsigned int>::iterator sit = sub.begin();
+                                    sit != sub.end(); sit++) {
+        partitions_map[*sit] = idx;
+    }
+}
+
 void fsp::Lts::minimize(stringstream& ss)
 {
-    set<unsigned int> frontier;
-    vector<unsigned int> current;
-    vector<bool> seen(nodes.size());
-    unsigned int st;
-    unsigned int cur_idx;
+    vector< set<unsigned int> > partitions;
+    vector<unsigned int> partitions_map;
 
     if (!nodes.size()) {
         return;
     }
 
-    /* Three data structures here:
-        - 'current', a set which contains the current tau-reachable
-          nodes that have been seen (not necessarily visited) during
-           the visit
-        - 'frontier', a set which contains the nodes seen during the
-           visit that are not part of the 'current' set
-        - 'seen', a bitmap that marks the nodes seen during the visit
+    initial_partitions(partitions, partitions_map);
 
-       Note that if 'seen[x]' is true, then 'x' must be contained in
-       either 'current' or 'frontier', but not both.
-    */
+split:
+    ss << "Partitions:\n";
+    for (unsigned int k=0; k<partitions.size(); k++) {
+        ss << "{";
+        for (set<unsigned int>::iterator it = partitions[k].begin();
+                it != partitions[k].end(); it++) {
+            ss << *it << ", ";
+        }
+        ss << "}\n";
+    }
+    ss << "map = {";
+    for (unsigned int k=0; k<partitions_map.size(); k++) {
+        ss << k << "-->" << partitions_map[k] << ", ";
+    }
+    ss << "}\n";
 
-    for (unsigned int i = 0; i < seen.size(); i++) {
-        seen[i] = false;
+    /* Scan all the current partitions looking for some split
+       condition. */
+    for (unsigned int k=0; k<partitions.size(); k++) {
+        set<unsigned int> actions;
+
+        if (partitions[k].size() == 1) {
+            /* Nothing to split. */
+            continue;
+        }
+
+        /* TODO reuse what computed by "initial_partitions". */
+        children_to_actions_set(nodes[*partitions[k].begin()].children,
+                actions);
+        for (set<unsigned int>::iterator ait = actions.begin();
+                ait != actions.end(); ait++) {
+            /* For each action '*ait' outgoing from the partition ... */
+            list< set<unsigned int> > dests_sets;
+            list< set<unsigned int> > sub_partitions;
+
+            /* Try to split with respect to '*ait'. */
+            for (set<unsigned int>::iterator nit =
+                    partitions[k].begin();
+                    nit != partitions[k].end(); nit++) {
+                /* For each node in the partition ... */
+                list< set<unsigned int> >::iterator dsit, spit;
+                set<unsigned int> s;
+                bool match = false;
+
+                /* Put in 's' all the destinations reachable from '*nit'
+                   using the action '*ait'. */
+                children_to_partitions_set(nodes[*nit].children, *ait,
+                        partitions_map, s);
+
+                /* Match 's' against all the distinct destinations sets
+                   computed so far. */
+                dsit = dests_sets.begin();
+                spit = sub_partitions.begin();
+                for (; dsit != dests_sets.end(); dsit++, spit++) {
+                    if (equal(*dsit, s)) {
+                        /* The node '*nit' will join this sub-partition
+                           set. */
+                        spit->insert(*nit);
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (!match) {
+                    /* Create a new destinations set and the
+                       corresponding sub-partition set. */
+                    dests_sets.push_back(s);
+                    sub_partitions.push_back(set<unsigned int>());
+                    sub_partitions.back().insert(*nit);
+                }
+            }
+
+            if (sub_partitions.size() > 1) {
+                /* We can split with respect to '*ait'. */
+                list< set<unsigned int> >::iterator
+                    spit = sub_partitions.begin();
+
+                ss << "Split wrt " << ati(*ait, false) << "\n";
+                for (list< set<unsigned int> >::iterator spit = sub_partitions.begin(); spit != sub_partitions.end(); spit++) {
+                    ss << "{";
+                    for (set<unsigned int>::iterator sit = spit->begin(); sit != spit->end(); sit++) {
+                        ss << *sit << ", ";
+                    }
+                    ss << "}\n";
+                }
+
+                /* Replace the current partition with the first
+                   sub-partition and enqueue back all the other
+                   sub-partitions.
+                   Also update the partitions map. */
+                partitions[k] = *spit;
+                update_partitions_map(partitions_map, *spit, k);
+                for (spit++; spit != sub_partitions.end(); spit++) {
+                    partitions.push_back(*spit);
+                    update_partitions_map(partitions_map, *spit,
+                                            partitions.size() - 1);
+                }
+                goto split;
+            }
+        }
     }
 
-    /* At initialization time 'frontier' is empty, while 'current'
-       contains the zero node. 'cur_idx' is an index into 'current'.*/
-    cur_idx = 0;
-    current.push_back(0);
-    seen[0] = true;
+    reduce_to_partitions(ss, partitions, partitions_map);
+}
 
-    for (;;) {
-#if 0
-        ss << "[***] Current: ";
-        for (unsigned int i = 0; i < current.size(); i++) {
-            ss << current[i] << " ";
-        }
-        ss << "\nFrontier: ";
-        for (set<unsigned int>::iterator it = frontier.begin();
-                                    it != frontier.end(); it++) {
-            ss << *it << " ";
-        }
-        ss << "\nSeen: ";
-        for (unsigned int i = 0; i < seen.size(); i++) {
-            ss << seen[i] << " ";
-        }
-        ss << "\n";
-#endif
-        /* In the generic iteration, we first try to extract a node from
-           'current' which has not been visited yet (although it may have
-           been seen many times). */
-        if (cur_idx < current.size()) {
-            st = current[cur_idx++];
-        } else {
-           /* If all the nodes in 'current' have been visited, it means the
-              'current' is a tau-reachable set that can be replaced by a
-              single state in a minimized LTS.
-              We then try to extract a node from 'frontier'.
-            */
-            ss << "New set found: {";
-            for (unsigned int i = 0; i < current.size(); i++) {
-                ss << current[i] << ",";
-            }
-            ss << "}\n";
-
-            if (frontier.empty()) {
-                /* Frontier is empty, we've done with the minimizing
-                   visit. */
-                break;
-            }
-
-            /* Reset 'current' so that contains the node just extracted from
-               'frontier', which is then removed from 'frontier'. This
-               situation is analogue to what happens at initialization time,
-               where 'current' contains a starting node that will aggregate
-               all the tau-reachable node to itself. */
-            current.clear();
-            st = *(frontier.begin());
-            frontier.erase(frontier.begin());
-            current.push_back(st);
-            cur_idx = 1;
+void fsp::Lts::reduce_to_partitions(stringstream &ss,
+                        const vector< set<unsigned int> >& partitions,
+                        const vector<unsigned int>& partitions_map)
+{
+        if (nodes.size() == partitions.size()) {
+            /* Nothing to reduce. */
+            return;
         }
 
-        const LtsNode& n = nodes[st];
+        vector<LtsNode> new_nodes(partitions.size());
 
-        /* Visit a node. */
-        for (unsigned int i = 0; i < n.children.size(); i++) {
-            const Edge& e = n.children[i];
+        for (unsigned int k = 0; k < partitions.size(); k++) {
+            set<unsigned int> actions;
+            set<unsigned int> dests;
+            unsigned int exponent = *partitions[k].begin();
 
-            if (e.action == 0) {
-                /* This is a tau-transition. */
-                if (seen[e.dest] && frontier.count(e.dest)) {
-                    /* This happens if we "mistakenly" added the destination
-                       to 'frontier', because of a previous
-                       non-tau-transition towards the same destination.
-                       Make up for the mistake, removing the destination
-                       from 'frontier', and pretending that the destination
-                       has never been seen before. It will
-                       be added to 'current' below. */
-                    frontier.erase(e.dest);
-                    seen[e.dest] = false;
+            /* Compute the set of actions that leave the partition. */
+            children_to_actions_set(nodes[exponent].children, actions);
+
+            for (set<unsigned int>::iterator ait = actions.begin();
+                                        ait != actions.end(); ait++) {
+                Edge e;
+
+                /* Compute the set of partitions that are reached from
+                   the current partition (the k-th) through the action
+                   '*ait'. */
+                children_to_partitions_set(nodes[exponent].children, *ait,
+                                            partitions_map, dests);
+
+                /* Add a transition (k, *ait, j) for each partition 'j'
+                   reachable from the current one through '*ait'. */
+                e.action = *ait;
+                for (set<unsigned int>::iterator dit = dests.begin();
+                                                dit != dests.end(); dit++) {
+                    e.dest = *dit;
+                    new_nodes[k].children.push_back(e);
                 }
-                if (!seen[e.dest]) {
-                    /* Add the destination to 'current' if it has not been
-                       seen previously. */
-                    current.push_back(e.dest);
-                }
-            } else if (!seen[e.dest]) {
-                /* This transition has a regular action. Add the destination
-                   to frontier if it has not been seen previously. */
-                frontier.insert(e.dest);
             }
-            /* Whatever happened in this inner loop iteration, mark the
-               destination as seen. */
-            seen[e.dest] = true;
         }
-    }
+
+        nodes = new_nodes;
+        terminal_sets_computed = false;
 }
 
 void fsp::Lts::__traces(stringstream &ss, set<CEdge>& marked,

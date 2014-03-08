@@ -87,8 +87,8 @@ void Shell::common_init()
                             "Show a list of compiled properties");
     help_map["lsmenu"] = HelpEntry("lsmenu",
                             "Show a list of available menus");
-    /* help_map["minimize"] = HelpEntry("minimize FSP_NAME", "Minimize the "
-                              "specified FSP"); */
+    help_map["minimize"] = HelpEntry("minimize FSP_NAME", "Minimize the "
+                              "specified FSP");
     /* help_map["traces"] = HelpEntry("traces FSP_NAME",
                             "Find all the action traces for the specified "
                             "process, stopping when there are cycles"); */
@@ -128,7 +128,7 @@ void Shell::common_init()
     cmd_map["print"] = &Shell::print;
     cmd_map["lsprop"] = &Shell::lsprop;
     cmd_map["lsmenu"] = &Shell::lsmenu;
-    /* cmd_map["minimize"] = &Shell::minimize; */
+    cmd_map["minimize"] = &Shell::minimize;
     /* cmd_map["traces"] = &Shell::traces; */
     cmd_map["printvar"] = &Shell::printvar;
     cmd_map["if"] = &Shell::if_;

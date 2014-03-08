@@ -30,5 +30,6 @@ int string2int(const string& s, int& ret);
 void lts_name_extension(const vector<int>& values, string& extension);
 bool intersection_exists(const set<unsigned int>&,
                          const set<unsigned int>&);
+bool equal(const set<unsigned int>&, const set<unsigned int>&);
 void merge_string_vec(const vector<string>& vec, string& res,
                         const string& separator);

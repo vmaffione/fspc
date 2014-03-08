@@ -1,11 +1,4 @@
-P(K=4) = (a[K]->END).
-U = (u->U0),
-    U0 = P;END.
+P = (a->b->P0 | c->d->P),
+P0 = (a->b->P|c->b->P).
 
-Q = (b->Q0),
-    Q0 = P;U;END.
-
-T = (t->T0 | t2->T),
-    T0 = U;Q;U;T.
-
-||V = (Q || U).
+Q = (a->b->a->b->a->b->Q).
