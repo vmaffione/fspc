@@ -29,9 +29,9 @@ f.write('url="%s"\n' % (url, ));
 f.write('license=(\'GPL3\')\n');
 f.write('depends=(\'bash\')\n');
 if generating:
-    f.write('makedepends=(\'bison\' \'flex\')\n');
+    f.write('makedepends=(\'bison\' \'flex\' \'sed\' \'python\')\n');
 f.write('checkdepends=()\n');
-f.write('optdepends=(\'graphviz: visualizing compiled LTS\')\n');
+f.write('optdepends=(\'graphviz: visualizing compiled LTS\' \'xv: visualizing compiled LTS\')\n');
 f.write('source=("%s")\n' % (url, ));
 
 #compute md5 checksum
