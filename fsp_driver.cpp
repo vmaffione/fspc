@@ -291,19 +291,19 @@ void FspDriver::translateProcessesDefinitions()
     doProcessesTranslation();
 }
 
-int FspDriver::parse(const CompilerOptions& co)
+/* First phase of the 'parse' method.
+   At the end of this phase the symbols tables will contain all
+   the objects specified (source FSP) or contained (binary objects) in
+   the input file.
+*/
+int FspDriver::inputPhase(stringstream& ss)
 {
     fsp::ActionsTable& actions = fsp::ActionsTable::getref();
-    Serializer *serp = NULL;
     Deserializer *desp = NULL;
-    stringstream ss;
     int ret = 0;
 
-    /* Copy in the options. */
-    cop = co;
-
-    if (co.input_type == CompilerOptions::InputTypeFsp) {
-	string orig(co.input_file);
+    if (cop.input_type == CompilerOptions::InputTypeFsp) {
+	string orig(cop.input_file);
 	string temp = ".fspcc." + orig;
 
 	for (unsigned int i=0; i<temp.size(); i++)
@@ -344,14 +344,10 @@ int FspDriver::parse(const CompilerOptions& co)
         translateProcessesDefinitions();
 
         DBRT(fsp::PtrCheckTable::get()->check());
-
-        if (co.output_file) {
-	    serp = new Serializer(co.output_file);
-        }
     } else { /* Load the processes table from an LTS file. */
 	uint32_t nlts, nprogr;
 
-	desp = new Deserializer(co.input_file);
+	desp = new Deserializer(cop.input_file);
 
 	desp->actions_table(actions, 0);
 	desp->integer(nlts, 0);
@@ -381,34 +377,32 @@ int FspDriver::parse(const CompilerOptions& co)
 	}
     }
 
-    /* Run an LTS analysis script if the user asked for that. */
-    if (co.script) {
-	ifstream fin(co.script_file, ios::in);
+    if (desp)
+	delete desp;
 
-	if (fin.fail()) {
-	    cerr << co.script_file << ": no such script file\n";
-	    exit(-1);
-	}
+    return 0;
+}
 
-	ret = Shell(*this, fin).run();
-	fin.close();
-    }
-
-    /* Run the interactive shell if the user asked for that. */
-    if (co.shell) {
-	ret = Shell(*this, std::cin).run();
-    }
-    /* Scan the 'processes' symbols table. For each process, output
-       the associated LTS and do the deadlock analysis. */
+int FspDriver::outputPhase(stringstream& ss)
+{
+    fsp::ActionsTable& actions = fsp::ActionsTable::getref();
+    Serializer *serp = NULL;
     map<string, fsp::Symbol *>::iterator it;
     map<string, fsp::Symbol *>::iterator jt;
     fsp::SmartPtr<fsp::Lts> lts;
     fsp::ProgressS *pv;
 
+    if (cop.input_type == CompilerOptions::InputTypeFsp && cop.output_file) {
+        serp = new Serializer(cop.output_file);
+    }
+
     if (serp) {
 	serp->actions_table(actions, 0);
 	serp->integer(processes.table.size(), 0);
     }
+
+    /* Scan the 'processes' symbols table. For each process, output
+       the associated LTS and do the deadlock analysis. */
     for (it=processes.table.begin(); it!=processes.table.end(); it++) {
 	lts = fsp::is<fsp::Lts>(it->second);
 
@@ -417,11 +411,11 @@ int FspDriver::parse(const CompilerOptions& co)
 	    serp->lts(*lts, 0);
 	}
 
-	if (co.deadlock) {
+	if (cop.deadlock) {
 	    lts->deadlockAnalysis(ss);
 	}
 
-	if (co.graphviz) {
+	if (cop.graphviz) {
 	    lts->graphvizOutput((lts->name + ".gv").c_str());
 	}
     }
@@ -433,7 +427,7 @@ int FspDriver::parse(const CompilerOptions& co)
     for (it=progresses.table.begin(); it!=progresses.table.end();
 	    it++) {
 	pv = fsp::is<fsp::ProgressS>(it->second);
-	if (co.progress) {
+	if (cop.progress) {
 	    for (jt=processes.table.begin();
 		    jt!=processes.table.end(); jt++) {
 		lts = fsp::is<fsp::Lts>(jt->second);
@@ -450,8 +444,42 @@ int FspDriver::parse(const CompilerOptions& co)
 
     if (serp)
 	delete serp;
-    if (desp)
-	delete desp;
+
+    return 0;
+}
+
+int FspDriver::parse(const CompilerOptions& co)
+{
+    stringstream ss;
+    int ret = 0;
+
+    /* Copy in the options. */
+    cop = co;
+
+    ret = inputPhase(ss);
+    if (ret) {
+        return ret;
+    }
+
+    /* Run an LTS analysis script if the user asked for that. */
+    if (cop.script) {
+	ifstream fin(cop.script_file, ios::in);
+
+	if (fin.fail()) {
+	    cerr << cop.script_file << ": no such script file\n";
+	    exit(-1);
+	}
+
+	ret = Shell(*this, fin).run();
+	fin.close();
+    }
+
+    /* Run the interactive shell if the user asked for that. */
+    if (cop.shell) {
+	ret = Shell(*this, std::cin).run();
+    }
+
+    outputPhase(ss);
 
     /* Flush out program output. */
     cout << ss.str();

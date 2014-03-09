@@ -110,6 +110,8 @@ class FspDriver
 
 	/* Run the parser.  Return 0 on success. */
 	int parse(const CompilerOptions& co);
+        int inputPhase(stringstream& ss);
+        int outputPhase(stringstream& ss);
 	bool trace_parsing;
 
         void translateDeclarations();
