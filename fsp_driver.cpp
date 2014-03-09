@@ -297,6 +297,7 @@ int FspDriver::parse(const CompilerOptions& co)
     Serializer *serp = NULL;
     Deserializer *desp = NULL;
     stringstream ss;
+    int ret = 0;
 
     /* Copy in the options. */
     cop = co;
@@ -304,7 +305,6 @@ int FspDriver::parse(const CompilerOptions& co)
     if (co.input_type == CompilerOptions::InputTypeFsp) {
 	string orig(co.input_file);
 	string temp = ".fspcc." + orig;
-        int ret;
 
 	for (unsigned int i=0; i<temp.size(); i++)
 	    if (temp[i] == '\\' || temp[i] == '/')
@@ -381,6 +381,23 @@ int FspDriver::parse(const CompilerOptions& co)
 	}
     }
 
+    /* Run an LTS analysis script if the user asked for that. */
+    if (co.script) {
+	ifstream fin(co.script_file, ios::in);
+
+	if (fin.fail()) {
+	    cerr << co.script_file << ": no such script file\n";
+	    exit(-1);
+	}
+
+	ret = Shell(*this, fin).run();
+	fin.close();
+    }
+
+    /* Run the interactive shell if the user asked for that. */
+    if (co.shell) {
+	ret = Shell(*this, std::cin).run();
+    }
     /* Scan the 'processes' symbols table. For each process, output
        the associated LTS and do the deadlock analysis. */
     map<string, fsp::Symbol *>::iterator it;
@@ -439,29 +456,7 @@ int FspDriver::parse(const CompilerOptions& co)
     /* Flush out program output. */
     cout << ss.str();
 
-    /* Run an LTS analysis script if the user asked for that. */
-    if (co.script) {
-	ifstream fin(co.script_file, ios::in);
-	int ret;
-
-	if (fin.fail()) {
-	    cerr << co.script_file << ": no such script file\n";
-	    exit(-1);
-	}
-
-	ret = Shell(*this, fin).run();
-	fin.close();
-	if (ret) {
-	    return ret;
-	}
-    }
-
-    /* Run the interactive shell if the user asked for that. */
-    if (co.shell) {
-	return Shell(*this, std::cin).run();
-    }
-
-    return 0;
+    return ret;
 }
 
 bool FspDriver::nesting_save()
