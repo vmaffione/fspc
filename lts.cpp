@@ -1423,24 +1423,31 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
-/* Enable debug output for the minimization machinery. */
-//#define CONFIG_DEBUG_MINIMIZATION
-
-/* Helper function, expects 's' to be empty. */
-static void children_to_actions_set(const vector<Edge>& children,
-                                    set<unsigned int>& s)
+void fsp::Lts::reachable_actions_set(unsigned int state,
+                                     set<unsigned int>& s) const
 {
+    const vector<Edge>& children = nodes[state].children;
+
+    s.clear();
+
     for (unsigned int j = 0; j < children.size(); j++) {
         s.insert(children[j].action);
     }
 }
 
+/* Enable debug output for the minimization machinery. */
+//#define CONFIG_DEBUG_MINIMIZATION
+
 /* Helper function, expects 's' to be empty. */
-static void children_to_partitions_set(const vector<Edge>& children,
-                            unsigned int action,
-                            const unsigned int *partitions_map,
-                            set<unsigned int>& s)
+void fsp::Lts::reachable_partitions_set(unsigned int state,
+                                        unsigned int action,
+                                        const unsigned int *partitions_map,
+                                        set<unsigned int>& s) const
 {
+    const vector<Edge>& children = nodes[state].children;
+
+    s.clear();
+
     for (unsigned int j = 0; j < children.size(); j++) {
         if (children[j].action == action) {
             s.insert(partitions_map[children[j].dest]);
@@ -1459,7 +1466,7 @@ void fsp::Lts::initial_partitions(list< set<unsigned int> >& partitions,
         set<unsigned int> s;
         bool match = false;
 
-        children_to_actions_set(nodes[i].children, s);
+        reachable_actions_set(i, s);
 
         asit = action_sets.begin();
         pit = partitions.begin();
@@ -1545,8 +1552,7 @@ split:
             continue;
         }
 
-        children_to_actions_set(nodes[*pit->begin()].children,
-                actions);
+        reachable_actions_set(*pit->begin(), actions);
         for (set<unsigned int>::iterator ait = actions.begin();
                 ait != actions.end(); ait++) {
             /* For each action '*ait' outgoing from the partition ... */
@@ -1564,8 +1570,7 @@ split:
 
                 /* Put in 's' all the destinations reachable from '*nit'
                    using the action '*ait'. */
-                children_to_partitions_set(nodes[*nit].children, *ait,
-                        partitions_map, s);
+                reachable_partitions_set(*nit, *ait, partitions_map, s);
 
                 /* Match 's' against all the distinct destinations sets
                    computed so far. */
@@ -1657,7 +1662,7 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
             unsigned int exponent = *pit->begin();
 
             /* Compute the set of actions that leave the partition. */
-            children_to_actions_set(nodes[exponent].children, actions);
+            reachable_actions_set(exponent, actions);
 
             for (set<unsigned int>::iterator ait = actions.begin();
                                         ait != actions.end(); ait++) {
@@ -1666,8 +1671,8 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
                 /* Compute the set of partitions that are reached from
                    the current partition (the k-th) through the action
                    '*ait'. */
-                children_to_partitions_set(nodes[exponent].children, *ait,
-                                            partitions_map, dests);
+                reachable_partitions_set(exponent, *ait,
+                                         partitions_map, dests);
 
                 /* Add a transition (k, *ait, j) for each partition 'j'
                    reachable from the current one through '*ait'. */

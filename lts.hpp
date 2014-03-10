@@ -213,6 +213,9 @@ class Lts: public Symbol {
     void reduce_to_partitions(stringstream &ss,
                               const list< set<unsigned int> >& partitions,
                               const unsigned int *partitions_map);
+    void reachable_partitions_set(unsigned int state, unsigned int action,
+                                  const unsigned int *partitions_map,
+                                  set<unsigned int>&) const;
 
     void __traces(stringstream &ss, set<CEdge>& marked,
                   vector<unsigned int>& trace, unsigned int state);
@@ -270,6 +273,8 @@ class Lts: public Symbol {
     void check_privs(set<unsigned int>& privs);
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
     vector<Edge> get_children(unsigned int state) const;
+    void reachable_actions_set(unsigned int state, set<unsigned int>&) const;
+
     void clear();
     void cleanup();
 
