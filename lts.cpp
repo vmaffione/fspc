@@ -1438,7 +1438,7 @@ static void children_to_actions_set(const vector<Edge>& children,
 /* Helper function, expects 's' to be empty. */
 static void children_to_partitions_set(const vector<Edge>& children,
                             unsigned int action,
-                            const vector<unsigned int>& partitions_map,
+                            const unsigned int *partitions_map,
                             set<unsigned int>& s)
 {
     for (unsigned int j = 0; j < children.size(); j++) {
@@ -1448,13 +1448,12 @@ static void children_to_partitions_set(const vector<Edge>& children,
     }
 }
 
-void fsp::Lts::initial_partitions(vector< set<unsigned int> >& partitions,
-                                    vector<unsigned int>& partitions_map)
+void fsp::Lts::initial_partitions(list< set<unsigned int> >& partitions,
+                                    unsigned int *partitions_map)
 {
     list< set<unsigned int> > action_sets;
-    list< set<unsigned int> >::iterator lit;
-
-    partitions_map.resize(nodes.size()); /* TODO use an array here. */
+    list< set<unsigned int> >::iterator asit;
+    list< set<unsigned int> >::iterator pit;
 
     for (unsigned int i = 0; i < nodes.size(); i++) {
         set<unsigned int> s;
@@ -1462,10 +1461,12 @@ void fsp::Lts::initial_partitions(vector< set<unsigned int> >& partitions,
 
         children_to_actions_set(nodes[i].children, s);
 
-        lit = action_sets.begin();
-        for (unsigned k = 0; lit != action_sets.end(); k++, lit++) {
-            if (equal(*lit, s)) {
-                partitions[k].insert(i);
+        asit = action_sets.begin();
+        pit = partitions.begin();
+        for (unsigned int k = 0; asit != action_sets.end();
+                                            asit++, pit++, k++) {
+            if (equal(*asit, s)) {
+                pit->insert(i);
                 partitions_map[i] = k;
                 match = true;
                 break;
@@ -1482,7 +1483,7 @@ void fsp::Lts::initial_partitions(vector< set<unsigned int> >& partitions,
     }
 }
 
-static void update_partitions_map(vector<unsigned int>& partitions_map,
+static void update_partitions_map(unsigned int *partitions_map,
                                     const set<unsigned int>& sub,
                                     unsigned int idx)
 {
@@ -1494,21 +1495,22 @@ static void update_partitions_map(vector<unsigned int>& partitions_map,
 
 /* Debug function used by Lts::minimize. */
 static void print_partitions(stringstream& ss,
-                      const vector< set<unsigned int> >& partitions,
-                      const vector<unsigned int>& partitions_map)
+                      const list< set<unsigned int> >& partitions,
+                      const unsigned int *partitions_map, unsigned int n)
 {
 #ifdef CONFIG_DEBUG_MINIMIZATION
     ss << "Partitions:\n";
-    for (unsigned int k=0; k<partitions.size(); k++) {
+    for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
+                        pit != partitions.end(); pit++) {
         ss << "{";
-        for (set<unsigned int>::iterator it = partitions[k].begin();
-                it != partitions[k].end(); it++) {
+        for (set<unsigned int>::iterator it = pit->begin();
+                                        it != pit->end(); it++) {
             ss << *it << ", ";
         }
         ss << "}\n";
     }
     ss << "map = {";
-    for (unsigned int k=0; k<partitions_map.size(); k++) {
+    for (unsigned int k=0; k<n; k++) {
         ss << k << "-->" << partitions_map[k] << ", ";
     }
     ss << "}\n";
@@ -1517,28 +1519,33 @@ static void print_partitions(stringstream& ss,
 
 void fsp::Lts::minimize(stringstream& ss)
 {
-    vector< set<unsigned int> > partitions;
-    vector<unsigned int> partitions_map;
+    list< set<unsigned int> > partitions;
+    unsigned int *partitions_map = NULL;
 
     if (!nodes.size()) {
         return;
     }
 
+    partitions_map = new unsigned int[nodes.size()];
+
     initial_partitions(partitions, partitions_map);
-    print_partitions(ss, partitions, partitions_map);
+    print_partitions(ss, partitions, partitions_map, nodes.size());
 
 split:
+    unsigned int k = 0;
+
     /* Scan all the current partitions looking for a split
        condition. */
-    for (unsigned int k=0; k<partitions.size(); k++) {
+    for (list< set<unsigned int> >::iterator pit = partitions.begin();
+                                pit != partitions.end(); pit++, k++) {
         set<unsigned int> actions;
 
-        if (partitions[k].size() == 1) {
+        if (pit->size() == 1) {
             /* Nothing to split. */
             continue;
         }
 
-        children_to_actions_set(nodes[*partitions[k].begin()].children,
+        children_to_actions_set(nodes[*pit->begin()].children,
                 actions);
         for (set<unsigned int>::iterator ait = actions.begin();
                 ait != actions.end(); ait++) {
@@ -1548,8 +1555,8 @@ split:
 
             /* Try to split with respect to '*ait'. */
             for (set<unsigned int>::iterator nit =
-                    partitions[k].begin();
-                    nit != partitions[k].end(); nit++) {
+                    pit->begin();
+                    nit != pit->end(); nit++) {
                 /* For each node in the partition ... */
                 list< set<unsigned int> >::iterator dsit, spit;
                 set<unsigned int> s;
@@ -1606,7 +1613,7 @@ split:
                    sub-partition and enqueue back all the other
                    sub-partitions.
                    Also update the partitions map. */
-                partitions[k] = *spit;
+                *pit = *spit;
                 update_partitions_map(partitions_map, *spit, k);
                 for (spit++; spit != sub_partitions.end(); spit++) {
                     partitions.push_back(*spit);
@@ -1614,7 +1621,8 @@ split:
                                             partitions.size() - 1);
                 }
 
-                print_partitions(ss, partitions, partitions_map);
+                print_partitions(ss, partitions, partitions_map,
+                                    nodes.size());
                 /* After the split we cannot continue the cycle, because
                    data structures have changed: Let's start from scratch. */
                 goto split;
@@ -1625,11 +1633,13 @@ split:
     /* When we arrive here, no more splits are possibile. We can therefore
        reduce each final partition to a single state. */
     reduce_to_partitions(ss, partitions, partitions_map);
+
+    delete partitions_map;
 }
 
 void fsp::Lts::reduce_to_partitions(stringstream &ss,
-                        const vector< set<unsigned int> >& partitions,
-                        const vector<unsigned int>& partitions_map)
+                        const list< set<unsigned int> >& partitions,
+                        const unsigned int *partitions_map)
 {
         if (nodes.size() == partitions.size()) {
             /* Nothing to reduce. */
@@ -1638,10 +1648,13 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
 
         vector<LtsNode> new_nodes(partitions.size());
 
-        for (unsigned int k = 0; k < partitions.size(); k++) {
+        unsigned int k = 0;
+
+        for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
+                                            pit != partitions.end(); pit++, k++) {
             set<unsigned int> actions;
             set<unsigned int> dests;
-            unsigned int exponent = *partitions[k].begin();
+            unsigned int exponent = *pit->begin();
 
             /* Compute the set of actions that leave the partition. */
             children_to_actions_set(nodes[exponent].children, actions);

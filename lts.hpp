@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <fstream>
 #include <string>
 #include <set>
@@ -207,11 +208,11 @@ class Lts: public Symbol {
     void print_trace(const vector<int>& trace, stringstream& ss) const;
     void removeType(unsigned int type, unsigned int zero_idx,
                     bool call_reduce);
-    void initial_partitions(vector< set<unsigned int> >& partitions,
-                            vector<unsigned int>& partitions_map);
+    void initial_partitions(list< set<unsigned int> >& partitions,
+                            unsigned int *partitions_map);
     void reduce_to_partitions(stringstream &ss,
-                              const vector< set<unsigned int> >& partitions,
-                              const vector<unsigned int>& partitions_map);
+                              const list< set<unsigned int> >& partitions,
+                              const unsigned int *partitions_map);
 
     void __traces(stringstream &ss, set<CEdge>& marked,
                   vector<unsigned int>& trace, unsigned int state);
