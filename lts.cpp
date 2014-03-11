@@ -248,12 +248,16 @@ void fsp::Lts::copy_nodes_in(const Lts& lts)
 /* BFS on the LTS for useless states removal. */
 void fsp::Lts::reduce(const fsp::Lts& unconnected)
 {
-    int np = unconnected.nodes.size();
-    vector<int> frontier(np);
-    vector<int> map(np);
-    int pop, push;
+    unsigned int np = unconnected.nodes.size();
+    queue<unsigned int> frontier;
+    int *map = new int[np];
     int state;
-    int n = 0;
+    unsigned int n = 0;
+
+    if (!map) {
+        cout << "Lts::reduce: map allocation failed\n";
+        exit(EXIT_FAILURE);
+    }
 
     /* We make sure that 'nodes' is empty. */
     nodes.clear();
@@ -267,34 +271,39 @@ void fsp::Lts::reduce(const fsp::Lts& unconnected)
     nodes.resize(np);
 
     /* At the beginning the frontier contains only the initial state */
-    frontier[0] = 0;
-    pop = 0; push = 1;
+    frontier.push(0);
     map[0] = n++;
-    for (int i=1; i<np; i++)
+    for (unsigned int i=1; i<np; i++)
 	map[i] = -1;
 
-    while (pop != push) {
+    do {
 	Edge e;
 
-	state = frontier[pop++];
+	state = frontier.front();
+
 	for (unsigned int j=0; j<unconnected.nodes[state].children.size(); j++) {
 	    int child = unconnected.nodes[state].children[j].dest;
 
 	    if (map[child] == -1) {
 		map[child] = n++;
-		frontier[push++] = child;
+                frontier.push(child);
 	    }
 	    e.dest = map[child];
 	    e.action = unconnected.nodes[state].children[j].action;
 	    nodes[map[state]].children.push_back(e);
 	}
-    }
 
-    for (int i=0; i<np; i++)
+        frontier.pop();
+
+    } while (!frontier.empty());
+
+    for (unsigned int i=0; i<np; i++)
 	if (map[i] != -1) {
             set_type(map[i], unconnected.get_type(i));
             set_priv(map[i], unconnected.get_priv(i));
         }
+
+    delete map;
 
     nodes.resize(n);
 }
