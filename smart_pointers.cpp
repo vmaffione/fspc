@@ -33,7 +33,7 @@ void fsp::PtrCheckTable::ref(void *ptr)
 {
     pair< map<void *, unsigned int>::iterator, bool > ret;
 
-    ret = t.insert(make_pair<void *, unsigned int>(ptr, 1));
+    ret = t.insert(make_pair(ptr, 1));
     if (!ret.second) {
         ret.first->second++;
     }

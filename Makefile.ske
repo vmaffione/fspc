@@ -1,7 +1,7 @@
 CC=g++
 DEBUG=-g
 CFLAGS=$(DEBUG) -Wall
-CXXFLAGS=$(DEBUG) -Wall
+CXXFLAGS=$(DEBUG) -Wall -std=c++11
 # Optimization flags, e.g. "-O2"
 CFLAGS += $(OPTIMIZE)
 CXXFLAGS += $(OPTIMIZE)
