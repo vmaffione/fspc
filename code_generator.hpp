@@ -1,5 +1,5 @@
 /*
- *  fspc code generator
+ *  Code generator for fspc - code generator
  *
  *  Copyright (C) 2014  Cosimo Sacco
  *  Email contact: <cosimosacco@gmail.com>
@@ -18,107 +18,73 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __FSPC_CODEGEN_GENERATOR__HH
+#define __FSPC_CODEGEN_GENERATOR__HH
 
-#ifndef __CODE_GENERATOR__HH
-#define __CODE_GENERATOR__HH
-
-#include <map>
+#include <stdexcept>
 #include <string>
-#include <list>
-#include <assert.h>
-#include <iostream>
 
-using namespace std;
+#include "fspc_experts.hpp"
 
-#include "symbols_table.hpp"
-#include "lts.hpp"
+namespace codegen {
 
-namespace codegen{
-
-/*MNF stands for Monitor Normal Form.*/
-typedef int State;
-typedef int Interaction;
-typedef int InternalAction;
-struct MNFAntecedent{
-    State state;
-    Interaction interaction;
-    MNFAntecedent() : state(-1), interaction(-1){}
-    MNFAntecedent(int s, int i) : state(s), interaction(i){}
-};
-
-bool operator<(const MNFAntecedent& a, const MNFAntecedent& b);
-ostream& operator<<(ostream& os, const MNFAntecedent& mnf_antecedent);
-
-struct MNFConsequent{
-    list<InternalAction> internal_actions;
-    int next_state;
-    MNFConsequent(){
-        next_state = -1;
-    }
-};
-
-ostream& operator<<(ostream& os, const MNFConsequent& mnf_consequent);
-
-typedef map<State , map<Interaction, MNFConsequent> > MNF;
-
-ostream& operator<<(ostream& os, const MNF& mnf);
-
-enum NodeType {
-    SYNCHRONIZATION_POINT,
-    TRANSITORY,
-    STOCHASTIC,
-    HYBRID,
-    ZERO_DIMENSION
-};
-
-typedef map<int, NodeType> VisitMemoization;
-
-class MNFExtractor{
+/**
+ * @class CodeGenerator
+ * @brief CodeGenerator visitor for code generation
+ *
+ * A CodeGenerator is a Visitor which can visit UserRequirements (an
+ * Information) producing SourceCode (an Information).
+ **/
+class CodeGenerator :
+    public visitor::Visitor,
+    public Visits<const UserRequirements> {
     private:
-        fsp::ActionsTable& actions;
-        const fsp::Lts& lts;
-        vector<uint32_t> interactions;
-        int state;
-        vector<bool> seen; //first time: 0 0 0 0 0 0 ...
-        bool firts_time;
-        VisitMemoization cache;
-        MNFAntecedent antecedent;
-        int nest_lev;
-        bool internal_actions_lookahead(int state, MNF& mnf, int& reason);
-        NodeType node_type(int node, const vector<Edge>& edges);
+        /**
+         * For each supported competence ("monitor", "fsp", "java",
+         * "semaphores", "cplusplus"...) CodeGenerator "hires" an Expert and
+         * registers it by competence.
+         **/
+        map<Competence, heap<Expert>> experts;
+        /**
+         * get_expert looks up the experts register (map) by competence.
+         * The expert, if found, is cast to a more specific type, specified by
+         * the template parameter Category, and then returned.
+         * @param competence The competence profile to look for
+         * @tparam Category The specific expert category to look for
+         * @return A smart pointer to an expert of the right Category which
+         * knows all about the required competence, or a smart pointer to
+         * nullptr in case of error (no expert found or expert found in a
+         * different Category).
+         **/
+        template <typename Category>
+        heap<Category> get_expert(const Competence& competence)
+        {
+            return heap<Category>(
+                       dynamic_pointer_cast<Category>(experts[competence]));
+        }
+        /**
+         * Reference to the FspDriver structure, to gain access to the fspc
+         * environment.
+         **/
+        FspDriver& c;
     public:
-        MNFExtractor(const fsp::Lts& _lts,
-                     const vector<uint32_t>& _interactions);
-        bool operator()(int node, MNF& mnf, int& reason, int nest_lev);
-};
-
-class CodeGenerator{
-    private:
-        fsp::ActionsTable& actions;
-        /*NodeType node_type(const vector<uint32_t>& interactions,
-                           const vector<Edge>& edges, string nest) const;
-        bool generate_mnf(const fsp::Lts& lts,
-                          const vector<uint32_t>& interactions,//must be ordered
-                          const int state, //first time: 0
-                          vector<bool>& seen, //first time: 0 0 0 0 0 0 ...
-                          bool firts_time,
-                          MNFAntecedent& antecedent,
-                          MNF& mnf, int nest_lev) const;*/
-        void remap_states(MNF& mnf);
-        void indent(string& s);
-    public:
-        CodeGenerator() : actions(fsp::ActionsTable::getref()){}
-        bool monitor(const fsp::Lts& lts, const list<string>& interactions,
-                     MNF& monitorNormalForm, int& reason);
-        bool get_monitor_representation(const fsp::Lts& lts,
-                                        const list<string>& interactions,
-                                        string& representation);
-        bool instantiate_monitor_template(const fsp::Lts& lts,
-                                          const list<string>& synchpoints,
-                                          const string monitor_identifier,
-                                          string& monitor_code);
-        //bool thread(const Lts& lts, const list<string>& interactions);
+        CodeGenerator(FspDriver& _c);
+        /**
+         * A CodeGenerator visits UserRequirements (an Information) producing
+         * SourceCode (an Information). The CodeGenerator organizes a pipeline
+         * composed by one Analyst and one Developer. These Experts are chosen
+         * by competences (which have to be specified by the user). The Analyst
+         * visits the UserRequirements producing a ParticularModel (which is an
+         * Information) whose actual type depends on the particular formalism
+         * known by the Analyst. The produced Information is visited by the
+         * Developer, which produces the final Information to return (the
+         * SourceCode).
+         * @param r User requirements
+         * @return Source code
+         **/
+        virtual heap<Information> visit(const UserRequirements& r);
 };
 
 }
+
 #endif
