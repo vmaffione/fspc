@@ -82,7 +82,6 @@ struct UserRequirements : Information, MakeVisitable<const UserRequirements> {
     UserRequirements(const Requirements& r);
 };
 
-typedef std::vector<std::string> Requirements;
 /**
  * @class SourceFile
  * @brief This class models a source file
