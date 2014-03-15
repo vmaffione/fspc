@@ -59,7 +59,7 @@ static const std::string internal_action_declaration_template =
 static const std::string interaction_template =
     "public void $interaction(/*fill in parameters*/) throws InterruptedException\n{\n\
 lock.lock();\n\
-triy {\n\
+try {\n\
 while ($wait_condition) {\n\
 $interaction_condition.await();\n\
 }\n\
