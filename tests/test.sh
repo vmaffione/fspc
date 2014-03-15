@@ -10,6 +10,12 @@ fi
 
 ##################### tests on correct input ##################
 TESTDIR="tests/blackbox"
+
+cat > deadlock.fsh << EOF
+n = safety
+exit n
+EOF
+
 for i in {1..29}
 do
     if [ ! -f "${TESTDIR}/input${i}.fsp" ]; then
@@ -33,7 +39,21 @@ do
     fi
     rm ${TESTDIR}/new-output${i}.lts
     echo "${TESTDIR}/input$i ok"
+
+    # How many deadlock are there here? If > 0 check that we expect
+    # them to be > 0 as listed in the "deadlock" file
+    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S deadlock.fsh > /dev/null
+    NUM_DEADLOCKS=$?
+    if [ ${NUM_DEADLOCKS} != "0" ]; then
+        grep "^${i}$" ${TESTDIR}/deadlocks > /dev/null
+        if [ "$?" != "0" ]; then
+            echo "Test FAILED on ${TESTDIR}/input${i}.fsp, while checking for deadlocks."
+            exit 1
+        fi
+    fi
 done
+
+rm deadlock.fsh
 
 
 ##################### tests on invalid input ##################

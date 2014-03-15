@@ -1,0 +1,6 @@
+# This file contains a row for each blackbox input test that contains LTSs
+# with one ore more deadlocks. The index of the test is reported.
+# As an example, tests #4 and #17 contains one ore more deadlocks.
+4
+17
+29

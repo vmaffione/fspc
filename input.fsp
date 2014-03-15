@@ -4,4 +4,12 @@ P1=(a->P2 | a->P0),
 P2=(a->P1 | b->P3),
 P3=(b->P3 | b->P4),
 P4=(b->P3 | b->P5),
-P5=(b->P5).
+P5=(b->P5) @ {a}.
+
+
+LOCK=(lock->unlock->LOCK).
+PUT=(lock->put->unlock->PUT).
+GET=(lock->get->unlock->GET).
+
+||SYS1=(PUT||GET||LOCK) @ {lock,unlock}.
+||SYS2=(PUT||GET||LOCK) @ {put, get}.
