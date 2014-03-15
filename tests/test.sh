@@ -40,16 +40,18 @@ do
     rm ${TESTDIR}/new-output${i}.lts
     echo "${TESTDIR}/input$i ok"
 
-    # How many deadlock are there here? If > 0 check that we expect
-    # them to be > 0 as listed in the "deadlock" file
+    # How many deadlock are there here? Check that the reported deadlocks
+    # are consistent with the file "deadlocks"
     ${FSPC} -i ${TESTDIR}/input${i}.fsp -S deadlock.fsh > /dev/null
     NUM_DEADLOCKS=$?
-    if [ ${NUM_DEADLOCKS} != "0" ]; then
-        grep "^${i}$" ${TESTDIR}/deadlocks > /dev/null
-        if [ "$?" != "0" ]; then
-            echo "Test FAILED on ${TESTDIR}/input${i}.fsp, while checking for deadlocks."
+    grep "^${i}$" ${TESTDIR}/deadlocks > /dev/null
+    EXPECT_NO_DEADLOCKS=$?
+    if [[ $NUM_DEADLOCKS == "0" && ${EXPECT_NO_DEADLOCKS} == "0" ]]; then
+            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: Deadlock expected but no deadlock reported."
             exit 1
-        fi
+    elif [[ $NUM_DEADLOCKS != "0" && ${EXPECT_NO_DEADLOCKS} != "0" ]]; then
+            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: Unexpected deadlock reported."
+            exit 1
     fi
 done
 
