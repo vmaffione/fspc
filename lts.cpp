@@ -850,35 +850,35 @@ fsp::Symbol *fsp::Lts::clone() const
 
 void fsp::Lts::visit(const struct LtsVisitObject& lvo) const
 {
-    int state = 0;
-    int n = nodes.size();
-    vector<int> frontier(n);
+    unsigned int n = nodes.size();
+    queue<unsigned int> frontier;
     vector<bool> seen(n);
-    int pop, push;
 
     if (!n) {
         return;
     }
 
-    pop = 0;
-    push = 1;
-    frontier[0] = 0;
+    frontier.push(0);
     seen[0] = true;
-    for (int i=1; i<n; i++)
+    for (unsigned int i=1; i<n; i++)
 	seen[i] = false;
 
-    while (pop != push) {
-	state = frontier[pop++];
+    do {
+        unsigned int state;
+
+        state = frontier.front();
 	/* Invoke the visit function */
 	lvo.vfp(state, *this, nodes[state], lvo.opaque);
 	for (unsigned int i=0; i<nodes[state].children.size(); i++) {
 	    int child = nodes[state].children[i].dest;
 	    if (!seen[child]) {
 		seen[child] = true;
-		frontier[push++] = child;
+                frontier.push(child);
 	    }
 	}
-    }
+
+        frontier.pop();
+    } while (!frontier.empty());
 }
 
 fsp::Lts& fsp::Lts::labeling(const SetS& labels)
