@@ -569,6 +569,7 @@ int Shell::ls(const vector<string> &args, stringstream& ss)
 int Shell::safety(const vector<string> &args, stringstream& ss)
 {
     map<string, fsp::Symbol *>::iterator it;
+    int deadlocks = 0;
 
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
@@ -579,7 +580,7 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
         ss << "Process " << args[0] << " not found\n";
             return -1;
         }
-        lts->deadlockAnalysis(ss);
+        deadlocks = lts->deadlockAnalysis(ss);
     } else {
         fsp::Lts *lts;
 
@@ -587,11 +588,11 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
   for (it=c.processes.table.begin();
         it!=c.processes.table.end(); it++) {
       lts = fsp::is<fsp::Lts>(it->second);
-      lts->deadlockAnalysis(ss);
+      deadlocks += lts->deadlockAnalysis(ss);
   }
     }
 
-    return 0;
+    return deadlocks;
 }
 
 int Shell::progress(const vector<string> &args, stringstream& ss)
