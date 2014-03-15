@@ -521,45 +521,51 @@ fsp::Lts& fsp::Lts::compose(const fsp::Lts& q)
 
 int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 {
-    int nd = 0;
-    int state = 0;
-    int n = nodes.size();
-    vector<int> frontier(n);  /* The frontier is managed as a queue */
-    vector<int> actions(n);   /* The action used to reach frontier[i] */
-    vector<int> back(n);      /* Backpointer of frontier[i] */
-    vector<bool> seen(n);     /* seen[i] is set if state i has been enqueued */
-    vector<int> action_trace(n);
-    int pop, push;  /* Queue indexes */
+    unsigned int nd = 0;
+    unsigned int n = nodes.size();
+    queue<unsigned int> frontier;
+    unsigned int *actions; /* The action used to reach frontier[i] */
+    unsigned int *back;    /* Backpointer of frontier[i] */
+    vector<bool> seen(n);  /* seen[i] is set if state i has been enqueued */
+    unsigned int *action_trace;
+    unsigned int push_idx, pop_idx;
 
     if (!n) {
         return 0;
     }
+
+    actions = new unsigned int[n];
+    back = new unsigned int[n];
+    action_trace = new unsigned int [n];
 
     /* BFS looking for states with no outgoing transitions. We use a BFS
        instead of a DFS because the former is simpler to implement and
        because it finds the shortest path to each deadlock state. */
 
     /* Initialize a queue that only contains the 0 node. */
-    pop = 0;
-    push = 1;
-    frontier[0] = 0;
+    frontier.push(0);
+    pop_idx = 0;
+    push_idx = 1;
     seen[0] = true;
-    for (int i=1; i<n; i++)
+    for (unsigned int i=1; i<n; i++)
 	seen[i] = false;
 
     /* Keep visiting until the queue is empty. */
-    while (pop != push) {
+    do {
+        unsigned int state;
 	unsigned int i;
 
 	/* Pop a state and examine all its children. */
-	state = frontier[pop];
+	state = frontier.front();
 	for (i=0; i<nodes[state].children.size(); i++) {
 	    int child = nodes[state].children[i].dest;
+
 	    if (!seen[child]) {
 		seen[child] = true;
-		back[push] = state;
-		actions[push] = nodes[state].children[i].action;
-		frontier[push++] = child;
+		back[push_idx] = state;
+		actions[push_idx] = nodes[state].children[i].action;
+                frontier.push(child);
+                push_idx++;
 	    }
 	}
 
@@ -577,7 +583,7 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 			<< state << "\n";
 	    /* Starting from 'state', we follow the backpointers to build the
 	       trace to deadlock (in reverse order). */
-	    t = pop;
+	    t = pop_idx;
 	    j = 0;
 	    while (t) {
 		action_trace[j++] = actions[t];
@@ -589,8 +595,13 @@ int fsp::Lts::deadlockAnalysis(stringstream& ss) const
 	    ss << "\n\n";
 	    nd++;
 	}
-	pop++; /* Pops 'state' from the queue */
-    }
+        frontier.pop();
+        pop_idx++;
+    } while (!frontier.empty());
+
+    delete actions;
+    delete back;
+    delete action_trace;
 
     return nd;
 }
