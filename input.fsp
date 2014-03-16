@@ -1,12 +1,11 @@
-P=P0,
-P0=(a->P1 | a->P2),
-P1=(a->P2 | a->P0),
-P2=(a->P1 | b->P3),
-P3=(b->P3 | b->P4),
-P4=(b->P3 | b->P5),
-P5=(b->P5) @ {a}.
+const N = 2
+range R = 0..N
 
-Q=Q0,
-    Q0 = (x->Q1),
-    Q1 = (x->Q2),
-    Q2 = (x->Q0) \ {x}.
+BUFFER= B[0],
+    B[i:R] = (when i>0 get->B[i-1] | when i < N put->B[i+1]).
+
+PRODUCER = (make->put->PRODUCER) + {get}.
+
+CONSUMER = (get->eat->CONSUMER) + {put}.
+
+||SYS = (c:CONSUMER || p:PRODUCER || {c,p}::BUFFER) \ {p.make, c.eat}.

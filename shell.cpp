@@ -147,6 +147,12 @@ void Shell::fill_completion()
     map<string, fsp::Symbol *>::iterator it;
     map<string, HelpEntry>::iterator jt;
 
+    /* Parameteric process names. */
+    for (it=c.parametric_processes.table.begin();
+            it!=c.parametric_processes.table.end(); it++) {
+        completion.insert(it->first);
+    }
+
     /* Process names. */
     for (it=c.processes.table.begin(); it!=c.processes.table.end(); it++) {
         completion.insert(it->first);
