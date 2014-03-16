@@ -1585,7 +1585,6 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
             /* Here we have a node with only one outgoing transition, whose
                action is the tau action. This means we've found a chain
                of tau actions (tau chain).*/
-            set_type(state, LtsNode::Zombie);
             next = nodes[state].children[0].dest;
 
             /* This loops follows the whole tau chain, collecting the
@@ -1613,9 +1612,38 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
                 next = nodes[next].children[0].dest;
             }
 
-            /* State 'state' will collapse onto 'next'. Here 'state' and
-               'next' are necessarily different. */
-            collapse_map[state] = next;
+            if (state != next) {
+                /* State 'state' will collapse onto 'next'. We also mark
+                   'state' for removal, since this has not been done yet. */
+                collapse_map[state] = next;
+                set_type(state, LtsNode::Zombie);
+            } else {
+                /* This special case happens with self-transitions labelled
+                   with tau. We can safely remove those transitions, and
+                   weak equivalence will be preserved. The algorithm here
+                   is able to remove many tau self-transitions, though
+                   probably there can be at most once.
+                */
+                for (;;) {
+                    unsigned int remove = ~0U;
+
+                    for (unsigned int j = 0;
+                            j < nodes[state].children.size(); j++) {
+                        if (nodes[state].children[j].dest == state &&
+                                nodes[state].children[j].action == 0) {
+                            remove = j;
+                            break;
+                        }
+                    }
+
+                    if (remove != ~0U) {
+                        nodes[state].children.erase(
+                                nodes[state].children.begin() + remove);
+                    } else {
+                        break;
+                    }
+                }
+            }
         }
 
         for (unsigned int j = 0; j < nodes[next].children.size(); j++) {
@@ -1657,6 +1685,7 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
         for (unsigned int j = 0; j < nodes[i].children.size(); j++) {
             map<unsigned int, unsigned int>::iterator mit;
 
+            /* Collapse if needed. */
             mit = collapse_map.find(nodes[i].children[j].dest);
             if (mit != collapse_map.end()) {
                 nodes[i].children[j].dest = mit->second;
@@ -1666,6 +1695,8 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
 
     /* Remove the nodes that are part of tau chains. */
     removeType(LtsNode::Zombie, ~0U, true);
+    /* Cleanup extended info used by Lts::removeType. */
+    cleanup();
 }
 
 void fsp::Lts::minimize(stringstream& ss)
