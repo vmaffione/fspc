@@ -834,6 +834,11 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     return -1;
     }
 
+    if (lts->numStates() == 0) {
+        ss << "Lts " << args[0] << " is empty\n";
+        return 0;
+    }
+
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
     tmp_name = "." + int2string(getpid()) + ".gv";

@@ -8,19 +8,5 @@ P5=(b->P5) @ {a}.
 
 Q=Q0,
     Q0 = (x->Q1),
-    Q1 = (x->Q2 | x->Q3),
-    Q2 = (a->Q0),
-    Q3 = (b->Q0) \ {x}.
-
-U=U0,
-    U0 = (x->U1 | a->U2),
-    U1 = (x->U3),
-    U2 = (b->U1),
-    U3 = (c->U0) \ {x}.
-
-LOCK=(lock->unlock->LOCK).
-PUT=(lock->put->unlock->PUT).
-GET=(lock->get->unlock->GET).
-
-||SYS1=(PUT||GET||LOCK) @ {lock,unlock}.
-||SYS2=(PUT||GET||LOCK) @ {put, get}.
+    Q1 = (x->Q2),
+    Q2 = (x->Q0) \ {x}.

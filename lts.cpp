@@ -1307,6 +1307,12 @@ void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
     int state = 0;
     vector<int> trace;
 
+    if (!nodes.size()) {
+        ss << "    Cannot simulate an empty LTS.\n";
+        sh.putsstream(ss, true);
+        return;
+    }
+
     for (;;) {
 	unsigned int i;
 	string choice;
