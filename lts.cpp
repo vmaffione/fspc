@@ -1550,7 +1550,6 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
     queue<unsigned int> frontier;
     vector<bool> seen(nodes.size());
     map<unsigned int, unsigned int> collapse_map;
-    list<unsigned int> pruned_set;
 
     /* Precompute the number of ingoing transitions for each node. */
     ingoing = new unsigned int[nodes.size()];
@@ -1580,7 +1579,7 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
             /* Here we have a node with only one outgoing transition, whose
                action is the tau action. This means we've found a chain
                of tau actions (tau chain).*/
-            pruned_set.push_back(state);
+            set_type(state, LtsNode::Zombie);
             next = nodes[state].children[0].dest;
 
             /* This loops follows the whole tau chain, collecting the
@@ -1603,7 +1602,7 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
                             && nodes[next].children[0].dest) {
                 if (!seen[next]) {
                     seen[next] = true;
-                    pruned_set.push_back(next);
+                    set_type(next, LtsNode::Zombie);
                 }
                 next = nodes[next].children[0].dest;
             }
@@ -1636,8 +1635,10 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
         ss << mit->first << " --> " << mit->second << ", ";
     }
     ss << "}\nPrune list: {";
-    for (lit = pruned_set.begin(); lit != pruned_set.end(); lit++) {
-        ss << *lit << ", ";
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        if (get_type(i) == LtsNode::Zombie) {
+            ss << i << ", ";
+        }
     }
     ss << "}\n";
 #endif
@@ -1658,11 +1659,6 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
     }
 
     /* Remove the nodes that are part of tau chains. */
-    for (list<unsigned int>::iterator lit = pruned_set.begin();
-                                    lit != pruned_set.end(); lit++) {
-        set_type(*lit, LtsNode::Zombie);
-    }
-
     removeType(LtsNode::Zombie, ~0U, true);
 }
 
