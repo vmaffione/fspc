@@ -1202,6 +1202,8 @@ fsp::Lts& fsp::Lts::property()
 int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 					    stringstream& ss)
 {
+    int npv = 0;    /* Number of progress violations. */
+
     terminalSets();
 
     for (unsigned int i=0; i<terminal_sets.size(); i++) {
@@ -1234,11 +1236,12 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
 		    it!=ts.actions.end(); it++)
 		ss << ati(*it, false) << ", ";
 	    ss << "}\n\n";
-	    
+
+            npv++;
 	}
     }
 
-    return 0;
+    return npv;
 }
 
 struct OutputData {

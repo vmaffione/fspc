@@ -594,6 +594,7 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
     map<string, fsp::Symbol *>::iterator it;
     map<string, fsp::Symbol *>::iterator jt;
     fsp::ProgressS *pv;
+    int npv = 0;    /* Number of progress violations. */
 
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
@@ -607,7 +608,7 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
         for (it=c.progresses.table.begin();
                 it!=c.progresses.table.end(); it++) {
             pv = fsp::is<fsp::ProgressS>(it->second);
-            lts->progress(it->first, *pv, ss);
+            npv = lts->progress(it->first, *pv, ss);
         }
     } else {
         fsp::Lts *lts;
@@ -619,12 +620,12 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
       for (jt=c.progresses.table.begin();
         jt!=c.progresses.table.end(); jt++) {
     pv = fsp::is<fsp::ProgressS>(jt->second);
-    lts->progress(jt->first, *pv, ss);
+    npv += lts->progress(jt->first, *pv, ss);
       }
   }
     }
 
-    return 0;
+    return npv;
 }
 
 int Shell::simulate(const vector<string> &args, stringstream& ss)

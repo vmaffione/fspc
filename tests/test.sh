@@ -1,6 +1,33 @@
 #!/bin/bash
 
 
+# This function is used in the blackbox tests (tests on correct input)
+# to cover safety/progress violation algorithms. It checks that test
+# cases with reported problems corresponds to what stored in the
+# "expect" list.
+match_expected_problems()
+{
+    i=$1                        # test index
+    FSPC=$2                     # fspc executable
+    TESTDIR=$3                  # test directory
+    EXPECT_LIST=${TESTDIR}/$4   # list of positive testcase indexes
+    PROBLEM=$4                  # the type of problem to check
+
+    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S ${PROBLEM}.fsh > /dev/null
+    NUM_PROBLEMS=$?
+
+    grep "^${i}$" ${EXPECT_LIST} > /dev/null
+    EXPECT_NO_PROBLEMS=$?
+    if [[ $NUM_PROBLEMS == "0" && ${EXPECT_NO_PROBLEMS} == "0" ]]; then
+            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: ${PROBLEM} expected but no ${PROBLEM} reported."
+            exit 1
+    elif [[ $NUM_PROBLEMS != "0" && ${EXPECT_NO_PROBLEMS} != "0" ]]; then
+            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: Unexpected ${PROBLEM} reported."
+            exit 1
+    fi
+}
+
+
 if [ -n "$1" ]; then
     # Use a different fspcc command line invokation
     FSPC="$1"
@@ -13,6 +40,11 @@ TESTDIR="tests/blackbox"
 
 cat > deadlock.fsh << EOF
 n = safety
+exit n
+EOF
+
+cat > progress_violation.fsh << EOF
+n = progress
 exit n
 EOF
 
@@ -40,22 +72,16 @@ do
     rm ${TESTDIR}/new-output${i}.lts
     echo "${TESTDIR}/input$i ok"
 
-    # How many deadlock are there here? Check that the reported deadlocks
-    # are consistent with the file "deadlocks"
-    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S deadlock.fsh > /dev/null
-    NUM_DEADLOCKS=$?
-    grep "^${i}$" ${TESTDIR}/deadlocks > /dev/null
-    EXPECT_NO_DEADLOCKS=$?
-    if [[ $NUM_DEADLOCKS == "0" && ${EXPECT_NO_DEADLOCKS} == "0" ]]; then
-            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: Deadlock expected but no deadlock reported."
-            exit 1
-    elif [[ $NUM_DEADLOCKS != "0" && ${EXPECT_NO_DEADLOCKS} != "0" ]]; then
-            echo "Test FAILED on ${TESTDIR}/input${i}.fsp: Unexpected deadlock reported."
-            exit 1
-    fi
+    # Are there any deadlocks here? Check that the reported deadlocks
+    # are consistent with the file "deadlock"
+    match_expected_problems ${i} ${FSPC} ${TESTDIR} deadlock
+
+    # Are there any progress violations here? Check that the reported
+    # violations are consistent with the file "progress_violation"
+    match_expected_problems ${i} ${FSPC} ${TESTDIR} progress_violation
 done
 
-rm deadlock.fsh
+rm deadlock.fsh progress_violation.fsh
 
 
 ##################### tests on invalid input ##################
