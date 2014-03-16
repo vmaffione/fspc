@@ -171,12 +171,12 @@ ID	        [_a-zA-Z][_a-zA-Z0-9]*
 
 /* User code: Functions that can be exported. */
 
-void sh_scan_begin(const string& s, int trace_scanning)
-{
-    const char *filename = "prova";
+static const char *filename = ".sh.in";
 
+void sh_scan_begin(const string& expression, int trace_scanning)
+{
     ofstream fout(filename);
-    fout << s << endl;
+    fout << expression << endl;
     fout.close();
 
     sh_flex_debug = trace_scanning;
@@ -190,5 +190,6 @@ void sh_scan_begin(const string& s, int trace_scanning)
 void sh_scan_end()
 {
     fclose(shin);
+    remove(filename);
 }
 

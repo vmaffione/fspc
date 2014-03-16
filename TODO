@@ -1,4 +1,5 @@
 [O] Fix what happens when there is no xv or graphviz
+[O] Use memory buffer instead of files for sh scanner input
 [O] General arraysation
 [O] Smart pointers for Result
 [O] printAlphabet() should sort the output
