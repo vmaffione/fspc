@@ -1458,7 +1458,30 @@ void fsp::Lts::reachable_actions_set(unsigned int state,
 /* Enable debug output for the minimization machinery. */
 //#define CONFIG_DEBUG_MINIMIZATION
 
-/* Helper function, expects 's' to be empty. */
+/* Debug function used by Lts::minimize. */
+static void print_partitions(stringstream& ss,
+                      const list< set<unsigned int> >& partitions,
+                      const unsigned int *partitions_map, unsigned int n)
+{
+#ifdef CONFIG_DEBUG_MINIMIZATION
+    ss << "Partitions:\n";
+    for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
+                        pit != partitions.end(); pit++) {
+        ss << "{";
+        for (set<unsigned int>::iterator it = pit->begin();
+                                        it != pit->end(); it++) {
+            ss << *it << ", ";
+        }
+        ss << "}\n";
+    }
+    ss << "map = {";
+    for (unsigned int k=0; k<n; k++) {
+        ss << k << "-->" << partitions_map[k] << ", ";
+    }
+    ss << "}\n";
+#endif /* CONFIG_DEBUG_MINIMIZATION */
+}
+
 void fsp::Lts::reachable_partitions_set(unsigned int state,
                                         unsigned int action,
                                         const unsigned int *partitions_map,
@@ -1520,28 +1543,127 @@ static void update_partitions_map(unsigned int *partitions_map,
     }
 }
 
-/* Debug function used by Lts::minimize. */
-static void print_partitions(stringstream& ss,
-                      const list< set<unsigned int> >& partitions,
-                      const unsigned int *partitions_map, unsigned int n)
+void fsp::Lts::collapse_tau_chains(stringstream &ss)
 {
-#ifdef CONFIG_DEBUG_MINIMIZATION
-    ss << "Partitions:\n";
-    for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
-                        pit != partitions.end(); pit++) {
-        ss << "{";
-        for (set<unsigned int>::iterator it = pit->begin();
-                                        it != pit->end(); it++) {
-            ss << *it << ", ";
-        }
-        ss << "}\n";
+    unsigned int *ingoing;
+
+    queue<unsigned int> frontier;
+    vector<bool> seen(nodes.size());
+    map<unsigned int, unsigned int> collapse_map;
+    list<unsigned int> pruned_set;
+
+    /* Precompute the number of ingoing transitions for each node. */
+    ingoing = new unsigned int[nodes.size()];
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        ingoing[i] = 0;
     }
-    ss << "map = {";
-    for (unsigned int k=0; k<n; k++) {
-        ss << k << "-->" << partitions_map[k] << ", ";
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        for (unsigned int j = 0; j < nodes[i].children.size(); j++) {
+            ingoing[nodes[i].children[j].dest]++;
+        }
+    }
+
+    /* Initialize a BFS visit. */
+    frontier.push(0);
+    seen[0] = true;
+    for (unsigned int i = 1; i < seen.size(); i++) {
+        seen[i] = false;
+    }
+
+    /* Do a special purpose BFS visit. */
+    do {
+        unsigned int state = frontier.front();
+        unsigned int next = state;
+
+        if (nodes[state].children.size() == 1 &&
+                    nodes[state].children[0].action == 0) {
+            /* Here we have a node with only one outgoing transition, whose
+               action is the tau action. This means we've found a chain
+               of tau actions (tau chain).*/
+            pruned_set.push_back(state);
+            next = nodes[state].children[0].dest;
+
+            /* This loops follows the whole tau chain, collecting the
+               nodes involved, that will be deleted afterwards.
+               As an example of what we want to discover, consider the
+               following chain of states:
+                    s1 --> s2 --> s3 --> s4.
+               Here s1, s2 and s3 have only one outgoing transition, whose
+               action is tau (s4 must not have this property). On the other
+               hand, s2, s3 and s4 have only one ingoing transition, whose
+               action is tau (s1 must not have this property).
+               During this visit we want to mark nodes that we want to
+               delete in order to replace the tau chain to something
+               equivalent (weak bisimulation equivalence).
+               In the example, we will delete s1, s2 and s3, and we will
+               collapse s1 onto s4. This means that s4 will inherit s1's
+               ingoing transitions.
+            */
+            while (nodes[next].children.size() == 1 && ingoing[next] == 1
+                            && nodes[next].children[0].dest) {
+                if (!seen[next]) {
+                    seen[next] = true;
+                    pruned_set.push_back(next);
+                }
+                next = nodes[next].children[0].dest;
+            }
+
+            /* State 'state' will collapse onto 'next'. Here 'state' and
+               'next' are necessarily different. */
+            collapse_map[state] = next;
+        }
+
+        for (unsigned int j = 0; j < nodes[next].children.size(); j++) {
+            unsigned int dest = nodes[next].children[j].dest;
+
+            if (!seen[dest]) {
+                seen[dest] = true;
+                frontier.push(dest);
+            }
+        }
+
+        frontier.pop();
+    } while (!frontier.empty());
+
+    delete ingoing;
+
+#ifdef CONFIG_DEBUG_MINIMIZATION
+    map<unsigned int, unsigned int>::iterator mit;
+    list<unsigned int>::iterator lit;
+
+    ss << "Collapse map: {";
+    for (mit = collapse_map.begin(); mit != collapse_map.end(); mit++) {
+        ss << mit->first << " --> " << mit->second << ", ";
+    }
+    ss << "}\nPrune list: {";
+    for (lit = pruned_set.begin(); lit != pruned_set.end(); lit++) {
+        ss << *lit << ", ";
     }
     ss << "}\n";
-#endif /* CONFIG_DEBUG_MINIMIZATION */
+#endif
+
+    /* Scan the graph to move (ingoing) transitions as described above:
+       For each element ('from', 'to') in the collapse map, the node
+       'to' will inherit all the ingoing transitions of the node 'from'.
+    */
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        for (unsigned int j = 0; j < nodes[i].children.size(); j++) {
+            map<unsigned int, unsigned int>::iterator mit;
+
+            mit = collapse_map.find(nodes[i].children[j].dest);
+            if (mit != collapse_map.end()) {
+                nodes[i].children[j].dest = mit->second;
+            }
+        }
+    }
+
+    /* Remove the nodes that are part of tau chains. */
+    for (list<unsigned int>::iterator lit = pruned_set.begin();
+                                    lit != pruned_set.end(); lit++) {
+        set_type(*lit, LtsNode::Zombie);
+    }
+
+    removeType(LtsNode::Zombie, ~0U, true);
 }
 
 void fsp::Lts::minimize(stringstream& ss)
@@ -1660,6 +1782,8 @@ split:
     reduce_to_partitions(ss, partitions, partitions_map);
 
     delete partitions_map;
+
+    collapse_tau_chains(ss);
 }
 
 void fsp::Lts::reduce_to_partitions(stringstream &ss,
@@ -1796,8 +1920,9 @@ fsp::Lts& fsp::Lts::zerocat(const fsp::Lts& lts, const string& label)
     return *this;
 }
 
-/* Remove incomplete nodes (and related transitions) from *this, compacting
-   the this->nodes vector. */
+/* Remove a set of nodes (and related transitions) from *this, compacting
+   the this->nodes vector. The nodes to remove are those whose type is
+   specified by the 'type' argument. */
 void fsp::Lts::removeType(unsigned int type, unsigned int zero_idx,
                          bool call_reduce)
 {

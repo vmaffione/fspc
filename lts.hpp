@@ -274,6 +274,7 @@ class Lts: public Symbol {
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
     vector<Edge> get_children(unsigned int state) const;
     void reachable_actions_set(unsigned int state, set<unsigned int>&) const;
+    void collapse_tau_chains(stringstream& ss);
 
     void clear();
     void cleanup();
