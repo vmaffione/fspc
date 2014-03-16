@@ -73,6 +73,21 @@ string JavaDeveloper::_(const string& s)
     return r;
 }
 
+string JavaDeveloper::_saving_last_dot(const string& s)
+{
+    string r(s);
+    auto last_dot_position = r.find_last_of('.');
+
+    if (last_dot_position != string::npos) { /*if found*/
+        r[last_dot_position] = '%';
+    }
+
+    r = _(r);
+    r[last_dot_position] = '.';
+
+    return r;
+}
+
 heap<SourceFile> JavaDeveloper::monitor_code(
     MonitorSpecification& specification,
     const MonitorIdentifier& identifier,
@@ -308,14 +323,15 @@ void JavaDeveloper::instantiate_thread_template(
                 map<Interaction, pair<MonitorInstance, bool>>::const_iterator
                         access = interaction_instance_map.find(j);
 
-                if (access == interaction_instance_map.end()) {
+                if (access == interaction_instance_map.end()) { /*if it's an internal action*/
                     action = _(actions.lookup(j)) + string("();\n");
                 } else if (
                     access->second.second) { /*if the name must be composed with the instance*/
                     action = string(
                                  access->second.first + "." + _(actions.lookup(j)) + "();\n");
                 } else {
-                    action = _(actions.lookup(j)) + string("();\n");
+
+                    action = _saving_last_dot(actions.lookup(j)) + string("();\n");
                 }
 
                 action_sequence += action;
@@ -351,10 +367,9 @@ void JavaDeveloper::instantiate_thread_template(
 
                     if (access == interaction_instance_map.end()) {
                         action = _(actions.lookup(a)) + string("();\n");
-                    } else if (
-                        access->second.second) { /*if the name must be composed with the instance*/
+                    } else if (access->second.second) { /*if the name must be composed with the instance*/
                         action = string(
-                                     access->second.first + "." + _(actions.lookup(a)) + "();\n");
+                            access->second.first + "." + _(actions.lookup(a)) + "();\n");
                     } else {
                         action = _(actions.lookup(a)) + string("();\n");
                     }

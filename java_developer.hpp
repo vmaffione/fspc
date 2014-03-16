@@ -71,6 +71,13 @@ class JavaDeveloper :
          **/
         std::string _(const std::string& s);
         /**
+         * Utility method which substitutes each occurrence of an invalid
+         * character with a '_' saving the last dot.
+         * @param s The original string
+         * @return The modified string
+         **/
+        std::string _saving_last_dot(const std::string& s);
+        /**
          * Method which maps the specification of a monitor into Java code.
          * @param specification The complete specification adhering to the
          * monitor formalism
