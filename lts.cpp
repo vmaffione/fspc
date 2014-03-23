@@ -1553,6 +1553,7 @@ bool fsp::Lts::in_tau_deadlock(unsigned int state) const
 /* Enable debug output for the minimization machinery. */
 //#define CONFIG_DEBUG_MINIMIZATION
 
+
 /* Debug function used by Lts::minimize. */
 static void print_partitions(stringstream& ss,
                       const list< set<unsigned int> >& partitions,
@@ -1858,8 +1859,8 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
         }
 
         vector<LtsNode> new_nodes(partitions.size());
-
         unsigned int k = 0;
+        unsigned int new_end = ~0U, new_err = new_end;
 
         /* Scan all the partitions. */
         for (list< set<unsigned int> >::const_iterator
@@ -1891,9 +1892,19 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
                     new_nodes[k].children.push_back(e);
                 }
             }
+
+            /* Check if 'k' should be an END or ERROR node. */
+            if (new_end == ~0U && pit->count(end)) {
+                new_end = k;
+            }
+            if (new_err == ~0U && pit->count(err)) {
+                new_err = k;
+            }
         }
 
         nodes = new_nodes;
+        err = new_err;
+        end = new_end;
         terminal_sets_computed = false;
 }
 

@@ -1,0 +1,2 @@
+minimize SYS
+minimize P

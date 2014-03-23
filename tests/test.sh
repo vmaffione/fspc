@@ -108,7 +108,7 @@ done
 
 ##################### tests with scripts #####################
 TESTDIR="tests/scripts"
-for i in {1..4}
+for i in {1..5}
 do
     if [ ! -f "${TESTDIR}/input${i}.fsp" ]; then
 	echo "error: ${TESTDIR}/input${i}.fsp not found"
