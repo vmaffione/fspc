@@ -853,32 +853,41 @@ void fsp::Lts::visit(const struct LtsVisitObject& lvo) const
     unsigned int n = nodes.size();
     queue<unsigned int> frontier;
     vector<bool> seen(n);
+    unsigned int visited = 0;
 
     if (!n) {
         return;
     }
 
-    frontier.push(0);
-    seen[0] = true;
-    for (unsigned int i=1; i<n; i++)
+    for (unsigned int i=0; i<n; i++)
 	seen[i] = false;
 
-    do {
-        unsigned int state;
+    while (visited < n) {
+        for (unsigned int i = 0; i < n; i++) {
+            if (!seen[i]) {
+                seen[i] = true;
+                frontier.push(i);
+            }
+        }
 
-        state = frontier.front();
-	/* Invoke the visit function */
-	lvo.vfp(state, *this, nodes[state], lvo.opaque);
-	for (unsigned int i=0; i<nodes[state].children.size(); i++) {
-	    int child = nodes[state].children[i].dest;
-	    if (!seen[child]) {
-		seen[child] = true;
-                frontier.push(child);
-	    }
-	}
+        do {
+            unsigned int state;
 
-        frontier.pop();
-    } while (!frontier.empty());
+            state = frontier.front();
+            /* Invoke the visit function */
+            lvo.vfp(state, *this, nodes[state], lvo.opaque);
+            for (unsigned int i=0; i<nodes[state].children.size(); i++) {
+                int child = nodes[state].children[i].dest;
+                if (!seen[child]) {
+                    seen[child] = true;
+                    frontier.push(child);
+                }
+            }
+
+            frontier.pop();
+            visited++;
+        } while (!frontier.empty());
+    }
 }
 
 fsp::Lts& fsp::Lts::labeling(const SetS& labels)
@@ -1453,15 +1462,66 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
 }
 
 void fsp::Lts::reachable_actions_set(unsigned int state,
-                                     set<unsigned int>& s) const
+                                     set<unsigned int>& s,
+                                     const set<unsigned int>&
+                                            tau_deadlock_set) const
 {
-    const vector<Edge>& children = nodes[state].children;
+    queue<unsigned int> frontier;
+    set<unsigned int> seen;
 
     s.clear();
 
-    for (unsigned int j = 0; j < children.size(); j++) {
-        s.insert(children[j].action);
-    }
+    frontier.push(state);
+    seen.insert(state);
+
+    do {
+        unsigned int st = frontier.front();
+        const vector<Edge>& children = nodes[st].children;
+        bool is_tau_deadlock = tau_deadlock_set.count(st);
+
+        for (unsigned int j = 0; j < children.size(); j++) {
+            if (children[j].action == 0 && (is_tau_deadlock ||
+                    !tau_deadlock_set.count(children[j].dest))) {
+                if (!seen.count(children[j].dest)) {
+                    frontier.push(children[j].dest);
+                    seen.insert(children[j].dest);
+                }
+            } else {
+                s.insert(children[j].action);
+            }
+        }
+
+        frontier.pop();
+    } while (!frontier.empty());
+}
+
+bool fsp::Lts::in_tau_deadlock(unsigned int state) const
+{
+    queue<unsigned int> frontier;
+    set<unsigned int> seen;
+
+    frontier.push(state);
+    seen.insert(state);
+
+    do {
+        unsigned int st = frontier.front();
+        const vector<Edge>& children = nodes[st].children;
+
+        for (unsigned int j = 0; j < children.size(); j++) {
+            if (children[j].action == 0) {
+                if (!seen.count(children[j].dest)) {
+                    frontier.push(children[j].dest);
+                    seen.insert(children[j].dest);
+                }
+            } else {
+                return false;
+            }
+        }
+
+        frontier.pop();
+    } while (!frontier.empty());
+
+    return true;
 }
 
 /* Enable debug output for the minimization machinery. */
@@ -1470,12 +1530,16 @@ void fsp::Lts::reachable_actions_set(unsigned int state,
 /* Debug function used by Lts::minimize. */
 static void print_partitions(stringstream& ss,
                       const list< set<unsigned int> >& partitions,
-                      const unsigned int *partitions_map, unsigned int n)
+                      const unsigned int *partitions_map, unsigned int n,
+                      const set<unsigned int>& tau_deadlock_set)
 {
 #ifdef CONFIG_DEBUG_MINIMIZATION
     ss << "Partitions:\n";
     for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
                         pit != partitions.end(); pit++) {
+        if (equal(*pit, tau_deadlock_set)) {
+            ss << "[tau-deadlock] ";
+        }
         ss << "{";
         for (set<unsigned int>::iterator it = pit->begin();
                                         it != pit->end(); it++) {
@@ -1494,31 +1558,58 @@ static void print_partitions(stringstream& ss,
 void fsp::Lts::reachable_partitions_set(unsigned int state,
                                         unsigned int action,
                                         const unsigned int *partitions_map,
-                                        set<unsigned int>& s) const
+                                        set<unsigned int>& s,
+                                        const set<unsigned int>&
+                                                tau_deadlock_set) const
 {
-    const vector<Edge>& children = nodes[state].children;
+    queue<unsigned int> frontier;
+    set<unsigned int> seen;
 
     s.clear();
 
-    for (unsigned int j = 0; j < children.size(); j++) {
-        if (children[j].action == action) {
-            s.insert(partitions_map[children[j].dest]);
+    frontier.push(state);
+    seen.insert(state);
+
+    do {
+        unsigned int st = frontier.front();
+        const vector<Edge>& children = nodes[st].children;
+        bool is_tau_deadlock = tau_deadlock_set.count(st);
+
+        for (unsigned int j = 0; j < children.size(); j++) {
+            if (children[j].action == 0 && (is_tau_deadlock ||
+                    !tau_deadlock_set.count(children[j].dest))) {
+                if (!seen.count(children[j].dest)) {
+                    frontier.push(children[j].dest);
+                    seen.insert(children[j].dest);
+                }
+            } else if (children[j].action == action) {
+                s.insert(partitions_map[children[j].dest]);
+            }
         }
-    }
+
+        frontier.pop();
+    } while (!frontier.empty());
 }
 
 void fsp::Lts::initial_partitions(list< set<unsigned int> >& partitions,
-                                    unsigned int *partitions_map)
+                                    unsigned int *partitions_map,
+                                    set<unsigned int>& tau_deadlock_set)
 {
     list< set<unsigned int> > action_sets;
     list< set<unsigned int> >::iterator asit;
     list< set<unsigned int> >::iterator pit;
 
     for (unsigned int i = 0; i < nodes.size(); i++) {
+        if (in_tau_deadlock(i)) {
+            tau_deadlock_set.insert(i);
+        }
+    }
+
+    for (unsigned int i = 0; i < nodes.size(); i++) {
         set<unsigned int> s;
         bool match = false;
 
-        reachable_actions_set(i, s);
+        reachable_actions_set(i, s, tau_deadlock_set);
 
         asit = action_sets.begin();
         pit = partitions.begin();
@@ -1706,6 +1797,7 @@ void fsp::Lts::minimize(stringstream& ss)
 {
     list< set<unsigned int> > partitions;
     unsigned int *partitions_map = NULL;
+    set<unsigned int> tau_deadlock_set;
 
     if (!nodes.size()) {
         return;
@@ -1713,8 +1805,9 @@ void fsp::Lts::minimize(stringstream& ss)
 
     partitions_map = new unsigned int[nodes.size()];
 
-    initial_partitions(partitions, partitions_map);
-    print_partitions(ss, partitions, partitions_map, nodes.size());
+    initial_partitions(partitions, partitions_map, tau_deadlock_set);
+    print_partitions(ss, partitions, partitions_map, nodes.size(),
+                     tau_deadlock_set);
 
 split:
     unsigned int k = 0;
@@ -1730,7 +1823,7 @@ split:
             continue;
         }
 
-        reachable_actions_set(*pit->begin(), actions);
+        reachable_actions_set(*pit->begin(), actions, tau_deadlock_set);
         for (set<unsigned int>::iterator ait = actions.begin();
                 ait != actions.end(); ait++) {
             /* For each action '*ait' outgoing from the partition ... */
@@ -1748,7 +1841,8 @@ split:
 
                 /* Put in 's' all the destinations reachable from '*nit'
                    using the action '*ait'. */
-                reachable_partitions_set(*nit, *ait, partitions_map, s);
+                reachable_partitions_set(*nit, *ait, partitions_map, s,
+                                         tau_deadlock_set);
 
                 /* Match 's' against all the distinct destinations sets
                    computed so far. */
@@ -1805,7 +1899,7 @@ split:
                 }
 
                 print_partitions(ss, partitions, partitions_map,
-                                    nodes.size());
+                                    nodes.size(), tau_deadlock_set);
                 /* After the split we cannot continue the cycle, because
                    data structures have changed: Let's start from scratch. */
                 goto split;
@@ -1815,16 +1909,15 @@ split:
 
     /* When we arrive here, no more splits are possibile. We can therefore
        reduce each final partition to a single state. */
-    reduce_to_partitions(ss, partitions, partitions_map);
+    reduce_to_partitions(ss, partitions, partitions_map, tau_deadlock_set);
 
     delete partitions_map;
-
-    collapse_tau_chains(ss);
 }
 
 void fsp::Lts::reduce_to_partitions(stringstream &ss,
                         const list< set<unsigned int> >& partitions,
-                        const unsigned int *partitions_map)
+                        const unsigned int *partitions_map,
+                        const set<unsigned int>& tau_deadlock_set)
 {
         if (nodes.size() == partitions.size()) {
             /* Nothing to reduce. */
@@ -1835,14 +1928,15 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
 
         unsigned int k = 0;
 
-        for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
-                                            pit != partitions.end(); pit++, k++) {
+        for (list< set<unsigned int> >::const_iterator
+                    pit = partitions.begin();
+                            pit != partitions.end(); pit++, k++) {
             set<unsigned int> actions;
             set<unsigned int> dests;
             unsigned int exponent = *pit->begin();
 
             /* Compute the set of actions that leave the partition. */
-            reachable_actions_set(exponent, actions);
+            reachable_actions_set(exponent, actions, tau_deadlock_set);
 
             for (set<unsigned int>::iterator ait = actions.begin();
                                         ait != actions.end(); ait++) {
@@ -1852,7 +1946,8 @@ void fsp::Lts::reduce_to_partitions(stringstream &ss,
                    the current partition (the k-th) through the action
                    '*ait'. */
                 reachable_partitions_set(exponent, *ait,
-                                         partitions_map, dests);
+                                         partitions_map, dests,
+                                         tau_deadlock_set);
 
                 /* Add a transition (k, *ait, j) for each partition 'j'
                    reachable from the current one through '*ait'. */
