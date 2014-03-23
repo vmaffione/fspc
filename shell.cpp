@@ -819,6 +819,8 @@ int Shell::alpha(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
+#define SEE_MAX_STATES  100
+
 int Shell::see(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
@@ -843,6 +845,11 @@ int Shell::see(const vector<string> &args, stringstream& ss)
 
     if (lts->numStates() == 0) {
         ss << "Lts " << args[0] << " is empty\n";
+        return 0;
+    }
+
+    if (lts->numStates() > SEE_MAX_STATES) {
+        ss << "Lts " << args[0] << " has too many states\n";
         return 0;
     }
 
