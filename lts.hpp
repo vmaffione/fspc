@@ -210,15 +210,15 @@ class Lts: public Symbol {
                     bool call_reduce);
     void initial_partitions(list< set<unsigned int> >& partitions,
                             unsigned int *partitions_map,
-                            set<unsigned int>& tau_deadlock_set);
+                            set<unsigned int>& tau_dead_set);
     void reduce_to_partitions(stringstream &ss,
                               const list< set<unsigned int> >& partitions,
                               const unsigned int *partitions_map,
-                              const set<unsigned int>& tau_deadlock_set);
+                              const set<unsigned int>& tau_dead_set);
     void reachable_partitions_set(unsigned int state, unsigned int action,
                                   const unsigned int *partitions_map,
-                                  set<unsigned int>&,
-                                  const set<unsigned int>&) const;
+                                  const set<unsigned int>& tau_dead_set,
+                                  set<unsigned int>& result) const;
 
     void __traces(stringstream &ss, set<CEdge>& marked,
                   vector<unsigned int>& trace, unsigned int state);
@@ -277,8 +277,9 @@ class Lts: public Symbol {
     void replace_priv(unsigned int new_priv, unsigned int old_priv);
     vector<Edge> get_children(unsigned int state) const;
     bool in_tau_deadlock(unsigned int state) const;
-    void reachable_actions_set(unsigned int state, set<unsigned int>&,
-                               const set<unsigned int>&) const;
+    void reachable_actions_set(unsigned int state,
+                               const set<unsigned int>& tau_dead_set,
+                               set<unsigned int>& result) const;
     void collapse_tau_chains(stringstream& ss);
 
     void clear();

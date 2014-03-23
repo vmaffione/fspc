@@ -1461,15 +1461,25 @@ void fsp::Lts::basic(const string& outfile, stringstream& ss) const
     fout.close();
 }
 
+/* This method puts into 'result' all the actions reachable from
+   the state 'state', according to the weak equivalence/bisimulation
+   concept.
+   This means that the method returns all the non-tau action labels
+   of outgoing transitions and recursively does the same for all the
+   neighbour states reachable through a tau transition. The recursion is
+   implemented using a simple BFS visit.
+   According to this definition, the tau action itself would be never
+   added to the returned set. However, in some special cases, the
+   'tau_dead_set' input is used to modify this behaviour.
+*/
 void fsp::Lts::reachable_actions_set(unsigned int state,
-                                     set<unsigned int>& s,
-                                     const set<unsigned int>&
-                                            tau_deadlock_set) const
+                                     const set<unsigned int>& tau_dead_set,
+                                     set<unsigned int>& result) const
 {
     queue<unsigned int> frontier;
     set<unsigned int> seen;
 
-    s.clear();
+    result.clear();
 
     frontier.push(state);
     seen.insert(state);
@@ -1477,17 +1487,28 @@ void fsp::Lts::reachable_actions_set(unsigned int state,
     do {
         unsigned int st = frontier.front();
         const vector<Edge>& children = nodes[st].children;
-        bool is_tau_deadlock = tau_deadlock_set.count(st);
+        bool is_tau_deadlock = tau_dead_set.count(st);
 
         for (unsigned int j = 0; j < children.size(); j++) {
+            /* We insert the action into the set if it is (1) a non-tau
+               action or (2) a tau-action with 'st' not belonging to the
+               tau-dead set and 'children[j].dest' belonging to the
+               tau-dead set.
+               Otherwise, we follow the tau transition in order to properly
+               support weak bisimulation. The tau transition we follow may
+               be connecting two states belonging to the tau-dead set or
+               two states not belonging to the tau-dead set (it is not
+               possible that 'i' belongs to the tau-dead set and
+               'children[j].dest' does not.
+            */
             if (children[j].action == 0 && (is_tau_deadlock ||
-                    !tau_deadlock_set.count(children[j].dest))) {
+                    !tau_dead_set.count(children[j].dest))) {
                 if (!seen.count(children[j].dest)) {
                     frontier.push(children[j].dest);
                     seen.insert(children[j].dest);
                 }
             } else {
-                s.insert(children[j].action);
+                result.insert(children[j].action);
             }
         }
 
@@ -1495,6 +1516,9 @@ void fsp::Lts::reachable_actions_set(unsigned int state,
     } while (!frontier.empty());
 }
 
+/* Check if 'state' is part of the tau-dead state. A state 'x' belongs to
+   the tau-dead set if and only if when we begin a visit from 'x' we
+   only meet tau transitions. */
 bool fsp::Lts::in_tau_deadlock(unsigned int state) const
 {
     queue<unsigned int> frontier;
@@ -1514,6 +1538,8 @@ bool fsp::Lts::in_tau_deadlock(unsigned int state) const
                     seen.insert(children[j].dest);
                 }
             } else {
+                /* We've met a non-tau transition, so we can return
+                   false immediately. */
                 return false;
             }
         }
@@ -1531,13 +1557,13 @@ bool fsp::Lts::in_tau_deadlock(unsigned int state) const
 static void print_partitions(stringstream& ss,
                       const list< set<unsigned int> >& partitions,
                       const unsigned int *partitions_map, unsigned int n,
-                      const set<unsigned int>& tau_deadlock_set)
+                      const set<unsigned int>& tau_dead_set)
 {
 #ifdef CONFIG_DEBUG_MINIMIZATION
     ss << "Partitions:\n";
     for (list< set<unsigned int> >::const_iterator pit = partitions.begin();
                         pit != partitions.end(); pit++) {
-        if (equal(*pit, tau_deadlock_set)) {
+        if (equal(*pit, tau_dead_set)) {
             ss << "[tau-deadlock] ";
         }
         ss << "{";
@@ -1555,12 +1581,19 @@ static void print_partitions(stringstream& ss,
 #endif /* CONFIG_DEBUG_MINIMIZATION */
 }
 
+/* This function puts into 'result' all the partitions (indexes) reachable
+   from the state 'state', according to the weak equivalence/bisimulation
+   concept.
+   This means that the function returns all partitions reachable through
+   non-tau transitions and recursively does the same for all the neighbour
+   states reachable through a tau transition. The recursion is implemented
+   using a simple BFS visit.
+*/
 void fsp::Lts::reachable_partitions_set(unsigned int state,
                                         unsigned int action,
                                         const unsigned int *partitions_map,
-                                        set<unsigned int>& s,
-                                        const set<unsigned int>&
-                                                tau_deadlock_set) const
+                                        const set<unsigned int>& tau_dead_set,
+                                        set<unsigned int>& s) const
 {
     queue<unsigned int> frontier;
     set<unsigned int> seen;
@@ -1573,11 +1606,22 @@ void fsp::Lts::reachable_partitions_set(unsigned int state,
     do {
         unsigned int st = frontier.front();
         const vector<Edge>& children = nodes[st].children;
-        bool is_tau_deadlock = tau_deadlock_set.count(st);
+        bool is_tau_deadlock = tau_dead_set.count(st);
 
         for (unsigned int j = 0; j < children.size(); j++) {
+            /* We insert the destination's partition if it is reached
+               through (1) a non-tau transition or (2) a tau-action with
+               'st' not belonging to the tau-dead set and 'children[j].dest'
+               belonging to the tau-dead set.
+               Otherwise, we follow the tau transition in order to properly
+               support weak bisimulation. The tau transition we follow may
+               be connecting two states belonging to the tau-dead set or
+               two states not belonging to the tau-dead set (it is not
+               possible that 'i' belongs to the tau-dead set and
+               'children[j].dest' does not.
+            */
             if (children[j].action == 0 && (is_tau_deadlock ||
-                    !tau_deadlock_set.count(children[j].dest))) {
+                    !tau_dead_set.count(children[j].dest))) {
                 if (!seen.count(children[j].dest)) {
                     frontier.push(children[j].dest);
                     seen.insert(children[j].dest);
@@ -1591,31 +1635,45 @@ void fsp::Lts::reachable_partitions_set(unsigned int state,
     } while (!frontier.empty());
 }
 
+/* This function implements the first step of the LTS minimization algorithm.
+   In this step we partition the states only according to the outgoing
+   alphabets. The outgoing alphabet is compute, according to the weak
+   equivalence concept, using Lts::reachable_actions_set().
+   The output of this step is the list of partitions ('partitions'), a
+   'state' --> 'partition' map ('partitions_map') and the tau-dead set.
+   The tau-dead set needs to be computed before we can call
+   Lts::reachable_actions_set().
+   Note that each partition is identified by an integer index, which is
+   never used as an array index (that's why 'partitions' can be a list).
+*/
 void fsp::Lts::initial_partitions(list< set<unsigned int> >& partitions,
                                     unsigned int *partitions_map,
-                                    set<unsigned int>& tau_deadlock_set)
+                                    set<unsigned int>& tau_dead_set)
 {
     list< set<unsigned int> > action_sets;
     list< set<unsigned int> >::iterator asit;
     list< set<unsigned int> >::iterator pit;
 
+    /* Compute the tau-dead set. */
     for (unsigned int i = 0; i < nodes.size(); i++) {
         if (in_tau_deadlock(i)) {
-            tau_deadlock_set.insert(i);
+            tau_dead_set.insert(i);
         }
     }
 
+    /* Create the initial partitions according to the outgoing alphabets. */
     for (unsigned int i = 0; i < nodes.size(); i++) {
         set<unsigned int> s;
         bool match = false;
 
-        reachable_actions_set(i, s, tau_deadlock_set);
+        reachable_actions_set(i, tau_dead_set, s);
 
         asit = action_sets.begin();
         pit = partitions.begin();
         for (unsigned int k = 0; asit != action_sets.end();
                                             asit++, pit++, k++) {
             if (equal(*asit, s)) {
+                /* Add the node 'i' to the partition 'k'. */
                 pit->insert(i);
                 partitions_map[i] = k;
                 match = true;
@@ -1643,6 +1701,206 @@ static void update_partitions_map(unsigned int *partitions_map,
     }
 }
 
+/* An LTS minimization algorithm taht use the weak equivalence/bisimulation
+   concept. Two states 's1' and 's2' are equivalent according to this
+   concept if and only if for each transition ('s1','a','s2') there is
+   a transition ('s2','a','t2') and 't1' and 't2' are equivalent. In this
+   definition, the notation ('s','a','t') indicates that it is possible
+   to reach 't' starting from 's' through a (non-tau) transition labelled
+   with 'a' and zero or more tau-transitions (before and/or after the
+   non-tau transition).
+*/
+void fsp::Lts::minimize(stringstream& ss)
+{
+    list< set<unsigned int> > partitions;
+    unsigned int *partitions_map = NULL;
+    set<unsigned int> tau_dead_set;
+
+    if (!nodes.size()) {
+        return;
+    }
+
+    partitions_map = new unsigned int[nodes.size()];
+
+    /* First step: Partition according to the outgoing alphabets.
+       After this step, all the states in the same partition have the
+       same outgoing actions.*/
+    initial_partitions(partitions, partitions_map, tau_dead_set);
+    print_partitions(ss, partitions, partitions_map, nodes.size(),
+                     tau_dead_set);
+
+split:
+    unsigned int k = 0;
+
+    /* Second step: Scan all the current partitions looking for a split
+       condition. A split condition is a violation of the weak equivalence
+       definition, that happens when two states currently in the same
+       partition reach different partitions through transitions labelled
+       with the same (non-tau) action. */
+    for (list< set<unsigned int> >::iterator pit = partitions.begin();
+                                pit != partitions.end(); pit++, k++) {
+        set<unsigned int> actions;
+
+        if (pit->size() == 1) {
+            /* Nothing to split. */
+            continue;
+        }
+
+        reachable_actions_set(*pit->begin(), tau_dead_set, actions);
+        for (set<unsigned int>::iterator ait = actions.begin();
+                ait != actions.end(); ait++) {
+            /* For each action '*ait' outgoing from the partition ... */
+            list< set<unsigned int> > dests_sets;
+            list< set<unsigned int> > sub_partitions;
+
+            /* Try to split with respect to '*ait'. */
+            for (set<unsigned int>::iterator nit =
+                    pit->begin();
+                    nit != pit->end(); nit++) {
+                /* For each node in the partition ... */
+                list< set<unsigned int> >::iterator dsit, spit;
+                set<unsigned int> s;
+                bool match = false;
+
+                /* Put in 's' all the destinations reachable from '*nit'
+                   using the action '*ait'. */
+                reachable_partitions_set(*nit, *ait, partitions_map,
+                                         tau_dead_set, s);
+
+                /* Match 's' against all the distinct destinations sets
+                   computed so far. */
+                dsit = dests_sets.begin();
+                spit = sub_partitions.begin();
+                for (; dsit != dests_sets.end(); dsit++, spit++) {
+                    if (equal(*dsit, s)) {
+                        /* The node '*nit' will join this sub-partition
+                           set. */
+                        spit->insert(*nit);
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (!match) {
+                    /* Create a new destinations set and the
+                       corresponding sub-partition set. */
+                    dests_sets.push_back(s);
+                    sub_partitions.push_back(set<unsigned int>());
+                    sub_partitions.back().insert(*nit);
+                }
+            }
+
+            if (sub_partitions.size() > 1) {
+                /* We can split with respect to '*ait'. */
+                list< set<unsigned int> >::iterator
+                    spit = sub_partitions.begin();
+
+#ifdef CONFIG_DEBUG_MINIMIZATION
+                ss << "Split wrt " << ati(*ait, false) << "\n";
+                for (list< set<unsigned int> >::iterator
+                        spit = sub_partitions.begin();
+                            spit != sub_partitions.end(); spit++) {
+                    ss << "{";
+                    for (set<unsigned int>::iterator
+                            sit = spit->begin(); sit != spit->end(); sit++) {
+                        ss << *sit << ", ";
+                    }
+                    ss << "}\n";
+                }
+#endif /* CONFIG_DEBUG_MINIMIZATION */
+
+                /* Replace the current partition with the first
+                   sub-partition and enqueue back all the other
+                   sub-partitions.
+                   Also update the partitions map. */
+                *pit = *spit;
+                update_partitions_map(partitions_map, *spit, k);
+                for (spit++; spit != sub_partitions.end(); spit++) {
+                    partitions.push_back(*spit);
+                    update_partitions_map(partitions_map, *spit,
+                                            partitions.size() - 1);
+                }
+
+                print_partitions(ss, partitions, partitions_map,
+                                    nodes.size(), tau_dead_set);
+                /* After the split we cannot continue the cycle, because
+                   data structures have changed: Let's start from scratch. */
+                goto split;
+            }
+        }
+    }
+
+    /* Third step: When we arrive here, no more splits are possibile.
+       We can therefore reduce each final partition to a single state. */
+    reduce_to_partitions(ss, partitions, partitions_map, tau_dead_set);
+
+    delete partitions_map;
+}
+
+/* This method implements the third (and final) step of the minimization
+   algorithm.
+   Input for this step are the list of partitions ('partitions'), the
+   'state' --> 'partition' map ('partitions_map') and the tau-dead set,
+   all computed by the previous steps.
+   This method rebuilds '*this' using a single state for each computed
+   partition. The transitions of the minimize LTS are computed using the
+   Lts::reachable_partitions_set() method.
+*/
+void fsp::Lts::reduce_to_partitions(stringstream &ss,
+                        const list< set<unsigned int> >& partitions,
+                        const unsigned int *partitions_map,
+                        const set<unsigned int>& tau_dead_set)
+{
+        if (nodes.size() == partitions.size()) {
+            /* Nothing to reduce. We've done a lot of useless work
+               in the previous steps! */
+            return;
+        }
+
+        vector<LtsNode> new_nodes(partitions.size());
+
+        unsigned int k = 0;
+
+        /* Scan all the partitions. */
+        for (list< set<unsigned int> >::const_iterator
+                    pit = partitions.begin();
+                            pit != partitions.end(); pit++, k++) {
+            set<unsigned int> actions;
+            set<unsigned int> dests;
+            unsigned int exponent = *pit->begin();
+
+            /* Compute the set of actions that leave the partition. */
+            reachable_actions_set(exponent, tau_dead_set, actions);
+
+            for (set<unsigned int>::iterator ait = actions.begin();
+                                        ait != actions.end(); ait++) {
+                Edge e;
+
+                /* Compute the set of partitions that are reached from
+                   the current partition (the k-th) through the action
+                   '*ait'. */
+                reachable_partitions_set(exponent, *ait, partitions_map,
+                                         tau_dead_set, dests);
+
+                /* Add a transition (k, *ait, j) for each partition 'j'
+                   reachable from the current one through '*ait'. */
+                e.action = *ait;
+                for (set<unsigned int>::iterator dit = dests.begin();
+                                                dit != dests.end(); dit++) {
+                    e.dest = *dit;
+                    new_nodes[k].children.push_back(e);
+                }
+            }
+        }
+
+        nodes = new_nodes;
+        terminal_sets_computed = false;
+}
+
+/* A nice method that collapses the tau chains in the LTS. This was used
+   by the minimization machinery in early stages but is currently unused.
+   Whatever, we export it to the user.
+*/
 void fsp::Lts::collapse_tau_chains(stringstream &ss)
 {
     unsigned int *ingoing;
@@ -1793,177 +2051,6 @@ void fsp::Lts::collapse_tau_chains(stringstream &ss)
     cleanup();
 }
 
-void fsp::Lts::minimize(stringstream& ss)
-{
-    list< set<unsigned int> > partitions;
-    unsigned int *partitions_map = NULL;
-    set<unsigned int> tau_deadlock_set;
-
-    if (!nodes.size()) {
-        return;
-    }
-
-    partitions_map = new unsigned int[nodes.size()];
-
-    initial_partitions(partitions, partitions_map, tau_deadlock_set);
-    print_partitions(ss, partitions, partitions_map, nodes.size(),
-                     tau_deadlock_set);
-
-split:
-    unsigned int k = 0;
-
-    /* Scan all the current partitions looking for a split
-       condition. */
-    for (list< set<unsigned int> >::iterator pit = partitions.begin();
-                                pit != partitions.end(); pit++, k++) {
-        set<unsigned int> actions;
-
-        if (pit->size() == 1) {
-            /* Nothing to split. */
-            continue;
-        }
-
-        reachable_actions_set(*pit->begin(), actions, tau_deadlock_set);
-        for (set<unsigned int>::iterator ait = actions.begin();
-                ait != actions.end(); ait++) {
-            /* For each action '*ait' outgoing from the partition ... */
-            list< set<unsigned int> > dests_sets;
-            list< set<unsigned int> > sub_partitions;
-
-            /* Try to split with respect to '*ait'. */
-            for (set<unsigned int>::iterator nit =
-                    pit->begin();
-                    nit != pit->end(); nit++) {
-                /* For each node in the partition ... */
-                list< set<unsigned int> >::iterator dsit, spit;
-                set<unsigned int> s;
-                bool match = false;
-
-                /* Put in 's' all the destinations reachable from '*nit'
-                   using the action '*ait'. */
-                reachable_partitions_set(*nit, *ait, partitions_map, s,
-                                         tau_deadlock_set);
-
-                /* Match 's' against all the distinct destinations sets
-                   computed so far. */
-                dsit = dests_sets.begin();
-                spit = sub_partitions.begin();
-                for (; dsit != dests_sets.end(); dsit++, spit++) {
-                    if (equal(*dsit, s)) {
-                        /* The node '*nit' will join this sub-partition
-                           set. */
-                        spit->insert(*nit);
-                        match = true;
-                        break;
-                    }
-                }
-
-                if (!match) {
-                    /* Create a new destinations set and the
-                       corresponding sub-partition set. */
-                    dests_sets.push_back(s);
-                    sub_partitions.push_back(set<unsigned int>());
-                    sub_partitions.back().insert(*nit);
-                }
-            }
-
-            if (sub_partitions.size() > 1) {
-                /* We can split with respect to '*ait'. */
-                list< set<unsigned int> >::iterator
-                    spit = sub_partitions.begin();
-
-#ifdef CONFIG_DEBUG_MINIMIZATION
-                ss << "Split wrt " << ati(*ait, false) << "\n";
-                for (list< set<unsigned int> >::iterator
-                        spit = sub_partitions.begin();
-                            spit != sub_partitions.end(); spit++) {
-                    ss << "{";
-                    for (set<unsigned int>::iterator
-                            sit = spit->begin(); sit != spit->end(); sit++) {
-                        ss << *sit << ", ";
-                    }
-                    ss << "}\n";
-                }
-#endif /* CONFIG_DEBUG_MINIMIZATION */
-
-                /* Replace the current partition with the first
-                   sub-partition and enqueue back all the other
-                   sub-partitions.
-                   Also update the partitions map. */
-                *pit = *spit;
-                update_partitions_map(partitions_map, *spit, k);
-                for (spit++; spit != sub_partitions.end(); spit++) {
-                    partitions.push_back(*spit);
-                    update_partitions_map(partitions_map, *spit,
-                                            partitions.size() - 1);
-                }
-
-                print_partitions(ss, partitions, partitions_map,
-                                    nodes.size(), tau_deadlock_set);
-                /* After the split we cannot continue the cycle, because
-                   data structures have changed: Let's start from scratch. */
-                goto split;
-            }
-        }
-    }
-
-    /* When we arrive here, no more splits are possibile. We can therefore
-       reduce each final partition to a single state. */
-    reduce_to_partitions(ss, partitions, partitions_map, tau_deadlock_set);
-
-    delete partitions_map;
-}
-
-void fsp::Lts::reduce_to_partitions(stringstream &ss,
-                        const list< set<unsigned int> >& partitions,
-                        const unsigned int *partitions_map,
-                        const set<unsigned int>& tau_deadlock_set)
-{
-        if (nodes.size() == partitions.size()) {
-            /* Nothing to reduce. */
-            return;
-        }
-
-        vector<LtsNode> new_nodes(partitions.size());
-
-        unsigned int k = 0;
-
-        for (list< set<unsigned int> >::const_iterator
-                    pit = partitions.begin();
-                            pit != partitions.end(); pit++, k++) {
-            set<unsigned int> actions;
-            set<unsigned int> dests;
-            unsigned int exponent = *pit->begin();
-
-            /* Compute the set of actions that leave the partition. */
-            reachable_actions_set(exponent, actions, tau_deadlock_set);
-
-            for (set<unsigned int>::iterator ait = actions.begin();
-                                        ait != actions.end(); ait++) {
-                Edge e;
-
-                /* Compute the set of partitions that are reached from
-                   the current partition (the k-th) through the action
-                   '*ait'. */
-                reachable_partitions_set(exponent, *ait,
-                                         partitions_map, dests,
-                                         tau_deadlock_set);
-
-                /* Add a transition (k, *ait, j) for each partition 'j'
-                   reachable from the current one through '*ait'. */
-                e.action = *ait;
-                for (set<unsigned int>::iterator dit = dests.begin();
-                                                dit != dests.end(); dit++) {
-                    e.dest = *dit;
-                    new_nodes[k].children.push_back(e);
-                }
-            }
-        }
-
-        nodes = new_nodes;
-        terminal_sets_computed = false;
-}
-
 void fsp::Lts::__traces(stringstream &ss, set<CEdge>& marked,
                         vector<unsigned int>& trace, unsigned int s)
 {
@@ -1994,6 +2081,7 @@ void fsp::Lts::__traces(stringstream &ss, set<CEdge>& marked,
     }
 }
 
+/* TODO The implementation is not complete. */
 void fsp::Lts::traces(stringstream& ss)
 {
     set<CEdge> marked;
