@@ -113,66 +113,6 @@ struct LtsVisitObject {
     void *opaque;
 };
 
-#if 0
-int generate_ID()
-{
-    static int s_nID = 0;
-    return s_nID++;
-}
-
-struct KanellakisSmolkaState{
-    int state;
-    Lts* owner;
-    KanellakisSmolkaState(int s, Lts* l): state(s), owner(l){}
-    bool operator==(const KanellakisSmolkaState& other){
-        return state == other.state && owner == other.owner;
-    }
-};
-
-typedef set<KanellakisSmolkaState> Block;
-typedef int BlockId;
-
-struct UniqueBlock{
-  Block block;
-  BlockId blockId;
-  UniqueBlock(Block b, BlockId i): block(b), blockId(i){}
-};
-
-typedef map<KanellakisSmolkaState, UniqueBlock> Partition;
-
-set<BlockId> reached_blocks(KanellakisSmolkaState s, Partition& p){
-    vector<Edge> s_children = s.owner->get_children(s.state);
-    set<int> reached_blocks;
-    vector<Edge>::iterator i = s_children.begin()
-    for(; i != s_children.end(); i++){
-        if(i->action == label){
-            KanellakisSmolkaState reached(i->dest, s.owner);
-            reached_blocks.insert(p[reached].blockId);
-        }
-    }
-    return reached_blocks;
-}
-
-Partition Kanellakis_Smolka_split(UniqueBlock& b, int label, Partition& p)
-{
-    assert(!b.block.empty());
-    KanellakisSmolkaState s = *(b.block.begin());
-    set<BlockId> s_reached_blocks(s, p);
-    Block b1, b2;
-    for(Block::iterator i = b.begin(); i != b.end; i++){
-        KanellakisSmolkaState t = *i;
-        set<BlockId> t_reached_blocks(t, p);
-        if(s_reached_blocks == t_reached_blocks) b1.insert(t);
-        else b2.insert(t);
-    }
-    UniqueBlock ub1(b1, generate_ID());
-    if(!b2.empty()){
-        UniqueBlock ubi2(b2, generate_ID());
-        //DA FINIRE, FORSE
-    }
-}
-#endif
-
 
 /* An LTS. */
 class Lts: public Symbol {
