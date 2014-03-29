@@ -1,7 +1,6 @@
 [O] Use memory buffer instead of files for sh scanner input
 [O] General arraysation
 [O] Smart pointers for Result
-[O] printAlphabet() should sort the output
 [O] serializer must do non-blocking reads!
 [O] add "basic" testing (for do_square_int)
 [O] currently the preprocessing doesn't work better with overriding:

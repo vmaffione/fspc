@@ -146,11 +146,23 @@ void fsp::Lts::mergeAlphabetFrom(const set<int>& actions)
 
 void fsp::Lts::printAlphabet(stringstream& ss) const
 {
-    set<int>::iterator it;
+    set<string> strings;
+
+    /* Lts::alphabet is a set of integers (index in the action
+       table), and so it is sorted w.r.t. the integer values. However,
+       here we want to print the action labels in lexycographic order.
+       To make this possbile, we simply build a set<string> with all
+       action label strings. */
+    for (set<int>::iterator it = alphabet.begin();
+                                it != alphabet.end(); it++) {
+        strings.insert(ati(*it, false));
+    }
 
     ss << "Alphabet: {";
-    for (it=alphabet.begin(); it != alphabet.end(); it++)    
-	ss << ati(*it, false) << ", ";
+    for (set<string>::iterator it = strings.begin();
+                                it != strings.end(); it++) {
+	ss << *it << ", ";
+    }
     ss << "}\n";
 }
 
