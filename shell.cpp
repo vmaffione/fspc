@@ -22,8 +22,9 @@
 #include <list>
 #include <sstream>
 #include <cstdio>
-#include <unistd.h> /* fork() */
-#include <sys/wait.h> /* waitpid() */
+#include <cstring>       /* strlen() */
+#include <unistd.h>      /* fork() */
+#include <sys/wait.h>    /* waitpid() */
 #include <ncurses.h>
 #include <fcntl.h>
 
@@ -827,6 +828,7 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
     string tmp_name, stdout_tmp_name;
     pid_t drawer;
+    const char *exec_errmsg;
 
     if (!interactive) {
     ss << "Cannot use 'see' command in scripts\n";
@@ -882,7 +884,9 @@ int Shell::see(const vector<string> &args, stringstream& ss)
         execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
         execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
         perror("ltsee exec failed");
-        exit(0);
+        exec_errmsg = "Cannot find ltsee";
+        write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        exit(EXIT_FAILURE);
         break;
     default:
         /* This is executed by the parent. */
@@ -917,6 +921,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
     string format = "png";
     string filename, stdout_tmp_name;
+    const char *exec_errmsg = NULL;
 
     if (!args.size()) {
     ss << "Invalid command: try 'help'\n";
@@ -954,7 +959,9 @@ int Shell::print(const vector<string> &args, stringstream& ss)
         open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
         execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
-        exit(1);
+        exec_errmsg = "Cannot find ltsimg";
+        write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        exit(EXIT_FAILURE);
         break;
     default:
         int status;
