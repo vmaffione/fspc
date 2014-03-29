@@ -1265,9 +1265,16 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
     return npv;
 }
 
-struct OutputData {
-    fstream *fsptr;
-};
+void fsp::Lts::compress_action_labels(const set<unsigned int>& actions,
+                                      set<string>& result) const
+{
+    result.clear();
+
+    for (set<unsigned int>::iterator it = actions.begin();
+                                            it != actions.end(); it++) {
+        result.insert(ati(*it, false));
+    }
+}
 
 void fsp::Lts::graphvizOutput(const char *filename) const
 {
@@ -1297,12 +1304,33 @@ void fsp::Lts::graphvizOutput(const char *filename) const
 	}
     }
 
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        for (unsigned int j=0; j<nodes[i].children.size(); j++) {
-            const Edge& e = nodes[i].children[j];
+    for (unsigned int i = 0; i<nodes.size(); i++) {
+        set<unsigned int> destinations;
 
-	    fout << i << " -> " << e.dest
-	            << " [label = \"" << ati(e.action, false) << "\"];\n";
+        /* Collect all the neighbours of this state. */
+        for (unsigned int j = 0; j < nodes[i].children.size(); j++) {
+            destinations.insert(nodes[i].children[j].dest);
+        }
+
+        for (set<unsigned int>::iterator it = destinations.begin();
+                                        it != destinations.end(); it++) {
+            set<unsigned int> actions;
+            set<string> labels;
+
+            /* Collect the actions for the neighbour '*it'. */
+            for (unsigned int j = 0; j < nodes[i].children.size(); j++) {
+                if (nodes[i].children[j].dest == *it) {
+                    actions.insert(nodes[i].children[j].action);
+                }
+            }
+
+            compress_action_labels(actions, labels);
+
+            for (set<string>::iterator lit = labels.begin();
+                                        lit != labels.end(); lit++) {
+	        fout << i << " -> " << *it
+	            << " [label = \"" << *lit << "\"];\n";
+            }
         }
     }
 
@@ -1422,6 +1450,10 @@ choose:
         sh.putsstream(ss, true); ss.clear();
     }
 }
+
+struct OutputData {
+    fstream *fsptr;
+};
 
 static void basicVisitFunction(int state, const fsp::Lts& lts, const struct LtsNode& node,
 				void *opaque)
