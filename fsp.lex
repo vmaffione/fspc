@@ -282,7 +282,7 @@ void fsp_scan_begin(const char *filename, int trace_scanning)
     if (filename == NULL /* || strcmp(file,"-") == 0 */) {
 	fspin = stdin;
     } else if (!(fspin = fopen(filename, "r"))) {
-	string err = "cannot open " + string(filename) + ": " + strerror(errno);
+	string err = "cannot open " + string(filename);
 	perror(err.c_str());
 	exit(EXIT_FAILURE);
     }

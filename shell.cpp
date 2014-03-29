@@ -50,13 +50,6 @@
 #endif
 
 
-/* Generate a per-per process unique name, and append a suffix
-   string to it. */
-static string get_tmp_name(const string& suffix)
-{
-    return "." + int2string(getpid()) + suffix;
-}
-
 #define HISTORY_MAX_COMMANDS    20
 
 /* =========================== Shell implementation ==================== */
@@ -863,11 +856,11 @@ int Shell::see(const vector<string> &args, stringstream& ss)
 
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
-    tmp_name = get_tmp_name(".gv");
+    tmp_name = get_tmp_name("", "gv");
     lts->graphvizOutput(tmp_name.c_str());
 
     /* UNIX-specific section. */
-    stdout_tmp_name = get_tmp_name(".stdout.tmp");
+    stdout_tmp_name = get_tmp_name("", "stdout.tmp");
     drawer = fork();
 
     switch (drawer) {
@@ -948,7 +941,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     }
 
     /* UNIX-specific section. */
-    stdout_tmp_name = get_tmp_name("stdout.tmp");
+    stdout_tmp_name = get_tmp_name("", "stdout.tmp");
     pid_t drawer = fork();
 
     switch (drawer) {

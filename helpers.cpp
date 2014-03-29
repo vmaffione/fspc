@@ -21,6 +21,7 @@
 #include "helpers.hpp"
 #include <cstdlib>
 #include <sstream>
+#include <unistd.h>
 
 
 string int2string(int x)
@@ -106,3 +107,31 @@ void merge_string_vec(const vector<string>& vec, string& res,
     }
 }
 
+/* Generate a per process unique name, and insert/append a
+   prefix/suffix string to it. */
+string get_tmp_name(const string& prefix, const string& suffix)
+{
+    return prefix + "." + int2string(getpid()) + "." + suffix;
+}
+
+/* Generate a per-process unique file name which is going to belong
+   in the current working directory, using 'name' as a seed. */
+string get_tmp_name_cwd(const string& name)
+{
+    char *cwd = get_current_dir_name();
+    string ret = cwd;
+    string name_ = name;
+
+    /* Sanitize the seed. */
+    for (unsigned int i = 0; i < name.size(); i++) {
+        if (name[i] == '\\' || name [i] == '/') {
+            name_[i] = '.';
+        }
+    }
+
+    ret += "/" + get_tmp_name("", name_);
+
+    free(cwd);
+
+    return ret;
+}

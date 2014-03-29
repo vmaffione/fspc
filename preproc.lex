@@ -118,6 +118,10 @@ int preprocess(const string& input_name, const string& output_name)
 	return -1;
     }
     p.out.open(output_name.c_str(), ios::out);
+    if (!p.out) {
+        perror("Cannot create a preprocessing temporary file");
+        return -1;
+    }
 
     yylex_init_extra(&p, &scanner);
     yyset_in(fin, scanner);

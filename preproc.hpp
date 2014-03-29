@@ -6,7 +6,7 @@
 using namespace std;
 
 
-void preprocess(const string& input_file, const string& output_file);
+int preprocess(const string& input_file, const string& output_file);
 
 #endif
 

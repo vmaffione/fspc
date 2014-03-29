@@ -304,14 +304,13 @@ int FspDriver::inputPhase(stringstream& ss)
 
     if (cop.input_type == CompilerOptions::InputTypeFsp) {
 	string orig(cop.input_file);
-	string temp = ".fspcc." + orig;
-
-	for (unsigned int i=0; i<temp.size(); i++)
-	    if (temp[i] == '\\' || temp[i] == '/')
-		temp[i] = '.';
+	string temp = get_tmp_name_cwd(orig);
 
 	/* Preprocess the input file, producing a temporary file. */
-	preprocess(orig, temp);
+	ret = preprocess(orig, temp);
+        if (ret) {
+            return ret;
+        }
 	this->remove_file = temp;
 
 	/* Parse the preprocessed temporary file. */
