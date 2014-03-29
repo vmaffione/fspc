@@ -25,6 +25,7 @@
 #include <unistd.h> /* fork() */
 #include <sys/wait.h> /* waitpid() */
 #include <ncurses.h>
+#include <fcntl.h>
 
 #include "shell.hpp"
 
@@ -48,6 +49,13 @@
 #define IFD(x)
 #endif
 
+
+/* Generate a per-per process unique name, and append a suffix
+   string to it. */
+static string get_tmp_name(const string& suffix)
+{
+    return "." + int2string(getpid()) + suffix;
+}
 
 #define HISTORY_MAX_COMMANDS    20
 
@@ -824,7 +832,7 @@ int Shell::alpha(const vector<string> &args, stringstream& ss)
 int Shell::see(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
-    string tmp_name;
+    string tmp_name, stdout_tmp_name;
     pid_t drawer;
 
     if (!interactive) {
@@ -855,10 +863,11 @@ int Shell::see(const vector<string> &args, stringstream& ss)
 
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
-    tmp_name = "." + int2string(getpid()) + ".gv";
+    tmp_name = get_tmp_name(".gv");
     lts->graphvizOutput(tmp_name.c_str());
 
     /* UNIX-specific section. */
+    stdout_tmp_name = get_tmp_name(".stdout.tmp");
     drawer = fork();
 
     switch (drawer) {
@@ -867,15 +876,42 @@ int Shell::see(const vector<string> &args, stringstream& ss)
         return -1;
         break;
     case 0:
+        /* This is executed by the child. */
+
+        /* A Unix trick used to redirect the standard output to a file.
+           Just close the standard output and immediately open the file to
+           redirect into: Unix semantic guarantees that the file descriptor
+           for the new file will be the lowest unused, and so in this case
+           stdout will be selected. */
+        close(1);
+        open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
+
         execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
         execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
         perror("ltsee exec failed");
         exit(0);
         break;
     default:
+        /* This is executed by the parent. */
         int status;
 
         waitpid(-1, &status, 0);
+
+        /* We read from the standard output of the child an write what
+           we read to the console output. It is important to open the
+           file after waitpid(), otherwise there is a race condition
+           where we try to open the file before this is created by the
+           child. */
+        ifstream stdout_file(stdout_tmp_name.c_str());
+
+        if (stdout_file) {
+            ss << stdout_file.rdbuf() << "\n";
+        } else {
+            ss << "Error: Make sure you have write permissions in the "
+                    "current directory\n";
+        }
+
+        remove(stdout_tmp_name.c_str());
     }
 
     remove(tmp_name.c_str());
@@ -887,7 +923,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
 {
     fsp::SmartPtr<fsp::Lts> lts;
     string format = "png";
-    string filename;
+    string filename, stdout_tmp_name;
 
     if (!args.size()) {
     ss << "Invalid command: try 'help'\n";
@@ -912,6 +948,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     }
 
     /* UNIX-specific section. */
+    stdout_tmp_name = get_tmp_name("stdout.tmp");
     pid_t drawer = fork();
 
     switch (drawer) {
@@ -920,6 +957,8 @@ int Shell::print(const vector<string> &args, stringstream& ss)
         return -1;
         break;
     case 0:
+        close(1);
+        open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
         execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         exit(1);
@@ -928,6 +967,17 @@ int Shell::print(const vector<string> &args, stringstream& ss)
         int status;
 
         waitpid(-1, &status, 0);
+
+        ifstream stdout_file(stdout_tmp_name.c_str());
+
+        if (stdout_file) {
+            ss << stdout_file.rdbuf() << "\n";
+        } else {
+            ss << "Error: Make sure you have write permissions in the "
+                    "current directory\n";
+        }
+
+        remove(stdout_tmp_name.c_str());
     }
 
     remove(filename.c_str());
