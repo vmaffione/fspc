@@ -1,6 +1,5 @@
 [O] add shell options
 [O] shell options to turn on/off label compression
-[O] printAlphabet() could use compressed labels
 [O] Use memory buffer instead of files for sh scanner input
 [O] General arraysation
 [O] Smart pointers for Result
