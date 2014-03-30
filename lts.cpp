@@ -1265,14 +1265,208 @@ int fsp::Lts::progress(const string& progress_name, const ProgressS& pr,
     return npv;
 }
 
-void fsp::Lts::compress_action_labels(const set<unsigned int>& actions,
-                                      set<string>& result) const
+static void print_compression_table(const list< vector< set<string> > >&
+                                    table, unsigned int iter)
 {
+#ifdef CONFIG_DEBUG_LABEL_COMPRESSION
+    cout << "Compression table (after #" << iter << " iterations):\n";
+    for (list< vector< set<string> > >::const_iterator row = table.begin();
+                                            row != table.end(); row++) {
+        for (vector< set<string> >::const_iterator col = row->begin();
+                                            col != row->end(); col++) {
+            cout << "{";
+            for (set<string>::const_iterator sit = col->begin();
+                                            sit != col->end(); sit++) {
+                cout << *sit << ",";
+            }
+            cout << "}, ";
+        }
+        cout << "\n";
+    }
+#endif  /* CONFIG_DEBUG_LABEL_COMPRESSION */
+}
+
+static unsigned int merge_pivot(const vector< set<string> >& row1,
+                                const vector< set<string> >& row2)
+{
+    vector< set<string> >::const_iterator col1 = row1.begin();
+    vector< set<string> >::const_iterator col2 = row2.begin();
+    unsigned int left = 0;
+    unsigned int right = row1.size() - 1;
+
+    if (row1.size() != row2.size()) {
+        /* No pivot. */
+        return 0;
+    }
+
+    while (left < row1.size() && equal<string>(*col1, *col2)) {
+        left++;
+        col1++;
+        col2++;
+    }
+
+    /* We cannot have a complete match, since 'actions' is a set,
+       e.g. it doesn't have duplicates. */
+    assert(left < row1.size());
+
+    col1 = row1.end();
+    col1--;
+    col2 = row2.end();
+    col2--;
+    while (right >= 0 && equal<string>(*col1, *col2)) {
+        col1--;
+        col2--;
+        right--;
+    }
+    assert(right >= 0);
+
+    if (left == right) {
+        /* Pivot found! */
+        return left;
+    }
+
+    /* No pivot. */
+    return 0;
+}
+
+static bool set_is_range(const set<string>& s, int& low, int& high)
+{
+    int last_num;
+    set<int> interval;
+
+    for (set<string>::const_iterator it = s.begin(); it != s.end(); it++) {
+        int num;
+
+        if (string2int(*it, num)) {
+            return false;
+        }
+
+        interval.insert(num);
+    }
+
+    for (set<int>::iterator it = interval.begin();
+                                it != interval.end(); it++) {
+        if (it != interval.begin() && *it != last_num + 1) {
+            return false;
+        }
+
+        last_num = *it;
+    }
+
+    low = *(interval.begin());
+    high = *(interval.rbegin());
+
+    return true;
+}
+
+static string compressed_label(const vector< set<string> >& row)
+{
+    string label;
+
+    for (vector< set<string> >::const_iterator col = row.begin();
+                                                col != row.end(); col++) {
+        string dot;
+        int low, high;
+
+        assert(col->size());
+
+        if (col != row.begin()) {
+            dot = ".";
+        }
+
+        if (col->size() == 1) {
+            label += dot + *(col->begin());
+        } else if (set_is_range(*col, low, high)) {
+            label += "[" + int2string(low) + ".." + int2string(high) + "]";
+        } else {
+            label += dot + set2string(*col);
+        }
+    }
+
+    return label;
+}
+
+void fsp::Lts::compress_action_labels(const set<unsigned int>& actions,
+                                      set<string>& result,
+                                      bool compress) const
+{
+    list< vector< set<string> > > table;
+    bool merged_something;
+    unsigned int iter = 0;
+
     result.clear();
+
+    if (!compress) {
+        for (set<unsigned int>::iterator it = actions.begin();
+                it != actions.end(); it++) {
+            result.insert(ati(*it, false));
+        }
+
+        return;
+    }
 
     for (set<unsigned int>::iterator it = actions.begin();
                                             it != actions.end(); it++) {
-        result.insert(ati(*it, false));
+        string label = ati(*it, false);
+        vector< set<string> > row;
+        string atom;
+
+        for (unsigned int k = 0; k < label.size(); k++) {
+            if (label[k] != '.') {
+                atom.push_back(label[k]);
+            }
+            if (label[k] == '.' || (k + 1 == label.size())) {
+                row.push_back(set<string>());
+                row.back().insert(atom);
+                atom.clear();
+            }
+        }
+
+        table.push_back(row);
+    }
+
+    do {
+        list< vector< set<string> > >::iterator r1 = table.begin();
+
+        print_compression_table(table, iter);
+
+        merged_something = false;
+
+        while (r1 != table.end()) {
+            list< vector< set<string> > >::iterator r2 = r1;
+            unsigned int pivot = merge_pivot(*r1, *(++r2));
+
+            if (pivot) {
+                set<string> accumulator;
+
+                for (r2++; r2 != table.end(); r2++) {
+                    unsigned int pivot_ = merge_pivot(*r1, *r2);
+
+                    if (pivot_ != pivot) {
+                        break;
+                    }
+                }
+
+                for (list< vector< set<string> > >::iterator r = r1;
+                                                        r != r2; r++) {
+                    merge<string>((*r)[pivot], accumulator);
+                }
+
+                (*r1)[pivot] = accumulator;
+                table.erase(++r1, r2);
+
+                merged_something = true;
+            }
+
+            r1 = r2;
+        }
+
+        iter++;
+    } while (merged_something);
+
+    for (list< vector< set<string> > >::iterator r = table.begin();
+                                                r != table.end(); r++) {
+        result.insert(compressed_label(*r));
     }
 }
 
@@ -1324,7 +1518,7 @@ void fsp::Lts::graphvizOutput(const char *filename) const
                 }
             }
 
-            compress_action_labels(actions, labels);
+            compress_action_labels(actions, labels, true);
 
             for (set<string>::iterator lit = labels.begin();
                                         lit != labels.end(); lit++) {

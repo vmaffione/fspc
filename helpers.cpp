@@ -78,22 +78,6 @@ bool intersection_exists(const set<unsigned int>& first,
     return false;
 }
 
-bool equal(const set<unsigned int>& first, const set<unsigned int>& second)
-{
-    if (first.size() != second.size()) {
-        return false;
-    }
-
-    for (set<unsigned int>::iterator it = first.begin();
-                it != first.end(); it++) {
-        if (!second.count(*it)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 void merge_string_vec(const vector<string>& vec, string& res,
                         const string& separator)
 {
@@ -132,6 +116,21 @@ string get_tmp_name_cwd(const string& name)
     ret += "/" + get_tmp_name("", name_);
 
     free(cwd);
+
+    return ret;
+}
+
+string set2string(const set<string>& s)
+{
+    string ret = "{";
+
+    for (set<string>::const_iterator sit = s.begin(); sit != s.end(); sit++) {
+        if (sit != s.begin()) {
+            ret += ",";
+        }
+        ret += *sit;
+    }
+    ret += "}";
 
     return ret;
 }

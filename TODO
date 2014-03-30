@@ -6,5 +6,4 @@
 [O] currently the preprocessing doesn't work better with overriding:
     Example: "range K=1 P(K=1)=(a[K]->END)."
 [O] fix memory leaks
-[O] aggregate labels and edges when printing with graphviz
 [O] Go parallel!

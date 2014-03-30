@@ -160,7 +160,7 @@ class Lts: public Symbol {
                                   const set<unsigned int>& tau_dead_set,
                                   set<unsigned int>& result) const;
     void compress_action_labels(const set<unsigned int>& actions,
-                                set<string>& result) const;
+                                set<string>& result, bool compress) const;
 
     void __traces(stringstream &ss, set<CEdge>& marked,
                   vector<unsigned int>& trace, unsigned int state);
