@@ -134,5 +134,33 @@ do
 done
 
 
+##################### test graphviz outputs #####################
+TESTDIR="tests/graphviz"
+
+cat > graphviz.fsh << EOF
+graphviz P new-output.gv
+EOF
+
+for i in {1..1}
+do
+    if [ ! -f "${TESTDIR}/input${i}.fsp" ]; then
+	echo "error: ${TESTDIR}/input${i}.fsp not found"
+	exit 255
+    fi
+    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S graphviz.fsh
+    diff ${TESTDIR}/output${i}.gv new-output.gv > /dev/null
+    var=$?
+    if [ "$var" != "0" ]; then
+	echo ""
+	echo "Test FAILED on ${TESTDIR}/input${i}.fsp"
+	exit 1
+    fi
+    rm new-output.gv
+    echo "${TESTDIR}/input$i ok"
+done
+
+rm graphviz.fsh
+
+
 echo ""
 echo "Test OK"

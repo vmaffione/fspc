@@ -242,6 +242,7 @@ class Shell {
         int else_(const vector<string>& args, stringstream& ss);
         int fi_(const vector<string>& args, stringstream& ss);
         int exit_(const vector<string>& args, stringstream& ss);
+        int graphviz(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
     public:

@@ -112,6 +112,11 @@ void Shell::common_init()
                         "'else' command)");
     help_map["fi"] = HelpEntry("fi", "Close the last opened 'if', 'elif' or "
                         "'else' branch");
+    help_map["graphviz"] = HelpEntry("graphviz FSP_NAME [FILENAME]",
+                                     "Output a GraphViz representation "
+                                     "of the specified FSP into the "
+                                     "specified file (default name is "
+                                     "'FSP_NAME.gv')");
     help_map["help"] = HelpEntry("help",  "Show this help");
     help_map["exit"] = HelpEntry("exit [EXPRESSION]",
                             "Exit the shell with the specified return code "
@@ -137,6 +142,7 @@ void Shell::common_init()
     cmd_map["elif"] = &Shell::elif_;
     cmd_map["else"] = &Shell::else_;
     cmd_map["fi"] = &Shell::fi_;
+    cmd_map["graphviz"] = &Shell::graphviz;
     cmd_map["exit"] = &Shell::exit_;
     cmd_map["help"] = &Shell::help;
 
@@ -1207,6 +1213,33 @@ int Shell::fi_(const vector<string> &args, stringstream& ss)
 
     /* Pop the current IfFrame, returning to the previous one. */
     ifframes.pop();
+
+    return 0;
+}
+
+int Shell::graphviz(const vector<string> &args, stringstream& ss)
+{
+    string outfile;
+    fsp::SmartPtr<fsp::Lts> lts;
+
+    if (!args.size()) {
+        ss << "Invalid command: try 'help'\n";
+        return -1;
+    }
+
+    lts = c.getLts(args[0], true);
+    if (lts == NULL) {
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
+    }
+
+    if (args.size() >= 2) {
+        outfile = args[1];
+    } else {
+        outfile = args[0] + ".gv";
+    }
+
+    lts->graphvizOutput(outfile.c_str());
 
     return 0;
 }
