@@ -121,7 +121,7 @@ class Lts: public Symbol {
     unsigned int end;
     unsigned int err;
 
-    set<int> alphabet;
+    set<unsigned int> alphabet;
 
     vector<TerminalSet> terminal_sets;
     bool terminal_sets_computed;
@@ -159,8 +159,6 @@ class Lts: public Symbol {
                                   const unsigned int *partitions_map,
                                   const set<unsigned int>& tau_dead_set,
                                   set<unsigned int>& result) const;
-    void compress_action_labels(const set<unsigned int>& actions,
-                                set<string>& result, bool compress) const;
 
     void __traces(stringstream &ss, set<CEdge>& marked,
                   vector<unsigned int>& trace, unsigned int state);
@@ -197,10 +195,10 @@ class Lts: public Symbol {
     void minimize(stringstream& ss);
     void traces(stringstream& ss);
 
-    void updateAlphabet(int action);
-    int lookupAlphabet(int action) const;
-    void mergeAlphabetInto(set<int>& actions) const;
-    void mergeAlphabetFrom(const set<int>& actions);
+    void updateAlphabet(unsigned int action);
+    int lookupAlphabet(unsigned int action) const;
+    void mergeAlphabetInto(set<unsigned int>& actions) const;
+    void mergeAlphabetFrom(const set<unsigned int>& actions);
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss) const;
     unsigned int append(const Lts&, unsigned int first);
@@ -246,6 +244,9 @@ struct LtsVecS : public Symbol {
 
     const char *className() const { return "LtsVec"; }
 };
+
+void compress_action_labels(const set<unsigned int>& actions,
+                            set<string>& result, bool compress);
 
 } /* namespace fsp */
 

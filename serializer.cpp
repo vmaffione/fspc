@@ -143,7 +143,7 @@ void Deserializer::stl_string(string &s, bool raw)
 
 void Serializer::actions_table(const class fsp::ActionsTable& at, bool raw)
 {
-    map<string, int>::const_iterator it;
+    map<string, unsigned int>::const_iterator it;
 
     if (!raw) {
 	fout.write(static_cast<const char *>(&Serializer::SerActionsTable),
@@ -231,7 +231,7 @@ void Serializer::lts(const fsp::Lts& lts, bool raw)
     lts.visit(lvo);
 
     this->integer(lts.alphabet.size(), 1);
-    for (set<int>::iterator it=lts.alphabet.begin();
+    for (set<unsigned int>::iterator it=lts.alphabet.begin();
 			it!=lts.alphabet.end(); it++) {
 	this->integer(*it, 1);
     }

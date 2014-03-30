@@ -59,9 +59,9 @@ fsp::ActionsTable& fsp::ActionsTable::getref()
 
 int fsp::ActionsTable::insert(const string& s)
 {
-    pair< map<string, int>::iterator, bool > ins_ret;
+    pair< map<string, unsigned int>::iterator, bool > ins_ret;
 
-    ins_ret = table.insert(pair<string, int>(s, serial));
+    ins_ret = table.insert(pair<string, unsigned int>(s, serial));
     if (ins_ret.second) {
 	reverse.push_back(ins_ret.first->first);
 	return serial++;
@@ -71,7 +71,7 @@ int fsp::ActionsTable::insert(const string& s)
 
 int fsp::ActionsTable::lookup(const string& s) const
 {
-    map<string, int>::const_iterator it = table.find(s);
+    map<string, unsigned int>::const_iterator it = table.find(s);
 
     if (it == table.end())
 	return -1;
@@ -88,7 +88,7 @@ string fsp::ActionsTable::lookup(unsigned int idx) const
 
 void fsp::ActionsTable::print() const
 {
-    map<string, int>::const_iterator it;
+    map<string, unsigned int>::const_iterator it;
 
     cout << "Action table '" << name << "'\n";
     for (it=table.begin(); it!=table.end(); it++) {

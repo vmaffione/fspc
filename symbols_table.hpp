@@ -43,8 +43,8 @@ class ActionsTable {
    Serializer/Deserializer friend declarations. */
 public:
     string name;
-    int serial;
-    map<string, int> table;
+    unsigned int serial;
+    map<string, unsigned int> table;
     vector<string> reverse;
 
 public:

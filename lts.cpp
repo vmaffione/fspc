@@ -116,29 +116,29 @@ string ati(unsigned int index, bool square_ints)
 fsp::Lts::ComposeAlgorithm fsp::Lts::compose_algorithm =
                                     &fsp::Lts::compose_operational;
 
-int fsp::Lts::lookupAlphabet(int action) const
+int fsp::Lts::lookupAlphabet(unsigned int action) const
 {
-    set<int>::iterator it = alphabet.find(action);
+    set<unsigned int>::iterator it = alphabet.find(action);
     
     return (it == alphabet.end()) ? -1 : 0;
 }
 
-void fsp::Lts::updateAlphabet(int action)
+void fsp::Lts::updateAlphabet(unsigned int action)
 {
     alphabet.insert(action);
 }
 
-void fsp::Lts::mergeAlphabetInto(set<int>& actions) const
+void fsp::Lts::mergeAlphabetInto(set<unsigned int>& actions) const
 {
-    for (set<int>::iterator it = alphabet.begin();
+    for (set<unsigned int>::iterator it = alphabet.begin();
 			it != alphabet.end(); it++) {
 	actions.insert(*it);
     }
 }
 
-void fsp::Lts::mergeAlphabetFrom(const set<int>& actions)
+void fsp::Lts::mergeAlphabetFrom(const set<unsigned int>& actions)
 {
-    for (set<int>::iterator it = actions.begin();
+    for (set<unsigned int>::iterator it = actions.begin();
 			it != actions.end(); it++) {
 	alphabet.insert(*it);
     }
@@ -153,7 +153,7 @@ void fsp::Lts::printAlphabet(stringstream& ss) const
        here we want to print the action labels in lexycographic order.
        To make this possbile, we simply build a set<string> with all
        action label strings. */
-    for (set<int>::iterator it = alphabet.begin();
+    for (set<unsigned int>::iterator it = alphabet.begin();
                                 it != alphabet.end(); it++) {
         strings.insert(ati(*it, false));
     }
@@ -927,14 +927,14 @@ fsp::Lts& fsp::Lts::labeling(const SetS& labels)
 fsp::Lts& fsp::Lts::labeling(const string& label)
 {
     ActionsTable& at = ActionsTable::getref();
-    set<int> new_alphabet;
+    set<unsigned int> new_alphabet;
     map<int, int> mapping;
 
     terminal_sets_computed = false;
 
     /* Update the actions table, compute a one-to-one [old --> new] mapping
        and update the alphabet. */
-    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
 	int old_index;
 	int new_index;
 
@@ -956,14 +956,14 @@ fsp::Lts& fsp::Lts::labeling(const string& label)
 fsp::Lts& fsp::Lts::sharing(const SetS& labels)
 {
     ActionsTable& at = ActionsTable::getref();
-    set<int> new_alphabet;
+    set<unsigned int> new_alphabet;
     map<int, vector<int> > mapping;
 
     terminal_sets_computed = false;
 
     /* Update the actions table, compute a one-to-many [old --> new] mapping 
        and update the alphabet. */
-    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
 	int old_index;
 	int new_index;
 	vector<int> new_indexes;
@@ -1002,13 +1002,13 @@ fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const string& oldlabel)
 {
     ActionsTable& at = ActionsTable::getref();
     map<int, vector<int> > mapping;
-    set<int> new_alphabet = alphabet;
+    set<unsigned int> new_alphabet = alphabet;
 
     terminal_sets_computed = false;
 
     /* Update the actions table, compute a one to many [old --> new]
        mapping and update the alphabet. */
-    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
+    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end(); it++) {
 	int old_index;
 	int new_index;
 	vector<int> new_indexes;
@@ -1069,7 +1069,7 @@ fsp::Lts& fsp::Lts::relabeling(const SetS& newlabels, const SetS& oldlabels)
 
 fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 {
-    set<int> new_alphabet;
+    set<unsigned int> new_alphabet;
 
     terminal_sets_computed = false;
 
@@ -1078,7 +1078,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 	for (unsigned int i=0; i<s.size(); i++) {
 	    /* The action s[i] can select multiple alphabet
 	       elements. */
-	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+	    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
@@ -1095,7 +1095,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 	new_alphabet = alphabet;
 	for (unsigned int i=0; i<s.size(); i++) {
 	    /* The action s[i] can hide multiple alphabet elements. */
-	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+	    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
@@ -1124,7 +1124,7 @@ fsp::Lts& fsp::Lts::hiding(const SetS& s, bool interface)
 fsp::Lts& fsp::Lts::priority(const SetS& s, bool low)
 {
     int low_int = (low) ? 1 : 0;
-    set<int> priority_actions;
+    set<unsigned int> priority_actions;
     Lts new_lts;
 
     new_lts.nodes.resize(nodes.size());
@@ -1134,7 +1134,7 @@ fsp::Lts& fsp::Lts::priority(const SetS& s, bool low)
     for (unsigned int i=0; i<s.size(); i++) {
 	    /* The action s[i] can select multiple alphabet
 	       elements. */
-	    for (set<int>::iterator it=alphabet.begin(); it!=alphabet.end();
+	    for (set<unsigned int>::iterator it=alphabet.begin(); it!=alphabet.end();
 								it++) {
 		string action = ati(*it, false);
 		pair<string::const_iterator, string::iterator> mm;
@@ -1207,10 +1207,10 @@ fsp::Lts& fsp::Lts::property()
        For such actions, create an outgoing edge to the ERROR state. */
     for (unsigned int i=0; i<nodes.size(); i++)
 	if (i != e.dest) {
-	    set<int> to_error = alphabet;
+	    set<unsigned int> to_error = alphabet;
 	    for (unsigned int j=0; j<nodes[i].children.size(); j++)
 		to_error.erase(nodes[i].children[j].action);
-	    for (set<int>::iterator it=to_error.begin();
+	    for (set<unsigned int>::iterator it=to_error.begin();
 					it!=to_error.end(); it++) {
 		e.action = *it;
 		nodes[i].children.push_back(e);
@@ -1331,8 +1331,8 @@ static unsigned int merge_pivot(const vector< set<string> >& row1,
 
 static bool set_is_range(const set<string>& s, int& low, int& high)
 {
-    int last_num;
-    set<int> interval;
+    unsigned int last_num;
+    set<unsigned int> interval;
 
     for (set<string>::const_iterator it = s.begin(); it != s.end(); it++) {
         int num;
@@ -1344,7 +1344,7 @@ static bool set_is_range(const set<string>& s, int& low, int& high)
         interval.insert(num);
     }
 
-    for (set<int>::iterator it = interval.begin();
+    for (set<unsigned int>::iterator it = interval.begin();
                                 it != interval.end(); it++) {
         if (it != interval.begin() && *it != last_num + 1) {
             return false;
@@ -1386,9 +1386,9 @@ static string compressed_label(const vector< set<string> >& row)
     return label;
 }
 
-void fsp::Lts::compress_action_labels(const set<unsigned int>& actions,
-                                      set<string>& result,
-                                      bool compress) const
+void fsp::compress_action_labels(const set<unsigned int>& actions,
+                                 set<string>& result,
+                                 bool compress)
 {
     list< vector< set<string> > > table;
     bool merged_something;
@@ -1576,7 +1576,7 @@ void fsp::Lts::simulate(Shell& sh, const ActionSetS *menu) const
 	    elegible_actions_set.insert(nodes[state].children[i].action);
 	}
 
-	/* Build two vector<int>'s from the set<int>. */
+	/* Build two vector<int>'s from the set<unsigned int>. */
 	for (set<unsigned int>::iterator it = elegible_actions_set.begin();
 		it != elegible_actions_set.end(); it++) {
             if (!menu || menu->lookup(*it)) {
