@@ -1386,6 +1386,7 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
                                  bool compress)
 {
     list< vector< set<string> > > table;
+    set<string> uncompressed;
     bool merged_something;
     unsigned int iter = 0;
 
@@ -1402,7 +1403,12 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
 
     for (set<unsigned int>::iterator it = actions.begin();
                                             it != actions.end(); it++) {
-        string label = ati(*it, false);
+        uncompressed.insert(ati(*it, false));
+    }
+
+    for (set<string>::iterator it = uncompressed.begin();
+                                        it != uncompressed.end(); it++) {
+        const string& label = *it;
         vector< set<string> > row;
         string atom;
 

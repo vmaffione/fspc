@@ -134,32 +134,32 @@ do
 done
 
 
-##################### test graphviz outputs #####################
-TESTDIR="tests/graphviz"
+################# test alphabet and label compression #################
+TESTDIR="tests/alpha"
 
-cat > graphviz.fsh << EOF
-graphviz P new-output.gv
+cat > alpha.fsh << EOF
+alpha P
 EOF
 
-for i in {1..1}
+for i in {1..2}
 do
     if [ ! -f "${TESTDIR}/input${i}.fsp" ]; then
 	echo "error: ${TESTDIR}/input${i}.fsp not found"
 	exit 255
     fi
-    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S graphviz.fsh
-    diff ${TESTDIR}/output${i}.gv new-output.gv > /dev/null
+    ${FSPC} -i ${TESTDIR}/input${i}.fsp -S alpha.fsh > new-output
+    diff ${TESTDIR}/output${i} new-output > /dev/null
     var=$?
     if [ "$var" != "0" ]; then
 	echo ""
 	echo "Test FAILED on ${TESTDIR}/input${i}.fsp"
 	exit 1
     fi
-    rm new-output.gv
+    rm new-output
     echo "${TESTDIR}/input$i ok"
 done
 
-rm graphviz.fsh
+rm alpha.fsh
 
 
 echo ""
