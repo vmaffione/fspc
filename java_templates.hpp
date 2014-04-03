@@ -43,7 +43,7 @@ import java.util.concurrent.locks.Lock;\n\
 import java.util.concurrent.locks.ReentrantLock;\n\n\
 public class $monitor_identifier\n{\n\
 private int state = 0;\n\
-private final Lock lock = new ReentrantLock();\n\
+private final Lock lock = new ReentrantLock(true);\n\
 $condition_variable_declarations\
 $internal_action_definitions\
 public $monitor_identifier(/*fill in parameters*/)\n{\n/*fill in body*/\n}\n\
