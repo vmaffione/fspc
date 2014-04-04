@@ -56,8 +56,9 @@
 /* =========================== Shell implementation ==================== */
 void Shell::common_init()
 {
-    /* Initialize the help map. */
-
+    /*
+     * Initialize the help map.
+     */
     help_map["ls"] = HelpEntry("ls", "Show a list of compiled FSPs");
     help_map["safety"] = HelpEntry("safety [FSP_NAME]",
                             "Run deadlock/error analysis on "
@@ -117,12 +118,22 @@ void Shell::common_init()
                                      "of the specified FSP into the "
                                      "specified file (default name is "
                                      "'FSP_NAME.gv')");
+    help_map["option"] = HelpEntry("option [OPTION_NAME] [OPTION_VALUE]",
+                                   "If no arguments are provided, show all "
+                                   "the current shell options. If only the "
+                                   "first argument is provided, show the "
+                                   "value of the specified option. Otherwise "
+                                   "the specified option is set to the value "
+                                   "specified by the second argument.");
     help_map["help"] = HelpEntry("help",  "Show this help");
     help_map["exit"] = HelpEntry("exit [EXPRESSION]",
                             "Exit the shell with the specified return code "
                             "(default 0)");
     help_map["quit"] = HelpEntry("quit", "Force the shell to terminate");
 
+    /*
+     * Initialize the command map.
+     */
     cmd_map["ls"] = &Shell::ls;
     cmd_map["safety"] = &Shell::safety;
     cmd_map["progress"] = &Shell::progress;
@@ -143,8 +154,15 @@ void Shell::common_init()
     cmd_map["else"] = &Shell::else_;
     cmd_map["fi"] = &Shell::fi_;
     cmd_map["graphviz"] = &Shell::graphviz;
+    cmd_map["option"] = &Shell::option;
     cmd_map["exit"] = &Shell::exit_;
     cmd_map["help"] = &Shell::help;
+
+    /*
+     * Initialize the options map.
+     */
+    options["label-compression"] = ShellOption("label-compression", "y",
+                                               ShellOption::Boolean);
 
     ifframes.push(IfFrame(true, false, false));
 }
@@ -1244,6 +1262,42 @@ int Shell::graphviz(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
+int Shell::option(const vector<string>& args, stringstream& ss)
+{
+    if (args.size() == 0) {
+        /* List all options names and values. */
+        for (map<string, ShellOption>::iterator mit = options.begin();
+                                            mit != options.end(); mit++) {
+            ss << "    " << mit->first << ": '" << mit->second.get() << "'\n";
+        }
+    } else {
+        if (!options.count(args[0])) {
+            ss << "    Unrecognized option " << args[0] << "\n";
+            return -1;
+        }
+        if (args.size() == 1) {
+            /* Show the value of the option specified with the first
+               argument. */
+            ss << "    " << args[0] << ": '" <<
+                    options[args[0]].get() << "'\n";
+        } else {
+            /* Set the value of the option specified with the first
+               argument. */
+            int ret;
+
+            ret = options[args[0]].set(args[1]);
+
+            if (ret) {
+                ss << "    Invalid option value\n";
+            }
+
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
 int Shell::exit_(const vector<string> &args, stringstream& ss)
 {
     return_value = 0;
@@ -1562,3 +1616,34 @@ TrieElem::TrieElem(char c, bool end_of_word)
     eow = end_of_word;
 }
 
+ShellOption::ShellOption(const string& n, const string& defaul,
+                         unsigned int t) : name(n), type(t)
+{
+    set(defaul);
+}
+
+string ShellOption::get() const
+{
+    return value;
+}
+
+int ShellOption::set(const string& val)
+{
+    switch (type) {
+        case Boolean:
+            if (val != "y" && val != "n") {
+                return -1;
+            }
+            break;
+
+        case String:
+            break;
+
+        default:
+            return -1;
+    }
+
+    value = val;
+
+    return 0;
+}

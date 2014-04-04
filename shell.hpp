@@ -161,6 +161,21 @@ struct IfFrame {
     }
 };
 
+struct ShellOption {
+    string name;
+    string value;
+    unsigned int type;
+
+    ShellOption() : type(0) { }
+    ShellOption(const string& n, const string& defaul,
+                unsigned int t);
+    string get() const;
+    int set(const string& val);
+
+    static const unsigned int Null      = 0;
+    static const unsigned int Boolean   = 1;
+    static const unsigned int String    = 2;
+};
 
 class FspDriver;
 
@@ -210,6 +225,9 @@ class Shell {
         /* Shell variables (values are integers). */
         map<string, int> variables;
 
+        /* Shell options, stored as (name, value) pairs. */
+        map<string, ShellOption> options;
+
         /* Support for bash-like conditional statements (if/elif/else/fi).
            The evolution of the stack follows the ramification of the
            shell script. */
@@ -243,6 +261,7 @@ class Shell {
         int fi_(const vector<string>& args, stringstream& ss);
         int exit_(const vector<string>& args, stringstream& ss);
         int graphviz(const vector<string>& args, stringstream& ss);
+        int option(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
     public:
