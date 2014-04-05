@@ -75,6 +75,7 @@ class Deserializer {
         void action_set_value(struct fsp::ActionSetS& asv, bool raw);
         void progress_value(struct fsp::ProgressS& pv, bool raw);
 	~Deserializer();
+        void read(char *dest, unsigned int size);
 };
 
 #endif

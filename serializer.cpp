@@ -50,6 +50,17 @@ Serializer::~Serializer()
     fout.close();
 }
 
+/* A convenient wrapper for 'fin.read()' that exits when EOF (which is
+   always unexpected) is encountered. */
+void Deserializer::read(char *dest, unsigned int size)
+{
+    fin.read(dest, size);
+    if (fin.eof()) {
+        cerr << "Error: Unexpected end of file\n";
+        exit(EXIT_FAILURE);
+    }
+}
+
 void Serializer::byte(uint8_t v, bool raw)
 {
     if (!raw) {
@@ -65,14 +76,14 @@ void Deserializer::byte(uint8_t &v, bool raw)
     char type;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerByte) {
 	    cout << "Error: expected byte\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
-    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
+    read(reinterpret_cast<char *>(&v), sizeof(v));
 }
 
 void Serializer::integer(uint32_t v, bool raw)
@@ -91,14 +102,14 @@ void Deserializer::integer(uint32_t &v, bool raw)
     char type;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerInteger) {
 	    cout << "Error: expected integer\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
-    fin.read(reinterpret_cast<char *>(&v), sizeof(v));
+    read(reinterpret_cast<char *>(&v), sizeof(v));
     v = le32toh(v);
 }
 
@@ -109,7 +120,7 @@ void Serializer::stl_string(const string &s, bool raw)
 
     if (s.size() > 255) {
 	cout << "Error: string is too long (>255)\n";
-	exit(-1);
+	exit(EXIT_FAILURE);
     }
 
     if (!raw) {
@@ -128,15 +139,15 @@ void Deserializer::stl_string(string &s, bool raw)
     char buf[256 + 1];
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerString) {
 	    cout << "Error: expected string\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
     this->byte(len, 1);
-    fin.read(buf, len);
+    read(buf, len);
     buf[len] = '\0';
     s = string(buf);
 }
@@ -166,10 +177,10 @@ void Deserializer::actions_table(fsp::ActionsTable &at, bool raw)
     string s;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerActionsTable) {
 	    cout << "Error: expected actions table\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -245,10 +256,10 @@ void Deserializer::lts(fsp::Lts &lts, bool raw)
     int ntr;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerLts) {
 	    cout << "Error: expected LTS\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -301,10 +312,10 @@ void Deserializer::set_value(struct fsp::SetS& setv, bool raw)
     uint32_t x;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerSetValue) {
 	    cout << "Error: expected SetS\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -335,10 +346,10 @@ void Deserializer::action_set_value(struct fsp::ActionSetS& asv, bool raw)
     uint32_t x, y;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerActionSetValue) {
 	    cout << "Error: expected ActionSetS\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
@@ -370,10 +381,10 @@ void Deserializer::progress_value(struct fsp::ProgressS& pv, bool raw)
     uint8_t x;
 
     if (!raw) {
-	fin.read(static_cast<char *>(&type), sizeof(char));
+	read(static_cast<char *>(&type), sizeof(char));
 	if (type != Serializer::SerProgressValue) {
 	    cout << "Error: expected ProgressS\n";
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
     }
 
