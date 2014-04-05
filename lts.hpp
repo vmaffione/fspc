@@ -189,7 +189,7 @@ class Lts: public Symbol {
     int progress(const string& progress_name, const ProgressS& pr,
         stringstream& ss);
     void visit(const struct LtsVisitObject&) const;
-    void graphvizOutput(const char *filename) const;
+    void graphvizOutput(const char *filename, bool compress) const;
     void simulate(Shell& sh, const ActionSetS *asv) const;
     void basic(const string& outfile, stringstream& ss) const;
     void minimize(stringstream& ss);
@@ -200,7 +200,7 @@ class Lts: public Symbol {
     void mergeAlphabetInto(set<unsigned int>& actions) const;
     void mergeAlphabetFrom(const set<unsigned int>& actions);
     int alphabetSize() const { return alphabet.size(); }
-    void printAlphabet(stringstream& ss) const;
+    void printAlphabet(stringstream& ss, bool compress) const;
     unsigned int append(const Lts&, unsigned int first);
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const vector< SmartPtr<Lts> >& ltsv);

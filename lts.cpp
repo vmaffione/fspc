@@ -144,14 +144,14 @@ void fsp::Lts::mergeAlphabetFrom(const set<unsigned int>& actions)
     }
 }
 
-void fsp::Lts::printAlphabet(stringstream& ss) const
+void fsp::Lts::printAlphabet(stringstream& ss, bool compress) const
 {
     set<string> strings;
 
     /* Lts::alphabet is a set of integers (index in the action
        table), and so it is sorted w.r.t. the integer values. However,
        here we want to print the action labels in lexycographic order. */
-    compress_action_labels(alphabet, strings, true);
+    compress_action_labels(alphabet, strings, compress);
 
     ss << "Alphabet: {";
     for (set<string>::iterator it = strings.begin();
@@ -188,7 +188,7 @@ void fsp::Lts::print() const
 	    cout << "    " << ati(nodes[i].children[j].action, false)
 		    << " --> " << nodes[i].children[j].dest << "\n";
     }
-    printAlphabet(ss); cout << ss.str();
+    printAlphabet(ss, false); cout << ss.str();
     cout << numStates() << " states, " << numTransitions() << " transitions\n";
 }
 
@@ -1471,7 +1471,7 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
     }
 }
 
-void fsp::Lts::graphvizOutput(const char *filename) const
+void fsp::Lts::graphvizOutput(const char *filename, bool compress) const
 {
     fstream fout;
 
@@ -1519,7 +1519,7 @@ void fsp::Lts::graphvizOutput(const char *filename) const
                 }
             }
 
-            compress_action_labels(actions, labels, true);
+            compress_action_labels(actions, labels, compress);
 
             for (set<string>::iterator lit = labels.begin();
                                         lit != labels.end(); lit++) {

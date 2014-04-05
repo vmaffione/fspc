@@ -840,7 +840,7 @@ int Shell::alpha(const vector<string> &args, stringstream& ss)
     return -1;
     }
 
-    lts->printAlphabet(ss);
+    lts->printAlphabet(ss, options["label-compression"].get() == "y");
 
     return 0;
 }
@@ -883,7 +883,7 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     /* Generate the graphivz output into a temporary file (whose name does
        not collide with other fspc instances). */
     tmp_name = get_tmp_name("", "gv");
-    lts->graphvizOutput(tmp_name.c_str());
+    lts->graphvizOutput(tmp_name.c_str(), options["label-compression"].get() == "y");
 
     /* UNIX-specific section. */
     stdout_tmp_name = get_tmp_name("", "stdout.tmp");
@@ -959,7 +959,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     }
     filename = args[0] + ".gv";
 
-    lts->graphvizOutput(filename.c_str());
+    lts->graphvizOutput(filename.c_str(), options["label-compression"].get() == "y");
 
     if (args.size() > 1) {
         if (args[1] != "png" && args[1] != "pdf") {
@@ -1257,7 +1257,7 @@ int Shell::graphviz(const vector<string> &args, stringstream& ss)
         outfile = args[0] + ".gv";
     }
 
-    lts->graphvizOutput(outfile.c_str());
+    lts->graphvizOutput(outfile.c_str(), options["label-compression"].get() == "y");
 
     return 0;
 }

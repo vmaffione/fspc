@@ -415,7 +415,7 @@ int FspDriver::outputPhase(stringstream& ss)
 	}
 
 	if (cop.graphviz) {
-	    lts->graphvizOutput((lts->name + ".gv").c_str());
+	    lts->graphvizOutput((lts->name + ".gv").c_str(), true);
 	}
     }
 
