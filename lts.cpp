@@ -1354,6 +1354,14 @@ static bool set_is_range(const set<string>& s, int& low, int& high)
     return true;
 }
 
+/* Convert a row of the label compression algorithm into an FSP
+   label expression.
+
+   Example:
+            <{a}, {1,2,3}, {6,7}>
+        is converted to
+            'a[1..3][6..7]
+*/
 static string compressed_label(const vector< set<string> >& row)
 {
     string label;
@@ -1381,6 +1389,14 @@ static string compressed_label(const vector< set<string> >& row)
     return label;
 }
 
+/* Given a set of actions (indexes in the action table), this
+   function returns a set of strings that represents the input
+   set. When 'compress' is true, action labels are aggregated
+   as much as possible. For example, the set:
+            { a.1.b, a.1.c, a.2.b, a.2.c, b.3, b.4, b.5 }
+   is compressed by aggregation in the following set:
+            { a[1..2].{b,c}, b[4..5] }
+*/
 void fsp::compress_action_labels(const set<unsigned int>& actions,
                                  set<string>& result,
                                  bool compress)
@@ -1393,6 +1409,9 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
     result.clear();
 
     if (!compress) {
+        /* If the caller doesn't require compression, we just
+           lookup the action table to gather the action labels.
+        */
         for (set<unsigned int>::iterator it = actions.begin();
                 it != actions.end(); it++) {
             result.insert(ati(*it, false));
@@ -1401,11 +1420,24 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
         return;
     }
 
+    /* First step: Translate the action indexes in the input set and
+       put the resulting labels in a set, so that we keep them sorted in
+       lexycographic order, which is required by the following step.
+    */
     for (set<unsigned int>::iterator it = actions.begin();
                                             it != actions.end(); it++) {
         uncompressed.insert(ati(*it, false));
     }
 
+    /* Second step: Build a table (a list) in which each row is a vector
+       of sets. Each row contains - as a whole - an element of the set
+       computed in the first step, splitted like in the following example.
+
+       Example: The label 'aa.3.5.b.18.x' is represented as
+            < {aa}, {3}, {5}, {b}, {18}, {x} >
+       i.e. a vector containing six sets, where each set contains a single
+       string (not containing the character '.').
+    */
     for (set<string>::iterator it = uncompressed.begin();
                                         it != uncompressed.end(); it++) {
         const string& label = *it;
@@ -1426,6 +1458,9 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
         table.push_back(row);
     }
 
+    /* Third step: Being the rows sorted, we iteratively try to merge
+       groups of consecutive rows using the 'pivot' concept.
+    */
     do {
         list< vector< set<string> > >::iterator r1 = table.begin();
 
@@ -1434,20 +1469,48 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
         merged_something = false;
 
         while (r1 != table.end()) {
+            /* Given two rows rx and ry, pivot(rx, ry) exists if
+               (1) rx and ry have the same length (i.e. the two vectors
+               have the same size), and
+               (2) rx and ry are the same except for an element
+               where the pivot is the index of the element which is different.
+
+               First of all we compute the pivot of two consecutive rows 'r1'
+               and 'r2'.
+            */
             list< vector< set<string> > >::iterator r2 = r1;
             unsigned int pivot = merge_pivot(*r1, *(++r2));
 
             if (pivot) {
+                /* Once we have found a pivot, we try to see if that pivot
+                   is good also for subsequent rows. We stop when we find
+                   a row for which the pivot is not good anymore.
+                */
                 set<string> accumulator;
 
                 for (r2++; r2 != table.end(); r2++) {
                     unsigned int pivot_ = merge_pivot(*r1, *r2);
 
                     if (pivot_ != pivot) {
+                        /* The pivot is not good anymore, let's stop. */
                         break;
                     }
                 }
 
+                /* We have found that 'pivot' is a good pivot for a set R of
+                   rows, containings the rows from 'r1' (included) to 'r2'
+                   (excluded).
+                   We therefore replace those rows with a single row which
+                   is the same as 'r1' (or another element of R), except for
+                   the pivot element, which is replaced by the union of the
+                   pivot elements of all the rows in R.
+
+                   Example:
+                            R = [ <{a}, {1}, {6,7}>, <{a}, {2}, {6,7}>,
+                                    <{a}, {3}, {6,7}> ]
+                        is replaced by
+                            <{a}, {1,2,3}, {6,7}>
+                */
                 for (list< vector< set<string> > >::iterator r = r1;
                                                         r != r2; r++) {
                     merge<string>((*r)[pivot], accumulator);
@@ -1459,12 +1522,19 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
                 merged_something = true;
             }
 
+            /* Skip the rows we've just merged, or the single row we couldn't
+               merge to anything. */
             r1 = r2;
         }
 
         iter++;
+        /* Stop only when the rows are stable --> no merges happened in
+           the last iteration. */
     } while (merged_something);
 
+    /* Step four: Transform each (compressed) row in the table in an
+       action label string, according to the FSP syntax.
+    */
     for (list< vector< set<string> > >::iterator r = table.begin();
                                                 r != table.end(); r++) {
         result.insert(compressed_label(*r));
@@ -1519,6 +1589,8 @@ void fsp::Lts::graphvizOutput(const char *filename, bool compress) const
                 }
             }
 
+            /* Try to aggregate (compress) the set of action labels
+               just collected. */
             compress_action_labels(actions, labels, compress);
 
             for (set<string>::iterator lit = labels.begin();
