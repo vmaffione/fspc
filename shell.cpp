@@ -853,6 +853,7 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     string tmp_name, stdout_tmp_name;
     pid_t drawer;
     const char *exec_errmsg;
+    int ret;
 
     if (!interactive) {
     ss << "Cannot use 'see' command in scripts\n";
@@ -909,7 +910,8 @@ int Shell::see(const vector<string> &args, stringstream& ss)
         execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
         perror("ltsee exec failed");
         exec_errmsg = "Cannot find ltsee";
-        write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        (void)ret;
         exit(EXIT_FAILURE);
         break;
     default:
@@ -946,6 +948,7 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     string format = "png";
     string filename, stdout_tmp_name;
     const char *exec_errmsg = NULL;
+    int ret;
 
     if (!args.size()) {
     ss << "Invalid command: try 'help'\n";
@@ -984,7 +987,8 @@ int Shell::print(const vector<string> &args, stringstream& ss)
         execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
         exec_errmsg = "Cannot find ltsimg";
-        write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+        (void)ret;
         exit(EXIT_FAILURE);
         break;
     default:
