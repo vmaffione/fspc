@@ -195,7 +195,7 @@ struct HelpEntry {
 
 class Shell {
         FspDriver& c;
-        codegen::CodeGenerator coder;
+        codegen::CodeGenerator code_generator;
 
         /* A mapping of command names to the help strings. */
         map<string, HelpEntry> help_map;

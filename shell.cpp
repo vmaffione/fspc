@@ -72,12 +72,21 @@ void Shell::common_init()
     help_map["basic"] = HelpEntry("basic FSP_NAME FILE_NAME",
                             "Write a basic process description of the "
                             "specified FSP into the specified output file");
-    /* help_map["monitor"] = HelpEntry("monitor "
-                            "FSP_NAME INTERACTIONS [-o FILE]",
-                            "Write, if possible, the Monitor Normal Form "
-                            "of the specified FSP into the specified "
-                            "output file"); */
-    /* help_map["code"] = HelpEntry("UNKNOWN", "UNKNOWN"); */
+#ifdef WITH_CODE
+    help_map["code"] = HelpEntry("code FORMALISM LANGUAGE SPECIFICATION",
+        "Generate LANGUAGE code using the specified FORMALISM adhering to the SPECIFICATION\n\n"
+        "Supported FORMALISMs: monitor\n\n"
+        "\tmonitor SPECIFICATION: ((-m FSP_NAME interaction*)|(-t FSP_NAME instance*)|(-i FSP_NAME instance))*\n"
+        "\tuse -m to define a monitor class modeling FSP_NAME and offering the specified interactions\n"
+        "\tuse -i to define a monitor instance\n"
+        "\tuse -t to define a thread modeling FSP_NAME and using the specified monitor instances\n\n"
+        "Supported LANGUAGEs: java\n\n"
+        "example: given the following FSP description\n"
+        "\tBUFFER = EMPTY, EMPTY = (put->FULL), FULL = (get->EMPTY).\n"
+        "\tPRODUCER = (produce->mailbox.put->PRODUCER).\n"
+        "\tCONSUMER = (mailbox.get->consume->CONSUMER).\n"
+        "use this command: code monitor java -m BUFFER put get -i BUFFER mailbox -t PRODUCER mailbox -t CONSUMER mailbox");
+#endif  /* WITH_CODE */
     help_map["alpha"] = HelpEntry("alpha FSP_NAME",
                                 "Show the alphabet of the specified FSP");
     help_map["see"] = HelpEntry("see FSP_NAME",
@@ -139,8 +148,9 @@ void Shell::common_init()
     cmd_map["progress"] = &Shell::progress;
     cmd_map["simulate"] = &Shell::simulate;
     cmd_map["basic"] = &Shell::basic;
-    /* cmd_map["monitor"] = &Shell::monitor; */
-    /* cmd_map["code"] = &Shell::code; */
+#ifdef WITH_CODE
+    cmd_map["code"] = &Shell::code;
+#endif  /* WITH_CODE */
     cmd_map["alpha"] = &Shell::alpha;
     cmd_map["see"] = &Shell::see;
     cmd_map["print"] = &Shell::print;
@@ -192,7 +202,7 @@ void Shell::fill_completion()
     }
 }
 
-Shell::Shell(FspDriver& cr, istream& inr) : c(cr), in(inr)
+Shell::Shell(FspDriver& cr, istream& inr) : c(cr), code_generator(cr), in(inr)
 {
     common_init();
     interactive = true;
@@ -216,7 +226,7 @@ Shell::Shell(FspDriver& cr, istream& inr) : c(cr), in(inr)
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
-Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), in(inr)
+Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), code_generator(cr), in(inr)
 {
     common_init();
     interactive = false;
@@ -720,109 +730,28 @@ int Shell::basic(const vector<string> &args, stringstream& ss)
     return 0;
 }
 
-int Shell::monitor(const vector<string>& args, stringstream& ss)
-{
-    string outfile(args[0] + ".mfsp");
-    fsp::SmartPtr<fsp::Lts> lts;
-
-    if (!args.size()) {
-        ss << "Invalid command: try 'help'\n";
-        return -1;
-    }
-
-    lts = c.getLts(args[0], true);
-    if (lts == NULL) {
-        ss << "Process " << args[0] << " not found\n";
-        return -1;
-    }
-
-    std::list<std::string> interactions;
-    bool outputFlagSet = false;
-    bool fileNameRead = false;
-    std::string outputFlag("-o");
-
-    if (args.size() >= 2) {
-        /* outfile = args[1]; */
-        for (unsigned int i = 1; i < args.size(); i++) {
-            if (outputFlag.compare(args[i]) == 0 && (!outputFlagSet)) {
-                outputFlagSet = true;
-                continue;
-            } else if (outputFlagSet && (!fileNameRead)) {
-                outfile = string(args[i]);
-                fileNameRead = true;
-                continue;
-            }
-            interactions.push_back(std::string(args[i]));
-        }
-    }
-
-    string representation;
-
-    if (!coder.get_monitor_representation(*lts, interactions,
-                                                representation)) {
-        ss << representation;
-        return -1;
-    } else {
-        fstream file;
-        file.open(outfile.c_str(), ios::out);
-        if (!file.is_open() || !(file << representation)) {
-            ss << "Cannot open file " << outfile;
-        }
-        file.close();
-    }
-    return 0;
-}
-
 int Shell::code(const vector<string>& args, stringstream& ss)
 {
-    string outfile(args[0] + ".java");
-    fsp::SmartPtr<fsp::Lts> lts;
+    using namespace codegen;
 
-    if (!args.size()) {
-        ss << "Invalid command: try 'help'\n";
-        return -1;
+    ss << "WARNING: this feature is highly experimental.\n"
+    "You are strongly encouraged to carefully inspect the generated code before using it.\n"
+    "The author takes no responsibility for any inconvenient the generated code may cause.\n"
+    "Use the generated code at your own risk.\n\n";
+
+    UserRequirements requirements(args);
+    try {
+        heap<Information> information(code_generator.visit(requirements));
+        heap<SourceCode> source = dynamic_pointer_cast<SourceCode>(information);
+
+        if (source) source->serialize();
+        else assert(0);
+
+    } catch (runtime_error r) {
+        ss << r.what();
+        return 0;
     }
-
-    lts = c.getLts(args[0], true);
-    if (lts == NULL) {
-        ss << "Process " << args[0] << " not found\n";
-        return -1;
-    }
-
-    std::list<std::string> interactions;
-    bool outputFlagSet = false;
-    bool fileNameRead = false;
-    std::string outputFlag("-o");
-
-    if (args.size() >= 2) {
-        /* outfile = args[1]; */
-        for (unsigned int i = 1; i < args.size(); i++) {
-            if (outputFlag.compare(args[i]) == 0 && (!outputFlagSet)) {
-                outputFlagSet = true;
-                continue;
-            } else if (outputFlagSet && (!fileNameRead)) {
-                outfile = string(args[i]);
-                fileNameRead = true;
-                continue;
-            }
-            interactions.push_back(std::string(args[i]));
-        }
-    }
-
-    string code;
-
-    if (!coder.instantiate_monitor_template(*lts, interactions, args[0], code)) {
-        ss << code;
-        return -1;
-    } else {
-        fstream file;
-        file.open(outfile.c_str(), ios::out);
-        if (!file.is_open() || !(file << code)) {
-            ss << "Cannot open file " << outfile;
-        }
-        file.close();
-    }
-    return 0;
+    return 1;
 }
 
 int Shell::alpha(const vector<string> &args, stringstream& ss)
@@ -1196,9 +1125,9 @@ int Shell::elif_(const vector<string> &args, stringstream& ss)
 int Shell::else_(const vector<string> &args, stringstream& ss)
 {
     if (args.size()) {
-	ss << "This command takes no arguments\n";
+    ss << "This command takes no arguments\n";
 
-	return -1;
+    return -1;
     }
 
     if (ifframes.size() == 1 || ifframes.top().else_met) {
@@ -1221,9 +1150,9 @@ int Shell::else_(const vector<string> &args, stringstream& ss)
 int Shell::fi_(const vector<string> &args, stringstream& ss)
 {
     if (args.size()) {
-	ss << "This command takes no arguments\n";
+    ss << "This command takes no arguments\n";
 
-	return -1;
+    return -1;
     }
 
     if (ifframes.size() == 1) {
@@ -1417,7 +1346,7 @@ int Shell::run()
             /* Command lookup and execution. */
             it = cmd_map.find(token);
             if (it == cmd_map.end()) {
-                ss << "	Unrecognized command\n";
+                ss << " Unrecognized command\n";
             } else {
                 ShellCmdFunc fp = it->second;
                 int ret;

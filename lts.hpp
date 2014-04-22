@@ -201,6 +201,7 @@ class Lts: public Symbol {
     void mergeAlphabetFrom(const set<unsigned int>& actions);
     int alphabetSize() const { return alphabet.size(); }
     void printAlphabet(stringstream& ss, bool compress) const;
+    set<unsigned int> getAlphabet() const { return alphabet; }
     unsigned int append(const Lts&, unsigned int first);
     Lts& zerocat(const Lts& lts, const string& label);
     Lts& incompcat(const vector< SmartPtr<Lts> >& ltsv);
