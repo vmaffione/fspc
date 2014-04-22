@@ -61,83 +61,83 @@ void Shell::common_init()
      */
     help_map["ls"] = HelpEntry("ls", "Show a list of compiled FSPs");
     help_map["safety"] = HelpEntry("safety [FSP_NAME]",
-                            "Run deadlock/error analysis on "
-                            "the specified FSP or on every FSP");
+            "Run deadlock/error analysis on "
+            "the specified FSP or on every FSP");
     help_map["progress"] = HelpEntry("progress [FSP_NAME]",
-                            "Run progress analysis on "
-                            "the specified FSP or on every FSP");
+            "Run progress analysis on "
+            "the specified FSP or on every FSP");
     help_map["simulate"] = HelpEntry("simulate FSP_NAME",
-                            "Run an interactive simulation of "
-                            "the specified FSP");
+            "Run an interactive simulation of "
+            "the specified FSP");
     help_map["basic"] = HelpEntry("basic FSP_NAME FILE_NAME",
-                            "Write a basic process description of the "
-                            "specified FSP into the specified output file");
+            "Write a basic process description of the "
+            "specified FSP into the specified output file");
 #ifdef WITH_CODE
     help_map["code"] = HelpEntry("code FORMALISM LANGUAGE SPECIFICATION",
-        "Generate LANGUAGE code using the specified FORMALISM adhering to the SPECIFICATION\n\n"
-        "Supported FORMALISMs: monitor\n\n"
-        "\tmonitor SPECIFICATION: ((-m FSP_NAME interaction*)|(-t FSP_NAME instance*)|(-i FSP_NAME instance))*\n"
-        "\tuse -m to define a monitor class modeling FSP_NAME and offering the specified interactions\n"
-        "\tuse -i to define a monitor instance\n"
-        "\tuse -t to define a thread modeling FSP_NAME and using the specified monitor instances\n\n"
-        "Supported LANGUAGEs: java\n\n"
-        "example: given the following FSP description\n"
-        "\tBUFFER = EMPTY, EMPTY = (put->FULL), FULL = (get->EMPTY).\n"
-        "\tPRODUCER = (produce->mailbox.put->PRODUCER).\n"
-        "\tCONSUMER = (mailbox.get->consume->CONSUMER).\n"
-        "use this command: code monitor java -m BUFFER put get -i BUFFER mailbox -t PRODUCER mailbox -t CONSUMER mailbox");
+            "Generate LANGUAGE code using the specified FORMALISM adhering to the SPECIFICATION\n\n"
+            "Supported FORMALISMs: monitor\n\n"
+            "\tmonitor SPECIFICATION: ((-m FSP_NAME interaction*)|(-t FSP_NAME instance*)|(-i FSP_NAME instance))*\n"
+            "\tuse -m to define a monitor class modeling FSP_NAME and offering the specified interactions\n"
+            "\tuse -i to define a monitor instance\n"
+            "\tuse -t to define a thread modeling FSP_NAME and using the specified monitor instances\n\n"
+            "Supported LANGUAGEs: java\n\n"
+            "example: given the following FSP description\n"
+            "\tBUFFER = EMPTY, EMPTY = (put->FULL), FULL = (get->EMPTY).\n"
+            "\tPRODUCER = (produce->mailbox.put->PRODUCER).\n"
+            "\tCONSUMER = (mailbox.get->consume->CONSUMER).\n"
+            "use this command: code monitor java -m BUFFER put get -i BUFFER mailbox -t PRODUCER mailbox -t CONSUMER mailbox");
 #endif  /* WITH_CODE */
     help_map["alpha"] = HelpEntry("alpha FSP_NAME",
-                                "Show the alphabet of the specified FSP");
+            "Show the alphabet of the specified FSP");
     help_map["see"] = HelpEntry("see FSP_NAME",
-                            "Show a graphical representation of the "
-                            "specified FSP using GraphViz");
+            "Show a graphical representation of the "
+            "specified FSP using GraphViz");
     help_map["print"] = HelpEntry("print FSP_NAME {png | pdf}",
-                        "Print the GraphViz representation of the specified "
-                        "fsp into a file FSP_NAME.FORMAT");
+            "Print the GraphViz representation of the specified "
+            "fsp into a file FSP_NAME.FORMAT");
     help_map["lsprop"] = HelpEntry("lsprop",
-                            "Show a list of compiled properties");
+            "Show a list of compiled properties");
     help_map["lsmenu"] = HelpEntry("lsmenu",
-                            "Show a list of available menus");
+            "Show a list of available menus");
     help_map["minimize"] = HelpEntry("minimize FSP_NAME", "Minimize the "
-                              "specified FSP");
+            "specified FSP");
     /* help_map["traces"] = HelpEntry("traces FSP_NAME",
-                            "Find all the action traces for the specified "
-                            "process, stopping when there are cycles"); */
+       "Find all the action traces for the specified "
+       "process, stopping when there are cycles"); */
     help_map["printvar"] = HelpEntry("printvar [VAR_NAME]",
-                            "Print the value of the specified variable or "
-                            "of all the variables VAR_NAME");
+            "Print the value of the specified variable or "
+            "of all the variables VAR_NAME");
     help_map["if"] = HelpEntry("if CONDITION", "If the specified condition "
-                        "is true, the following commands will be executed "
-                        "(up to the next matching 'elif', 'else' or 'fi' "
-                        "command)");
+            "is true, the following commands will be executed "
+            "(up to the next matching 'elif', 'else' or 'fi' "
+            "command)");
     help_map["elif"] = HelpEntry("elif CONDITION", "If the specified "
-                        "condition is true and all the conditions "
-                        "associated to the previous branches were false, "
-                        "the following commands will be executed (up to the "
-                        "next matching 'elif', 'else' or 'fi' command)");
+            "condition is true and all the conditions "
+            "associated to the previous branches were false, "
+            "the following commands will be executed (up to the "
+            "next matching 'elif', 'else' or 'fi' command)");
     help_map["else"] = HelpEntry("else", "If all the conditions associated "
-                        "to the previous branches were false, the following "
-                        "commands will be executed (up to the next matching "
-                        "'else' command)");
+            "to the previous branches were false, the following "
+            "commands will be executed (up to the next matching "
+            "'else' command)");
     help_map["fi"] = HelpEntry("fi", "Close the last opened 'if', 'elif' or "
-                        "'else' branch");
+            "'else' branch");
     help_map["graphviz"] = HelpEntry("graphviz FSP_NAME [FILENAME]",
-                                     "Output a GraphViz representation "
-                                     "of the specified FSP into the "
-                                     "specified file (default name is "
-                                     "'FSP_NAME.gv')");
+            "Output a GraphViz representation "
+            "of the specified FSP into the "
+            "specified file (default name is "
+            "'FSP_NAME.gv')");
     help_map["option"] = HelpEntry("option [OPTION_NAME] [OPTION_VALUE]",
-                                   "If no arguments are provided, show all "
-                                   "the current shell options. If only the "
-                                   "first argument is provided, show the "
-                                   "value of the specified option. Otherwise "
-                                   "the specified option is set to the value "
-                                   "specified by the second argument.");
+            "If no arguments are provided, show all "
+            "the current shell options. If only the "
+            "first argument is provided, show the "
+            "value of the specified option. Otherwise "
+            "the specified option is set to the value "
+            "specified by the second argument.");
     help_map["help"] = HelpEntry("help",  "Show this help");
     help_map["exit"] = HelpEntry("exit [EXPRESSION]",
-                            "Exit the shell with the specified return code "
-                            "(default 0)");
+            "Exit the shell with the specified return code "
+            "(default 0)");
     help_map["quit"] = HelpEntry("quit", "Force the shell to terminate");
 
     /*
@@ -172,7 +172,7 @@ void Shell::common_init()
      * Initialize the options map.
      */
     options["label-compression"] = ShellOption("label-compression", "y",
-                                               ShellOption::Boolean);
+            ShellOption::Boolean);
 
     ifframes.push(IfFrame(true, false, false));
 }
@@ -235,7 +235,7 @@ Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), code_generator(cr), in(inr)
 Shell::~Shell()
 {
     if (interactive)
-  endwin();   /* Exit curses mode. */
+        endwin();   /* Exit curses mode. */
 }
 
 static void scroll_screen(int n, int y, int x)
@@ -246,14 +246,14 @@ static void scroll_screen(int n, int y, int x)
 
     getmaxyx(stdscr, rows, cols);
     if (n >= rows)
-  return;
+        return;
 
     /* Shift everything n rows up. */
     for (r_i=n; r_i<rows; r_i++) {
-  for (c_i=0; c_i<cols; c_i++) {
-      ch = mvinch(r_i, c_i);
-      mvaddch(r_i-n, c_i, ch);
-  }
+        for (c_i=0; c_i<cols; c_i++) {
+            ch = mvinch(r_i, c_i);
+            mvaddch(r_i-n, c_i, ch);
+        }
     }
 
     /* Clear the last n rows. */
@@ -266,58 +266,58 @@ static void scroll_screen(int n, int y, int x)
 }
 
 /* eol: if false a newline will not be printed together with the last
-  line in 'ss'. */
+   line in 'ss'. */
 void Shell::putsstream(stringstream& ss, bool eol) {
 
     if (interactive) {
-  string line;
-  int y, x;
-  int rows, cols;
-  bool first_line = true;
+        string line;
+        int y, x;
+        int rows, cols;
+        bool first_line = true;
 
-  getmaxyx(stdscr, rows, cols);
+        getmaxyx(stdscr, rows, cols);
 
-  /* Split the stringstream content in lines (using '\n' as
-     separator. */
-  while (getline(ss, line)) {
-      int rows_required;
+        /* Split the stringstream content in lines (using '\n' as
+           separator. */
+        while (getline(ss, line)) {
+            int rows_required;
 
-      if (!first_line) {
-    /* Newline attached to the line printed in the previous
-       iteration: We need to defer the newline insertion because
-       of the 'eol' parameter. */
-    printw("\n");
-    refresh();
-      }
-      first_line = false;
+            if (!first_line) {
+                /* Newline attached to the line printed in the previous
+iteration: We need to defer the newline insertion because
+of the 'eol' parameter. */
+                printw("\n");
+                refresh();
+            }
+            first_line = false;
 
-      /* Compute the number of rows that are necessary to print the
-         line. */
-      rows_required = line.size() / cols;
-      if (line.size() % cols)
-    rows_required++;
+            /* Compute the number of rows that are necessary to print the
+               line. */
+            rows_required = line.size() / cols;
+            if (line.size() % cols)
+                rows_required++;
 
-      getyx(stdscr, y, x);
-      /* If there is not enough empty rows in the screen, we scroll as
-         many times as needed to make enough room, and move the
-         cursor at the beginning of the first empty row after
-         scrolling. */
-      if (y + rows_required >= rows)
-    scroll_screen(y + rows_required - rows + 1,
-        rows - rows_required-1, 0);
-      /* Finally print the line. */
-      printw("%s", line.c_str());
-  }
+            getyx(stdscr, y, x);
+            /* If there is not enough empty rows in the screen, we scroll as
+               many times as needed to make enough room, and move the
+               cursor at the beginning of the first empty row after
+               scrolling. */
+            if (y + rows_required >= rows)
+                scroll_screen(y + rows_required - rows + 1,
+                        rows - rows_required-1, 0);
+            /* Finally print the line. */
+            printw("%s", line.c_str());
+        }
 
-  /* Put a newline after the last line in 'ss' only if asked by
-     the user. */
-  if (eol)
-      printw("\n");
+        /* Put a newline after the last line in 'ss' only if asked by
+           the user. */
+        if (eol)
+            printw("\n");
 
-  refresh();
+        refresh();
     }
     else {
-  cout << ss.str();
+        cout << ss.str();
     }
 }
 
@@ -370,10 +370,10 @@ void Shell::getline_ncurses(string& line, const char *prompt)
     /* Print the prompty (if any), and initialize the prompt position
        properly. */
     if (prompt) {
-  attron(COLOR_PAIR(2));
-  printw(prompt);
-  attroff(COLOR_PAIR(2));
-  refresh();
+        attron(COLOR_PAIR(2));
+        printw(prompt);
+        attroff(COLOR_PAIR(2));
+        refresh();
     }
     getyx(stdscr, prompt_y, prompt_x);
 
@@ -385,26 +385,26 @@ void Shell::getline_ncurses(string& line, const char *prompt)
     line = string();
 
     for (;;) {
-  ch = getch();
-  getyx(stdscr, y, x);
+        ch = getch();
+        getyx(stdscr, y, x);
 
-  switch (ch) {
-      case '\r':
-      case '\n':
-    move(frontier_y, frontier_x);
-    if (frontier_y == rows-1) {
-        scroll_screen(1, frontier_y-1,frontier_x);
-    }
-    printw("\n");
-    refresh();
+        switch (ch) {
+            case '\r':
+            case '\n':
+                move(frontier_y, frontier_x);
+                if (frontier_y == rows-1) {
+                    scroll_screen(1, frontier_y-1,frontier_x);
+                }
+                printw("\n");
+                refresh();
                 if (history_enabled) {
                     /* Update the history. */
                     history.add_command(line);
                 }
-    return;
+                return;
 
-      case KEY_UP:
-      case KEY_DOWN:
+            case KEY_UP:
+            case KEY_DOWN:
                 if (!history_enabled) {
                     break;
                 }
@@ -416,11 +416,11 @@ void Shell::getline_ncurses(string& line, const char *prompt)
                 history.get_current(line);
                 move(prompt_y, prompt_x);
                 printw("%s", line.c_str());
-    getyx(stdscr, frontier_y, frontier_x);
+                getyx(stdscr, frontier_y, frontier_x);
                 move(frontier_y, frontier_x);
                 str_cursor = line.size();
-    clrtobot();
-    break;
+                clrtobot();
+                break;
 
             case '\t':
                 /* Split the current 'line' into 'line' + 'arg', so that
@@ -444,120 +444,120 @@ void Shell::getline_ncurses(string& line, const char *prompt)
                 }
                 break;
 
-      case KEY_LEFT:
-    if (y > prompt_y || x > prompt_x) {
-        if (x) {
-      x--;
-        } else {
-      y--;
-      x = cols-1;
+            case KEY_LEFT:
+                if (y > prompt_y || x > prompt_x) {
+                    if (x) {
+                        x--;
+                    } else {
+                        y--;
+                        x = cols-1;
+                    }
+                    move(y, x);
+                    str_cursor--;
+                }
+                break;
+
+            case KEY_RIGHT:
+                if (y < frontier_y || x < frontier_x) {
+                    if (x == cols-1) {
+                        x = 0;
+                        y++;
+                    } else {
+                        x++;
+                    }
+                    move(y, x);
+                    str_cursor++;
+                }
+                break;
+
+            case KEY_HOME:
+                move(prompt_y, prompt_x);
+                str_cursor = 0;
+                break;
+
+            case KEY_END:
+                move(frontier_y, frontier_x);
+                str_cursor = line.size();
+                break;
+
+            case 127: /* Backspace. */
+            case KEY_BACKSPACE:
+                if (str_cursor) {
+                    /* Compute the next cursor position. */
+                    if (x) {
+                        x--;
+                    } else {
+                        y--;
+                        x = cols-1;
+                    }
+                    str_cursor--;
+                    /* Use the same implementation of KEY_DC. */
+                } else break;
+
+            case KEY_DC:    /* Canc */
+                if (line.size()) {
+                    line.erase(str_cursor, 1);
+
+                    /* Update the frontier. */
+                    if (frontier_x) {
+                        frontier_x--;
+                    } else {
+                        frontier_x = cols-1;
+                        frontier_y--;
+                    }
+
+                    /* Reflush the command string. */
+                    move(prompt_y, prompt_x);
+                    printw("%s", line.c_str());
+
+                    /* Clear up to the end of the screen, in order to remove
+                       old trailing character (they have been shifted). */
+                    clrtobot();
+
+                    /* Restore the cursor position. */
+                    move(y, x);
+                }
+                break;
+
+            default:
+                if (is_printable(ch)) {
+                    /* Insert a character in the command string at the
+                       current cursor position. */
+                    line.insert(str_cursor, 1, static_cast<char>(ch));
+
+                    /* Compute the new cursor position. */
+                    if (x == cols-1) {
+                        x = 0;
+                        if (y == rows-1) {
+                            prompt_y--;
+                            scroll_screen(1, rows - 1, 0);
+                            frontier_y = rows - 2;
+                        } else {
+                            y++;
+                        }
+                    } else {
+                        x++;
+                    }
+                    str_cursor++;
+
+                    /* Reflush the whole command string. */
+                    move(prompt_y, prompt_x);
+                    printw("%s", line.c_str());
+
+                    /* Update the frontier. */
+                    getyx(stdscr, tmp_y, tmp_x);
+                    if (tmp_y > frontier_y) {
+                        frontier_y = tmp_y;
+                        frontier_x = 0;
+                    }
+                    if (tmp_y == frontier_y)
+                        frontier_x = max(frontier_x, tmp_x);
+
+                    /* Restore the cursor position. */
+                    move(y, x);
+                }
         }
-        move(y, x);
-        str_cursor--;
-    }
-    break;
-
-      case KEY_RIGHT:
-    if (y < frontier_y || x < frontier_x) {
-        if (x == cols-1) {
-      x = 0;
-      y++;
-        } else {
-      x++;
-        }
-        move(y, x);
-        str_cursor++;
-    }
-    break;
-
-      case KEY_HOME:
-    move(prompt_y, prompt_x);
-    str_cursor = 0;
-    break;
-
-      case KEY_END:
-    move(frontier_y, frontier_x);
-    str_cursor = line.size();
-    break;
-
-      case 127: /* Backspace. */
-      case KEY_BACKSPACE:
-    if (str_cursor) {
-        /* Compute the next cursor position. */
-        if (x) {
-      x--;
-        } else {
-      y--;
-      x = cols-1;
-        }
-        str_cursor--;
-        /* Use the same implementation of KEY_DC. */
-    } else break;
-
-      case KEY_DC:    /* Canc */
-    if (line.size()) {
-        line.erase(str_cursor, 1);
-
-        /* Update the frontier. */
-        if (frontier_x) {
-      frontier_x--;
-        } else {
-      frontier_x = cols-1;
-      frontier_y--;
-        }
-
-        /* Reflush the command string. */
-        move(prompt_y, prompt_x);
-        printw("%s", line.c_str());
-
-        /* Clear up to the end of the screen, in order to remove
-           old trailing character (they have been shifted). */
-        clrtobot();
-
-        /* Restore the cursor position. */
-        move(y, x);
-    }
-    break;
-
-      default:
-    if (is_printable(ch)) {
-        /* Insert a character in the command string at the
-           current cursor position. */
-        line.insert(str_cursor, 1, static_cast<char>(ch));
-
-        /* Compute the new cursor position. */
-        if (x == cols-1) {
-      x = 0;
-      if (y == rows-1) {
-          prompt_y--;
-          scroll_screen(1, rows - 1, 0);
-          frontier_y = rows - 2;
-      } else {
-          y++;
-      }
-        } else {
-      x++;
-        }
-        str_cursor++;
-
-        /* Reflush the whole command string. */
-        move(prompt_y, prompt_x);
-        printw("%s", line.c_str());
-
-        /* Update the frontier. */
-        getyx(stdscr, tmp_y, tmp_x);
-        if (tmp_y > frontier_y) {
-      frontier_y = tmp_y;
-      frontier_x = 0;
-        }
-        if (tmp_y == frontier_y)
-      frontier_x = max(frontier_x, tmp_x);
-
-        /* Restore the cursor position. */
-        move(y, x);
-    }
-  }
-  refresh();
+        refresh();
     }
 
     assert(rows < 10000);
@@ -566,7 +566,7 @@ void Shell::getline_ncurses(string& line, const char *prompt)
 void Shell::readline(string& line)
 {
     if (interactive) {
-  getline_ncurses(line, NULL);
+        getline_ncurses(line, NULL);
     } else {
         getline(in, line);
     }
@@ -581,16 +581,16 @@ int Shell::ls(const vector<string> &args, stringstream& ss)
     /* Compiled processes (e.g. all the processes in the 'processes'
        cache table). */
     for (it = c.processes.table.begin();
-                it != c.processes.table.end(); it++) {
-  lts = fsp::is<fsp::Lts>(it->second);
-  ss << "   " << it->first << ": " << lts->numStates()
-      << " states, " << lts->numTransitions() << " transitions, "
-      << lts->alphabetSize() << " actions in alphabet\n";
+            it != c.processes.table.end(); it++) {
+        lts = fsp::is<fsp::Lts>(it->second);
+        ss << "   " << it->first << ": " << lts->numStates()
+            << " states, " << lts->numTransitions() << " transitions, "
+            << lts->alphabetSize() << " actions in alphabet\n";
     }
     /* Processes defined in the FSP input file that have not been
        translated yet. */
     for (it = c.parametric_processes.table.begin();
-                it != c.parametric_processes.table.end(); it++) {
+            it != c.parametric_processes.table.end(); it++) {
         /* We try to see if the parametric process 'it->first', with
            default parameters, is in the 'processes' cache. If not, we
            don't force the translation. */
@@ -610,22 +610,22 @@ int Shell::safety(const vector<string> &args, stringstream& ss)
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
 
-  /* Deadlock analysis on args[0]. */
+        /* Deadlock analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
-        ss << "Process " << args[0] << " not found\n";
+            ss << "Process " << args[0] << " not found\n";
             return -1;
         }
         deadlocks = lts->deadlockAnalysis(ss);
     } else {
         fsp::Lts *lts;
 
-  /* Deadlock analysis on every process. */
-  for (it=c.processes.table.begin();
-        it!=c.processes.table.end(); it++) {
-      lts = fsp::is<fsp::Lts>(it->second);
-      deadlocks += lts->deadlockAnalysis(ss);
-  }
+        /* Deadlock analysis on every process. */
+        for (it=c.processes.table.begin();
+                it!=c.processes.table.end(); it++) {
+            lts = fsp::is<fsp::Lts>(it->second);
+            deadlocks += lts->deadlockAnalysis(ss);
+        }
     }
 
     return deadlocks;
@@ -641,10 +641,10 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
     if (args.size()) {
         fsp::SmartPtr<fsp::Lts> lts;
 
-  /* Progress analysis on args[0]. */
+        /* Progress analysis on args[0]. */
         lts = c.getLts(args[0], true);
         if (lts == NULL) {
-        ss << "Process " << args[0] << " not found\n";
+            ss << "Process " << args[0] << " not found\n";
             return -1;
         }
         for (it=c.progresses.table.begin();
@@ -655,16 +655,16 @@ int Shell::progress(const vector<string> &args, stringstream& ss)
     } else {
         fsp::Lts *lts;
 
-  /* Progress analysis on every process. */
-  for (it=c.processes.table.begin();
-        it!=c.processes.table.end(); it++) {
-      lts = fsp::is<fsp::Lts>(it->second);
-      for (jt=c.progresses.table.begin();
-        jt!=c.progresses.table.end(); jt++) {
-    pv = fsp::is<fsp::ProgressS>(jt->second);
-    npv += lts->progress(jt->first, *pv, ss);
-      }
-  }
+        /* Progress analysis on every process. */
+        for (it=c.processes.table.begin();
+                it!=c.processes.table.end(); it++) {
+            lts = fsp::is<fsp::Lts>(it->second);
+            for (jt=c.progresses.table.begin();
+                    jt!=c.progresses.table.end(); jt++) {
+                pv = fsp::is<fsp::ProgressS>(jt->second);
+                npv += lts->progress(jt->first, *pv, ss);
+            }
+        }
     }
 
     return npv;
@@ -676,7 +676,7 @@ int Shell::simulate(const vector<string> &args, stringstream& ss)
     fsp::ActionSetS *menu = NULL;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
+        ss << "Invalid command: try 'help'\n";
         return -1;
     }
 
@@ -709,8 +709,8 @@ int Shell::basic(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
@@ -720,9 +720,9 @@ int Shell::basic(const vector<string> &args, stringstream& ss)
     }
 
     if (args.size() >= 2) {
-  outfile = args[1];
+        outfile = args[1];
     } else {
-  outfile = args[0] + ".bfsp";
+        outfile = args[0] + ".bfsp";
     }
 
     lts->basic(outfile, ss);
@@ -735,9 +735,9 @@ int Shell::code(const vector<string>& args, stringstream& ss)
     using namespace codegen;
 
     ss << "WARNING: this feature is highly experimental.\n"
-    "You are strongly encouraged to carefully inspect the generated code before using it.\n"
-    "The author takes no responsibility for any inconvenient the generated code may cause.\n"
-    "Use the generated code at your own risk.\n\n";
+        "You are strongly encouraged to carefully inspect the generated code before using it.\n"
+        "The author takes no responsibility for any inconvenient the generated code may cause.\n"
+        "Use the generated code at your own risk.\n\n";
 
     UserRequirements requirements(args);
     try {
@@ -759,14 +759,14 @@ int Shell::alpha(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-    ss << "Process " << args[0] << " not found\n";
-    return -1;
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
 
     lts->printAlphabet(ss, options["label-compression"].get() == "y");
@@ -785,19 +785,19 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     int ret;
 
     if (!interactive) {
-    ss << "Cannot use 'see' command in scripts\n";
-    return -1;
+        ss << "Cannot use 'see' command in scripts\n";
+        return -1;
     }
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-    ss << "Process " << args[0] << " not found\n";
-    return -1;
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
 
     if (lts->numStates() == 0) {
@@ -820,50 +820,50 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     drawer = fork();
 
     switch (drawer) {
-    case -1:
-        ss << "fork() error\n";
-        return -1;
-        break;
-    case 0:
-        /* This is executed by the child. */
+        case -1:
+            ss << "fork() error\n";
+            return -1;
+            break;
+        case 0:
+            /* This is executed by the child. */
 
-        /* A Unix trick used to redirect the standard output to a file.
-           Just close the standard output and immediately open the file to
-           redirect into: Unix semantic guarantees that the file descriptor
-           for the new file will be the lowest unused, and so in this case
-           stdout will be selected. */
-        close(1);
-        open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
+            /* A Unix trick used to redirect the standard output to a file.
+               Just close the standard output and immediately open the file to
+               redirect into: Unix semantic guarantees that the file descriptor
+               for the new file will be the lowest unused, and so in this case
+               stdout will be selected. */
+            close(1);
+            open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
 
-        execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
-        execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
-        perror("ltsee exec failed");
-        exec_errmsg = "Cannot find ltsee";
-        ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
-        (void)ret;
-        exit(EXIT_FAILURE);
-        break;
-    default:
-        /* This is executed by the parent. */
-        int status;
+            execl("ltsee", "ltsee", tmp_name.c_str(), NULL);
+            execlp("ltsee", "ltsee", tmp_name.c_str(), NULL);
+            perror("ltsee exec failed");
+            exec_errmsg = "Cannot find ltsee";
+            ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+            (void)ret;
+            exit(EXIT_FAILURE);
+            break;
+        default:
+            /* This is executed by the parent. */
+            int status;
 
-        waitpid(-1, &status, 0);
+            waitpid(-1, &status, 0);
 
-        /* We read from the standard output of the child an write what
-           we read to the console output. It is important to open the
-           file after waitpid(), otherwise there is a race condition
-           where we try to open the file before this is created by the
-           child. */
-        ifstream stdout_file(stdout_tmp_name.c_str());
+            /* We read from the standard output of the child an write what
+               we read to the console output. It is important to open the
+               file after waitpid(), otherwise there is a race condition
+               where we try to open the file before this is created by the
+               child. */
+            ifstream stdout_file(stdout_tmp_name.c_str());
 
-        if (stdout_file) {
-            ss << stdout_file.rdbuf() << "\n";
-        } else {
-            ss << "Error: Make sure you have write permissions in the "
+            if (stdout_file) {
+                ss << stdout_file.rdbuf() << "\n";
+            } else {
+                ss << "Error: Make sure you have write permissions in the "
                     "current directory\n";
-        }
+            }
 
-        remove(stdout_tmp_name.c_str());
+            remove(stdout_tmp_name.c_str());
     }
 
     remove(tmp_name.c_str());
@@ -880,14 +880,14 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     int ret;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-    ss << "Process " << args[0] << " not found\n";
-    return -1;
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
     filename = args[0] + ".gv";
 
@@ -906,35 +906,35 @@ int Shell::print(const vector<string> &args, stringstream& ss)
     pid_t drawer = fork();
 
     switch (drawer) {
-    case -1:
-        ss << "fork() error\n";
-        return -1;
-        break;
-    case 0:
-        close(1);
-        open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
-        execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
-        execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
-        exec_errmsg = "Cannot find ltsimg";
-        ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
-        (void)ret;
-        exit(EXIT_FAILURE);
-        break;
-    default:
-        int status;
+        case -1:
+            ss << "fork() error\n";
+            return -1;
+            break;
+        case 0:
+            close(1);
+            open(stdout_tmp_name.c_str(), O_CREAT | O_WRONLY, S_IRUSR);
+            execl("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
+            execlp("ltsimg", "ltsimg", filename.c_str(), format.c_str(), NULL);
+            exec_errmsg = "Cannot find ltsimg";
+            ret = write(1, exec_errmsg, strlen(exec_errmsg) + 1);
+            (void)ret;
+            exit(EXIT_FAILURE);
+            break;
+        default:
+            int status;
 
-        waitpid(-1, &status, 0);
+            waitpid(-1, &status, 0);
 
-        ifstream stdout_file(stdout_tmp_name.c_str());
+            ifstream stdout_file(stdout_tmp_name.c_str());
 
-        if (stdout_file) {
-            ss << stdout_file.rdbuf() << "\n";
-        } else {
-            ss << "Error: Make sure you have write permissions in the "
+            if (stdout_file) {
+                ss << stdout_file.rdbuf() << "\n";
+            } else {
+                ss << "Error: Make sure you have write permissions in the "
                     "current directory\n";
-        }
+            }
 
-        remove(stdout_tmp_name.c_str());
+            remove(stdout_tmp_name.c_str());
     }
 
     remove(filename.c_str());
@@ -957,7 +957,7 @@ int Shell::lsprop(const vector<string> &args, stringstream& ss)
         if (pv->conditional) {
             pv->condition.toSetValue(cond);
         }
-  ss << "   " << it->first << ": ";
+        ss << "   " << it->first << ": ";
         if (pv->conditional) {
             ss << "if ";
             cond.output(ss);
@@ -981,7 +981,7 @@ int Shell::lsmenu(const vector<string> &args, stringstream& ss)
 
         as = fsp::is<fsp::ActionSetS>(it->second);
         as->toSetValue(setv);
-  ss << "   " << it->first << ": ";
+        ss << "   " << it->first << ": ";
         setv.output(ss);
         ss << "\n";
     }
@@ -994,14 +994,14 @@ int Shell::minimize(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-    ss << "Process " << args[0] << " not found\n";
-    return -1;
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
 
     lts->minimize(ss);
@@ -1014,14 +1014,14 @@ int Shell::traces(const vector<string> &args, stringstream& ss)
     fsp::SmartPtr<fsp::Lts> lts;
 
     if (!args.size()) {
-    ss << "Invalid command: try 'help'\n";
-    return -1;
+        ss << "Invalid command: try 'help'\n";
+        return -1;
     }
 
     lts = c.getLts(args[0], true);
     if (lts == NULL) {
-    ss << "Process " << args[0] << " not found\n";
-    return -1;
+        ss << "Process " << args[0] << " not found\n";
+        return -1;
     }
 
     lts->traces(ss);
@@ -1058,7 +1058,7 @@ int Shell::if_(const vector<string> &args, stringstream& ss)
            in the new IfFrame will ever be executed. Therefore we just
            push a new IfFrame, where we don't initially accept, but
            pretend we have already accepted commands.
-        */
+           */
         ifframes.push(IfFrame(false, true, false));
     } else {
         /* We met an 'if' command while accepting commands. We evaluate
@@ -1125,9 +1125,9 @@ int Shell::elif_(const vector<string> &args, stringstream& ss)
 int Shell::else_(const vector<string> &args, stringstream& ss)
 {
     if (args.size()) {
-    ss << "This command takes no arguments\n";
+        ss << "This command takes no arguments\n";
 
-    return -1;
+        return -1;
     }
 
     if (ifframes.size() == 1 || ifframes.top().else_met) {
@@ -1150,9 +1150,9 @@ int Shell::else_(const vector<string> &args, stringstream& ss)
 int Shell::fi_(const vector<string> &args, stringstream& ss)
 {
     if (args.size()) {
-    ss << "This command takes no arguments\n";
+        ss << "This command takes no arguments\n";
 
-    return -1;
+        return -1;
     }
 
     if (ifframes.size() == 1) {
@@ -1200,7 +1200,7 @@ int Shell::option(const vector<string>& args, stringstream& ss)
     if (args.size() == 0) {
         /* List all options names and values. */
         for (map<string, ShellOption>::iterator mit = options.begin();
-                                            mit != options.end(); mit++) {
+                mit != options.end(); mit++) {
             ss << "    " << mit->first << ": '" << mit->second.get() << "'\n";
         }
     } else {
@@ -1212,7 +1212,7 @@ int Shell::option(const vector<string>& args, stringstream& ss)
             /* Show the value of the option specified with the first
                argument. */
             ss << "    " << args[0] << ": '" <<
-                    options[args[0]].get() << "'\n";
+                options[args[0]].get() << "'\n";
         } else {
             /* Set the value of the option specified with the first
                argument. */
@@ -1266,7 +1266,7 @@ int Shell::help(const vector<string> &args, stringstream& ss)
             return -1;
         }
         ss << "   " << it->second.synopsis << ": " << it->second.desc
-                << "\n";
+            << "\n";
     } else {
         ss << "Available commands: (type 'help CMD' to get more info)\n";
         /* Show the synopsis for every command. */
@@ -1487,7 +1487,7 @@ void AutoCompletion::insert(const string& s)
    common prefix of all the strings in the subset.
 
    Returns true if 's' has been modified.
-*/
+   */
 bool AutoCompletion::lookup(string& s) const
 {
     unsigned int ti = 0;
@@ -1550,7 +1550,7 @@ TrieElem::TrieElem(char c, bool end_of_word)
 }
 
 ShellOption::ShellOption(const string& n, const string& defaul,
-                         unsigned int t) : name(n), type(t)
+        unsigned int t) : name(n), type(t)
 {
     set(defaul);
 }

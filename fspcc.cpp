@@ -36,20 +36,20 @@ void help()
     cout << "fspc - A Finite State Process compiler and LTS analisys tool.\n";
     cout << "USAGE: fspc [-dpgasSh] [-i FILE | -l FILE] [-o FILE]\n";
     cout << "   -i FILE : Specifies FILE as the input file containing "
-            "FSP definitions.\n";
+        "FSP definitions.\n";
     cout << "   -l FILE : Specifies FILE as the input file containing "
-            "compiled LTSs.\n";
+        "compiled LTSs.\n";
     cout << "   -o FILE : Specifies the output FILE, e.g. the file that "
-            "will contain the compiled LTSs.\n";
+        "will contain the compiled LTSs.\n";
     cout << "   -d : Runs deadlock/error analysis on every FSP.\n";
     cout << "   -p : Runs all the specified progress verifications on "
-            "every FSP.\n";
+        "every FSP.\n";
     cout << "   -g : Outputs a graphviz representation file of every FSP.\n";
     cout << "   -a : The same as '-d -p -g'\n";
     cout << "   -s : Runs an LTS analysis interactive shell\n";
     cout << "   -S FILE : Runs an LTS analysis script\n";
     cout << "   -D NUM : The maximum depth of process references accepted "
-            "within a process definition (default is 1000)\n";
+        "within a process definition (default is 1000)\n";
     cout << "   -v : Shows versioning information\n";
     cout << "   -h : Shows this help.\n";
 }
@@ -71,58 +71,58 @@ void process_args(CompilerOptions& co, int argc, char **argv)
     co.max_reference_depth = 1000;
 
     while ((ch = getopt(argc, argv, "i:l:o:adpghsvS:D:")) != -1) {
-  switch (ch) {
-      default:
-    cout << "\n";
-    help();
-    exit(1);
-    break;
+        switch (ch) {
+            default:
+                cout << "\n";
+                help();
+                exit(1);
+                break;
 
-      case 'i':
-    il_options++;
-    co.input_file = optarg;
-    co.input_type = CompilerOptions::InputTypeFsp;
-    break;
+            case 'i':
+                il_options++;
+                co.input_file = optarg;
+                co.input_type = CompilerOptions::InputTypeFsp;
+                break;
 
-      case 'l':
-    il_options++;
-    co.input_file = optarg;
-    co.input_type = CompilerOptions::InputTypeLts;
-    break;
+            case 'l':
+                il_options++;
+                co.input_file = optarg;
+                co.input_type = CompilerOptions::InputTypeLts;
+                break;
 
-      case 'o':
+            case 'o':
                 co.output_file = optarg;
                 break;
 
-      case 'a':
-    co.deadlock = co.progress = co.graphviz = true;
-    break;
+            case 'a':
+                co.deadlock = co.progress = co.graphviz = true;
+                break;
 
-      case 'd':
-    co.deadlock = true;
-    break;
+            case 'd':
+                co.deadlock = true;
+                break;
 
-      case 'p':
-    co.progress = true;
-    break;
+            case 'p':
+                co.progress = true;
+                break;
 
-      case 'g':
-    co.graphviz = true;
-    break;
+            case 'g':
+                co.graphviz = true;
+                break;
 
-      case 'h':
-    help();
-    exit(0);
-    break;
+            case 'h':
+                help();
+                exit(0);
+                break;
 
-      case 's':
-    co.shell = true;
-    break;
+            case 's':
+                co.shell = true;
+                break;
 
-      case 'S':
-    co.script = true;
-    co.script_file = optarg;
-    break;
+            case 'S':
+                co.script = true;
+                co.script_file = optarg;
+                break;
 
             case 'D':
                 co.max_reference_depth = atoi(optarg);
@@ -132,13 +132,13 @@ void process_args(CompilerOptions& co, int argc, char **argv)
                 cout << "fspc 1.7 (April 2014)\n";
                 cout << "Copyright 2013-2014 Vincenzo Maffione\n";
                 exit(0);
-  }
+        }
     }
 
     if (il_options > 1) {
-  cerr << "Error: Cannot specify more than one input file\n\n";
+        cerr << "Error: Cannot specify more than one input file\n\n";
         help();
-  exit(-1);
+        exit(-1);
     }
 
     if (!co.input_file) {
