@@ -76,6 +76,7 @@ using namespace std;
    avoid linking the executable with -lfl. */
 %option noyywrap nounput batch debug
 %option outfile="fsp_scanner.cpp"
+%option prefix="fsp"
 
 DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-zA-Z0-9]*

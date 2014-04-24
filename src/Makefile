@@ -10,7 +10,7 @@ NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_t
 SOURCES=$(NONGEN) $(GENERATED)
 
 # All the non-generated files.
-WCIN=$(NONGEN) fsp.lex fsp.ypp Makefile preproc.lex ltsee csee.sh fsp_parser.diff fspcc.1 Makefile.ske sh.lex sh.ypp
+WCIN=$(NONGEN) fsp_scanner.lpp fsp_parser.ypp Makefile preproc.lpp ltsee csee.sh fsp_parser.diff fspcc.1 Makefile.ske sh_scanner.lpp sh_parser.ypp
 
 # The files included in the fspc tarball.
 TAR_CONTENT=$(SOURCES) ltsee csee.sh fsp_parser.diff fspcc.1 Makefile.gen
@@ -46,8 +46,8 @@ Makefile.gen: Makefile.ske
 # the 'location.hh' and 'position.hh' files into files with different
 # names: For this reason it's necessary to manually rename the files
 # and replace include directives.
-fsp_parser.cpp fsp_parser.hpp fsp_location.hh fsp_position.hh: fsp.ypp fsp.y fsp_parser.diff
-	bison -p fsp $(REPORT) fsp.ypp
+fsp_parser.cpp fsp_parser.hpp fsp_location.hh fsp_position.hh: fsp_parser.ypp fsp_parser.diff
+	bison $(REPORT) fsp_parser.ypp
 	patch fsp_parser.cpp < fsp_parser.diff
 	mv location.hh fsp_location.hh
 	mv position.hh fsp_position.hh
@@ -55,20 +55,20 @@ fsp_parser.cpp fsp_parser.hpp fsp_location.hh fsp_position.hh: fsp.ypp fsp.y fsp
 	sed -i 's|\<position.hh|fsp_position.hh|g' *.hpp *.cpp *.hh
 
 # Generate the fsp_scanner with Flex.
-fsp_scanner.cpp: fsp.lex fsp_parser.hpp
-	flex -P fsp fsp.lex
+fsp_scanner.cpp: fsp_scanner.lpp fsp_parser.hpp
+	flex fsp_scanner.lpp
 
 # Generate the preprocessor with Flex.
-preproc.cpp: preproc.lex
-	flex -P fsp preproc.lex
+preproc.cpp: preproc.lpp
+	flex preproc.lpp
 
 # Generate the shell fsp_parser with GNU Bison.
-sh_parser.cpp sh_parser.hpp: sh.ypp sh.ypp
-	bison -p sh $(REPORT) sh.ypp
+sh_parser.cpp sh_parser.hpp: sh_parser.ypp
+	bison $(REPORT) sh_parser.ypp
 
 # Generate the shell fsp_scanner with Flex.
-sh_scanner.cpp: sh.lex sh_parser.hpp
-	flex -P sh sh.lex
+sh_scanner.cpp: sh_scanner.lpp sh_parser.hpp
+	flex sh_scanner.lpp
 
 # Blackbox test against the testset.
 testing: normal
@@ -104,7 +104,7 @@ aur:
 	python create_pkgbuild.py remote $(VER)
 
 # Create a tarball containing all the files necessary for the compilation
-# but not the generating files (e.g. fsp.ypp, fsp.lex, ecc.)
+# but not the generating files (e.g. fsp_parser.ypp, fsp_scanner.lpp, ecc.)
 fspcc-$(VER).tar.gz: $(TAR_CONTENT)
 	mkdir release
 	cp $(TAR_CONTENT) release

@@ -17,6 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+%name-prefix "sh"
+
 %code top {
 /* This piece of code goes verbatim at the the top of the generated
    parser implementation. */
@@ -45,7 +47,7 @@ using namespace std;
 %verbose
 */
 
-%define parser_class_name "ShParser"
+%define parser_class_name {ShParser}
 
 /* The parsing context. */
 %parse-param { ShDriver& driver }

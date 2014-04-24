@@ -70,6 +70,7 @@ using namespace std;
    avoid linking the executable with -lfl. */
 %option noyywrap nounput batch debug
 %option outfile="sh_scanner.cpp"
+%option prefix="sh"
 
 DIGIT		[0-9]
 ID	        [_a-zA-Z][_a-zA-Z0-9]*

@@ -17,6 +17,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+%name-prefix "fsp"
+
 %code top {
 /* This piece of code goes verbatim at the the top of the generated
    parser implementation. */
@@ -46,7 +48,7 @@ using namespace std;
 %verbose
 */
 
-%define parser_class_name "FspParser"
+%define parser_class_name {FspParser}
 
 /* The parsing context. */
 %parse-param { FspDriver& driver }
