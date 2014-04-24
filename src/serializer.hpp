@@ -33,6 +33,9 @@ using namespace std;
 namespace fsp {
     class Lts;
     class ActionsTable;
+    class SetS;
+    class ActionSetS;
+    class ProgressS;
 }
 
 class Serializer {
