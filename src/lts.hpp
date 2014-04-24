@@ -31,7 +31,7 @@
 #include <stdint.h>
 
 #include "symbols_table.hpp"
-#include "fsp_location.hh"
+#include "location.hh"
 
 using namespace std;
 

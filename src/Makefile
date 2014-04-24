@@ -1,7 +1,7 @@
 VER=1.7
 
 # Generated C++ source files (to be updated manually)
-GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp fsp_location.hh fsp_position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
+GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp location.hh position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp
 
 # Non-generated C++ source files (to be updated manually).
 NONGEN=context.hpp context.cpp fspcc.cpp interface.hpp lts.cpp lts.hpp symbols_table.cpp symbols_table.hpp utils.cpp utils.hpp circular_buffer.cpp circular_buffer.hpp serializer.cpp serializer.hpp shell.cpp shell.hpp fsp_driver.cpp fsp_driver.hpp tree.cpp tree.hpp preproc.hpp helpers.cpp helpers.hpp unresolved.cpp unresolved.hpp test-serializer.cpp smart_pointers.hpp smart_pointers.cpp shlex_declaration.hpp fsplex_declaration.hpp sh_driver.cpp sh_driver.hpp code_generator.cpp code_generator.hpp code_generation_framework.cpp code_generation_framework.hpp fspc_experts.hpp scalable_visitor.hpp monitor_analyst.cpp monitor_analyst.hpp java_developer.cpp java_developer.hpp java_templates.hpp
@@ -46,13 +46,9 @@ Makefile.gen: Makefile.ske
 # the 'location.hh' and 'position.hh' files into files with different
 # names: For this reason it's necessary to manually rename the files
 # and replace include directives.
-fsp_parser.cpp fsp_parser.hpp fsp_location.hh fsp_position.hh: fsp_parser.ypp fsp_parser.diff
+fsp_parser.cpp fsp_parser.hpp location.hh position.hh: fsp_parser.ypp fsp_parser.diff
 	bison $(REPORT) fsp_parser.ypp
 	patch fsp_parser.cpp < fsp_parser.diff
-	mv location.hh fsp_location.hh
-	mv position.hh fsp_position.hh
-	sed -i 's|\<location.hh|fsp_location.hh|g' *.hpp *.cpp *.hh
-	sed -i 's|\<position.hh|fsp_position.hh|g' *.hpp *.cpp *.hh
 
 # Generate the fsp_scanner with Flex.
 fsp_scanner.cpp: fsp_scanner.lpp fsp_parser.hpp

@@ -29,7 +29,7 @@
 #include "symbols_table.hpp"
 #include "lts.hpp"
 #include "context.hpp"
-#include "fsp_location.hh"
+#include "location.hh"
 
 
 struct FspDriver;
