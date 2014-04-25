@@ -469,13 +469,13 @@ int FspDriver::parse(const CompilerOptions& co)
 	    exit(-1);
 	}
 
-	ret = Shell(*this, fin).run();
+	ret = BatchShell(*this, fin).run();
 	fin.close();
     }
 
     /* Run the interactive shell if the user asked for that. */
     if (cop.shell) {
-	ret = Shell(*this, std::cin).run();
+	ret = InteractiveShell(*this, std::cin).run();
     }
 
     outputPhase(ss);

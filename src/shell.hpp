@@ -206,19 +206,6 @@ class Shell {
         /* A mapping of command names to command callbacks. */
         map<string, ShellCmdFunc> cmd_map;
 
-        /* The input stream the shell reads from. */
-        istream& in;
-
-        /* Whethter the input stream 'in' is interactive or not. */
-        bool interactive;
-
-        /* Command history. */
-        CommandHistory history;
-        bool history_enabled;
-
-        /* Auto-completion. */
-        AutoCompletion completion;
-
         /* Keep trace of the last 'c.processes.size()' seen. */
         unsigned int trace_processes_size;
 
@@ -235,10 +222,6 @@ class Shell {
 
         /* Shell return value, set by the "exit" command. */
         int return_value;
-
-        void common_init();
-        void fill_completion();
-        void getline_ncurses(string& line, const char *prompt);
 
         int ls(const vector<string>& args, stringstream& ss);
         int safety(const vector<string>& args, stringstream& ss);
@@ -264,17 +247,47 @@ class Shell {
         int option(const vector<string>& args, stringstream& ss);
         int help(const vector<string>& args, stringstream& ss);
 
+    protected:
+        /* The input stream the shell reads from. */
+        istream& in;
+
+        /* Command history. */
+        CommandHistory history;
+        bool history_enabled;
+
+        /* Auto-completion. */
+        AutoCompletion completion;
+
+        void fill_completion();
+
     public:
         Shell(FspDriver& cr, istream& inr);
-        Shell(FspDriver& cr, ifstream& inr);
 
         int run();
-        void readline(string& line);
-        void putsstream(stringstream& ss, bool eol);
+        virtual void readline(string& line, const char *prompt) = 0;
+        virtual void putsstream(stringstream& ss, bool eol) = 0;
+        virtual bool interactive() const = 0;
         void history_enable(bool enable);
         bool lookup_variable(const string& name, int& val) const;
+};
 
-        ~Shell();
+class InteractiveShell: public Shell {
+    public:
+        InteractiveShell(FspDriver& cr, istream& inr);
+        ~InteractiveShell();
+
+        virtual void readline(string& line, const char *prompt);
+        virtual void putsstream(stringstream& ss, bool eol);
+        virtual bool interactive() const { return true; }
+};
+
+class BatchShell: public Shell {
+    public:
+        BatchShell(FspDriver& cr, ifstream& inr);
+
+        virtual void readline(string& line, const char *prompt);
+        virtual void putsstream(stringstream& ss, bool eol);
+        virtual bool interactive() const { return false; }
 };
 
 

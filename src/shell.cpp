@@ -54,7 +54,7 @@
 #define HISTORY_MAX_COMMANDS    20
 
 /* =========================== Shell implementation ==================== */
-void Shell::common_init()
+Shell::Shell(FspDriver& cr, istream& inr) : c(cr), code_generator(cr), in(inr)
 {
     /*
      * Initialize the help map.
@@ -177,7 +177,6 @@ void Shell::common_init()
     ifframes.push(IfFrame(true, false, false));
 }
 
-/* This function must be called after common_init(). */
 void Shell::fill_completion()
 {
     map<string, fsp::Symbol *>::iterator it;
@@ -202,10 +201,8 @@ void Shell::fill_completion()
     }
 }
 
-Shell::Shell(FspDriver& cr, istream& inr) : c(cr), code_generator(cr), in(inr)
+InteractiveShell::InteractiveShell(FspDriver& cr, istream& inr) : Shell(cr, inr)
 {
-    common_init();
-    interactive = true;
     history_enabled = true;
 
     /* Autocompletion initialization. */
@@ -226,16 +223,13 @@ Shell::Shell(FspDriver& cr, istream& inr) : c(cr), code_generator(cr), in(inr)
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
 }
 
-Shell::Shell(FspDriver& cr, ifstream& inr) : c(cr), code_generator(cr), in(inr)
+InteractiveShell::~InteractiveShell()
 {
-    common_init();
-    interactive = false;
+    endwin();   /* Exit curses mode. */
 }
 
-Shell::~Shell()
+BatchShell::BatchShell(FspDriver& cr, ifstream& inr): Shell(cr, inr)
 {
-    if (interactive)
-        endwin();   /* Exit curses mode. */
 }
 
 static void scroll_screen(int n, int y, int x)
@@ -267,58 +261,58 @@ static void scroll_screen(int n, int y, int x)
 
 /* eol: if false a newline will not be printed together with the last
    line in 'ss'. */
-void Shell::putsstream(stringstream& ss, bool eol) {
+void InteractiveShell::putsstream(stringstream& ss, bool eol)
+{
+    string line;
+    int y, x;
+    int rows, cols;
+    bool first_line = true;
 
-    if (interactive) {
-        string line;
-        int y, x;
-        int rows, cols;
-        bool first_line = true;
+    getmaxyx(stdscr, rows, cols);
 
-        getmaxyx(stdscr, rows, cols);
+    /* Split the stringstream content in lines (using '\n' as
+       separator. */
+    while (getline(ss, line)) {
+        int rows_required;
 
-        /* Split the stringstream content in lines (using '\n' as
-           separator. */
-        while (getline(ss, line)) {
-            int rows_required;
-
-            if (!first_line) {
-                /* Newline attached to the line printed in the previous
+        if (!first_line) {
+            /* Newline attached to the line printed in the previous
 iteration: We need to defer the newline insertion because
 of the 'eol' parameter. */
-                printw("\n");
-                refresh();
-            }
-            first_line = false;
-
-            /* Compute the number of rows that are necessary to print the
-               line. */
-            rows_required = line.size() / cols;
-            if (line.size() % cols)
-                rows_required++;
-
-            getyx(stdscr, y, x);
-            /* If there is not enough empty rows in the screen, we scroll as
-               many times as needed to make enough room, and move the
-               cursor at the beginning of the first empty row after
-               scrolling. */
-            if (y + rows_required >= rows)
-                scroll_screen(y + rows_required - rows + 1,
-                        rows - rows_required-1, 0);
-            /* Finally print the line. */
-            printw("%s", line.c_str());
-        }
-
-        /* Put a newline after the last line in 'ss' only if asked by
-           the user. */
-        if (eol)
             printw("\n");
+            refresh();
+        }
+        first_line = false;
 
-        refresh();
+        /* Compute the number of rows that are necessary to print the
+           line. */
+        rows_required = line.size() / cols;
+        if (line.size() % cols)
+            rows_required++;
+
+        getyx(stdscr, y, x);
+        /* If there is not enough empty rows in the screen, we scroll as
+           many times as needed to make enough room, and move the
+           cursor at the beginning of the first empty row after
+           scrolling. */
+        if (y + rows_required >= rows)
+            scroll_screen(y + rows_required - rows + 1,
+                    rows - rows_required-1, 0);
+        /* Finally print the line. */
+        printw("%s", line.c_str());
     }
-    else {
-        cout << ss.str();
-    }
+
+    /* Put a newline after the last line in 'ss' only if asked by
+       the user. */
+    if (eol)
+        printw("\n");
+
+    refresh();
+}
+
+void BatchShell::putsstream(stringstream& ss, bool eol)
+{
+    cout << ss.str();
 }
 
 /* The more portable way I found out to implement 'isprint'. */
@@ -343,7 +337,7 @@ static void right_split(string& base, string& back)
     base = base.substr(0, p + 1);
 }
 
-void Shell::getline_ncurses(string& line, const char *prompt)
+void InteractiveShell::readline(string& line, const char *prompt)
 {
     int ch;
 
@@ -563,13 +557,9 @@ void Shell::getline_ncurses(string& line, const char *prompt)
     assert(rows < 10000);
 }
 
-void Shell::readline(string& line)
+void BatchShell::readline(string& line, const char *prompt)
 {
-    if (interactive) {
-        getline_ncurses(line, NULL);
-    } else {
-        getline(in, line);
-    }
+    getline(in, line);
 }
 
 int Shell::ls(const vector<string> &args, stringstream& ss)
@@ -784,7 +774,7 @@ int Shell::see(const vector<string> &args, stringstream& ss)
     const char *exec_errmsg;
     int ret;
 
-    if (!interactive) {
+    if (!interactive()) {
         ss << "Cannot use 'see' command in scripts\n";
         return -1;
     }
@@ -1293,10 +1283,7 @@ int Shell::run()
         map<string, ShellCmdFunc>::iterator it;
         stringstream ss;
 
-        if (interactive)
-            getline_ncurses(line, "fspcc >> ");
-        else
-            getline(in, line);
+        readline(line, "fspcc >> ");
 
         if (in.eof()) {
             return 0;

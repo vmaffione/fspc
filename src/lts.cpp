@@ -1684,7 +1684,7 @@ choose:
         }
 	ss << "    Your choice ('q' to quit): ";
 	sh.putsstream(ss, false); ss.clear();
-	sh.readline(choice);
+	sh.readline(choice, NULL);
 	if (choice.size() && choice[0] == 'q')
 	    return;
 
