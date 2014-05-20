@@ -21,13 +21,13 @@
 #ifndef __STRINGS__TABLE__H__
 #define __STRINGS__TABLE__H__
 
+#include "smart_pointers.hpp"
+
 #include <iostream>
 #include <vector>
 #include <string>
 #include <map>
 #include <set>
-
-#include "smart_pointers.hpp"
 
 using namespace std;
 

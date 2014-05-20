@@ -18,16 +18,16 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdexcept>
-
-using namespace std;
-
 #include "monitor_analyst.hpp"
 #include "java_developer.hpp"
 #include "code_generator.hpp"
 
+#include <stdexcept>
+
+using namespace std;
 using namespace codegen;
 using namespace java;
+
 
 CodeGenerator::CodeGenerator(FspDriver& _c) : c(_c)
 {

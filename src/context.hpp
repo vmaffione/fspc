@@ -21,8 +21,9 @@
 #ifndef __CONTEXT__H__
 #define __CONTEXT__H__
 
-#include <iostream>
 #include "symbols_table.hpp"
+
+#include <iostream>
 
 using namespace std;
 

@@ -18,15 +18,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
-
-using namespace std;
-
 #include "lts.hpp"
 #include "monitor_analyst.hpp"
 
+#include <algorithm>
+
+using namespace std;
 using namespace fsp;
 using namespace codegen;
+
 
 string lowercase(const string& u)
 {

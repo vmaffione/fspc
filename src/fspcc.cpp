@@ -18,6 +18,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Main FspDriver class, instantiating the parser. */
+#include "fsp_driver.hpp"
+#include "code_generator.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -25,10 +28,6 @@
 #include <unistd.h>
 
 using namespace std;
-
-/* Main FspDriver class, instantiating the parser. */
-#include "fsp_driver.hpp"
-#include "code_generator.hpp"
 
 
 void help()

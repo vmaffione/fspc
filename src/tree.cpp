@@ -17,18 +17,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "tree.hpp"
+#include "fsp_driver.hpp"
+#include "unresolved.hpp"
+#include "helpers.hpp"
+#include "utils.hpp"
 
 #include <iostream>
 #include <vector>
 #include <queue>
 #include <fstream>
 #include <sstream>
-
-#include "tree.hpp"
-#include "fsp_driver.hpp"
-#include "unresolved.hpp"
-#include "helpers.hpp"
-#include "utils.hpp"
 
 using namespace std;
 using namespace fsp;

@@ -17,17 +17,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <set>
-#include <sstream>
-#include <fstream>
-#include <assert.h>
-
 /* Symbols tables and symbol types. */
 #include "symbols_table.hpp"
 
 #include "helpers.hpp"
 
+#include <set>
+#include <sstream>
+#include <fstream>
+#include <assert.h>
 
 
 //#define DEBUG

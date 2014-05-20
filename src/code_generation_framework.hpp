@@ -21,12 +21,13 @@
 #ifndef __FSPC_CODEGEN_CODE_GENERATOR_FRAMEWORK__HH
 #define __FSPC_CODEGEN_CODE_GENERATOR_FRAMEWORK__HH
 
+#include "scalable_visitor.hpp"
+
 #include <memory>
 #include <string>
 #include <fstream>
 #include <vector>
 
-#include "scalable_visitor.hpp"
 
 namespace codegen {
 
@@ -119,7 +120,7 @@ class SourceCode :
     public Serializable,
     public MakeVisitable<SourceCode> {
     private:
-        vector<heap<SourceFile>> sourceFiles;
+        std::vector<heap<SourceFile>> sourceFiles;
     public:
         SourceCode();
         void add_file(heap<SourceFile> f);

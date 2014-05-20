@@ -21,6 +21,9 @@
 #ifndef __SHELL_HH
 #define __SHELL_HH
 
+#include "symbols_table.hpp"
+#include "code_generator.hpp"
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -30,9 +33,6 @@
 #include <cassert>
 
 using namespace std;
-
-#include "symbols_table.hpp"
-#include "code_generator.hpp"
 
 
 /* An helper class which implements the command history for the

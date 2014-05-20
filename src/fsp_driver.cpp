@@ -21,6 +21,7 @@
 /* The parse tree structures. */
 #include "tree.hpp"
 
+/* Some helper routines. */
 #include "helpers.hpp"
 
 #include <queue>

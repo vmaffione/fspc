@@ -1,6 +1,14 @@
 #ifndef __DRIVER__HH
 #define __DRIVER__HH
 
+#include "context.hpp"
+#include "symbols_table.hpp"
+#include "utils.hpp"
+#include "fsp_parser.hpp"
+#include "interface.hpp"
+#include "unresolved.hpp"
+#include "lts.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -11,14 +19,6 @@
 
 //#define NDEBUG
 #include <assert.h>
-
-#include "context.hpp"
-#include "symbols_table.hpp"
-#include "utils.hpp"
-#include "fsp_parser.hpp"
-#include "interface.hpp"
-#include "unresolved.hpp"
-#include "lts.hpp"
 
 using namespace std;
 

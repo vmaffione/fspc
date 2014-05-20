@@ -21,13 +21,14 @@
 #ifndef __UTILS__HH
 #define __UTILS__HH
 
+#include "symbols_table.hpp"
+#include "fsp_parser.hpp"
+
 #include <sstream>
 #include <assert.h>
 
 using namespace std;
 
-#include "symbols_table.hpp"
-#include "fsp_parser.hpp"
 
 namespace fsp {
 

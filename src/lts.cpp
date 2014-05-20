@@ -17,15 +17,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <map>
-#include <fstream>
-#include <algorithm>
-#include <list>
-#include <queue>
-#include <cstdlib>
-#include <assert.h>
-
 /* Inline utilities. */
 #include "utils.hpp"
 
@@ -40,6 +31,14 @@
 
 /* Some helpers (intersection routines). */
 #include "helpers.hpp"
+
+#include <map>
+#include <fstream>
+#include <algorithm>
+#include <list>
+#include <queue>
+#include <cstdlib>
+#include <assert.h>
 
 using namespace std;
 

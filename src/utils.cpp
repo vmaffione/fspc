@@ -17,6 +17,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Token buffer support. */
+#include "circular_buffer.hpp"
+
+/* Main class driver. */
+#include "fsp_driver.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -24,12 +29,6 @@
 #include <fstream>
 
 using namespace std;
-
-/* Token buffer support. */
-#include "circular_buffer.hpp"
-
-/* Main class driver. */
-#include "fsp_driver.hpp"
 
 
 /* Global variable shared between all the compilation units. */

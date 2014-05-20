@@ -18,13 +18,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string>
-
-using namespace std;
-
 #include "java_developer.hpp"
 #include "java_templates.hpp"
 
+#include <string>
+
+using namespace std;
 using namespace codegen;
 using namespace java;
 

@@ -17,17 +17,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <iostream>
-
 #include "symbols_table.hpp"  /* struct ActionsTable */
 #include "lts.hpp"            /* class Lts */
 
-/* Serialization support. */
 #include "serializer.hpp"
 
-using namespace std;
+#include <iostream>
 
+using namespace std;
 
 
 /* ============================= Serializer ============================== */

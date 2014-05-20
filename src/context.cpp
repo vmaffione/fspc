@@ -17,9 +17,10 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "context.hpp"
+
 #include <cassert>
 #include <string>
-#include "context.hpp"
 
 using namespace std;
 

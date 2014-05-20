@@ -21,6 +21,9 @@
 #ifndef __LTS__H__
 #define __LTS__H__
 
+#include "symbols_table.hpp"
+#include "location.hh"
+
 #include <iostream>
 #include <vector>
 #include <list>
@@ -29,9 +32,6 @@
 #include <set>
 #include <assert.h>
 #include <stdint.h>
-
-#include "symbols_table.hpp"
-#include "location.hh"
 
 using namespace std;
 

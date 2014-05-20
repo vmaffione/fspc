@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "sh_driver.hpp"
 
 /* Interactive shell */
@@ -7,6 +5,8 @@
 
 /* Bison generated parser. */
 #include "sh_parser.hpp"
+
+#include <cassert>
 
 using namespace std;
 

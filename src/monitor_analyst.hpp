@@ -22,14 +22,14 @@
 #define __FSPC_CODEGEN_MONITOR_ANALYST__HH
 /*#define MONITOR_DEBUG*/
 
+#include "lts.hpp"
+#include "fspc_experts.hpp"
+#include "symbols_table.hpp"
+
 #include <map>
 #include <list>
 #include <vector>
 #include <string>
-
-#include "lts.hpp"
-#include "fspc_experts.hpp"
-#include "symbols_table.hpp"
 
 namespace codegen {
 

@@ -17,17 +17,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include <string>
-#include <list>
-#include <sstream>
-#include <cstdio>
-#include <cstring>       /* strlen() */
-#include <unistd.h>      /* fork() */
-#include <sys/wait.h>    /* waitpid() */
-#include <ncurses.h>
-#include <fcntl.h>
-
 #include "shell.hpp"
 
 /* FspDriver class to access the compiler structure. */
@@ -42,6 +31,16 @@
 /* ShDriver class to access expression parser. */
 #include "sh_driver.hpp"
 
+#include <string>
+#include <list>
+#include <sstream>
+#include <cstdio>
+#include <cstring>       /* strlen() */
+#include <unistd.h>      /* fork() */
+#include <sys/wait.h>    /* waitpid() */
+#include <ncurses.h>
+#include <fcntl.h>
+
 
 #define DEBUG
 #ifdef DEBUG
@@ -49,7 +48,6 @@
 #else
 #define IFD(x)
 #endif
-
 
 #define HISTORY_MAX_COMMANDS    20
 

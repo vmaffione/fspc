@@ -21,15 +21,15 @@
 #ifndef __TREE_HPP__
 #define __TREE_HPP__
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <fstream>
-
 #include "symbols_table.hpp"
 #include "lts.hpp"
 #include "context.hpp"
 #include "location.hh"
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
 
 
 struct FspDriver;

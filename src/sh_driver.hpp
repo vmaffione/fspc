@@ -1,6 +1,10 @@
 #ifndef __SH_DRIVER__HH
 #define __SH_DRIVER__HH
 
+#include "sh_parser.hpp"
+
+#include "shell.hpp"
+
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -11,10 +15,6 @@
 
 //#define NDEBUG
 #include <assert.h>
-
-#include "sh_parser.hpp"
-
-#include "shell.hpp"
 
 using namespace std;
 

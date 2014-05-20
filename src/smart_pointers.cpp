@@ -1,4 +1,5 @@
 #include "smart_pointers.hpp"
+
 #include <cassert>
 
 using namespace std;

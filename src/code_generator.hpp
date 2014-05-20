@@ -21,10 +21,11 @@
 #ifndef __FSPC_CODEGEN_GENERATOR__HH
 #define __FSPC_CODEGEN_GENERATOR__HH
 
+#include "fspc_experts.hpp"
+
 #include <stdexcept>
 #include <string>
 
-#include "fspc_experts.hpp"
 
 namespace codegen {
 

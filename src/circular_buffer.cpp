@@ -17,13 +17,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "circular_buffer.hpp"
 
 #include <iostream>
 #include <cstring>
 
 using namespace std;
-
-#include "circular_buffer.hpp"
 
 
 /* ========================== CircularBuffer ============================ */

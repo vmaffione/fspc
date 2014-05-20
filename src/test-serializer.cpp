@@ -1,5 +1,8 @@
-#include <iostream>
 #include "serializer.hpp"
+
+#include <iostream>
+
+using namespace std;
 
 
 void serialize()

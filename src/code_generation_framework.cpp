@@ -18,15 +18,15 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "code_generation_framework.hpp"
+
 #include <string>
 #include <fstream>
 #include <vector>
 
+using namespace codegen;
 using namespace std;
 
-#include "code_generation_framework.hpp"
-
-using namespace codegen;
 
 Serializable::Serializable(string f) : filename(f) {}
 

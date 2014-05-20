@@ -17,12 +17,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "unresolved.hpp"
+#include "lts.hpp"
+
 #include <iostream>
 #include <cassert>
-
-#include "lts.hpp"
 
 
 #define FUNNY   44  /* Magic number used to generate indexes. */

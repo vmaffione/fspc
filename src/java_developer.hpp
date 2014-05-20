@@ -21,11 +21,12 @@
 #ifndef __FSPC_CODEGEN_JAVA_DEVELOPER__HH
 #define __FSPC_CODEGEN_JAVA_DEVELOPER__HH
 
+#include "fspc_experts.hpp"
+#include "monitor_analyst.hpp"
+
 #include <vector>
 #include <array>
 
-#include "fspc_experts.hpp"
-#include "monitor_analyst.hpp"
 
 namespace codegen {
 namespace java {
