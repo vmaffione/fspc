@@ -38,6 +38,8 @@ struct Preproc {
 DIGIT		[0-9]
 LowerCaseID	[_a-z][_a-zA-Z0-9]*
 UpperCaseID	[A-Z][_a-zA-Z0-9]*
+Spaces          [ \t\r\n]+
+OptSpaces       [ \t\r\n]*
 
 /* We don't want to take a standard yywrap() from fl.so, and so we can
    avoid linking the executable with -lfl. */
@@ -47,6 +49,8 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 %option prefix="pp"
 %option reentrant stack noyywrap
 %option extra-type="struct Preproc *"
+
+%x PARAMETERS
 
 %%
 
@@ -58,7 +62,21 @@ UpperCaseID	[A-Z][_a-zA-Z0-9]*
 %}
 
 
-range[ \t\r\n]+{UpperCaseID} {
+{UpperCaseID}{OptSpaces}"(" {
+    yyextra->out << yytext;
+    BEGIN(PARAMETERS);
+}
+
+<PARAMETERS>")" {
+    yyextra->out << yytext;
+    BEGIN(INITIAL);
+}
+
+<PARAMETERS>. {
+    yyextra->out << yytext;
+}
+
+range{Spaces}{UpperCaseID} {
     string s;
     int i = 5;
 
@@ -73,7 +91,7 @@ range[ \t\r\n]+{UpperCaseID} {
     yyextra->out << s;
 }
 
-set[ \t]+{UpperCaseID} {
+set{Spaces}{UpperCaseID} {
     string s;
     int i = 3;
 

@@ -4,6 +4,6 @@
 [O] serializer must do non-blocking reads!
 [O] add "basic" testing (for do_square_int)
 [O] currently the preprocessing doesn't work better with overriding:
-    Example: "range K=1 P(K=1)=(a[K]->END)."
+    Example: "range K=2..4 P(K=1)=(a[K]->END)."
 [O] fix memory leaks
 [O] Go parallel!
