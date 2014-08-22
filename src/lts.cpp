@@ -1468,17 +1468,24 @@ void fsp::compress_action_labels(const set<unsigned int>& actions,
         merged_something = false;
 
         while (r1 != table.end()) {
-            /* Given two rows rx and ry, pivot(rx, ry) exists if
-               (1) rx and ry have the same length (i.e. the two vectors
+            list< vector< set<string> > >::iterator r2 = r1;
+            unsigned int pivot;
+
+            r2++;
+            if (r2 == table.end()) {
+                /* r1 is the last row, there is no r2. */
+                break;
+            }
+            /* Given two rows r1 and r2, pivot(r1, r2) exists if
+               (1) r1 and r2 have the same length (i.e. the two vectors
                have the same size), and
-               (2) rx and ry are the same except for an element
+               (2) r1 and r2 are the same except for an element
                where the pivot is the index of the element which is different.
 
                First of all we compute the pivot of two consecutive rows 'r1'
                and 'r2'.
             */
-            list< vector< set<string> > >::iterator r2 = r1;
-            unsigned int pivot = merge_pivot(*r1, *(++r2));
+            pivot = merge_pivot(*r1, *r2);
 
             if (pivot) {
                 /* Once we have found a pivot, we try to see if that pivot
