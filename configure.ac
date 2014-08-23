@@ -1,4 +1,4 @@
-AC_INIT([fspc], [1.7], [v.maffione@gmail.com])
+AC_INIT([fspc], [1.8], [v.maffione@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall])
 
 AC_CONFIG_SRCDIR([src/lts.cpp])

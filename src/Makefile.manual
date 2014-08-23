@@ -1,4 +1,4 @@
-VER=1.7
+VER=1.8
 
 # Generated C++ source files (to be updated manually)
 GENERATED=fsp_parser.cpp fsp_parser.hpp fsp_scanner.cpp preproc.cpp location.hh position.hh sh_parser.cpp sh_parser.hpp sh_scanner.cpp Makefile.gen
