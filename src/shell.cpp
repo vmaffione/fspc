@@ -201,6 +201,8 @@ void Shell::fill_completion()
 
 InteractiveShell::InteractiveShell(FspDriver& cr, istream& inr) : Shell(cr, inr)
 {
+    stringstream ss;
+
     history_enabled = true;
 
     /* Autocompletion initialization. */
@@ -219,6 +221,11 @@ InteractiveShell::InteractiveShell(FspDriver& cr, istream& inr) : Shell(cr, inr)
     init_pair(4, COLOR_BLUE, COLOR_BLACK);
 
     //scrollok(stdscr, TRUE); /* Use original terminal scrolling. */
+
+    ss << "Welcome to the fspc interactive shell!" << endl;
+    ss << "     Type 'help' to list the available commands" << endl;
+    putsstream(ss, true);
+
 }
 
 InteractiveShell::~InteractiveShell()
@@ -1279,6 +1286,8 @@ int Shell::run()
         string var;
         vector<string> tokens;
         map<string, ShellCmdFunc>::iterator it;
+        /* Declare 'ss' inside the loop, so that it's not necessary to
+         * purge it after each iteration. */
         stringstream ss;
 
         readline(line, "fspcc >> ");
