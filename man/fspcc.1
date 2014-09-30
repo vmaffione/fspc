@@ -1,0 +1,198 @@
+.\" Manpage for fspcc.
+.\" Contact v.maffione@gmail.com to correct errors or typos.
+.TH "FSPCC" "1" "June 2013" "fspcc 1.1" "fspcc manual"
+
+.SH NAME
+fspcc \- An FSP compiler and LTS analysis tool
+
+.SH SYNOPSIS
+.B fspcc
+[\fI-dpgasvh\fR] [\fI-S FILE\fR] [\fI-D NUM\fR] \fI-i FILE\fR [\fI-o FILE\fR]
+.br
+.B fspcc
+[\fI-dpgasvh\fR] [\fI-S FILE\fR] [\fI-D NUM\fR] \fI-l FILE\fR
+
+
+.SH DESCRIPTION
+.PP
+This command invokes an Finite State Process (FSP) compiler and a
+Labelled Transition System (LTS) analysis tool.
+.PP
+The FSP language can be used to model concurrent systems, e.g.
+multi-threaded/multi-process applications. An FSP model can be
+compiled into a graph-based representation using an FSP compiler:
+each FSP process is transformed into an equivalent LTS.
+.PP
+An LTS analysis tool is then able to:
+.RS 3
+.IP "   -"
+detect concurrency problems in the concurrent system (e.g. deadlock,
+starvation)
+.RE
+.RS 3
+.IP "   -"
+show that certain properties (or assertions) hold on the concurrent system
+.RE
+.RS 3
+.IP "   -"
+run a simulation (animation) of the concurrent system, in order to gain
+confidence on the model
+.RE
+.PP
+When invoked in the first form, you use the \fI-i\fR option to specify an
+input file containing FSP definitions. The tool will compile all the FSP
+models, and produce an output file containing the corresponding compiled LTSs.
+.PP
+When invoked in the second form, you use the \fI-l\fR option to specify a
+file containing a set of compiled LTSs, in order to use the LTS analysis
+tool without compiling again.
+
+
+.SH OPTIONS
+.PP
+\fB\-i\fR \fIPATHNAME\fR
+.RS 3
+Specifies an input file pathname containing FSP definitions to compile.
+.RE
+
+.PP
+\fB\-o\fR \fIPATHNAME\fR
+.RS 3
+Specifies the output file pathname where compiled LTSs are stored. If this
+option is not specified, the default output file name is 'output.lts'.
+.RE
+
+.PP
+\fB\-l\fR \fIPATHNAME\fR
+.RS 3
+Specifies the input file pathname containing compiled LTSs.
+.RE
+
+.PP
+\fB\-d\fR
+.RS 3
+Runs deadlock/error analysis on every compiled LTS. A list of deadlocks/errors
+will be printed on the standard output. If there are no such problems, no
+output is produced.
+.RE
+
+.PP
+\fB\-p\fR
+.RS 3
+Runs all the specified progress checks on every compiled LTS. A list of
+progress violations will be printed on the standard output. If there are no
+such problems, no output is produced.
+.RE
+
+.PP
+\fB\-g\fR
+.RS 3
+Outputs a GraphViz representation file corrisponding to every LTS.
+For each process named 'P', a file called 'P.gv' is created.
+.RE
+
+.PP
+\fB\-a\fR
+.RS 3
+The same as \fB\-dpg\fR.
+.RE
+
+.PP
+\fB\-s\fR
+.RS 3
+Runs an LTS analysis interactive shell. The shell is run after compilation
+(if any), but before the compiled output is generated (if any).
+.RE
+
+.PP
+\fB\-S\fR \fIPATHNAME\fR
+.RS 3
+Runs the LTS analysis script specified by the pathname. The script is
+run after the compilation (if any) but before invoking the interactive shell
+(when \fB\-s\fR is specified).
+.RE
+
+.PP
+\fB\-D\fR \fINUMBER\fR
+.RS 3
+Specifies the maximum accepted depth for process references. This is
+mainly useful to avoid problems with poorly written recursive processes.
+Example of a problematic process, which causes unterminated recursion:
+.PP
+.RS 4
+P(K=3) = if (K == 0) then END else P(K-1);P(K-2);END.
+.RE
+.RE
+
+.PP
+\fB\-v\fR
+.RS 3
+Show versioning information.
+.RE
+
+.PP
+\fB\-h\fR
+.RS 3
+Show the help.
+.RE
+
+
+.SH EXAMPLES
+Here is a simple example of FSP input file (say in.fsp):
+.PP
+.RS 4
+P = (a->b->P|c->d->END).
+.br
+Q = (t[i:1..2]-> (when (i>1) u->Q | v->Q)).
+.br
+||C = (P || Q).
+.RE
+.PP
+Compile these FSP models and store the result into 'out.lts'
+.PP
+.RS 4
+fspcc -i in.fsp -o out.lts
+.RE
+.PP
+Now run all the analysis and produce GraphViz representations
+.PP
+.RS 4
+fspcc -a -l out.lts
+.RE
+.PP
+Alternatively, you can do the same thing with just one command
+.PP
+.RS 4
+fspcc -a -i in.fsp -o out.lts
+.RE
+.PP
+To launch an interactive shell
+.PP
+.RS 4
+fspcc -s -i in.fsp
+.RE
+.PP
+or, from a compiled LTS file
+.PP
+.RS 4
+fspcc -s -l out.lts
+.RE
+
+
+.SH AUTHOR
+Written by Vincenzo Maffione.
+
+.SH REPORTING BUGS
+Please report fspcc bugs to v.maffione@gmail.com.
+.br
+See fspcc project homepage: <http://www.bitbucket.org/vmaffione/fspc>
+
+.SH COPYRIGHT
+Copyright \(co 2013 Vincenzo Maffione.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+.SH SEE ALSO
+\fBgraphviz\fR(7), \fBdot\fR(1)

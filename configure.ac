@@ -10,5 +10,5 @@ AC_CHECK_LIB([ncurses], [printw])
 AC_CHECK_HEADER([ncurses.h])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile scripts/Makefile])
 AC_OUTPUT

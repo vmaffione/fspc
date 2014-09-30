@@ -1,0 +1,40 @@
+#!/bin/bash
+
+
+# set -x
+
+if [ "$1" == "" ]; then
+    echo "USAGE: ltsimg P.gv [pdf|png]"
+    exit 1
+fi
+
+if [ ! -f "$1" ]; then
+    echo "$1: no such file"
+    exit 1
+fi
+
+# check if we have the dot command
+which dot &> /dev/null
+if [ "$?" != "0" ]; then
+    echo "\"dot\" program not found"
+    echo "Try to install the graphviz package"
+    exit 1
+fi
+
+# check the output format
+if [ "$2" == "" ]; then
+    FORMAT="png"
+elif [ "$2" != "png" -a "$2" != "pdf" ]; then
+    echo "Unknown format \"$2\""
+    echo "USAGE: ltsimg P.gv [pdf|png]"
+    exit 1
+else
+    FORMAT="$2"
+fi
+
+# cut the .gv filename extension
+BASENAME=$(echo "$1" | sed 's|\.gv||')
+
+# generate the image
+dot -T${FORMAT} "$1" -o "$BASENAME.${FORMAT}"
+

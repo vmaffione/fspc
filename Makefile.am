@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src man scripts
 
 
 # Targets inherited from the original Makefile
