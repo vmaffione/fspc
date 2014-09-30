@@ -5,9 +5,6 @@ An FSP (Finite State Process) compiler + an LTS (Labeled Transition System) anal
 
 
 
-FSPC(1)                            fspc manual                           FSPC(1)
-
-
 NAME
        fspc - An FSP compiler and LTS analysis tool
 
@@ -15,7 +12,6 @@ NAME
 SYNOPSIS
        fspcc [-dpgasvh] [-S FILE] [-D NUM] -i FILE [-o FILE]
        fspcc [-dpgasvh] [-S FILE] [-D NUM] -l FILE
-
 
 
 DESCRIPTION

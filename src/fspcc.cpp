@@ -53,6 +53,14 @@ void help()
     cout << "   -h : Shows this help.\n";
 }
 
+void help_with_suggestion()
+{
+        help();
+        cout << "\n    [Hint] Try\n";
+        cout << "       $ fspcc -s -i input.fsp\n";
+        cout << "    to open 'input.fsp' and run the interactive shell\n";
+}
+
 void process_args(CompilerOptions& co, int argc, char **argv)
 {
     int ch;
@@ -73,7 +81,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
         switch (ch) {
             default:
                 cout << "\n";
-                help();
+                help_with_suggestion();
                 exit(1);
                 break;
 
@@ -142,7 +150,7 @@ void process_args(CompilerOptions& co, int argc, char **argv)
 
     if (!co.input_file) {
         cerr << "Error: Missing input file\n\n";
-        help();
+        help_with_suggestion();
         exit(-1);
     }
 
